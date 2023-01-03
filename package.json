@@ -1,0 +1,22 @@
+{
+  "name": "vsslib",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "dev": "npx tsc --watch",
+    "test": "jest tests --watch",
+    "build": "rm -rf ./build && tsc"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "typescript": "^4.9.4",
+    "@types/jest": "^29.2.5",
+    "jest": "^29.3.1"
+  }
+}
