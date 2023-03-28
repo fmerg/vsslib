@@ -8,15 +8,27 @@
     "/dist"
   ],
   "scripts": {
+    "vss": "node cli.js",
     "dev": "npx tsc --watch",
-    "test": "jest tests --watch",
-    "build": "rm -rf ./build && tsc"
+    "test": "jest tests --maxWorkers=1",
+    "test:reload": "jest tests --watch --maxWorkers=1 --verbose",
+    "test-elgamal:reload": "jest tests/elgamal --watch --maxWorkers=1 --verbose",
+    "test-key:reload": "jest tests/key --watch --maxWorkers=1 --verbose",
+    "test-utils:reload": "jest tests/utils --watch --maxWorkers=1 --verbose",
+    "build": "rm -rf ./build && tsc",
+    "docs": "typedoc --out docs src/*.ts"
   },
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "typescript": "^4.9.4",
+    "@noble/curves": "^0.8.3",
     "@types/jest": "^29.2.5",
-    "jest": "^29.3.1"
+    "commander": "^10.0.0",
+    "ffjavascript": "^0.2.57",
+    "jest": "^29.5",
+    "noble-ed25519": "^1.2.6",
+    "ts-jest": "^29.0.5",
+    "typedoc": "^0.23.26",
+    "typescript": "^4.9.4"
   }
 }
