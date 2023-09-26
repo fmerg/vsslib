@@ -3,7 +3,7 @@
 ```js
 const elgamal = require('vsslib/elgamal');
 
-const ctx = elgamal.initCryptosystem('ed25519');
+const ctx = elgamal.initCrypto('ed25519');
 ```
 
 ```js

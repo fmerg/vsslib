@@ -1,4 +1,4 @@
-import { Cryptosystem } from '../src/elgamal/system';
+import { CryptoSystem } from '../src/elgamal/crypto';
 import { Point } from '../src/elgamal/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
@@ -12,32 +12,32 @@ const __labels      = Object.values(Systems);
 const __algorithms  = Object.values(Algorithms);
 
 
-describe('system initialization', () => {
+describe('crypto initialization', () => {
   it.each(__labels)('over %s', async (label) => {
-    const ctx1 = elgamal.initCryptosystem(label);
-    const ctx2 = new Cryptosystem(backend.initGroup(label));
+    const ctx1 = elgamal.initCrypto(label);
+    const ctx2 = new CryptoSystem(backend.initGroup(label));
     expect(await ctx1.isEqual(ctx2)).toBe(true);
     expect(await ctx1.label).toEqual(label);
   });
 });
 
 
-describe('system initialization failure', () => {
-  test('unsupported system', () => {
+describe('crypto initialization failure', () => {
+  test('unsupported crypto', () => {
     const unsupported = 'unsupported';
-    expect(() => elgamal.initCryptosystem(unsupported)).toThrow(
-      `Unsupported system: ${unsupported}`
+    expect(() => elgamal.initCrypto(unsupported)).toThrow(
+      `Unsupported crypto: ${unsupported}`
     );
   });
 });
 
 
-describe('system equality', () => {
+describe('crypto equality', () => {
   it.each(__labels)('over %s', async (label) => {
-    const ctx = elgamal.initCryptosystem(label);
-    expect(await ctx.isEqual(elgamal.initCryptosystem(label))).toBe(true);
+    const ctx = elgamal.initCrypto(label);
+    expect(await ctx.isEqual(elgamal.initCrypto(label))).toBe(true);
     expect(await ctx.isEqual(
-      elgamal.initCryptosystem(
+      elgamal.initCrypto(
         label == Systems.ED25519 ?
           Systems.ED448 :
           Systems.ED25519
@@ -50,7 +50,7 @@ describe('system equality', () => {
 describe('fiat-shamir heuristic', () => {
   // Helper for reproducing externally the fiat-shamir computation
   const computeFiatShamir = async (
-    ctx: Cryptosystem,
+    ctx: CryptoSystem,
     scalars: bigint[],
     points: Point[],
     algorithm: Algorithm | undefined,
@@ -90,7 +90,7 @@ describe('fiat-shamir heuristic', () => {
     }
   }
   it.each(combinations)('over %s/%s', async (label, algorithm) => {
-    const ctx = elgamal.initCryptosystem(label);
+    const ctx = elgamal.initCrypto(label);
     const scalars = [
       await ctx.randomScalar(),
       await ctx.randomScalar(),

@@ -11,7 +11,7 @@
 ```js
 import { Key } from 'vsslib';
 
-const key = await Key.generate({ system: 'ed25519' });
+const key = await Key.generate({ crypto: 'ed25519' });
 const pub = await key.extractPublic();
 ```
 
@@ -25,7 +25,7 @@ const serialized = await key.serialize();
 The original key is recovered as follows:
 
 ```js
-const keyBack = await Key.deserialize(serialized, { system: 'ed25519' });
+const keyBack = await Key.deserialize(serialized, { crypto: 'ed25519' });
 const areEqual = await keyBack.isEqual(key);  // true;
 ```
 
@@ -40,7 +40,7 @@ It can be recovered as follows:
 ```js
 import { Public } from 'vsslib';
 
-const pubBack = await Public.deserialize(serialized, { system: 'ed25519' });
+const pubBack = await Public.deserialize(serialized, { crypto: 'ed25519' });
 const areEqual = await pubBack.isEqual(pub);  // true
 ```
 

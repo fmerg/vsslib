@@ -7,7 +7,7 @@ import { leInt2Buff, leBuff2Int } from '../utils';
 const utils = require('../utils');
 
 
-export class Cryptosystem {
+export class CryptoSystem {
   _group:     Group;
   _label:     Label;
   _modulus:   bigint;
@@ -57,7 +57,7 @@ export class Cryptosystem {
     return this._neutral;
   }
 
-  isEqual = async (ctx: Cryptosystem): Promise<Boolean> => {
+  isEqual = async (ctx: CryptoSystem): Promise<Boolean> => {
     return this._group.isEqual(ctx._group);
   }
 
