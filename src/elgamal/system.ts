@@ -117,15 +117,12 @@ export class Cryptosystem {
     ].reduce(
       (acc: number[], curr: Uint8Array) => [...acc, ...curr], []
     )
-
     const scalarsBuff = scalars.reduce(
       (acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []
     );
-
     const pointsBuff = points.reduce(
       (acc: number[], p: Point) => [...acc, ...p.toBytes()], []
     );
-
     const digest = await utils.hash(
       new Uint8Array(
         [fixedBuff, scalarsBuff, pointsBuff].reduce(
