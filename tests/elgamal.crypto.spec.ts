@@ -125,28 +125,55 @@ describe('fiat-shamir heuristic', () => {
 
 
 describe('multiple AND dlog proof success', () => {
-  it.each(__labels)('over %s', async (label) => {
+  const combinations: any[] = [];
+  for (const label of __labels) {
+    for (const algorithm of [...__algorithms, undefined]) {
+      combinations.push([label, algorithm]);
+    }
+  }
+  it.each(combinations)('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
     const dlog = await ctx.randomScalar();
     const pairs = await createDlogPairs(ctx, dlog, 3);
-    const proof = await ctx.prove_AND_Dlog(dlog, pairs);
-    const valid = await ctx.verify_AND_Dlog(pairs, proof);
+    const proof = await ctx.prove_AND_Dlog(dlog, pairs, algorithm);
+    expect(proof.algorithm).toBe(algorithm || 'sha256');
 
+    const valid = await ctx.verify_AND_Dlog(pairs, proof);
     expect(valid).toBe(true);
   });
 });
 
 
-describe('multiple AND dlog proof failure', () => {
+describe('multiple AND dlog proof failure if tampered', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = elgamal.initCrypto(label);
 
     const dlog = await ctx.randomScalar();
     const pairs = await createDlogPairs(ctx, dlog, 3);
-    const proof = await ctx.prove_AND_Dlog(dlog, pairs);
+    const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.SHA256);
 
-    pairs[2].v = await ctx.randomPoint();         // tamper last pair
+    // Tamper last pair
+    pairs[2].v = await ctx.randomPoint();
+
+    const valid = await ctx.verify_AND_Dlog(pairs, proof);
+    expect(valid).toBe(false);
+  });
+});
+
+
+describe('multiple AND dlog proof failure if wrong algorithm', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const dlog = await ctx.randomScalar();
+    const pairs = await createDlogPairs(ctx, dlog, 3);
+    const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.SHA256);
+
+    // change hash algorithm
+    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
+      Algorithms.SHA512 :
+      Algorithms.SHA256
 
     const valid = await ctx.verify_AND_Dlog(pairs, proof);
     expect(valid).toBe(false);
@@ -155,13 +182,19 @@ describe('multiple AND dlog proof failure', () => {
 
 
 describe('single dlog proof success', () => {
-  it.each(__labels)('over %s', async (label) => {
+  const combinations: any[] = [];
+  for (const label of __labels) {
+    for (const algorithm of [...__algorithms, undefined]) {
+      combinations.push([label, algorithm]);
+    }
+  }
+  it.each(combinations)('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
     const dlog = await ctx.randomScalar();
     const u = await ctx.randomPoint();
     const v = await ctx.operate(dlog, u);
-    const proof = await ctx.proveDlog(dlog, { u, v });
+    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.SHA256);
 
     const valid = await ctx.verifyDlog({ u, v }, proof);
     expect(valid).toBe(true);
@@ -169,16 +202,37 @@ describe('single dlog proof success', () => {
 });
 
 
-describe('single dlog proof failure', () => {
+describe('single dlog proof failure if tampered', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = elgamal.initCrypto(label);
 
     const dlog = await ctx.randomScalar();
     const u = await ctx.randomPoint();
     const v = await ctx.operate(dlog, u);
-    const proof = await ctx.proveDlog(dlog, { u, v });
+    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.SHA256);
 
-    proof.response = await ctx.randomScalar();  // tamper response
+    // tamper response
+    proof.response = await ctx.randomScalar();
+
+    const valid = await ctx.verifyDlog({ u, v }, proof);
+    expect(valid).toBe(false);
+  });
+});
+
+
+describe('single dlog proof failure if wrong algorithm', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const dlog = await ctx.randomScalar();
+    const u = await ctx.randomPoint();
+    const v = await ctx.operate(dlog, u);
+    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.SHA256);
+
+    // change hash algorithm
+    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
+      Algorithms.SHA512 :
+      Algorithms.SHA256
 
     const valid = await ctx.verifyDlog({ u, v }, proof);
     expect(valid).toBe(false);

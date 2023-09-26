@@ -14,6 +14,7 @@ export type DlogPair = {
 export type DlogProof = {
   commitments : Point[],
   response    : bigint,
+  algorithm   : Algorithm,
 }
 
 
@@ -145,23 +146,25 @@ export class CryptoSystem {
     return this.leBuff2Scalar(digest);
   }
 
-  prove_AND_Dlog = async (dlog: bigint, pairs: DlogPair[]): Promise<DlogProof> => {
+  prove_AND_Dlog = async (dlog: bigint, pairs: DlogPair[], algorithm?: Algorithm): Promise<DlogProof> => {
+    algorithm = algorithm || Algorithms.DEFAULT;
+
     const r = await this._group.randomScalar();
     const commitments = [];
     for (const { u, v } of pairs) {
       commitments.push(await this._group.operate(r, u));
     }
 
-    const c = await this.fiatShamir([], commitments, Algorithms.SHA256);  // TODO: Enhance
+    const c = await this.fiatShamir([], commitments, algorithm);  // TODO: Enhance
     const response = (r + c * dlog) % this._order;
 
-    return { commitments, response };
+    return { commitments, response, algorithm };
   }
 
   verify_AND_Dlog = async (pairs: DlogPair[], proof: DlogProof): Promise<Boolean> => {
-    const { commitments, response } = proof;
-    const c = await this.fiatShamir([], commitments);
+    const { commitments, response, algorithm } = proof;
 
+    const c = await this.fiatShamir([], commitments, algorithm);
     let flag: Boolean = true;
     for (const [i, { u, v }] of pairs.entries()) {
       const lpt = await this._group.operate(response, u);
@@ -174,8 +177,8 @@ export class CryptoSystem {
     return flag;
   }
 
-  proveDlog = async (dlog: bigint, pair: DlogPair): Promise<DlogProof> => {
-    return this.prove_AND_Dlog(dlog, [pair]);
+  proveDlog = async (dlog: bigint, pair: DlogPair, algorithm?: Algorithm): Promise<DlogProof> => {
+    return this.prove_AND_Dlog(dlog, [pair], algorithm);
   }
 
   verifyDlog = async (pair: DlogPair, proof: DlogProof): Promise<Boolean> => {
