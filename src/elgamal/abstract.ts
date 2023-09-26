@@ -35,8 +35,8 @@ export abstract class Group {
   abstract generatePoint: (s: bigint) => Promise<Point>;
   abstract assertValid: (p: Point) => Promise<Boolean>;
   abstract assertEqual: (p: Point, q: Point) => Promise<Boolean>;
-  abstract packPoint: (p: Point) => Promise<string>;
-  abstract unpackPoint: (p: string) => Promise<Point>;
+  abstract hexify: (p: Point) => string;
+  abstract unhexify: (p: string) => Point;
 
   randomScalar = async (): Promise<bigint> => {
     const size = byteLen(this._order);
@@ -63,7 +63,7 @@ export abstract class Point {
     );
   }
 
-  pack = async (): Promise<string> => {
-    return await this._group.packPoint(this);
+  toHex = (): string => {
+    return this._group.hexify(this);
   }
 }

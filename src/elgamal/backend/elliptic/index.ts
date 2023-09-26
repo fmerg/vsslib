@@ -141,11 +141,11 @@ class EcGroup extends Group {
     );
   }
 
-  packPoint = async (p: Point): Promise<string> => {
+  hexify = (p: Point): string => {
     return (p as EcPoint).wrapped.toHex();
   }
 
-  unpackPoint = async (packed: string): Promise<Point> => {
+  unhexify = (packed: string): Point => {
     return new EcPoint(this, this._curve.ExtendedPoint.fromHex(packed));
   }
 }

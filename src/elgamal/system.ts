@@ -75,12 +75,12 @@ export class Cryptosystem {
     return await this._group.assertValid(p);
   }
 
-  packPoint = async (p: Point): Promise<string> => {
-    return this._group.packPoint(p);
+  hexify = (p: Point): string => {
+    return this._group.hexify(p);
   }
 
-  unpackPoint = async (p: string): Promise<Point> => {
-    return this._group.unpackPoint(p);
+  unhexify = (p: string): Point => {
+    return this._group.unhexify(p);
   }
 
 }

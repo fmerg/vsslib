@@ -96,7 +96,7 @@ export class Public {
   }
 
   serialize = async (): Promise<SerializedPublic> => {
-    const packed =  await this._system.packPoint(this._point);
+    const packed = this._system.hexify(this._point);
 
     return { packed };
   }
@@ -105,11 +105,7 @@ export class Public {
     const ctx = elgamal.initCryptosystem(opts.system);
     const { packed } = serialized;
 
-    // TODO
-    // const point = await ctx.unpackPoint(packed);
-    // await ctx.assertValid(point);
-
-    return new Public(ctx, await ctx.unpackPoint(packed));
+    return new Public(ctx, ctx.unhexify(packed));
   }
 
   isEqual = async (other: Public): Promise<Boolean> => {
