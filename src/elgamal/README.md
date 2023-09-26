@@ -84,3 +84,32 @@ const u = await ctx.fiatShamir([s1, s2, ...], [p1, p2, ...], 'sha256');
 
 Roughly speaking, this is the scalar produced by hashing together the provided
 input and the underlying subgroup's parameters.
+
+
+### Multiple AND dlog proof
+
+```js
+const pairs = [
+  {
+    u: u1,
+    v: v1,
+  },
+  {
+    u: u2,
+    v: v2,
+  },
+  ...
+];
+
+const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.SHA256);
+
+const valid = await ctx.verify_AND_Dlog(pairs, proof);
+```
+
+### Dlog proof
+
+```js
+const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.SHA256);
+
+const valid = await ctx.verifyDlog(pairs, proof);
+```

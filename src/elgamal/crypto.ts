@@ -150,12 +150,21 @@ export class CryptoSystem {
     algorithm = algorithm || Algorithms.DEFAULT;
 
     const r = await this._group.randomScalar();
+
     const commitments = [];
     for (const { u, v } of pairs) {
       commitments.push(await this._group.operate(r, u));
     }
 
-    const c = await this.fiatShamir([], commitments, algorithm);  // TODO: Enhance
+    const c = await this.fiatShamir(
+      [],
+      [
+        ...pairs.reduce((acc: Point[], { u, v }: DlogPair) => [...acc, u, v], []),
+        ...commitments
+      ],
+      algorithm
+    );
+
     const response = (r + c * dlog) % this._order;
 
     return { commitments, response, algorithm };
@@ -164,7 +173,15 @@ export class CryptoSystem {
   verify_AND_Dlog = async (pairs: DlogPair[], proof: DlogProof): Promise<Boolean> => {
     const { commitments, response, algorithm } = proof;
 
-    const c = await this.fiatShamir([], commitments, algorithm);
+    const c = await this.fiatShamir(
+      [],
+      [
+        ...pairs.reduce((acc: Point[], { u, v }: DlogPair) => [...acc, u, v], []),
+        ...commitments
+      ],
+      algorithm
+    );
+
     let flag: Boolean = true;
     for (const [i, { u, v }] of pairs.entries()) {
       const lpt = await this._group.operate(response, u);
