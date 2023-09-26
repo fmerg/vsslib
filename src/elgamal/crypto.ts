@@ -6,6 +6,16 @@ import { leInt2Buff, leBuff2Int } from '../utils';
 
 const utils = require('../utils');
 
+export type DlogPair = {
+  u: Point,
+  v: Point,
+}
+
+export type DlogProof = {
+  commitments : Point[],
+  response    : bigint,
+}
+
 
 export class CryptoSystem {
   _group:     Group;
@@ -133,6 +143,35 @@ export class CryptoSystem {
     );
     const digestScalar = this.leBuffScalar(digest);
     return this._group.operate(digestScalar, this._generator);
+  }
+
+  prove_AND_Dlog = async (dlog: bigint, pairs: DlogPair[]): Promise<DlogProof> => {
+    // TODO: Implement
+
+    const commitments = [
+      await this._group.randomPoint(),
+      await this._group.randomPoint(),
+    ];
+
+    const response = await this._group.randomScalar();
+
+    return {
+      commitments,
+      response,
+    };
+  }
+
+  verify_AND_Dlog = async (pairs: DlogPair[], proof: DlogProof): Promise<Boolean> => {
+    // TODO: Implement
+    return true;
+  }
+
+  proveDlog = async (dlog: bigint, pair: DlogPair): Promise<DlogProof> => {
+    return this.prove_AND_Dlog(dlog, [pair]);
+  }
+
+  verifyDlog = async (pair: DlogPair, proof: DlogProof): Promise<Boolean> => {
+    return this.verify_AND_Dlog([pair], proof);
   }
 
 }
