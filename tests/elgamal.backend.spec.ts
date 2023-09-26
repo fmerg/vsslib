@@ -192,12 +192,23 @@ describe('scalar operation on random point', () => {
 });
 
 
-describe('hexify and unhexify point', () => {
+describe('point to bytes and back', () => {
   it.each(__labels)('over %s', async (label) => {
     const group = backend.initGroup(label);
     const p = await group.randomPoint();
-    const packed = p.toHex();
-    const unpacked = group.unhexify(packed);
-    expect(await unpacked.isEqual(p)).toBe(true);
+    const pBytes = p.toBytes();
+    const pBack = group.unpack(pBytes);
+    expect(await pBack.isEqual(p)).toBe(true);
+  })
+});
+
+
+describe('point to hex and back', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const group = backend.initGroup(label);
+    const p = await group.randomPoint();
+    const pHex = p.toHex();
+    const pBack = group.unhexify(pHex);
+    expect(await pBack.isEqual(p)).toBe(true);
   })
 });

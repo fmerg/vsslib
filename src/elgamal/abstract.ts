@@ -35,6 +35,8 @@ export abstract class Group {
   abstract generatePoint: (s: bigint) => Promise<Point>;
   abstract assertValid: (p: Point) => Promise<Boolean>;
   abstract assertEqual: (p: Point, q: Point) => Promise<Boolean>;
+  abstract pack: (p: Point) => Uint8Array;
+  abstract unpack: (p: Uint8Array) => Point;
   abstract hexify: (p: Point) => string;
   abstract unhexify: (p: string) => Point;
 
@@ -61,6 +63,10 @@ export abstract class Point {
       (await this._group.isEqual(other.group)) &&
       (await this._group.assertEqual(this, other))
     );
+  }
+
+  toBytes = (): Uint8Array => {
+    return this._group.pack(this);
   }
 
   toHex = (): string => {

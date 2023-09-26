@@ -40,11 +40,19 @@ const areEqual = await ctx.assertEqual(p, q);
 ```
 
 ```js
-const packed = p.toHex();
+const pBytes = p.toBytes();
 ```
 
 ```js
-const unpacked = ctx.unhexify(packed);
+const pBack = ctx.unpack(pBytes);
+```
+
+```js
+const pHex = p.toHex();
+```
+
+```js
+const pBack = ctx.unhexify(pHex);
 ```
 
 

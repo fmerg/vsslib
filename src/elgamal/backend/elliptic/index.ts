@@ -29,6 +29,7 @@ type NoblePoint = {
   add: Function
   negate: Function
   assertValidity: Function
+  toRawBytes: Function
   toHex: Function
 }
 
@@ -141,12 +142,20 @@ class EcGroup extends Group {
     );
   }
 
+  pack = (p: Point): Uint8Array => {
+    return (p as EcPoint).wrapped.toRawBytes();
+  }
+
+  unpack = (pBytes: Uint8Array): Point => {
+    return new EcPoint(this, this._curve.ExtendedPoint.fromHex(pBytes));
+  }
+
   hexify = (p: Point): string => {
     return (p as EcPoint).wrapped.toHex();
   }
 
-  unhexify = (packed: string): Point => {
-    return new EcPoint(this, this._curve.ExtendedPoint.fromHex(packed));
+  unhexify = (pHex: string): Point => {
+    return new EcPoint(this, this._curve.ExtendedPoint.fromHex(pHex));
   }
 }
 

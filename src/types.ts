@@ -7,12 +7,12 @@ export type SerializedKey = {
 }
 
 export type SerializedPublic = {
-  packed: string;
+  value: string;
 }
 
 export type Ciphertext = {
-  alpha: Point,
-  beta: Point,
+  alpha:  Point,
+  beta:   Point,
 }
 
 export type Label =

@@ -96,16 +96,16 @@ export class Public {
   }
 
   serialize = async (): Promise<SerializedPublic> => {
-    const packed = this._system.hexify(this._point);
+    const value = this._system.hexify(this._point);
 
-    return { packed };
+    return { value };
   }
 
   static deserialize = async (serialized: SerializedPublic, opts: any): Promise<Public> => {
     const ctx = elgamal.initCryptosystem(opts.system);
-    const { packed } = serialized;
+    const { value } = serialized;
 
-    return new Public(ctx, ctx.unhexify(packed));
+    return new Public(ctx, ctx.unhexify(value));
   }
 
   isEqual = async (other: Public): Promise<Boolean> => {

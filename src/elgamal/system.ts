@@ -75,6 +75,14 @@ export class Cryptosystem {
     return await this._group.assertValid(p);
   }
 
+  pack = (p: Point): Uint8Array => {
+    return this._group.pack(p);
+  }
+
+  unpack = (p: Uint8Array): Point => {
+    return this._group.unpack(p);
+  }
+
   hexify = (p: Point): string => {
     return this._group.hexify(p);
   }
