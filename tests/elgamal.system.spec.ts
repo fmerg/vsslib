@@ -1,10 +1,15 @@
 import { Cryptosystem } from '../src/elgamal/system';
-import { Systems } from '../src/enums';
+import { Point } from '../src/elgamal/abstract';
+import { Systems, Algorithms } from '../src/enums';
+import { Algorithm } from '../src/types';
+import { leInt2Buff, leBuff2Int } from '../src/utils';
 
 const elgamal = require('../src/elgamal');
 const backend = require('../src/elgamal/backend');
+const utils = require('../src/utils');
 
-const __labels = Object.values(Systems);
+const __labels      = Object.values(Systems);
+const __algorithms  = Object.values(Algorithms);
 
 
 describe('system initialization', () => {
@@ -38,5 +43,66 @@ describe('system equality', () => {
           Systems.ED25519
       )
     )).toBe(false);
+  });
+});
+
+
+describe('fiat-shamir heuristic', () => {
+  // Helper for reproducing externally the fiat-shamir computation
+  const computeFiatShamir = async (
+    ctx: Cryptosystem,
+    scalars: bigint[],
+    points: Point[],
+    algorithm: Algorithm | undefined,
+  ): Promise<Point> => {
+    const fixedBuff = [
+      leInt2Buff(ctx.modulus),
+      leInt2Buff(ctx.order),
+      ctx.generator.toBytes(),
+    ].reduce(
+      (acc: number[], curr: Uint8Array) => [...acc, ...curr], []
+    )
+    const scalarsBuff = scalars.reduce(
+      (acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []
+    );
+    const pointsBuff = points.reduce(
+      (acc: number[], p: Point) => [...acc, ...p.toBytes()], []
+    );
+    const buffer = [fixedBuff, scalarsBuff, pointsBuff].reduce(
+      (acc, curr) => [...acc, ...curr], []
+    );
+    const digest = await utils.hash(
+      new Uint8Array(
+        [fixedBuff, scalarsBuff, pointsBuff].reduce(
+          (acc, curr) => [...acc, ...curr], []
+        )
+      ),
+      { algorithm }
+    );
+    const digestScalar = (leBuff2Int(digest) as bigint) % ctx.order;
+    return ctx.operate(digestScalar, ctx.generator);
+  }
+
+  const combinations: any[] = [];
+  for (const label of __labels) {
+    for (const algorithm of [...__algorithms, undefined]) {
+      combinations.push([label, algorithm]);
+    }
+  }
+  it.each(combinations)('over %s/%s', async (label, algorithm) => {
+    const ctx = elgamal.initCryptosystem(label);
+    const scalars = [
+      await ctx.randomScalar(),
+      await ctx.randomScalar(),
+    ];
+    const points = [
+      await ctx.randomPoint(),
+      await ctx.randomPoint(),
+      await ctx.randomPoint(),
+    ]
+    const result = await ctx.fiatShamir(scalars, points, algorithm);
+    expect(await result.isEqual(await computeFiatShamir(
+      ctx, scalars, points, algorithm
+    ))).toBe(true);
   });
 });

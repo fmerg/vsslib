@@ -1,5 +1,10 @@
 import { Label } from '../types';
+import { Algorithms } from '../enums';
+import { Algorithm } from '../types';
 import { Group, Point } from './abstract';
+import { leInt2Buff, leBuff2Int } from '../utils';
+
+const utils = require('../utils');
 
 
 export class Cryptosystem {
@@ -10,6 +15,11 @@ export class Cryptosystem {
   _generator: Point;
   _neutral:   Point;
 
+  _modBytes:  Uint8Array;
+  _ordBytes:  Uint8Array;
+  _genBytes:  Uint8Array;
+
+
   constructor(group: Group) {
     this._group     = group;
     this._label     = group.label;
@@ -17,6 +27,10 @@ export class Cryptosystem {
     this._order     = group.order;
     this._generator = group.generator;
     this._neutral   = group.neutral;
+
+    this._modBytes  = leInt2Buff(this._modulus);
+    this._ordBytes  = leInt2Buff(this._order);
+    this._genBytes  = this._generator.toBytes();
   }
 
   public get group(): Group {
@@ -59,6 +73,10 @@ export class Cryptosystem {
     return this._group.invert(p);
   }
 
+  leBuffScalar = (buff: Uint8Array): bigint => {
+    return (leBuff2Int(buff) as bigint) % this._order;
+  }
+
   randomScalar = async (): Promise<bigint> => {
     return this._group.randomScalar();
   }
@@ -89,6 +107,32 @@ export class Cryptosystem {
 
   unhexify = (p: string): Point => {
     return this._group.unhexify(p);
+  }
+
+  fiatShamir = async (scalars: bigint[], points: Point[], algorithm?: Algorithm): Promise<Point> => {
+    const fixedBuff = [
+      this._modBytes,
+      this._ordBytes,
+      this._genBytes,
+    ].reduce(
+      (acc: number[], curr: Uint8Array) => [...acc, ...curr], []
+    )
+    const scalarsBuff = scalars.reduce(
+      (acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []
+    );
+    const pointsBuff = points.reduce(
+      (acc: number[], p: Point) => [...acc, ...p.toBytes()], []
+    );
+    const digest = await utils.hash(
+      new Uint8Array(
+        [fixedBuff, scalarsBuff, pointsBuff].reduce(
+          (acc, curr) => [...acc, ...curr], []
+        )
+      ),
+      { algorithm: algorithm || Algorithms.DEFAULT }
+    );
+    const digestScalar = this.leBuffScalar(digest);
+    return this._group.operate(digestScalar, this._generator);
   }
 
 }

@@ -70,3 +70,17 @@ const v = await ctx.invert(p);
 ```js
 const w = await ctx.operate(s, p);
 ```
+
+### Fiat-Shamir transform
+
+The Fiat-Shamir transform is a hash-based computation used for converting
+generic Σ-protocols into non-interactive zero-knowledge (NIZK) proofs.
+For example, given scalars `s1, s2, ...` and points `p1, p2, ...`,
+the SHA256-based Fiat-Shamir computation is:
+
+```js
+const u = await ctx.fiatShamir([s1, s2, ...], [p1, p2, ...], 'sha256');
+```
+
+Roughly speaking, this is the point whose discrete logarithm is produced by
+hashing together the provided input and the underlying subgroup's parameters.
