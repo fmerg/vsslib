@@ -82,5 +82,5 @@ the SHA256-based Fiat-Shamir computation is:
 const u = await ctx.fiatShamir([s1, s2, ...], [p1, p2, ...], 'sha256');
 ```
 
-Roughly speaking, this is the point whose discrete logarithm is produced by
-hashing together the provided input and the underlying subgroup's parameters.
+Roughly speaking, this is the scalar produced by hashing together the provided
+input and the underlying subgroup's parameters.

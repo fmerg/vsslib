@@ -73,7 +73,7 @@ describe('fiat-shamir heuristic', () => {
     scalars: bigint[],
     points: Point[],
     algorithm: Algorithm | undefined,
-  ): Promise<Point> => {
+  ): Promise<bigint> => {
     const fixedBuff = [
       leInt2Buff(ctx.modulus),
       leInt2Buff(ctx.order),
@@ -98,8 +98,7 @@ describe('fiat-shamir heuristic', () => {
       ),
       { algorithm }
     );
-    const digestScalar = (leBuff2Int(digest) as bigint) % ctx.order;
-    return ctx.operate(digestScalar, ctx.generator);
+    return (leBuff2Int(digest) as bigint) % ctx.order;
   }
 
   const combinations: any[] = [];
@@ -120,9 +119,7 @@ describe('fiat-shamir heuristic', () => {
       await ctx.randomPoint(),
     ]
     const result = await ctx.fiatShamir(scalars, points, algorithm);
-    expect(await result.isEqual(await computeFiatShamir(
-      ctx, scalars, points, algorithm
-    ))).toBe(true);
+    expect(result).toEqual(await computeFiatShamir(ctx, scalars, points, algorithm));
   });
 });
 
@@ -149,7 +146,8 @@ describe('multiple AND dlog proof failure', () => {
     const pairs = await createDlogPairs(ctx, dlog, 3);
     const proof = await ctx.prove_AND_Dlog(dlog, pairs);
 
-    proof.response = await ctx.randomScalar();  // tamper proof
+    pairs[2].v = await ctx.randomPoint();         // tamper last pair
+
     const valid = await ctx.verify_AND_Dlog(pairs, proof);
     expect(valid).toBe(false);
   });
@@ -180,7 +178,8 @@ describe('single dlog proof failure', () => {
     const v = await ctx.operate(dlog, u);
     const proof = await ctx.proveDlog(dlog, { u, v });
 
-    proof.response = await ctx.randomScalar();  // tamper proof
+    proof.response = await ctx.randomScalar();  // tamper response
+
     const valid = await ctx.verifyDlog({ u, v }, proof);
     expect(valid).toBe(false);
   });
