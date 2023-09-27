@@ -17,10 +17,10 @@ describe('group initialization', () => {
 
 
 describe('group initialization failure', () => {
-  test('unsupported system', () => {
+  test('unsupported crypto', () => {
     const unsupported = 'unsupported';
     expect(() => backend.initGroup(unsupported)).toThrow(
-      `Unsupported system: ${unsupported}`
+      `Unsupported crypto: ${unsupported}`
     );
   });
 })

@@ -3,7 +3,7 @@
 ```js
 const elgamal = require('vsslib/elgamal');
 
-const ctx = elgamal.initCryptosystem('ed25519');
+const ctx = elgamal.initCrypto('ed25519');
 ```
 
 ```js
@@ -75,12 +75,51 @@ const w = await ctx.operate(s, p);
 
 The Fiat-Shamir transform is a hash-based computation used for converting
 generic Σ-protocols into non-interactive zero-knowledge (NIZK) proofs.
-For example, given scalars `s1, s2, ...` and points `p1, p2, ...`,
-the SHA256-based Fiat-Shamir computation is:
+Given scalars `s1, s2, ...` and points `p1, p2, ...`, the respective
+SHA256-based Fiat-Shamir computation is:
 
 ```js
 const u = await ctx.fiatShamir([s1, s2, ...], [p1, p2, ...], 'sha256');
 ```
 
-Roughly speaking, this is the point whose discrete logarithm is produced by
-hashing together the provided input and the underlying subgroup's parameters.
+Roughly speaking, this is the scalar produced by hashing together the provided
+input and the underlying subgroup's parameters.
+
+
+### Dlog proof (Schnorr protocol)
+
+Generate a SHA256-based NIZK proof-of-knowledge of a secret scalar `dlog` being
+the discrete logarithm of a point `u` with base point `v` as follows:
+
+```js
+const proof = await ctx.proveDlog(dlog, { u, v }, '');
+```
+
+Verify the proof against the `(u, v)` pair as follows:
+
+
+```js
+const valid = await ctx.verifyDlog({ u, v }, proof);   // Boolean
+```
+
+### Multiple AND Dlog proof
+
+The above primitive is special case of this one. Let
+
+```js
+const pairs = [{ u: u1, v: v1 }, { u: u2, v: v2 }, ...];
+```
+
+be pairs of points with uniform discrete logarithm, i.e., there exists a secret
+scalar `dlog` being the discrete logarithm of `vi` with base `ui` for all `i`.
+Generate a SHA256-based NIZK proof-of-knowledge of this secret as follows:
+
+```js
+const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.SHA256);
+```
+
+Verify the proof against the pairs `(u1, v1), ...` as follows:
+
+```js
+const valid = await ctx.verify_AND_Dlog(pairs, proof);
+```

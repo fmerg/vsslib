@@ -185,7 +185,7 @@ export default function(label: Label): EcGroup {
       break;
     default:
       throw new Error(
-        `Unsupported system: ${label}`
+        `Unsupported crypto: ${label}`
     );
   }
 

@@ -13,20 +13,20 @@ const program = new Command();
 
 
 async function generateKey(options) {
-  const key = await Key.generate({ system: options.crypto });
+  const key = await Key.generate({ crypto: options.crypto });
   const pub = await key.extractPublic();
 
   const keySerialized = await key.serialize();
   console.log(keySerialized);
 
-  const keyBack = await Key.deserialize(keySerialized, { system: options.crypto });
+  const keyBack = await Key.deserialize(keySerialized, { crypto: options.crypto });
   let areEqual = await keyBack.isEqual(key);
   console.log(areEqual);
 
   const pubSerialized = await pub.serialize();
   console.log(pubSerialized);
 
-  const pubBack = await Public.deserialize(pubSerialized, { system: options.crypto });
+  const pubBack = await Public.deserialize(pubSerialized, { crypto: options.crypto });
   areEqual = await pubBack.isEqual(pub);
   console.log(areEqual);
 }
@@ -47,7 +47,7 @@ program
   .option('--some-option', 'some option')
 
 
-const cryptoOption = new Option('-c, --crypto <label>', 'underlying cryptosystem')
+const cryptoOption = new Option('-c, --crypto <label>', 'underlying ccypto')
   .default(enums.Systems.ED25519)
   .choices(Object.values(enums.Systems));
 

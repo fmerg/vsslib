@@ -6,8 +6,19 @@ import { leInt2Buff, leBuff2Int } from '../utils';
 
 const utils = require('../utils');
 
+export type DlogPair = {
+  u: Point,
+  v: Point,
+}
 
-export class Cryptosystem {
+export type DlogProof = {
+  commitments : Point[],
+  response    : bigint,
+  algorithm   : Algorithm,
+}
+
+
+export class CryptoSystem {
   _group:     Group;
   _label:     Label;
   _modulus:   bigint;
@@ -57,7 +68,7 @@ export class Cryptosystem {
     return this._neutral;
   }
 
-  isEqual = async (ctx: Cryptosystem): Promise<Boolean> => {
+  isEqual = async (ctx: CryptoSystem): Promise<Boolean> => {
     return this._group.isEqual(ctx._group);
   }
 
@@ -73,7 +84,7 @@ export class Cryptosystem {
     return this._group.invert(p);
   }
 
-  leBuffScalar = (buff: Uint8Array): bigint => {
+  leBuff2Scalar = (buff: Uint8Array): bigint => {
     return (leBuff2Int(buff) as bigint) % this._order;
   }
 
@@ -109,7 +120,7 @@ export class Cryptosystem {
     return this._group.unhexify(p);
   }
 
-  fiatShamir = async (scalars: bigint[], points: Point[], algorithm?: Algorithm): Promise<Point> => {
+  fiatShamir = async (scalars: bigint[], points: Point[], algorithm?: Algorithm): Promise<bigint> => {
     const fixedBuff = [
       this._modBytes,
       this._ordBytes,
@@ -131,8 +142,64 @@ export class Cryptosystem {
       ),
       { algorithm: algorithm || Algorithms.DEFAULT }
     );
-    const digestScalar = this.leBuffScalar(digest);
-    return this._group.operate(digestScalar, this._generator);
+
+    return this.leBuff2Scalar(digest);
+  }
+
+  prove_AND_Dlog = async (dlog: bigint, pairs: DlogPair[], algorithm?: Algorithm): Promise<DlogProof> => {
+    algorithm = algorithm || Algorithms.DEFAULT;
+
+    const r = await this._group.randomScalar();
+
+    const commitments = [];
+    for (const { u, v } of pairs) {
+      commitments.push(await this._group.operate(r, u));
+    }
+
+    const c = await this.fiatShamir(
+      [],
+      [
+        ...pairs.reduce((acc: Point[], { u, v }: DlogPair) => [...acc, u, v], []),
+        ...commitments
+      ],
+      algorithm
+    );
+
+    const response = (r + c * dlog) % this._order;
+
+    return { commitments, response, algorithm };
+  }
+
+  verify_AND_Dlog = async (pairs: DlogPair[], proof: DlogProof): Promise<Boolean> => {
+    const { commitments, response, algorithm } = proof;
+
+    const c = await this.fiatShamir(
+      [],
+      [
+        ...pairs.reduce((acc: Point[], { u, v }: DlogPair) => [...acc, u, v], []),
+        ...commitments
+      ],
+      algorithm
+    );
+
+    let flag: Boolean = true;
+    for (const [i, { u, v }] of pairs.entries()) {
+      const lpt = await this._group.operate(response, u);
+      const rpt = await this._group.combine(
+        commitments[i], await this._group.operate(c, v)
+      );
+      flag &&= await lpt.isEqual(rpt);
+    }
+
+    return flag;
+  }
+
+  proveDlog = async (dlog: bigint, pair: DlogPair, algorithm?: Algorithm): Promise<DlogProof> => {
+    return this.prove_AND_Dlog(dlog, [pair], algorithm);
+  }
+
+  verifyDlog = async (pair: DlogPair, proof: DlogProof): Promise<Boolean> => {
+    return this.verify_AND_Dlog([pair], proof);
   }
 
 }
