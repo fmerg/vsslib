@@ -92,7 +92,7 @@ Generate a SHA256-based NIZK proof-of-knowledge of a secret scalar `dlog` being
 the discrete logarithm of a point `u` with base point `v` as follows:
 
 ```js
-const proof = await ctx.proveDlog(dlog, { u, v }, '');
+const proof = await ctx.proveDlog(dlog, { u, v }, 'sha256');
 ```
 
 Verify the proof against the `(u, v)` pair as follows:
@@ -115,7 +115,7 @@ scalar `dlog` being the discrete logarithm of `vi` with base `ui` for all `i`.
 Generate a SHA256-based NIZK proof-of-knowledge of this secret as follows:
 
 ```js
-const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.SHA256);
+const proof = await ctx.prove_AND_Dlog(dlog, pairs, 'sha256');
 ```
 
 Verify the proof against the pairs `(u1, v1), ...` as follows:

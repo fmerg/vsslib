@@ -1,21 +1,17 @@
 import { createHash } from 'node:crypto';
 import { Algorithms, Encodings } from '../src/enums';
+import { Algorithm, Encoding } from '../src/types';
+import { cartesian } from './helpers';
 
 const utils = require('../src/utils');
 
+const __algorithms  = [...Object.values(Algorithms), undefined];
+const __encodings   = [...Object.values(Encodings), undefined];
+
 
 describe('hash digest', () => {
-  const algorithms = [...Object.values(Algorithms), undefined];
-  const encodings = [...Object.values(Encodings), undefined];
-  const combinations : any[] = [];
-  for (const algorithm of algorithms) {
-    for (const encoding of encodings) {
-      combinations.push([algorithm, encoding]);
-    }
-  }
-
   const buffer = Buffer.from('sample-text');
-  it.each(combinations)('%s, %s', async (algorithm, encoding) => {
+  it.each(cartesian(__algorithms, __encodings))('%s, %s', async (algorithm, encoding) => {
     const digest = await utils.hash(buffer, { algorithm, encoding });
     const hasher = createHash(algorithm || Algorithms.DEFAULT).update(buffer);
     const expected = encoding ?
@@ -40,14 +36,3 @@ describe('hash failure', () => {
     );
   });
 });
-
-
-describe('bits & bytes', () => {
-  test('little-endian roundtrip', () => {
-    const buffer = new Uint8Array([1, 2, 3, 255]);
-    const number = utils.leBuff2Int(buffer);
-    const buffBack = utils.leInt2Buff(number);
-    expect(buffBack).toEqual(buffer);
-  });
-});
-

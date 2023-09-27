@@ -47,7 +47,7 @@ program
   .option('--some-option', 'some option')
 
 
-const cryptoOption = new Option('-c, --crypto <label>', 'underlying ccypto')
+const cryptoOption = new Option('-c, --crypto <label>', 'underlying cryptosystem')
   .default(enums.Systems.ED25519)
   .choices(Object.values(enums.Systems));
 

@@ -4,13 +4,15 @@ import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
 import { DlogPair } from '../src/elgamal/crypto';
+import { cartesian } from './helpers';
 
 const elgamal = require('../src/elgamal');
 const backend = require('../src/elgamal/backend');
 const utils = require('../src/utils');
 
+
 const __labels      = Object.values(Systems);
-const __algorithms  = Object.values(Algorithms);
+const __algorithms  = [...Object.values(Algorithms), undefined];
 
 
 /** Helper for reproducing externally the fiat-shamir computation */
@@ -46,7 +48,6 @@ const computeFiatShamir = async (
   );
   return (leBuff2Int(digest) as bigint) % ctx.order;
 }
-
 
 
 /** Helper for creating dlog pairs with uniform logarithm */
@@ -104,13 +105,7 @@ describe('crypto equality', () => {
 
 
 describe('fiat-shamir heuristic', () => {
-  const combinations: any[] = [];
-  for (const label of __labels) {
-    for (const algorithm of [...__algorithms, undefined]) {
-      combinations.push([label, algorithm]);
-    }
-  }
-  it.each(combinations)('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
     const scalars = [
       await ctx.randomScalar(),
@@ -128,13 +123,7 @@ describe('fiat-shamir heuristic', () => {
 
 
 describe('multiple AND dlog proof success', () => {
-  const combinations: any[] = [];
-  for (const label of __labels) {
-    for (const algorithm of [...__algorithms, undefined]) {
-      combinations.push([label, algorithm]);
-    }
-  }
-  it.each(combinations)('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
     const dlog = await ctx.randomScalar();
@@ -185,13 +174,7 @@ describe('multiple AND dlog proof failure if wrong algorithm', () => {
 
 
 describe('single dlog proof success', () => {
-  const combinations: any[] = [];
-  for (const label of __labels) {
-    for (const algorithm of [...__algorithms, undefined]) {
-      combinations.push([label, algorithm]);
-    }
-  }
-  it.each(combinations)('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
     const dlog = await ctx.randomScalar();

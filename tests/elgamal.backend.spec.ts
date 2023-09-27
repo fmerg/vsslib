@@ -4,8 +4,8 @@ import { Systems } from '../src/enums';
 const backend = require('../src/elgamal/backend');
 
 const __labels = Object.values(Systems);
-const __zero   = BigInt(0)
-const __one    = BigInt(1)
+const __0n     = BigInt(0)
+const __1n     = BigInt(1)
 
 
 describe('group initialization', () => {
@@ -46,7 +46,7 @@ describe('neutral element', () => {
     const group = backend.initGroup(label);
     await group.assertValid(group.generator);
 
-    const neutral = await group.generatePoint(__zero);
+    const neutral = await group.generatePoint(__0n);
     expect(await neutral.isEqual(group.neutral)).toBe(true);
   });
 });
@@ -57,7 +57,7 @@ describe('group generator', () => {
     const group = backend.initGroup(label);
     await group.assertValid(group.generator);
 
-    const generator = await group.generatePoint(__one);
+    const generator = await group.generatePoint(__1n);
     expect(await generator.isEqual(group.generator)).toBe(true);
   });
 });
@@ -113,7 +113,7 @@ describe('inverse of generator', () => {
   it.each(__labels)('over %s', async (label) => {
     const group = backend.initGroup(label);
 
-    const minusOne = group.order - __one;             // TODO: scalar -1
+    const minusOne = group.order - __1n;             // TODO: scalar -1
     const expected = await group.generatePoint(minusOne);
     const genInv = await group.invert(group.generator);
     expect(await genInv.isEqual(expected)).toBe(true);
@@ -146,9 +146,9 @@ describe('scalar operation on generator', () => {
   it.each(__labels)('over %s', async (label) => {
     const group = backend.initGroup(label);
 
-    let expected = await group.operate(__zero, group.generator)
+    let expected = await group.operate(__0n, group.generator)
     expect(await group.neutral.isEqual(expected)).toBe(true);
-    expected = await group.generatePoint(__zero)
+    expected = await group.generatePoint(__0n)
     expect(await group.neutral.isEqual(expected)).toBe(true);
 
     const s = await group.randomScalar();
@@ -169,22 +169,22 @@ describe('scalar operation on random point', () => {
 
     const p = await group.randomPoint();                      // p
 
-    s = __zero;
+    s = __0n;
     current = group.neutral;                                  // 0
     expected = await group.operate(s, p);                     // 0 * p
     expect(await current.isEqual(expected)).toBe(true);
 
-    s += __one;
+    s += __1n;
     current = p;                                              // p
     expected = await group.operate(s, p);                     // 1 * p
     expect(await current.isEqual(expected)).toBe(true);
 
-    s += __one;
+    s += __1n;
     current = await group.combine(p, current);                // p + p
     expected = await group.operate(s, p);                     // 2 * p
     expect(await current.isEqual(expected)).toBe(true);
 
-    s += __one;
+    s += __1n;
     current = await group.combine(p, current);                // p + (p + p)
     expected = await group.operate(s, p);                     // 3 * p
     expect(await current.isEqual(expected)).toBe(true);

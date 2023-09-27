@@ -13,8 +13,12 @@
     "test": "jest tests --maxWorkers=1",
     "test:reload": "jest tests --watch --maxWorkers=1 --verbose",
     "test-elgamal:reload": "jest tests/elgamal --watch --maxWorkers=1 --verbose",
+    "test-backend:reload": "jest tests/elgamal.backend --watch --maxWorkers=1 --verbose",
+    "test-crypto:reload": "jest tests/elgamal.crypto --watch --maxWorkers=1 --verbose",
     "test-key:reload": "jest tests/key --watch --maxWorkers=1 --verbose",
     "test-utils:reload": "jest tests/utils --watch --maxWorkers=1 --verbose",
+    "test-bitwise:reload": "jest tests/utils.bitwise --watch --maxWorkers=1 --verbose",
+    "test-hash:reload": "jest tests/utils.hash --watch --maxWorkers=1 --verbose",
     "build": "rm -rf ./build && tsc",
     "docs": "typedoc --out docs src/*.ts"
   },

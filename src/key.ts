@@ -15,7 +15,7 @@ export class Key {
 
   constructor(ctx: CryptoSystem, scalar: bigint) {
     this._crypto = ctx;
-    // TODO: scalar validation according to ccypto
+    // TODO: scalar validation according to cryptosystem
     this._secret = scalar;
   }
 
