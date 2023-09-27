@@ -123,3 +123,28 @@ Verify the proof against the pairs `(u1, v1), ...` as follows:
 ```js
 const valid = await ctx.verify_AND_Dlog(pairs, proof);
 ```
+
+### DDH proof (Chaum-Pedersen protocol)
+
+A triple of points `(u, v, w)` is called Decisional Diffie-Hellman (DDH-tuple)
+if the discrete logarithm of `w` with respect to the generator (or,
+equivalently, any other non-neutral point) is the product of the discrete
+logarithms of `u` and `v`; i.e., in multiplicative notation, there exists
+scalar scalar `z = dlog` such that `u = g ^ x, v = g ^ z, w = g ^ xz`.
+Genearate a SHA256-based NIZK proof-of-knowledge of the secret scalar
+`dlog` as follows:
+
+```js
+const proof = await ctx.proveDDH(dlog, { u, v, w }, 'sha256');
+```
+
+Verify the proof against the `(u, v, w)` DDH-tuple as follows:
+
+```js
+const valid = await ctx.verifyDDH({ u, v, w }, proof);
+```
+
+Note that `(u, v, w)` being a DDH-tuple as above is equivalent to
+`z` being the common discrete logarithm for the pairs `(g, v), (u, w)`,
+so that the Chaum-Pedersen protocol is actually a special case of the multiple
+AND Dlog protocol.
