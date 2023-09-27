@@ -165,7 +165,7 @@ describe('multiple AND dlog proof failure if wrong algorithm', () => {
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
-      Algorithms.SHA256
+      Algorithms.SHA256;
 
     const valid = await ctx.verify_AND_Dlog(pairs, proof);
     expect(valid).toBe(false);
@@ -218,9 +218,66 @@ describe('single dlog proof failure if wrong algorithm', () => {
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
-      Algorithms.SHA256
+      Algorithms.SHA256;
 
     const valid = await ctx.verifyDlog({ u, v }, proof);
     expect(valid).toBe(false);
+  });
+});
+
+
+describe('ddh proof success', () => {
+  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const u = await ctx.randomPoint();
+    const z = await ctx.randomScalar()
+    const v = await ctx.operate(z, u);
+    const w = await ctx.operate(z, v);
+    const proof = await ctx.proveDDH(z, { u, v, w }, algorithm);
+
+    const valid = await ctx.verifyDDH({ u, v, w }, proof);
+    expect(valid).toBe(true);
+  });
+});
+
+
+describe('ddh proof failure if tampered', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const u = await ctx.randomPoint();
+    const z = await ctx.randomScalar()
+    const v = await ctx.operate(z, u);
+    const w = await ctx.operate(z, v);
+    const proof = await ctx.proveDDH(z, { u, v, w }, Algorithms.SHA256);
+
+    // tamper response
+    proof.response = await ctx.randomScalar();
+
+    const valid = await ctx.verifyDDH({ u, v, w }, proof);
+    expect(valid).toBe(false);
+  });
+});
+
+
+describe('ddh proof failure if wrong algorithm', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const u = await ctx.randomPoint();
+    const z = await ctx.randomScalar()
+    const v = await ctx.operate(z, u);
+    const w = await ctx.operate(z, v);
+    const proof = await ctx.proveDDH(z, { u, v, w }, Algorithms.SHA256);
+
+    // change hash algorithm
+    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
+      Algorithms.SHA512 :
+      Algorithms.SHA256;
+
+    const valid = await ctx.verifyDDH({ u, v, w }, proof);
+    expect(valid).toBe(false);
+
   });
 });
