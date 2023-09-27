@@ -120,7 +120,7 @@ export class CryptoSystem {
     return this._group.unhexify(p);
   }
 
-  fiatShamir = async (scalars: bigint[], points: Point[], algorithm?: Algorithm): Promise<bigint> => {
+  fiatShamir = async (points: Point[], scalars: bigint[], algorithm?: Algorithm): Promise<bigint> => {
     const fixedBuff = [
       this._modBytes,
       this._ordBytes,
@@ -128,11 +128,11 @@ export class CryptoSystem {
     ].reduce(
       (acc: number[], curr: Uint8Array) => [...acc, ...curr], []
     )
-    const scalarsBuff = scalars.reduce(
-      (acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []
-    );
     const pointsBuff = points.reduce(
       (acc: number[], p: Point) => [...acc, ...p.toBytes()], []
+    );
+    const scalarsBuff = scalars.reduce(
+      (acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []
     );
     const digest = await utils.hash(
       new Uint8Array(
@@ -157,11 +157,11 @@ export class CryptoSystem {
     }
 
     const c = await this.fiatShamir(
-      [],
       [
         ...pairs.reduce((acc: Point[], { u, v }: DlogPair) => [...acc, u, v], []),
         ...commitments
       ],
+      [],
       algorithm
     );
 
@@ -174,11 +174,11 @@ export class CryptoSystem {
     const { commitments, response, algorithm } = proof;
 
     const c = await this.fiatShamir(
-      [],
       [
         ...pairs.reduce((acc: Point[], { u, v }: DlogPair) => [...acc, u, v], []),
         ...commitments
       ],
+      [],
       algorithm
     );
 

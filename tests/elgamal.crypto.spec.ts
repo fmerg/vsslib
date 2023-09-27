@@ -13,6 +13,43 @@ const __labels      = Object.values(Systems);
 const __algorithms  = Object.values(Algorithms);
 
 
+/** Helper for reproducing externally the fiat-shamir computation */
+const computeFiatShamir = async (
+  ctx: CryptoSystem,
+  points: Point[],
+  scalars: bigint[],
+  algorithm: Algorithm | undefined,
+): Promise<bigint> => {
+  const fixedBuff = [
+    leInt2Buff(ctx.modulus),
+    leInt2Buff(ctx.order),
+    ctx.generator.toBytes(),
+  ].reduce(
+    (acc: number[], curr: Uint8Array) => [...acc, ...curr], []
+  )
+  const pointsBuff = points.reduce(
+    (acc: number[], p: Point) => [...acc, ...p.toBytes()], []
+  );
+  const scalarsBuff = scalars.reduce(
+    (acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []
+  );
+  const buffer = [fixedBuff, scalarsBuff, pointsBuff].reduce(
+    (acc, curr) => [...acc, ...curr], []
+  );
+  const digest = await utils.hash(
+    new Uint8Array(
+      [fixedBuff, scalarsBuff, pointsBuff].reduce(
+        (acc, curr) => [...acc, ...curr], []
+      )
+    ),
+    { algorithm }
+  );
+  return (leBuff2Int(digest) as bigint) % ctx.order;
+}
+
+
+
+/** Helper for creating dlog pairs with uniform logarithm */
 const createDlogPairs = async (ctx: CryptoSystem, dlog: bigint, nrPairs: number): Promise<DlogPair[]> => {
   const us = [];
   for (let i = 0; i < nrPairs; i++) {
@@ -67,40 +104,6 @@ describe('crypto equality', () => {
 
 
 describe('fiat-shamir heuristic', () => {
-  // Helper for reproducing externally the fiat-shamir computation
-  const computeFiatShamir = async (
-    ctx: CryptoSystem,
-    scalars: bigint[],
-    points: Point[],
-    algorithm: Algorithm | undefined,
-  ): Promise<bigint> => {
-    const fixedBuff = [
-      leInt2Buff(ctx.modulus),
-      leInt2Buff(ctx.order),
-      ctx.generator.toBytes(),
-    ].reduce(
-      (acc: number[], curr: Uint8Array) => [...acc, ...curr], []
-    )
-    const scalarsBuff = scalars.reduce(
-      (acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []
-    );
-    const pointsBuff = points.reduce(
-      (acc: number[], p: Point) => [...acc, ...p.toBytes()], []
-    );
-    const buffer = [fixedBuff, scalarsBuff, pointsBuff].reduce(
-      (acc, curr) => [...acc, ...curr], []
-    );
-    const digest = await utils.hash(
-      new Uint8Array(
-        [fixedBuff, scalarsBuff, pointsBuff].reduce(
-          (acc, curr) => [...acc, ...curr], []
-        )
-      ),
-      { algorithm }
-    );
-    return (leBuff2Int(digest) as bigint) % ctx.order;
-  }
-
   const combinations: any[] = [];
   for (const label of __labels) {
     for (const algorithm of [...__algorithms, undefined]) {
@@ -118,8 +121,8 @@ describe('fiat-shamir heuristic', () => {
       await ctx.randomPoint(),
       await ctx.randomPoint(),
     ]
-    const result = await ctx.fiatShamir(scalars, points, algorithm);
-    expect(result).toEqual(await computeFiatShamir(ctx, scalars, points, algorithm));
+    const result = await ctx.fiatShamir(points, scalars, algorithm);
+    expect(result).toEqual(await computeFiatShamir(ctx, points, scalars, algorithm));
   });
 });
 
