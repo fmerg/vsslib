@@ -11,11 +11,10 @@ export type DlogPair = {
   v: Point,
 }
 
-// c = x * z <=> v = g ^ z AND w = u ^ z <=> z uniform logarithm for (g, v), (u, v)
 export type DDHTuple = {
-  u: Point,   // u = g ^ x
-  v: Point,   // v = g ^ z
-  w: Point,   // w = g ^ c
+  u: Point,
+  v: Point,
+  w: Point,
 }
 
 export type DlogProof = {
@@ -210,19 +209,40 @@ export class CryptoSystem {
   }
 
   proveDDH = async (dlog: bigint, ddh: DDHTuple, algorithm?: Algorithm): Promise<DlogProof> => {
-    // TODO: Implement
-    const commitments = [
-      await this._group.randomPoint(),
-    ];
-    const response = await this._group.randomScalar();
-    algorithm = algorithm || Algorithms.DEFAULT
+    const { u, v, w } = ddh;
 
-    return { commitments, response, algorithm };
+    return this.prove_AND_Dlog(
+      dlog,
+      [
+        {
+          u: this._generator,
+          v: v,
+        },
+        {
+          u: u,
+          v: w,
+        },
+      ],
+      algorithm || Algorithms.DEFAULT
+    );
   }
 
   verifyDDH = async (ddh: DDHTuple, proof: DlogProof): Promise<Boolean> => {
-    // TODO: Implement
-    return true;
+    const { u, v, w } = ddh;
+
+    return this.verify_AND_Dlog(
+      [
+        {
+          u: this._generator,
+          v: v,
+        },
+        {
+          u: u,
+          v: w,
+        },
+      ],
+      proof
+    );
   }
 
 }
