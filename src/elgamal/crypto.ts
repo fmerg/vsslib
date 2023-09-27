@@ -11,6 +11,12 @@ export type DlogPair = {
   v: Point,
 }
 
+export type DDHTuple = {
+  u: Point,
+  v: Point,
+  w: Point,
+}
+
 export type DlogProof = {
   commitments : Point[],
   response    : bigint,
@@ -200,6 +206,43 @@ export class CryptoSystem {
 
   verifyDlog = async (pair: DlogPair, proof: DlogProof): Promise<Boolean> => {
     return this.verify_AND_Dlog([pair], proof);
+  }
+
+  proveDDH = async (dlog: bigint, ddh: DDHTuple, algorithm?: Algorithm): Promise<DlogProof> => {
+    const { u, v, w } = ddh;
+
+    return this.prove_AND_Dlog(
+      dlog,
+      [
+        {
+          u: this._generator,
+          v: v,
+        },
+        {
+          u: u,
+          v: w,
+        },
+      ],
+      algorithm || Algorithms.DEFAULT
+    );
+  }
+
+  verifyDDH = async (ddh: DDHTuple, proof: DlogProof): Promise<Boolean> => {
+    const { u, v, w } = ddh;
+
+    return this.verify_AND_Dlog(
+      [
+        {
+          u: this._generator,
+          v: v,
+        },
+        {
+          u: u,
+          v: w,
+        },
+      ],
+      proof
+    );
   }
 
 }
