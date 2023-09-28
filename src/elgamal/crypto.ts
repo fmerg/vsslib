@@ -304,9 +304,13 @@ export class CryptoSystem {
   }
 
   proveDecryptor = async (ciphertext: Ciphertext, secret: bigint, decryptor: Point, algorithm?: Algorithm): Promise<DlogProof> => {
+    const pub = await this._group.operate(secret, this._generator);
+
+    return await this.proveDDH(secret, { u: ciphertext.beta, v: pub, w: decryptor }, algorithm);
   }
 
   verifyDecryptor = async (decryptor: Point, ciphertext: Ciphertext, pub: Point, proof: DlogProof): Promise<Boolean> => {
+    return await this.verifyDDH({ u: ciphertext.beta, v: pub, w: decryptor }, proof);
   }
 
   proveRandomness = async (ciphertext: Ciphertext, randomness: bigint, algorithm?: Algorithm): Promise<DlogProof> => {
