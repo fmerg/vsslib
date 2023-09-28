@@ -23,6 +23,28 @@ export type DlogProof = {
   algorithm   : Algorithm,
 }
 
+export type Ciphertext = {
+  alpha:  Point,
+  beta:   Point
+}
+
+export type DecryptionOptions = {
+  secret     : bigint,
+  decryptor? : never,
+  randomness?  : never,
+  pub?  : never,
+} | {
+  secret?    : never,
+  decryptor  : Point,
+  randomness?  : never,
+  pub?  : never,
+} | {
+  secret?    : never,
+  decryptor? : never,
+  randomness   : bigint,
+  pub   : Point,
+}
+
 
 export class CryptoSystem {
   _group:     Group;
@@ -245,4 +267,24 @@ export class CryptoSystem {
     );
   }
 
+  encrypt = async (message: Point, pub: Point): Promise<{
+    ciphertext: Ciphertext,
+    randomness: bigint,
+    decryptor: Point,
+  }> => {
+    // TODO: Implement
+    const alpha = await this._group.randomPoint();
+    const beta = await this._group.randomPoint();
+    const randomness = await this._group.randomScalar();
+    const decryptor = await this._group.randomPoint();
+
+    return { ciphertext: { alpha, beta }, randomness, decryptor };
+  }
+
+  decrypt = async (ciphertext: Ciphertext, opts: DecryptionOptions): Promise<Point> => {
+    // TODO: Implement
+    const plaintext = await this._group.randomPoint();
+
+    return plaintext;
+  }
 }
