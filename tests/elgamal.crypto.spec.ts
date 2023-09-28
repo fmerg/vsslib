@@ -300,6 +300,23 @@ describe('encryption - decryption with secret key', () => {
 });
 
 
+describe('encryption - decryption with secret key failure', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator)
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const forged = await ctx.randomScalar();
+    const plaintext = await ctx.decrypt(ciphertext, { secret: forged });
+    expect(await plaintext.isEqual(message)).toBe(false);
+  });
+});
+
+
 describe('encryption - decryption with decryptor', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = elgamal.initCrypto(label);
@@ -316,6 +333,23 @@ describe('encryption - decryption with decryptor', () => {
 });
 
 
+describe('encryption - decryption with decryptor failure', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator)
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const forged = await ctx.randomPoint();
+    const plaintext = await ctx.decrypt(ciphertext, { decryptor: forged });
+    expect(await plaintext.isEqual(message)).toBe(false);
+  });
+});
+
+
 describe('encryption - decryption with randomness', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = elgamal.initCrypto(label);
@@ -328,5 +362,22 @@ describe('encryption - decryption with randomness', () => {
 
     const plaintext = await ctx.decrypt(ciphertext, { randomness, pub });
     expect(await plaintext.isEqual(message)).toBe(true);
+  });
+});
+
+
+describe('encryption - decryption with randomness failure', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator)
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const forged = await ctx.randomScalar();
+    const plaintext = await ctx.decrypt(ciphertext, { randomness: forged, pub });
+    expect(await plaintext.isEqual(message)).toBe(false);
   });
 });
