@@ -313,11 +313,12 @@ export class CryptoSystem {
     return await this.verifyDDH({ u: ciphertext.beta, v: pub, w: decryptor }, proof);
   }
 
-  proveRandomness = async (ciphertext: Ciphertext, randomness: bigint, algorithm?: Algorithm): Promise<DlogProof> => {
+  proveEncryption = async (ciphertext: Ciphertext, randomness: bigint, algorithm?: Algorithm): Promise<DlogProof> => {
     return this.proveDlog(randomness, { u: this._generator,  v: ciphertext.beta }, algorithm);
   }
 
-  verifyRandomness = async (ciphertext: Ciphertext, proof: DlogProof): Promise<Boolean> => {
+  verifyEncryption = async (ciphertext: Ciphertext, proof: DlogProof): Promise<Boolean> => {
     return this.verifyDlog({ u: this._generator, v: ciphertext.beta }, proof);
   }
+
 }

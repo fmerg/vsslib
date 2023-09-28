@@ -419,7 +419,7 @@ describe('encryption - proof of decryptor failure', () => {
 });
 
 
-describe('encryption - proof of randomness', () => {
+describe('encryption - proof of encryption', () => {
   it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
@@ -428,16 +428,16 @@ describe('encryption - proof of randomness', () => {
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness } = await ctx.encrypt(message, pub);
-    const proof = await ctx.proveRandomness(ciphertext, randomness, algorithm);
+    const proof = await ctx.proveEncryption(ciphertext, randomness, algorithm);
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
 
-    const valid = await ctx.verifyRandomness(ciphertext, proof);
+    const valid = await ctx.verifyEncryption(ciphertext, proof);
     expect(valid).toBe(true);
   });
 });
 
 
-describe('encryption - proof of randomness failure', () => {
+describe('encryption - proof of encryption failure', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = elgamal.initCrypto(label);
 
@@ -446,12 +446,14 @@ describe('encryption - proof of randomness failure', () => {
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness } = await ctx.encrypt(message, pub);
-    const proof = await ctx.proveRandomness(ciphertext, randomness);
+    const proof = await ctx.proveEncryption(ciphertext, randomness);
 
     // Tamper ciphertext
     ciphertext.beta = await ctx.randomPoint();
 
-    const valid = await ctx.verifyRandomness(ciphertext, proof);
+    const valid = await ctx.verifyEncryption(ciphertext, proof);
     expect(valid).toBe(false);
   });
 });
+
+
