@@ -29,20 +29,20 @@ export type Ciphertext = {
 }
 
 export type DecryptionOptions = {
-  secret     : bigint,
-  decryptor? : never,
-  randomness?  : never,
-  pub?  : never,
+  secret: bigint,
+  decryptor?: never,
+  randomness?: never,
+  pub?: never,
 } | {
-  secret?    : never,
-  decryptor  : Point,
-  randomness?  : never,
-  pub?  : never,
+  secret?: never,
+  decryptor: Point,
+  randomness?: never,
+  pub?: never,
 } | {
-  secret?    : never,
-  decryptor? : never,
-  randomness   : bigint,
-  pub   : Point,
+  secret?: never,
+  decryptor?: never,
+  randomness: bigint,
+  pub: Point,
 }
 
 
@@ -272,18 +272,33 @@ export class CryptoSystem {
     randomness: bigint,
     decryptor: Point,
   }> => {
-    // TODO: Implement
-    const alpha = await this._group.randomPoint();
-    const beta = await this._group.randomPoint();
     const randomness = await this._group.randomScalar();
-    const decryptor = await this._group.randomPoint();
+    const k = await this._group.operate(randomness, pub);
 
-    return { ciphertext: { alpha, beta }, randomness, decryptor };
+    const alpha = await this._group.combine(k, message);
+    const beta = await this._group.operate(randomness, this._generator);
+
+    return { ciphertext: { alpha, beta }, randomness, decryptor: k };
   }
 
   decrypt = async (ciphertext: Ciphertext, opts: DecryptionOptions): Promise<Point> => {
-    // TODO: Implement
-    const plaintext = await this._group.randomPoint();
+    const { alpha, beta } = ciphertext;
+    let decryptor;
+
+    if (opts.secret) {
+      decryptor = await this._group.operate(opts.secret, beta);
+    }
+
+    if (opts.randomness) {
+      decryptor = await this._group.operate(opts.randomness, opts.pub);
+    }
+
+    if (opts.decryptor) {
+      decryptor = opts.decryptor;
+    }
+
+    const decryptorInverse = await this._group.invert(decryptor as Point);
+    const plaintext = await this._group.combine(alpha, decryptorInverse);
 
     return plaintext;
   }
