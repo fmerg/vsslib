@@ -314,8 +314,10 @@ export class CryptoSystem {
   }
 
   proveRandomness = async (ciphertext: Ciphertext, randomness: bigint, algorithm?: Algorithm): Promise<DlogProof> => {
+    return this.proveDlog(randomness, { u: this._generator,  v: ciphertext.beta }, algorithm);
   }
 
   verifyRandomness = async (ciphertext: Ciphertext, proof: DlogProof): Promise<Boolean> => {
+    return this.verifyDlog({ u: this._generator, v: ciphertext.beta }, proof);
   }
 }
