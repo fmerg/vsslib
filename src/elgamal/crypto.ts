@@ -302,4 +302,16 @@ export class CryptoSystem {
 
     return plaintext;
   }
+
+  proveDecryptor = async (ciphertext: Ciphertext, secret: bigint, decryptor: Point, algorithm?: Algorithm): Promise<DlogProof> => {
+  }
+
+  verifyDecryptor = async (decryptor: Point, ciphertext: Ciphertext, pub: Point, proof: DlogProof): Promise<Boolean> => {
+  }
+
+  proveRandomness = async (ciphertext: Ciphertext, randomness: bigint, algorithm?: Algorithm): Promise<DlogProof> => {
+  }
+
+  verifyRandomness = async (ciphertext: Ciphertext, proof: DlogProof): Promise<Boolean> => {
+  }
 }
