@@ -129,7 +129,7 @@ export class CryptoSystem {
   }
 
   assertValid = async (p: Point): Promise<Boolean> => {
-    return await this._group.assertValid(p);
+    return this._group.assertValid(p);
   }
 
   pack = (p: Point): Uint8Array => {
@@ -155,7 +155,7 @@ export class CryptoSystem {
       this._genBytes,
     ].reduce(
       (acc: number[], curr: Uint8Array) => [...acc, ...curr], []
-    )
+    );
     const pointsBuff = points.reduce(
       (acc: number[], p: Point) => [...acc, ...p.toBytes()], []
     );
@@ -164,7 +164,7 @@ export class CryptoSystem {
     );
     const digest = await utils.hash(
       new Uint8Array(
-        [fixedBuff, scalarsBuff, pointsBuff].reduce(
+        [fixedBuff, pointsBuff, scalarsBuff].reduce(
           (acc, curr) => [...acc, ...curr], []
         )
       ),
@@ -267,11 +267,7 @@ export class CryptoSystem {
     );
   }
 
-  encrypt = async (message: Point, pub: Point): Promise<{
-    ciphertext: Ciphertext,
-    randomness: bigint,
-    decryptor: Point,
-  }> => {
+  encrypt = async (message: Point, pub: Point): Promise<{ ciphertext: Ciphertext, randomness: bigint, decryptor: Point }> => {
     const randomness = await this._group.randomScalar();
     const k = await this._group.operate(randomness, pub);
 
@@ -298,19 +294,7 @@ export class CryptoSystem {
     }
 
     const decryptorInverse = await this._group.invert(decryptor as Point);
-    const plaintext = await this._group.combine(alpha, decryptorInverse);
-
-    return plaintext;
-  }
-
-  proveDecryptor = async (ciphertext: Ciphertext, secret: bigint, decryptor: Point, algorithm?: Algorithm): Promise<DlogProof> => {
-    const pub = await this._group.operate(secret, this._generator);
-
-    return await this.proveDDH(secret, { u: ciphertext.beta, v: pub, w: decryptor }, algorithm);
-  }
-
-  verifyDecryptor = async (decryptor: Point, ciphertext: Ciphertext, pub: Point, proof: DlogProof): Promise<Boolean> => {
-    return await this.verifyDDH({ u: ciphertext.beta, v: pub, w: decryptor }, proof);
+    return this._group.combine(alpha, decryptorInverse);
   }
 
   proveEncryption = async (ciphertext: Ciphertext, randomness: bigint, algorithm?: Algorithm): Promise<DlogProof> => {
@@ -321,4 +305,13 @@ export class CryptoSystem {
     return this.verifyDlog({ u: this._generator, v: ciphertext.beta }, proof);
   }
 
+  proveDecryptor = async (ciphertext: Ciphertext, secret: bigint, decryptor: Point, algorithm?: Algorithm): Promise<DlogProof> => {
+    const pub = await this._group.operate(secret, this._generator);
+
+    return this.proveDDH(secret, { u: ciphertext.beta, v: pub, w: decryptor }, algorithm);
+  }
+
+  verifyDecryptor = async (decryptor: Point, ciphertext: Ciphertext, pub: Point, proof: DlogProof): Promise<Boolean> => {
+    return this.verifyDDH({ u: ciphertext.beta, v: pub, w: decryptor }, proof);
+  }
 }
