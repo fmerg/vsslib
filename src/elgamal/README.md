@@ -7,17 +7,17 @@ const ctx = elgamal.initCrypto('ed25519');
 ```
 
 ```js
-const group = ctx.group
-```
-
-```js
 const modulus = ctx.modulus;      // Field prime order (bigint)
 const order = ctx.order;          // Subgroup order (bigint)
 const generator = ctx.generator;  // Subgroup generator (Point)
 const neutral = ctx.neutral;      // Group neutral element (Point)
 ```
 
-### Points and scalars
+
+## Algebraic operation
+
+
+### Generalities
 
 ```js
 const s = await ctx.randomScalar();
@@ -39,6 +39,24 @@ const isValid = await ctx.assertValid(p);
 const areEqual = await ctx.assertEqual(p, q);
 ```
 
+
+### Group operations
+
+```js
+const u = await ctx.combine(p, q);
+```
+
+```js
+const v = await ctx.invert(p);
+```
+
+```js
+const w = await ctx.operate(s, p);
+```
+
+
+### Point serialization
+
 ```js
 const pBytes = p.toBytes();
 ```
@@ -56,20 +74,7 @@ const pBack = ctx.unhexify(pHex);
 ```
 
 
-### Group operations
-
-
-```js
-const u = await ctx.combine(p, q);
-```
-
-```js
-const v = await ctx.invert(p);
-```
-
-```js
-const w = await ctx.operate(s, p);
-```
+## Non-interactive Zero-Knowledge (NIZK) Proofs
 
 ### Fiat-Shamir transform
 
@@ -148,3 +153,48 @@ Note that `(u, v, w)` being a DDH-tuple as above is equivalent to
 `z` being the common discrete logarithm for the pairs `(g, v), (u, w)`,
 so that the Chaum-Pedersen protocol is actually a special case of the multiple
 AND Dlog protocol.
+
+
+## Encryption
+
+### Encryption and proofs
+
+```js
+const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+```
+
+#### Proof of encryption
+
+```js
+const proof = await ctx.proveEncryption(ciphertext, randomness, 'sha256');
+
+const valid = await ctx.verifyEncryption(ciphertext, proof);
+```
+
+#### Proof of decryptor
+
+```js
+const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, 'sha256');
+
+const valid = await ctx.verifyDecryptor(decryptor, ciphertext, pub, proof);
+```
+
+### Decryption modes
+
+#### Decryption with secret key
+
+```js
+const plaintext = await ctx.decrypt(ciphertext, { secret });
+```
+
+#### Decryption with decryptor
+
+```js
+const plaintext = await ctx.decrypt(ciphertext, { decryptor });
+```
+
+#### Decryption with randomness
+
+```js
+const plaintext = await ctx.decrypt(ciphertext, { pub, randomness });
+```

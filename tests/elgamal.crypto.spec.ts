@@ -3,7 +3,7 @@ import { Point } from '../src/elgamal/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
-import { DlogPair } from '../src/elgamal/crypto';
+import { DlogPair, DDHTuple } from '../src/elgamal/crypto';
 import { cartesian } from './helpers';
 
 const elgamal = require('../src/elgamal');
@@ -40,7 +40,7 @@ const computeFiatShamir = async (
   );
   const digest = await utils.hash(
     new Uint8Array(
-      [fixedBuff, scalarsBuff, pointsBuff].reduce(
+      [fixedBuff, pointsBuff, scalarsBuff].reduce(
         (acc, curr) => [...acc, ...curr], []
       )
     ),
@@ -66,6 +66,18 @@ const createDlogPairs = async (ctx: CryptoSystem, dlog: bigint, nrPairs: number)
   }
 
   return pairs;
+}
+
+
+/** Helper for creating DDH-tuples */
+const createDDH = async (ctx: CryptoSystem, dlog?: bigint): Promise<{ dlog: bigint, ddh: DDHTuple }> => {
+  dlog = dlog || await ctx.randomScalar();
+
+  const u = await ctx.randomPoint();
+  const v = await ctx.operate(dlog, ctx.generator);
+  const w = await ctx.operate(dlog, u);
+
+  return { dlog, ddh: { u, v, w } };
 }
 
 
@@ -143,7 +155,7 @@ describe('multiple AND dlog proof failure if tampered', () => {
 
     const dlog = await ctx.randomScalar();
     const pairs = await createDlogPairs(ctx, dlog, 3);
-    const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.SHA256);
+    const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.DEFAULT);
 
     // Tamper last pair
     pairs[2].v = await ctx.randomPoint();
@@ -160,7 +172,7 @@ describe('multiple AND dlog proof failure if wrong algorithm', () => {
 
     const dlog = await ctx.randomScalar();
     const pairs = await createDlogPairs(ctx, dlog, 3);
-    const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.SHA256);
+    const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.DEFAULT);
 
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -196,7 +208,7 @@ describe('single dlog proof failure if tampered', () => {
     const dlog = await ctx.randomScalar();
     const u = await ctx.randomPoint();
     const v = await ctx.operate(dlog, u);
-    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.SHA256);
+    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.DEFAULT);
 
     // tamper response
     proof.response = await ctx.randomScalar();
@@ -214,7 +226,7 @@ describe('single dlog proof failure if wrong algorithm', () => {
     const dlog = await ctx.randomScalar();
     const u = await ctx.randomPoint();
     const v = await ctx.operate(dlog, u);
-    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.SHA256);
+    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.DEFAULT);
 
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -230,12 +242,9 @@ describe('single dlog proof failure if wrong algorithm', () => {
 describe('ddh proof success', () => {
   it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
+    const { dlog, ddh: { u, v, w } } = await createDDH(ctx);
 
-    const u = await ctx.randomPoint();
-    const z = await ctx.randomScalar()
-    const v = await ctx.operate(z, ctx.generator);
-    const w = await ctx.operate(z, u);
-    const proof = await ctx.proveDDH(z, { u, v, w }, algorithm);
+    const proof = await ctx.proveDDH(dlog, { u, v, w }, algorithm);
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
 
     const valid = await ctx.verifyDDH({ u, v, w }, proof);
@@ -247,12 +256,9 @@ describe('ddh proof success', () => {
 describe('ddh proof failure if tampered', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = elgamal.initCrypto(label);
+    const { dlog, ddh: { u, v, w } } = await createDDH(ctx);
 
-    const u = await ctx.randomPoint();
-    const z = await ctx.randomScalar()
-    const v = await ctx.operate(z, ctx.generator);
-    const w = await ctx.operate(z, u);
-    const proof = await ctx.proveDDH(z, { u, v, w }, Algorithms.SHA256);
+    const proof = await ctx.proveDDH(dlog, { u, v, w }, Algorithms.DEFAULT);
 
     // tamper response
     proof.response = await ctx.randomScalar();
@@ -266,12 +272,9 @@ describe('ddh proof failure if tampered', () => {
 describe('ddh proof failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = elgamal.initCrypto(label);
+    const { dlog, ddh: { u, v, w } } = await createDDH(ctx);
 
-    const u = await ctx.randomPoint();
-    const z = await ctx.randomScalar()
-    const v = await ctx.operate(z, ctx.generator);
-    const w = await ctx.operate(z, u);
-    const proof = await ctx.proveDDH(z, { u, v, w }, Algorithms.SHA256);
+    const proof = await ctx.proveDDH(dlog, { u, v, w }, Algorithms.DEFAULT);
 
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -280,6 +283,178 @@ describe('ddh proof failure if wrong algorithm', () => {
 
     const valid = await ctx.verifyDDH({ u, v, w }, proof);
     expect(valid).toBe(false);
+  });
+});
 
+
+describe('encryption - decryption with secret key', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const plaintext = await ctx.decrypt(ciphertext, { secret });
+    expect(await plaintext.isEqual(message)).toBe(true);
+  });
+});
+
+
+describe('encryption - decryption with secret key failure', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const forged = await ctx.randomScalar();
+    const plaintext = await ctx.decrypt(ciphertext, { secret: forged });
+    expect(await plaintext.isEqual(message)).toBe(false);
+  });
+});
+
+
+describe('encryption - decryption with decryptor', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const plaintext = await ctx.decrypt(ciphertext, { decryptor });
+    expect(await plaintext.isEqual(message)).toBe(true);
+  });
+});
+
+
+describe('encryption - decryption with decryptor failure', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const forged = await ctx.randomPoint();
+    const plaintext = await ctx.decrypt(ciphertext, { decryptor: forged });
+    expect(await plaintext.isEqual(message)).toBe(false);
+  });
+});
+
+
+describe('encryption - decryption with randomness', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const plaintext = await ctx.decrypt(ciphertext, { randomness, pub });
+    expect(await plaintext.isEqual(message)).toBe(true);
+  });
+});
+
+
+describe('encryption - decryption with randomness failure', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
+
+    const forged = await ctx.randomScalar();
+    const plaintext = await ctx.decrypt(ciphertext, { randomness: forged, pub });
+    expect(await plaintext.isEqual(message)).toBe(false);
+  });
+});
+
+
+describe('encryption - proof of encryption', () => {
+  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness } = await ctx.encrypt(message, pub);
+    const proof = await ctx.proveEncryption(ciphertext, randomness, algorithm);
+    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
+
+    const valid = await ctx.verifyEncryption(ciphertext, proof);
+    expect(valid).toBe(true);
+  });
+});
+
+
+describe('encryption - proof of encryption failure', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, randomness } = await ctx.encrypt(message, pub);
+    const proof = await ctx.proveEncryption(ciphertext, randomness);
+
+    // Tamper ciphertext
+    ciphertext.beta = await ctx.randomPoint();
+
+    const valid = await ctx.verifyEncryption(ciphertext, proof);
+    expect(valid).toBe(false);
+  });
+});
+
+
+describe('encryption - proof of decryptor', () => {
+  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, decryptor } = await ctx.encrypt(message, pub);
+    const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, algorithm);
+    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
+
+    const valid = await ctx.verifyDecryptor(decryptor, ciphertext, pub, proof);
+    expect(valid).toBe(true);
+  });
+});
+
+
+describe('encryption - proof of decryptor failure', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = elgamal.initCrypto(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, decryptor } = await ctx.encrypt(message, pub);
+    const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor);
+
+    const forged = await ctx.randomPoint();
+    const valid = await ctx.verifyDecryptor(forged, ciphertext, pub, proof);
+    expect(valid).toBe(false);
   });
 });
