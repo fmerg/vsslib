@@ -27,28 +27,11 @@ export const computeFiatShamir = async (
   scalars: bigint[],
   algorithm: Algorithm | undefined,
 ): Promise<bigint> => {
-  const fixedBuff = [
-    leInt2Buff(ctx.modulus),
-    leInt2Buff(ctx.order),
-    ctx.generator.toBytes(),
-  ].reduce(
-    (acc: number[], curr: Uint8Array) => [...acc, ...curr], []
-  )
-  const pointsBuff = points.reduce(
-    (acc: number[], p: Point) => [...acc, ...p.toBytes()], []
-  );
-  const scalarsBuff = scalars.reduce(
-    (acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []
-  );
-  const buffer = [fixedBuff, scalarsBuff, pointsBuff].reduce(
-    (acc, curr) => [...acc, ...curr], []
-  );
+  const fixedBuff = [...leInt2Buff(ctx.modulus), ...leInt2Buff(ctx.order), ...ctx.generator.toBytes()];
+  const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
+  const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
   const digest = await utils.hash(
-    new Uint8Array(
-      [fixedBuff, pointsBuff, scalarsBuff].reduce(
-        (acc, curr) => [...acc, ...curr], []
-      )
-    ),
+    new Uint8Array([...fixedBuff, ...pointsBuff, ...scalarsBuff]),
     { algorithm }
   );
   return (leBuff2Int(digest) as bigint) % ctx.order;
@@ -56,31 +39,24 @@ export const computeFiatShamir = async (
 
 
 /** Creates dlog pairs with uniform logarithm */
-export const createDlogPairs = async (ctx: CryptoSystem, dlog: bigint, nrPairs: number): Promise<DlogPair[]> => {
-  const us = [];
-  for (let i = 0; i < nrPairs; i++) {
-    us.push(await ctx.randomPoint());
-  }
-
+export const createDlogPairs = async (ctx: CryptoSystem, z: bigint, nrPairs: number): Promise<DlogPair[]> => {
   const pairs = [];
-  for (const u of us) {
-    pairs.push({
-      u,
-      v: await ctx.operate(dlog, u),
-    });
+  for (let i = 0; i < nrPairs; i++) {
+    const u = await ctx.randomPoint();
+    const v = await ctx.operate(z, u);
+    pairs.push({ u, v });
   }
-
   return pairs;
 }
 
 
 /** Create DDH-tuples */
-export const createDDH = async (ctx: CryptoSystem, dlog?: bigint): Promise<{ dlog: bigint, ddh: DDHTuple }> => {
-  dlog = dlog || await ctx.randomScalar();
+export const createDDH = async (ctx: CryptoSystem, z?: bigint): Promise<{ z: bigint, ddh: DDHTuple }> => {
+  z = z || await ctx.randomScalar();
 
   const u = await ctx.randomPoint();
-  const v = await ctx.operate(dlog, ctx.generator);
-  const w = await ctx.operate(dlog, u);
+  const v = await ctx.operate(z, ctx.generator);
+  const w = await ctx.operate(z, u);
 
-  return { dlog, ddh: { u, v, w } };
+  return { z, ddh: { u, v, w } };
 }
