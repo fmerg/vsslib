@@ -84,7 +84,7 @@ Given points `p1, p2, ...` and scalars `s1, s2, ...`, the respective
 SHA256-based Fiat-Shamir computation is:
 
 ```js
-const u = await ctx.fiatShamir([p1, p2, ...], [s1, s2, ...], 'sha256');
+const u = await ctx.fiatShamir([p1, p2, ...], [s1, s2, ...], { algorithm: 'sha256' });
 ```
 
 Roughly speaking, this is the scalar produced by hashing together the provided
@@ -97,7 +97,7 @@ Generate a SHA256-based NIZK proof-of-knowledge of a secret scalar `dlog` being
 the discrete logarithm of a point `u` with base point `v` as follows:
 
 ```js
-const proof = await ctx.proveDlog(dlog, { u, v }, 'sha256');
+const proof = await ctx.proveDlog(dlog, { u, v }, { algorithm: 'sha256' });
 ```
 
 Verify the proof against the `(u, v)` pair as follows:
@@ -120,7 +120,7 @@ scalar `dlog` being the discrete logarithm of `vi` with base `ui` for all `i`.
 Generate a SHA256-based NIZK proof-of-knowledge of this secret as follows:
 
 ```js
-const proof = await ctx.prove_AND_Dlog(dlog, pairs, 'sha256');
+const proof = await ctx.prove_AND_Dlog(dlog, pairs, { algorithm: 'sha256' });
 ```
 
 Verify the proof against the pairs `(u1, v1), ...` as follows:
@@ -140,7 +140,7 @@ Genearate a SHA256-based NIZK proof-of-knowledge of the secret scalar
 `dlog` as follows:
 
 ```js
-const proof = await ctx.proveDDH(dlog, { u, v, w }, 'sha256');
+const proof = await ctx.proveDDH(dlog, { u, v, w }, { algorithm: 'sha256' });
 ```
 
 Verify the proof against the `(u, v, w)` DDH-tuple as follows:
@@ -166,7 +166,7 @@ const { ciphertext, randomness, decryptor } = await ctx.encrypt(message, pub);
 #### Proof of encryption
 
 ```js
-const proof = await ctx.proveEncryption(ciphertext, randomness, 'sha256');
+const proof = await ctx.proveEncryption(ciphertext, randomness, { algorithm: 'sha256' });
 
 const valid = await ctx.verifyEncryption(ciphertext, proof);
 ```
@@ -174,7 +174,7 @@ const valid = await ctx.verifyEncryption(ciphertext, proof);
 #### Proof of decryptor
 
 ```js
-const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, 'sha256');
+const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, { algorithm: 'sha256' });
 
 const valid = await ctx.verifyDecryptor(decryptor, ciphertext, pub, proof);
 ```

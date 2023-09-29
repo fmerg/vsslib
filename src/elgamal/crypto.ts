@@ -148,7 +148,9 @@ export class CryptoSystem {
     return this._group.unhexify(p);
   }
 
-  fiatShamir = async (points: Point[], scalars: bigint[], algorithm?: Algorithm): Promise<bigint> => {
+  fiatShamir = async (points: Point[], scalars: bigint[], opts?: { algorithm?: Algorithm }): Promise<bigint> => {
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+
     const fixedBuff = [
       this._modBytes,
       this._ordBytes,
@@ -168,14 +170,14 @@ export class CryptoSystem {
           (acc, curr) => [...acc, ...curr], []
         )
       ),
-      { algorithm: algorithm || Algorithms.DEFAULT }
+      { algorithm }
     );
 
     return this.leBuff2Scalar(digest);
   }
 
-  prove_AND_Dlog = async (dlog: bigint, pairs: DlogPair[], algorithm?: Algorithm): Promise<DlogProof> => {
-    algorithm = algorithm || Algorithms.DEFAULT;
+  prove_AND_Dlog = async (dlog: bigint, pairs: DlogPair[], opts?: { algorithm?: Algorithm }): Promise<DlogProof> => {
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
 
     const r = await this._group.randomScalar();
 
@@ -190,7 +192,7 @@ export class CryptoSystem {
         ...commitments
       ],
       [],
-      algorithm
+      { algorithm }
     );
 
     const response = (r + c * dlog) % this._order;
@@ -207,7 +209,7 @@ export class CryptoSystem {
         ...commitments
       ],
       [],
-      algorithm
+      { algorithm }
     );
 
     let flag: Boolean = true;
@@ -222,16 +224,19 @@ export class CryptoSystem {
     return flag;
   }
 
-  proveDlog = async (dlog: bigint, pair: DlogPair, algorithm?: Algorithm): Promise<DlogProof> => {
-    return this.prove_AND_Dlog(dlog, [pair], algorithm);
+  proveDlog = async (dlog: bigint, pair: DlogPair, opts?: { algorithm?: Algorithm }): Promise<DlogProof> => {
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+
+    return this.prove_AND_Dlog(dlog, [pair], { algorithm });
   }
 
   verifyDlog = async (pair: DlogPair, proof: DlogProof): Promise<Boolean> => {
     return this.verify_AND_Dlog([pair], proof);
   }
 
-  proveDDH = async (dlog: bigint, ddh: DDHTuple, algorithm?: Algorithm): Promise<DlogProof> => {
+  proveDDH = async (dlog: bigint, ddh: DDHTuple, opts?: { algorithm?: Algorithm }): Promise<DlogProof> => {
     const { u, v, w } = ddh;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
 
     return this.prove_AND_Dlog(
       dlog,
@@ -245,7 +250,7 @@ export class CryptoSystem {
           v: w,
         },
       ],
-      algorithm || Algorithms.DEFAULT
+      { algorithm }
     );
   }
 
@@ -297,18 +302,20 @@ export class CryptoSystem {
     return this._group.combine(alpha, decryptorInverse);
   }
 
-  proveEncryption = async (ciphertext: Ciphertext, randomness: bigint, algorithm?: Algorithm): Promise<DlogProof> => {
-    return this.proveDlog(randomness, { u: this._generator,  v: ciphertext.beta }, algorithm);
+  proveEncryption = async (ciphertext: Ciphertext, randomness: bigint, opts?: { algorithm?: Algorithm }): Promise<DlogProof> => {
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    return this.proveDlog(randomness, { u: this._generator,  v: ciphertext.beta }, { algorithm });
   }
 
   verifyEncryption = async (ciphertext: Ciphertext, proof: DlogProof): Promise<Boolean> => {
     return this.verifyDlog({ u: this._generator, v: ciphertext.beta }, proof);
   }
 
-  proveDecryptor = async (ciphertext: Ciphertext, secret: bigint, decryptor: Point, algorithm?: Algorithm): Promise<DlogProof> => {
+  proveDecryptor = async (ciphertext: Ciphertext, secret: bigint, decryptor: Point, opts?: { algorithm?: Algorithm }): Promise<DlogProof> => {
     const pub = await this._group.operate(secret, this._generator);
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
 
-    return this.proveDDH(secret, { u: ciphertext.beta, v: pub, w: decryptor }, algorithm);
+    return this.proveDDH(secret, { u: ciphertext.beta, v: pub, w: decryptor }, { algorithm });
   }
 
   verifyDecryptor = async (decryptor: Point, ciphertext: Ciphertext, pub: Point, proof: DlogProof): Promise<Boolean> => {

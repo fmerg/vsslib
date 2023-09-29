@@ -26,7 +26,7 @@ describe('fiat-shamir heuristic', () => {
       await ctx.randomPoint(),
       await ctx.randomPoint(),
     ]
-    const result = await ctx.fiatShamir(points, scalars, algorithm);
+    const result = await ctx.fiatShamir(points, scalars, { algorithm });
     expect(result).toEqual(await computeFiatShamir(ctx, points, scalars, algorithm));
   });
 });
@@ -38,7 +38,7 @@ describe('multiple AND dlog proof success', () => {
 
     const dlog = await ctx.randomScalar();
     const pairs = await createDlogPairs(ctx, dlog, 3);
-    const proof = await ctx.prove_AND_Dlog(dlog, pairs, algorithm);
+    const proof = await ctx.prove_AND_Dlog(dlog, pairs, { algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
 
     const valid = await ctx.verify_AND_Dlog(pairs, proof);
@@ -53,7 +53,7 @@ describe('multiple AND dlog proof failure if tampered', () => {
 
     const dlog = await ctx.randomScalar();
     const pairs = await createDlogPairs(ctx, dlog, 3);
-    const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.DEFAULT);
+    const proof = await ctx.prove_AND_Dlog(dlog, pairs);
 
     // Tamper last pair
     pairs[2].v = await ctx.randomPoint();
@@ -70,7 +70,7 @@ describe('multiple AND dlog proof failure if wrong algorithm', () => {
 
     const dlog = await ctx.randomScalar();
     const pairs = await createDlogPairs(ctx, dlog, 3);
-    const proof = await ctx.prove_AND_Dlog(dlog, pairs, Algorithms.DEFAULT);
+    const proof = await ctx.prove_AND_Dlog(dlog, pairs);
 
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -90,7 +90,7 @@ describe('single dlog proof success', () => {
     const dlog = await ctx.randomScalar();
     const u = await ctx.randomPoint();
     const v = await ctx.operate(dlog, u);
-    const proof = await ctx.proveDlog(dlog, { u, v }, algorithm);
+    const proof = await ctx.proveDlog(dlog, { u, v }, { algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
 
     const valid = await ctx.verifyDlog({ u, v }, proof);
@@ -106,7 +106,7 @@ describe('single dlog proof failure if tampered', () => {
     const dlog = await ctx.randomScalar();
     const u = await ctx.randomPoint();
     const v = await ctx.operate(dlog, u);
-    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.DEFAULT);
+    const proof = await ctx.proveDlog(dlog, { u, v })
 
     // tamper response
     proof.response = await ctx.randomScalar();
@@ -124,7 +124,7 @@ describe('single dlog proof failure if wrong algorithm', () => {
     const dlog = await ctx.randomScalar();
     const u = await ctx.randomPoint();
     const v = await ctx.operate(dlog, u);
-    const proof = await ctx.proveDlog(dlog, { u, v }, Algorithms.DEFAULT);
+    const proof = await ctx.proveDlog(dlog, { u, v })
 
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -142,7 +142,7 @@ describe('ddh proof success', () => {
     const ctx = elgamal.initCrypto(label);
     const { dlog, ddh: { u, v, w } } = await createDDH(ctx);
 
-    const proof = await ctx.proveDDH(dlog, { u, v, w }, algorithm);
+    const proof = await ctx.proveDDH(dlog, { u, v, w }, { algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
 
     const valid = await ctx.verifyDDH({ u, v, w }, proof);
@@ -156,7 +156,7 @@ describe('ddh proof failure if tampered', () => {
     const ctx = elgamal.initCrypto(label);
     const { dlog, ddh: { u, v, w } } = await createDDH(ctx);
 
-    const proof = await ctx.proveDDH(dlog, { u, v, w }, Algorithms.DEFAULT);
+    const proof = await ctx.proveDDH(dlog, { u, v, w })
 
     // tamper response
     proof.response = await ctx.randomScalar();
@@ -172,7 +172,7 @@ describe('ddh proof failure if wrong algorithm', () => {
     const ctx = elgamal.initCrypto(label);
     const { dlog, ddh: { u, v, w } } = await createDDH(ctx);
 
-    const proof = await ctx.proveDDH(dlog, { u, v, w }, Algorithms.DEFAULT);
+    const proof = await ctx.proveDDH(dlog, { u, v, w })
 
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?

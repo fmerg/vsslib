@@ -102,7 +102,9 @@ describe('encryption - proof of encryption', () => {
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness } = await ctx.encrypt(message, pub);
-    const proof = await ctx.proveEncryption(ciphertext, randomness, algorithm);
+    const proof = await ctx.proveEncryption(ciphertext, randomness, {
+      algorithm
+    });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
 
     const valid = await ctx.verifyEncryption(ciphertext, proof);
@@ -140,7 +142,9 @@ describe('encryption - proof of decryptor', () => {
 
     const message = await ctx.randomPoint();
     const { ciphertext, decryptor } = await ctx.encrypt(message, pub);
-    const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, algorithm);
+    const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, {
+      algorithm
+    });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
 
     const valid = await ctx.verifyDecryptor(decryptor, ciphertext, pub, proof);
