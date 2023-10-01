@@ -60,3 +60,12 @@ export const createDDH = async (ctx: CryptoSystem, z?: bigint): Promise<{ z: big
 
   return { z, ddh: { u, v, w } };
 }
+
+/** Trims trailing zeroes from number array */
+export const trimZeroes = (arr: number[]): number[] => {
+  let len = arr.length;
+  if (len > 0) {
+    while (arr[len - 1] == 0) len--;
+  }
+  return arr.slice(0, len);
+}
