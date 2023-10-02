@@ -1,3 +1,6 @@
+import { Label } from '../types';
+import { byteLen, randomInteger } from '../utils';
+
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 
@@ -63,8 +66,27 @@ export class Polynomial {
 
   isEqual = (other: Polynomial): Boolean => {
     return (
-      this._order === other.order &&
-      this.hasEqualCoeffs(other)
+      this._order === other.order && this.hasEqualCoeffs(other)
     );
+  }
+
+  add = (other: Polynomial): Polynomial => {
+    if (this._order !== other.order) throw new Error(
+      'Could not add polynomials: different orders'
+    );
+
+    let [long, short] = this._degree > other.degree ? [this, other] : [other, this];
+    if (short.degree == -Infinity) {
+      return long;
+    }
+
+    let newCoeffs = new Array(long.degree).fill(__0n);
+    for (let i = 0; i <= short.degree; i++) {
+      newCoeffs[i] = short.coeffs[i] + long.coeffs[i];
+    }
+    for (let i = short.degree + 1; i <= long.degree; i++) {
+      newCoeffs[i] = long.coeffs[i];
+    }
+    return new Polynomial(newCoeffs, this._order);
   }
 }

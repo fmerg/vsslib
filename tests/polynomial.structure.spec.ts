@@ -106,3 +106,29 @@ describe('non-equal', () => {
     expect(poly1.isEqual(poly4)).toBe(false);
   });
 });
+
+
+describe('random polynomial error', () => {
+  test('non-positive degree', async () => {
+    await expect(Polynomial.random({ degree: -1, order: BigInt(2) })).rejects.toThrow(
+      `Polynomial degree should be non-negative: -1`
+    );
+  });
+});
+
+
+describe('random polynomial', () => {
+  it.each(cartesian([0, 1, 2, 3, 4, 5, 6, 7, 8], __labels))('degre %s over %s', async (
+    degree, label
+  ) => {
+    const order = elgamal.initCrypto(label).order;
+    const poly = await Polynomial.random({ degree, order });
+    expect(poly.degree).toEqual(degree);
+    expect(poly.order).toEqual(order);
+    let flag = true;
+    for (const coeff of poly.coeffs) {
+      flag &&= (coeff < order);
+    }
+    expect(flag).toBe(true);
+  });
+})
