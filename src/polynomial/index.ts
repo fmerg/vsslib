@@ -1,4 +1,5 @@
 const __0n = BigInt(0);
+const __1n = BigInt(1);
 
 
 export class Polynomial {
@@ -7,6 +8,10 @@ export class Polynomial {
   _order: bigint;
 
   constructor(coeffs: bigint[], order: bigint) {
+    if (!(order > __1n)) throw new Error(
+      `Polynomial order should be greater than 1: ${order}`
+    );
+
     coeffs = coeffs.map((num) => num % order);
     let len = coeffs.length;
     if (len > 0) {
@@ -27,6 +32,22 @@ export class Polynomial {
 
   public get order(): bigint {
     return this._order;
+  }
+
+  static random = async (opts: { degree: number , order: bigint }): Promise<Polynomial> => {
+    const { degree, order } = opts;
+
+    if (degree < 0) throw new Error(
+      `Polynomial degree should be non-negative: ${degree}`
+    );
+
+    const coeffs = new Array(degree + 1);
+    const nrBytes = byteLen(order);
+    for (let i = 0; i < coeffs.length; i++) {
+      coeffs[i] = await randomInteger(nrBytes);
+    }
+
+    return new Polynomial(coeffs, order);
   }
 
   hasEqualCoeffs(other: Polynomial): Boolean {

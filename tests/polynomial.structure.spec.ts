@@ -60,6 +60,15 @@ describe('construction - coeffs greater than order', () => {
 });
 
 
+describe('construction errors', () => {
+  test('order not greater than one', async () => {
+    expect(() => { new Polynomial([], BigInt(1)) }).toThrow(
+      `Polynomial order should be greater than 1: 1`
+    );
+  });
+});
+
+
 describe('equal', () => {
   it.each(cartesian(__coeffs_and_degree, __labels))('%s %s', async (
     [coeffs, degree], label
