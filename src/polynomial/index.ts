@@ -77,13 +77,17 @@ export class Polynomial {
     );
   }
 
+  clone = (): Polynomial => {
+    return new Polynomial([...this._coeffs], this._order);
+  }
+
   add = (other: Polynomial): Polynomial => {
     if (this._order !== other.order) throw new Error(
       'Could not add polynomials: different orders'
     );
 
     let [long, short] = this.degree > other.degree ? [this, other] : [other, this];
-    if (short.isZero()) return long;
+    if (short.isZero()) return long.clone();
 
     let newCoeffs = new Array(long.degree).fill(__0n);
     for (let i = 0; i <= short.degree; i++) {

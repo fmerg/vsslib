@@ -80,11 +80,14 @@ describe('equal', () => {
       coeffs.map((num: number) => BigInt(num) + ctx.order),
       ctx.order
     );
-
     const poly4 = new Polynomial(coeffs.concat([0]).map(BigInt), ctx.order);
-    expect(poly1.isEqual(poly2)).toBe(true);
-    expect(poly2.isEqual(poly3)).toBe(true);
-    expect(poly3.isEqual(poly4)).toBe(true);
+    const poly5 = poly1.clone();
+
+    expect(poly1.isEqual(poly1)).toBe(true);
+    expect(poly2.isEqual(poly1)).toBe(true);
+    expect(poly3.isEqual(poly1)).toBe(true);
+    expect(poly4.isEqual(poly1)).toBe(true);
+    expect(poly5.isEqual(poly1)).toBe(true);
   });
 });
 
@@ -101,9 +104,11 @@ describe('non-equal', () => {
       ([666].concat([...coeffs.slice(coeffs.length - 1)])).map(BigInt),
       ctx.order
     );
-    expect(poly1.isEqual(poly2)).toBe(false);
-    expect(poly1.isEqual(poly3)).toBe(false);
-    expect(poly1.isEqual(poly4)).toBe(false);
+    const poly5 = poly4.clone();
+    expect(poly3.isEqual(poly1)).toBe(false);
+    expect(poly3.isEqual(poly1)).toBe(false);
+    expect(poly4.isEqual(poly1)).toBe(false);
+    expect(poly5.isEqual(poly1)).toBe(false);
   });
 });
 
