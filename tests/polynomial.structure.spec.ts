@@ -123,6 +123,7 @@ describe('random polynomial', () => {
   ) => {
     const order = elgamal.initCrypto(label).order;
     const poly = await Polynomial.random({ degree, order });
+    expect(poly.isZero()).toBe(false);
     expect(poly.degree).toEqual(degree);
     expect(poly.order).toEqual(order);
     let flag = true;
