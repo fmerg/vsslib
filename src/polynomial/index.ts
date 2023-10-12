@@ -37,7 +37,11 @@ export class Polynomial {
     return this._order;
   }
 
-  static random = async (opts: { degree: number , order: bigint }): Promise<Polynomial> => {
+  static zero = async (opts: { order: bigint }): Promise<Polynomial> => {
+    return new Polynomial([], opts.order);
+  }
+
+  static random = async (opts: { degree: number, order: bigint }): Promise<Polynomial> => {
     const { degree, order } = opts;
 
     if (degree < 0) throw new Error(

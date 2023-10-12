@@ -12,6 +12,16 @@ const __small_orders = [2, 3, 4, 5, 6, 7].map(BigInt);
 const __prime_orders = __labels.map((label) => elgamal.initCrypto(label).order);
 
 
+describe('zero polynomial', () => {
+  it.each(__prime_orders)('order: %s', async (order) => {
+    const poly = await Polynomial.zero({ order });
+    expect(poly.coeffs).toEqual([]);
+    expect(poly.degree).toBe(-Infinity);
+    expect(poly.order).toBe(order);
+  });
+});
+
+
 describe('addition errors', () => {
   test('different orders', async () => {
     const poly1 = new Polynomial([], BigInt(2));
