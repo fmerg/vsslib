@@ -8,15 +8,28 @@ import { DlogPair, DDHTuple } from '../src/elgamal/crypto';
 const utils = require('../src/utils');
 
 
-/** Make cartesian product of provided arrays */
-export const cartesian = (arr1: any[], arr2: any[]): any[] => {
-  const out = [];
-  for (const c1 of arr1) {
-    for (const c2 of arr2) {
-      out.push([c1, c2]);
+export const cartesian = (arrays: any[]): any[] => {
+  if (arrays.length == 2) {
+    const xs = arrays[0];
+    const ys = arrays[1];
+    let out = new Array(xs.length * ys.length);
+    for (const [i, x] of xs.entries()) {
+      for (const [j, y] of ys.entries()) {
+        out[i * ys.length + j] = [x, y];
+      }
     }
+    return out;
+  } else {
+    const xs = arrays[0];
+    const ys = cartesian(arrays.slice(1));
+    let out = new Array(xs.length * ys.length);
+    for (const [i, x] of xs.entries()) {
+      for (const [j, y] of ys.entries()) {
+        out[i * ys.length + j] = [x, ...y];
+      }
+    }
+    return out;
   }
-  return out;
 }
 
 

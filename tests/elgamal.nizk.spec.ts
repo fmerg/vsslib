@@ -15,7 +15,7 @@ const __algorithms  = [...Object.values(Algorithms), undefined];
 
 
 describe('fiat-shamir heuristic', () => {
-  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
     const scalars = [
       await ctx.randomScalar(),
@@ -33,7 +33,7 @@ describe('fiat-shamir heuristic', () => {
 
 
 describe('multiple AND dlog proof success', () => {
-  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
     const z = await ctx.randomScalar();
@@ -84,7 +84,7 @@ describe('multiple AND dlog proof failure if wrong algorithm', () => {
 
 
 describe('single z proof success', () => {
-  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
     const z = await ctx.randomScalar();
@@ -138,7 +138,7 @@ describe('single z proof failure if wrong algorithm', () => {
 
 
 describe('ddh proof success', () => {
-  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
     const { z, ddh: { u, v, w } } = await createDDH(ctx);
 

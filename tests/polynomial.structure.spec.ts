@@ -28,7 +28,7 @@ const __1n = BigInt(1);
 
 
 describe('construction - coeffs smaller than order', () => {
-  it.each(cartesian(__coeffs_and_degree, __labels))('%s %s', async (
+  it.each(cartesian([__coeffs_and_degree, __labels]))('%s %s', async (
     [coeffs, degree], label
   ) => {
     const ctx = elgamal.initCrypto(label);
@@ -43,7 +43,7 @@ describe('construction - coeffs smaller than order', () => {
 
 
 describe('construction - coeffs greater than order', () => {
-  it.each(cartesian(__coeffs_and_degree, __labels))('%s %s', async (
+  it.each(cartesian([__coeffs_and_degree, __labels]))('%s %s', async (
     [coeffs, degree], label
   ) => {
     const ctx = elgamal.initCrypto(label);
@@ -70,7 +70,7 @@ describe('construction errors', () => {
 
 
 describe('equal', () => {
-  it.each(cartesian(__coeffs_and_degree, __labels))('%s %s', async (
+  it.each(cartesian([__coeffs_and_degree, __labels]))('%s %s', async (
     [coeffs, degree], label
   ) => {
     const ctx = elgamal.initCrypto(label);
@@ -93,7 +93,7 @@ describe('equal', () => {
 
 
 describe('non-equal', () => {
-  it.each(cartesian(__coeffs_and_degree, __labels))('%s %s', async (
+  it.each(cartesian([__coeffs_and_degree, __labels]))('%s %s', async (
     [coeffs, degree], label
   ) => {
     const ctx = elgamal.initCrypto(label);
@@ -123,7 +123,7 @@ describe('random polynomial error', () => {
 
 
 describe('random polynomial', () => {
-  it.each(cartesian([0, 1, 2, 3, 4, 5, 6, 7, 8], __labels))('degre %s over %s', async (
+  it.each(cartesian([[0, 1, 2, 3, 4, 5, 6, 7, 8], __labels]))('degre %s over %s', async (
     degree, label
   ) => {
     const order = elgamal.initCrypto(label).order;

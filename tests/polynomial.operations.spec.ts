@@ -1,7 +1,7 @@
 import { Systems } from '../src/enums';
 import { Polynomial } from '../src/polynomial';
+import { byteLen, randomInteger } from '../src/utils';
 import { cartesian, trimZeroes } from './helpers';
-
 const polynomial = require('../src/polynomial');
 const elgamal = require('../src/elgamal');
 
@@ -15,7 +15,7 @@ const __prime_orders = __labels.map((label) => elgamal.initCrypto(label).order);
 
 describe('zero polynomial', () => {
   it.each(__prime_orders)('order: %s', async (order) => {
-    const poly = await Polynomial.zero({ order });
+    const poly = Polynomial.zero({ order });
     expect(poly.coeffs).toEqual([]);
     expect(poly.degree).toBe(-Infinity);
     expect(poly.order).toBe(order);
@@ -37,16 +37,18 @@ describe('addition errors', () => {
 
 describe('addition - predefined polynomials with small order', () => {
   it.each(cartesian([
-    [[1, 2, 3, 4], [],                    [1, 2, 3, 4]],
-    [[1, 2, 3, 4], [1],                   [2, 2, 3, 4]],
-    [[1, 2, 3, 4], [1, 2],                [2, 4, 3, 4]],
-    [[1, 2, 3, 4], [1, 2, 3],             [2, 4, 6, 4]],
-    [[1, 2, 3, 4], [1, 2, 3, 4],          [2, 4, 6, 8]],
-    [[1, 2, 3, 4], [1, 2, 3, 4, 5],       [2, 4, 6, 8, 5]],
-    [[1, 2, 3, 4], [1, 2, 3, 4, 5, 6],    [2, 4, 6, 8, 5, 6]],
-    [[1, 2, 3, 4], [1, 2, 3, 4, 5, 6, 7], [2, 4, 6, 8, 5, 6, 7]],
-  ], __small_orders
-  ))('%s %s', async ([coeffs1, coeffs2, coeffs3], order) => {
+    [
+      [[1, 2, 3, 4], [],                    [1, 2, 3, 4]],
+      [[1, 2, 3, 4], [1],                   [2, 2, 3, 4]],
+      [[1, 2, 3, 4], [1, 2],                [2, 4, 3, 4]],
+      [[1, 2, 3, 4], [1, 2, 3],             [2, 4, 6, 4]],
+      [[1, 2, 3, 4], [1, 2, 3, 4],          [2, 4, 6, 8]],
+      [[1, 2, 3, 4], [1, 2, 3, 4, 5],       [2, 4, 6, 8, 5]],
+      [[1, 2, 3, 4], [1, 2, 3, 4, 5, 6],    [2, 4, 6, 8, 5, 6]],
+      [[1, 2, 3, 4], [1, 2, 3, 4, 5, 6, 7], [2, 4, 6, 8, 5, 6, 7]],
+    ],
+    __small_orders
+  ]))('%s %s', async ([coeffs1, coeffs2, coeffs3], order) => {
     const poly1 = new Polynomial(coeffs1.map(BigInt), order);
     const poly2 = new Polynomial(coeffs2.map((num: number) => BigInt(num) + order), order);
     const poly3 = new Polynomial(coeffs3.map(BigInt), order);
@@ -58,9 +60,11 @@ describe('addition - predefined polynomials with small order', () => {
 
 describe('addition - random polynomials with prime order', () => {
   it.each(cartesian([
-    [0, 0], [0, 1], [1, 1], [0, 2], [1, 2],
-    [2, 2], [5, 7], [6, 9], [7, 9], [8, 9],
-  ], __prime_orders))('degrees: %s, order: %s', async (degrees, order) => {
+    [
+      [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9],
+    ],
+    __prime_orders
+  ]))('degrees: %s, order: %s', async (degrees, order) => {
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await Polynomial.random({ degree: degree1, order });
     const poly2 = await Polynomial.random({ degree: degree2, order });
@@ -88,16 +92,18 @@ describe('multiplication errors', () => {
 
 describe('multiplication - predefined polynomials with small order', () => {
   it.each(cartesian([
-    [[1, 2, 3, 4], [],                    []],
-    [[1, 2, 3, 4], [1],                   [1, 2, 3, 4]],
-    [[1, 2, 3, 4], [1, 2],                [1, 4, 7, 10, 8]],
-    [[1, 2, 3, 4], [1, 2, 3],             [1, 4, 10, 16, 17, 12]],
-    [[1, 2, 3, 4], [1, 2, 3, 4],          [1, 4, 10, 20, 25, 24, 16]],
-    [[1, 2, 3, 4], [1, 2, 3, 4, 5],       [1, 4, 10, 20, 30, 34, 31, 20]],
-    [[1, 2, 3, 4], [1, 2, 3, 4, 5, 6],    [1, 4, 10, 20, 30, 40, 43, 38, 24]],
-    [[1, 2, 3, 4], [1, 2, 3, 4, 5, 6, 7], [1, 4, 10, 20, 30, 40, 50, 52, 45, 28]],
-  ], __small_orders
-  ))('%s %s', async ([coeffs1, coeffs2, coeffs3], order) => {
+    [
+      [[1, 2, 3, 4], [],                    []],
+      [[1, 2, 3, 4], [1],                   [1, 2, 3, 4]],
+      [[1, 2, 3, 4], [1, 2],                [1, 4, 7, 10, 8]],
+      [[1, 2, 3, 4], [1, 2, 3],             [1, 4, 10, 16, 17, 12]],
+      [[1, 2, 3, 4], [1, 2, 3, 4],          [1, 4, 10, 20, 25, 24, 16]],
+      [[1, 2, 3, 4], [1, 2, 3, 4, 5],       [1, 4, 10, 20, 30, 34, 31, 20]],
+      [[1, 2, 3, 4], [1, 2, 3, 4, 5, 6],    [1, 4, 10, 20, 30, 40, 43, 38, 24]],
+      [[1, 2, 3, 4], [1, 2, 3, 4, 5, 6, 7], [1, 4, 10, 20, 30, 40, 50, 52, 45, 28]],
+    ],
+    __small_orders
+  ]))('%s %s', async ([coeffs1, coeffs2, coeffs3], order) => {
     const poly1 = new Polynomial(coeffs1.map(BigInt), order);
     const poly2 = new Polynomial(coeffs2.map((num: number) => BigInt(num) + order), order);
     const poly3 = new Polynomial(coeffs3.map(BigInt), order);
@@ -109,9 +115,12 @@ describe('multiplication - predefined polynomials with small order', () => {
 
 describe('multiplication - random polynomials with prime order', () => {
   it.each(cartesian([
-    [0, 0], [0, 1], [1, 1], [0, 2], [1, 2],
-    [2, 2], [5, 7], [6, 9], [7, 9], [8, 9],
-  ], __prime_orders))('degrees: %s, order: %s', async ([degree1, degree2], order) => {
+    [
+      [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9],
+    ],
+    __prime_orders
+  ]))('degrees: %s, order: %s', async (degrees, order) => {
+    let [degree1, degree2] = degrees;
     const poly1 = await Polynomial.random({ degree: degree1, order });
     const poly2 = await Polynomial.random({ degree: degree2, order });
 
@@ -126,3 +135,49 @@ describe('multiplication - random polynomials with prime order', () => {
     expect(poly3.isEqual(poly2.mult(poly1))).toBe(true);
   });
 });
+
+
+describe('scalar multiplication - predefined polynomials with small order', () => {
+  it.each(cartesian([
+    [
+      [],
+      [1],
+      [1, 2],
+      [1, 2, 3],
+      [1, 2, 3, 4],
+      [1, 2, 3, 4, 5],
+      [1, 2, 3, 4, 5, 6],
+      [1, 2, 3, 4, 5, 6, 7],
+    ],
+      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    __small_orders,
+  ]))('%s %s, %s', async (coeffs, scalar, order) => {
+    const poly1 = new Polynomial(coeffs.map(BigInt), order);
+    const poly2 = poly1.multScalar(BigInt(scalar));
+
+    const poly3 = new Polynomial(coeffs.map((c: number) => BigInt(scalar * c)), order);
+    expect(poly2.isEqual(poly3)).toBe(true);
+
+    const poly4 = new Polynomial([BigInt(scalar)], order);
+    expect(poly2.isEqual(poly1.mult(poly4))).toBe(true);
+  });
+});
+
+
+describe('scalar multiplication - random polynomials with prime order', () => {
+  it.each(cartesian([
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    __prime_orders
+  ]))('degrees: %s, order: %s', async (degree, order) => {
+    const scalar = await randomInteger(byteLen(order));
+    const poly1 = await Polynomial.random({ degree, order });
+    const poly2 = poly1.multScalar(scalar);
+
+    const poly3 = new Polynomial(poly1.coeffs.map((c) => scalar * c), order);
+    expect(poly2.isEqual(poly3)).toBe(true);
+
+    const poly4 = new Polynomial([scalar], order);
+    expect(poly2.isEqual(poly1.mult(poly4))).toBe(true);
+  });
+});
+

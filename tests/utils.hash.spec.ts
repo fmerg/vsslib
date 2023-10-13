@@ -11,7 +11,7 @@ const __encodings   = [...Object.values(Encodings), undefined];
 
 describe('hash digest', () => {
   const buffer = Buffer.from('sample-text');
-  it.each(cartesian(__algorithms, __encodings))('%s, %s', async (algorithm, encoding) => {
+  it.each(cartesian([__algorithms, __encodings]))('%s, %s', async (algorithm, encoding) => {
     const digest = await utils.hash(buffer, { algorithm, encoding });
     const hasher = createHash(algorithm || Algorithms.DEFAULT).update(buffer);
     const expected = encoding ?

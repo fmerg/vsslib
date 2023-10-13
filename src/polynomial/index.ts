@@ -36,7 +36,7 @@ export class Polynomial {
     return this._order;
   }
 
-  static zero = async (opts: { order: bigint }): Promise<Polynomial> => {
+  static zero = (opts: { order: bigint }): Polynomial => {
     return new Polynomial([], opts.order);
   }
 
@@ -115,5 +115,9 @@ export class Polynomial {
       }
     }
     return new Polynomial(newCoeffs, this._order);
+  }
+
+  multScalar = (scalar: bigint): Polynomial => {
+    return new Polynomial(this._coeffs.map((coeff) => scalar * coeff), this._order);
   }
 }
