@@ -9,6 +9,8 @@ import { randomInteger } from './random';
 
 import { default as hash } from './hash';
 
+import { mod, gcd, modInv } from './arith';
+
 export {
   bitLen,
   byteLen,
@@ -16,4 +18,7 @@ export {
   leInt2Buff,
   randomInteger,
   hash,
+  mod,
+  gcd,
+  modInv,
 }

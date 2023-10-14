@@ -63,7 +63,7 @@ describe('construction - coeffs greater than order', () => {
 describe('construction errors', () => {
   test('order not greater than one', async () => {
     expect(() => { new Polynomial([], BigInt(1)) }).toThrow(
-      `Polynomial order should be greater than 1: 1`
+      'Polynomial order must be > 1'
     );
   });
 });
@@ -106,7 +106,7 @@ describe('non-equal', () => {
     );
     const poly5 = poly4.clone();
     expect(poly3.isEqual(poly1)).toBe(false);
-    expect(poly3.isEqual(poly1)).toBe(false);
+    expect(poly2.isEqual(poly1)).toBe(false);
     expect(poly4.isEqual(poly1)).toBe(false);
     expect(poly5.isEqual(poly1)).toBe(false);
   });
@@ -116,7 +116,7 @@ describe('non-equal', () => {
 describe('random polynomial error', () => {
   test('non-positive degree', async () => {
     await expect(Polynomial.random({ degree: -1, order: BigInt(2) })).rejects.toThrow(
-      `Polynomial degree should be non-negative: -1`
+      'Polynomial degree must be >= 0'
     );
   });
 });

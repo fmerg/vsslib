@@ -4,6 +4,8 @@ import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
 import { DlogPair, DDHTuple } from '../src/elgamal/crypto';
+import { Polynomial } from '../src/polynomial';
+import { XYPoint } from '../src/lagrange';
 
 const utils = require('../src/utils');
 
@@ -81,4 +83,32 @@ export const trimZeroes = (arr: number[]): number[] => {
     while (arr[len - 1] == 0) len--;
   }
   return arr.slice(0, len);
+}
+
+export const interpolate = (points: XYPoint[], opts: { order: bigint }): Polynomial => {
+  /** At least two points needed for interpolation and number of points
+   *  cannot exceed order
+   */
+  const __0n = BigInt(0);
+  const __1n = BigInt(1);
+  const order = BigInt(opts.order);
+  let poly = Polynomial.zero({ order });
+  const castPoints = points.map(([x, y]) => [BigInt(x), BigInt(y)]);
+  for (let j = 0; j < castPoints.length; j++) {
+    const [xj, yj] = castPoints[j];
+    let w = __1n;
+    let pj = new Polynomial([__1n], order);
+    for (let i = 0; i < castPoints.length; i++) {
+      if (i !== j) {
+        const [xi, _] = castPoints[i];
+        w *= xj - xi;
+        pj = pj.mult(new Polynomial([-xi, __1n], order))
+      }
+    }
+    const wInv = utils.modInv(w, order);
+    pj = pj.multScalar(yj * wInv)
+    poly = poly.add(pj);
+  }
+
+  return poly;
 }

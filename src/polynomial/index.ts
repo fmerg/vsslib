@@ -1,5 +1,5 @@
 import { Label } from '../types';
-import { byteLen, randomInteger } from '../utils';
+import { byteLen, randomInteger, mod, modInv } from '../utils';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -10,11 +10,8 @@ export class Polynomial {
   _order: bigint;
 
   constructor(coeffs: bigint[], order: bigint) {
-    if (!(order > __1n)) throw new Error(
-      `Polynomial order should be greater than 1: ${order}`
-    );
-
-    coeffs = coeffs.map((num) => num % order);
+    if ((order <= __1n)) throw new Error('Polynomial order must be > 1');
+    coeffs = coeffs.map((num) => mod(num, order));
     let len = coeffs.length;
     if (len > 0) {
       while (coeffs[len - 1] === __0n) len--;
@@ -42,39 +39,35 @@ export class Polynomial {
 
   static random = async (opts: { degree: number, order: bigint }): Promise<Polynomial> => {
     const { degree, order } = opts;
-
-    if (degree < 0) throw new Error(
-      `Polynomial degree should be non-negative: ${degree}`
-    );
-
+    if (degree < 0) throw new Error('Polynomial degree must be >= 0')
     const coeffs = new Array(degree + 1);
     const nrBytes = byteLen(order);
     for (let i = 0; i < coeffs.length; i++) {
       coeffs[i] = await randomInteger(nrBytes);
     }
-
     return new Polynomial(coeffs, order);
   }
 
-  isZero = (): Boolean => {
-    return this._coeffs.length === 0;
-  }
-
-  hasEqualCoeffs(other: Polynomial): Boolean {
+  hasEqualCoeffs = (other: Polynomial): boolean => {
     const minDegree = Math.min(this.degree, other.degree);
     let index = 0;
     let flag = true;
-    while (index <= minDegree) {
+    while (index < minDegree + 1) {
       flag &&= (this._coeffs[index] === other.coeffs[index]);
       index++;
     }
     return this.degree === other.degree ? flag : false;
   }
 
-  isEqual = (other: Polynomial): Boolean => {
-    return (
-      this._order === other.order && this.hasEqualCoeffs(other)
-    );
+  isEqual = (other: Polynomial): boolean => {
+    let flag = true;
+    flag &&= this.hasEqualCoeffs(other);
+    flag &&= this._order === other.order;
+    return flag;
+  }
+
+  isZero = (): boolean => {
+    return this._coeffs.length === 0;
   }
 
   clone = (): Polynomial => {
@@ -90,10 +83,10 @@ export class Polynomial {
     if (short.isZero()) return long.clone();
 
     let newCoeffs = new Array(long.degree).fill(__0n);
-    for (let i = 0; i <= short.degree; i++) {
+    for (let i = 0; i < short.degree + 1; i++) {
       newCoeffs[i] = short.coeffs[i] + long.coeffs[i];
     }
-    for (let i = short.degree + 1; i <= long.degree; i++) {
+    for (let i = short.degree + 1; i < long.degree + 1; i++) {
       newCoeffs[i] = long.coeffs[i];
     }
     return new Polynomial(newCoeffs, this._order);
@@ -108,9 +101,9 @@ export class Polynomial {
 
     let [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     let newCoeffs = new Array(long.degree + short.degree + 1).fill(__0n);
-    for (let i = 0; i <= long.degree; i++) {
+    for (let i = 0; i < long.degree + 1; i++) {
       let curr_i = long.coeffs[i];
-      for (let j = 0; j <= short.degree; j++) {
+      for (let j = 0; j < short.degree + 1; j++) {
         newCoeffs[i + j] += curr_i * short.coeffs[j];
       }
     }
@@ -118,15 +111,13 @@ export class Polynomial {
   }
 
   multScalar = (scalar: bigint): Polynomial => {
+    scalar = mod(scalar, this._order);
     return new Polynomial(this._coeffs.map((coeff) => scalar * coeff), this._order);
   }
 
-  evaluate = (value: bigint): bigint => {
-    // TODO: Research optimizations
-    // 1. array function or loop
-    // 2. proper exponentiation
-    // 3. when to take modulo
-    const acc = this._coeffs.reduce((acc, c, i) => acc + c * value ** BigInt(i), __0n);
-    return acc % this._order;
+  evaluate = (value: bigint | number): bigint => {
+    const x = BigInt(value);
+    const acc = this._coeffs.reduce((acc, c, i) => acc + c * x ** BigInt(i), __0n);
+    return mod(acc, this._order);
   }
 }

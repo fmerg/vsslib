@@ -4,17 +4,18 @@ import { byteLen, randomInteger } from '../src/utils';
 import { cartesian, trimZeroes } from './helpers';
 const polynomial = require('../src/polynomial');
 const elgamal = require('../src/elgamal');
+const test_helpers = require('./helpers');
 
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 const __labels = Object.values(Systems);
 const __small_orders = [2, 3, 4, 5, 6, 7].map(BigInt);
-const __prime_orders = __labels.map((label) => elgamal.initCrypto(label).order);
+const __big_primes = __labels.map((label) => elgamal.initCrypto(label).order);
 
 
 describe('zero polynomial', () => {
-  it.each(__prime_orders)('order: %s', async (order) => {
+  it.each(__big_primes)('order: %s', async (order) => {
     const poly = Polynomial.zero({ order });
     expect(poly.coeffs).toEqual([]);
     expect(poly.degree).toBe(-Infinity);
@@ -63,7 +64,7 @@ describe('addition - random polynomials with prime order', () => {
     [
       [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9],
     ],
-    __prime_orders
+    __big_primes
   ]))('degrees: %s, order: %s', async (degrees, order) => {
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await Polynomial.random({ degree: degree1, order });
@@ -118,7 +119,7 @@ describe('multiplication - random polynomials with prime order', () => {
     [
       [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9],
     ],
-    __prime_orders
+    __big_primes
   ]))('degrees: %s, order: %s', async (degrees, order) => {
     let [degree1, degree2] = degrees;
     const poly1 = await Polynomial.random({ degree: degree1, order });
@@ -167,7 +168,7 @@ describe('scalar multiplication - predefined polynomials with small order', () =
 describe('scalar multiplication - random polynomials with prime order', () => {
   it.each(cartesian([
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    __prime_orders
+    __big_primes
   ]))('degrees: %s, order: %s', async (degree, order) => {
     const scalar = await randomInteger(byteLen(order));
     const poly1 = await Polynomial.random({ degree, order });
@@ -214,7 +215,7 @@ describe('evaluation - predefined polynomials with small order', () => {
 describe('evaluation - random polynomials with prime order', () => {
   it.each(cartesian([
     [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    __prime_orders
+    __big_primes
   ]))('degrees: %s, order: %s', async (degree, order) => {
     const value = await randomInteger(byteLen(order));
     const poly = await Polynomial.random({ degree, order });
@@ -227,4 +228,3 @@ describe('evaluation - random polynomials with prime order', () => {
     expect(result).toEqual(expected);
   });
 });
-
