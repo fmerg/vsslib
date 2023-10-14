@@ -120,4 +120,13 @@ export class Polynomial {
   multScalar = (scalar: bigint): Polynomial => {
     return new Polynomial(this._coeffs.map((coeff) => scalar * coeff), this._order);
   }
+
+  evaluate = (value: bigint): bigint => {
+    // TODO: Research optimizations
+    // 1. array function or loop
+    // 2. proper exponentiation
+    // 3. when to take modulo
+    const acc = this._coeffs.reduce((acc, c, i) => acc + c * value ** BigInt(i), __0n);
+    return acc % this._order;
+  }
 }

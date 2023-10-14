@@ -181,3 +181,50 @@ describe('scalar multiplication - random polynomials with prime order', () => {
   });
 });
 
+
+describe('evaluation - predefined polynomials with small order', () => {
+  it.each(cartesian([
+    [
+      [],
+      [1],
+      [1, 2],
+      [1, 2, 3],
+      [1, 2, 3, 4],
+      [1, 2, 3, 4, 5],
+      [1, 2, 3, 4, 5, 6],
+      [1, 2, 3, 4, 5, 6, 7],
+    ],
+    [
+      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+    ],
+    __small_orders,
+  ]))('%s %s, %s', async (coeffs, value, order) => {
+    const poly = new Polynomial(coeffs.map(BigInt), order);
+    let acc = 0;
+    for (const [i, c] of coeffs.entries()) {
+      acc += c * value ** i;
+    }
+    const expected = BigInt(acc) % order;
+    const result = poly.evaluate(BigInt(value));
+    expect(result).toEqual(expected);
+  });
+});
+
+
+describe('evaluation - random polynomials with prime order', () => {
+  it.each(cartesian([
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    __prime_orders
+  ]))('degrees: %s, order: %s', async (degree, order) => {
+    const value = await randomInteger(byteLen(order));
+    const poly = await Polynomial.random({ degree, order });
+    let acc = __0n;
+    for (const [i, c] of poly.coeffs.entries()) {
+      acc += c * value ** BigInt(i);
+    }
+    const expected = BigInt(acc) % order;
+    const result = poly.evaluate(BigInt(value));
+    expect(result).toEqual(expected);
+  });
+});
+
