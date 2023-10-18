@@ -9,29 +9,20 @@ import { XYPoint } from '../src/lagrange';
 
 const utils = require('../src/utils');
 
+const __0n = BigInt(0);
+const __1n = BigInt(1);
+
 
 export const cartesian = (arrays: any[]): any[] => {
-  if (arrays.length == 2) {
-    const xs = arrays[0];
-    const ys = arrays[1];
-    let out = new Array(xs.length * ys.length);
-    for (const [i, x] of xs.entries()) {
-      for (const [j, y] of ys.entries()) {
-        out[i * ys.length + j] = [x, y];
-      }
+  const xs = arrays[0];
+  const ys = arrays.length > 2 ? cartesian(arrays.slice(1)) : arrays[1].map((a: any[]) => [a]);
+  let out = new Array(xs.length * ys.length);
+  for (const [i, x] of xs.entries()) {
+    for (const [j, y] of ys.entries()) {
+      out[i * ys.length + j] = [x, ...y];
     }
-    return out;
-  } else {
-    const xs = arrays[0];
-    const ys = cartesian(arrays.slice(1));
-    let out = new Array(xs.length * ys.length);
-    for (const [i, x] of xs.entries()) {
-      for (const [j, y] of ys.entries()) {
-        out[i * ys.length + j] = [x, ...y];
-      }
-    }
-    return out;
   }
+  return out;
 }
 
 
@@ -85,15 +76,14 @@ export const trimZeroes = (arr: number[]): number[] => {
   return arr.slice(0, len);
 }
 
+
+/** Textbook lagrange interpolation. At least two points needed and number of
+ * points must not exceed order.
+ */
 export const interpolate = (points: XYPoint[], opts: { order: bigint }): Polynomial => {
-  /** At least two points needed for interpolation and number of points
-   *  cannot exceed order
-   */
-  const __0n = BigInt(0);
-  const __1n = BigInt(1);
   const order = BigInt(opts.order);
-  let poly = Polynomial.zero({ order });
   const castPoints = points.map(([x, y]) => [BigInt(x), BigInt(y)]);
+  let poly = Polynomial.zero({ order });
   for (let j = 0; j < castPoints.length; j++) {
     const [xj, yj] = castPoints[j];
     let w = __1n;

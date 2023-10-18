@@ -1,5 +1,5 @@
 import { Label } from '../types';
-import { byteLen, randomInteger, mod, modInv } from '../utils';
+import { byteLen, randomInteger, mod } from '../utils';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -9,15 +9,16 @@ export class Polynomial {
   _coeffs: bigint[];
   _order: bigint;
 
-  constructor(coeffs: bigint[], order: bigint) {
-    if ((order <= __1n)) throw new Error('Polynomial order must be > 1');
-    coeffs = coeffs.map((num) => mod(num, order));
-    let len = coeffs.length;
+  constructor(coeffs: (bigint | number)[], order: bigint | number) {
+    const _order = BigInt(order);
+    if ((_order <= __1n)) throw new Error('Polynomial order must be > 1');
+    const _coeffs: bigint[] = coeffs.map((num) => mod(BigInt(num), _order));
+    let len = _coeffs.length;
     if (len > 0) {
-      while (coeffs[len - 1] === __0n) len--;
+      while (_coeffs[len - 1] === __0n) len--;
     }
-    this._coeffs = coeffs.slice(0, len);
-    this._order = order;
+    this._coeffs = _coeffs.slice(0, len);
+    this._order = _order;
   }
 
   public get coeffs(): bigint[] {
@@ -25,7 +26,7 @@ export class Polynomial {
   }
 
   public get degree(): number {
-    let len = this._coeffs.length;
+    const len = this._coeffs.length;
     return len === 0 ? -Infinity : len - 1;
   }
 
@@ -33,15 +34,15 @@ export class Polynomial {
     return this._order;
   }
 
-  static zero = (opts: { order: bigint }): Polynomial => {
+  static zero = (opts: { order: bigint | number }): Polynomial => {
     return new Polynomial([], opts.order);
   }
 
-  static random = async (opts: { degree: number, order: bigint }): Promise<Polynomial> => {
+  static random = async (opts: { degree: number, order: bigint | number }): Promise<Polynomial> => {
     const { degree, order } = opts;
     if (degree < 0) throw new Error('Polynomial degree must be >= 0')
     const coeffs = new Array(degree + 1);
-    const nrBytes = byteLen(order);
+    const nrBytes = byteLen(BigInt(order));
     for (let i = 0; i < coeffs.length; i++) {
       coeffs[i] = await randomInteger(nrBytes);
     }
@@ -56,7 +57,8 @@ export class Polynomial {
       flag &&= (this._coeffs[index] === other.coeffs[index]);
       index++;
     }
-    return this.degree === other.degree ? flag : false;
+    flag &&= this.degree === other.degree;
+    return flag;
   }
 
   isEqual = (other: Polynomial): boolean => {
@@ -75,13 +77,9 @@ export class Polynomial {
   }
 
   add = (other: Polynomial): Polynomial => {
-    if (this._order !== other.order) throw new Error(
-      'Could not add polynomials: different orders'
-    );
-
-    let [long, short] = this.degree > other.degree ? [this, other] : [other, this];
+    if (this._order !== other.order) throw new Error('Can not add polynomials: Different orders');
+    const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     if (short.isZero()) return long.clone();
-
     let newCoeffs = new Array(long.degree).fill(__0n);
     for (let i = 0; i < short.degree + 1; i++) {
       newCoeffs[i] = short.coeffs[i] + long.coeffs[i];
@@ -93,26 +91,21 @@ export class Polynomial {
   }
 
   mult = (other: Polynomial): Polynomial => {
-    if (this._order !== other.order) throw new Error(
-      'Could not multiply polynomials: different orders'
-    );
-
+    if (this._order !== other.order) throw new Error('Can not multiply polynomials: Different orders');
     if (this.isZero() || other.isZero()) return new Polynomial([], this.order);
-
-    let [long, short] = this.degree > other.degree ? [this, other] : [other, this];
+    const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     let newCoeffs = new Array(long.degree + short.degree + 1).fill(__0n);
     for (let i = 0; i < long.degree + 1; i++) {
-      let curr_i = long.coeffs[i];
       for (let j = 0; j < short.degree + 1; j++) {
-        newCoeffs[i + j] += curr_i * short.coeffs[j];
+        newCoeffs[i + j] += long.coeffs[i] * short.coeffs[j];
       }
     }
     return new Polynomial(newCoeffs, this._order);
   }
 
-  multScalar = (scalar: bigint): Polynomial => {
-    scalar = mod(scalar, this._order);
-    return new Polynomial(this._coeffs.map((coeff) => scalar * coeff), this._order);
+  multScalar = (scalar: bigint | number): Polynomial => {
+    const s = mod(BigInt(scalar), this._order);
+    return new Polynomial(this._coeffs.map((coeff) => s * coeff), this._order);
   }
 
   evaluate = (value: bigint | number): bigint => {

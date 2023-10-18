@@ -6,7 +6,8 @@ const polynomial = require('../src/polynomial');
 const elgamal = require('../src/elgamal');
 
 
-const __labels = Object.values(Systems);
+const __0n = BigInt(0);
+const __1n = BigInt(1);
 const __coeffs_and_degree = [
   [[], -Infinity],
   [[0], -Infinity],
@@ -24,15 +25,14 @@ const __coeffs_and_degree = [
   [[0, 1, 1], 2],
   [[1, 1, 1], 2],
 ];
-const __1n = BigInt(1);
+const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(label).order);
 
 
 describe('construction - coeffs smaller than order', () => {
-  it.each(cartesian([__coeffs_and_degree, __labels]))('%s %s', async (
-    [coeffs, degree], label
+  it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
+    [coeffs, degree], order
   ) => {
-    const ctx = elgamal.initCrypto(label);
-    const poly = new Polynomial(coeffs.map(BigInt), ctx.order);
+    const poly = new Polynomial(coeffs, order);
     expect(poly.coeffs).toEqual(trimZeroes(coeffs).map(BigInt));
     expect(poly.degree).toBe(degree);
     expect(poly.degree).toBe(
@@ -43,14 +43,10 @@ describe('construction - coeffs smaller than order', () => {
 
 
 describe('construction - coeffs greater than order', () => {
-  it.each(cartesian([__coeffs_and_degree, __labels]))('%s %s', async (
-    [coeffs, degree], label
+  it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
+    [coeffs, degree], order
   ) => {
-    const ctx = elgamal.initCrypto(label);
-    const poly = new Polynomial(
-      coeffs.map((num: number) => BigInt(num) + ctx.order),
-      ctx.order
-    );
+    const poly = new Polynomial(coeffs, order);
     expect(poly.coeffs).toEqual(trimZeroes(coeffs).map(BigInt));
     expect(poly.degree).toBe(degree);
     expect(poly.degree).toBe(
@@ -62,7 +58,7 @@ describe('construction - coeffs greater than order', () => {
 
 describe('construction errors', () => {
   test('order not greater than one', async () => {
-    expect(() => { new Polynomial([], BigInt(1)) }).toThrow(
+    expect(() => { new Polynomial([], 1) }).toThrow(
       'Polynomial order must be > 1'
     );
   });
@@ -70,17 +66,16 @@ describe('construction errors', () => {
 
 
 describe('equal', () => {
-  it.each(cartesian([__coeffs_and_degree, __labels]))('%s %s', async (
-    [coeffs, degree], label
+  it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
+    [coeffs, degree], order
   ) => {
-    const ctx = elgamal.initCrypto(label);
-    const poly1 = new Polynomial(coeffs.map(BigInt), ctx.order);
-    const poly2 = new Polynomial(coeffs.map(BigInt), ctx.order);
+    const poly1 = new Polynomial(coeffs, order);
+    const poly2 = new Polynomial(coeffs, order);
     const poly3 = new Polynomial(
-      coeffs.map((num: number) => BigInt(num) + ctx.order),
-      ctx.order
+      coeffs.map((num: number) => BigInt(num) + order),
+      order
     );
-    const poly4 = new Polynomial(coeffs.concat([0]).map(BigInt), ctx.order);
+    const poly4 = new Polynomial(coeffs.concat([0]), order);
     const poly5 = poly1.clone();
 
     expect(poly1.isEqual(poly1)).toBe(true);
@@ -93,16 +88,15 @@ describe('equal', () => {
 
 
 describe('non-equal', () => {
-  it.each(cartesian([__coeffs_and_degree, __labels]))('%s %s', async (
-    [coeffs, degree], label
+  it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
+    [coeffs, degree], order
   ) => {
-    const ctx = elgamal.initCrypto(label);
-    const poly1 = new Polynomial(coeffs.map(BigInt), ctx.order);
-    const poly2 = new Polynomial(coeffs.map(BigInt), ctx.order + __1n);
-    const poly3 = new Polynomial(coeffs.concat([1]).map(BigInt), ctx.order);
+    const poly1 = new Polynomial(coeffs, order);
+    const poly2 = new Polynomial(coeffs, order + __1n);
+    const poly3 = new Polynomial(coeffs.concat([1]), order);
     const poly4 = new Polynomial(
-      ([666].concat([...coeffs.slice(coeffs.length - 1)])).map(BigInt),
-      ctx.order
+      ([666].concat([...coeffs.slice(coeffs.length - 1)])),
+      order
     );
     const poly5 = poly4.clone();
     expect(poly3.isEqual(poly1)).toBe(false);
@@ -113,9 +107,20 @@ describe('non-equal', () => {
 });
 
 
+describe('zero polynomial', () => {
+  it.each(__big_primes)('order: %s', async (order) => {
+    const poly = Polynomial.zero({ order });
+    expect(poly.coeffs).toEqual([]);
+    expect(poly.degree).toBe(-Infinity);
+    expect(poly.order).toBe(order);
+    expect(poly.isZero()).toBe(true);
+  });
+});
+
+
 describe('random polynomial error', () => {
   test('non-positive degree', async () => {
-    await expect(Polynomial.random({ degree: -1, order: BigInt(2) })).rejects.toThrow(
+    await expect(Polynomial.random({ degree: -1, order: 2 })).rejects.toThrow(
       'Polynomial degree must be >= 0'
     );
   });
@@ -123,10 +128,9 @@ describe('random polynomial error', () => {
 
 
 describe('random polynomial', () => {
-  it.each(cartesian([[0, 1, 2, 3, 4, 5, 6, 7, 8], __labels]))('degre %s over %s', async (
-    degree, label
+  it.each(cartesian([[0, 1, 2, 3, 4, 5, 6, 7, 8], __big_primes]))('degree %s over %s', async (
+    degree, order
   ) => {
-    const order = elgamal.initCrypto(label).order;
     const poly = await Polynomial.random({ degree, order });
     expect(poly.isZero()).toBe(false);
     expect(poly.degree).toEqual(degree);

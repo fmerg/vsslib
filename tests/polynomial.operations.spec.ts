@@ -4,39 +4,26 @@ import { byteLen, randomInteger } from '../src/utils';
 import { cartesian, trimZeroes } from './helpers';
 const polynomial = require('../src/polynomial');
 const elgamal = require('../src/elgamal');
-const test_helpers = require('./helpers');
 
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
-const __labels = Object.values(Systems);
-const __small_orders = [2, 3, 4, 5, 6, 7].map(BigInt);
-const __big_primes = __labels.map((label) => elgamal.initCrypto(label).order);
-
-
-describe('zero polynomial', () => {
-  it.each(__big_primes)('order: %s', async (order) => {
-    const poly = Polynomial.zero({ order });
-    expect(poly.coeffs).toEqual([]);
-    expect(poly.degree).toBe(-Infinity);
-    expect(poly.order).toBe(order);
-    expect(poly.isZero()).toBe(true);
-  });
-});
+const __small_orders = [2, 3, 4, 5, 6, 7];
+const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(label).order);
 
 
 describe('addition errors', () => {
   test('different orders', async () => {
-    const poly1 = new Polynomial([], BigInt(2));
-    const poly2 = new Polynomial([], BigInt(3));
+    const poly1 = new Polynomial([], 2);
+    const poly2 = new Polynomial([], 3);
     expect(() => poly1.add(poly2)).toThrow(
-      'Could not add polynomials: different orders'
+      'Can not add polynomials: Different orders'
     );
   });
 });
 
 
-describe('addition - predefined polynomials with small order', () => {
+describe('addition - fixed polynomials small small order', () => {
   it.each(cartesian([
     [
       [[1, 2, 3, 4], [],                    [1, 2, 3, 4]],
@@ -50,9 +37,9 @@ describe('addition - predefined polynomials with small order', () => {
     ],
     __small_orders
   ]))('%s %s', async ([coeffs1, coeffs2, coeffs3], order) => {
-    const poly1 = new Polynomial(coeffs1.map(BigInt), order);
-    const poly2 = new Polynomial(coeffs2.map((num: number) => BigInt(num) + order), order);
-    const poly3 = new Polynomial(coeffs3.map(BigInt), order);
+    const poly1 = new Polynomial(coeffs1, order);
+    const poly2 = new Polynomial(coeffs2.map((num: number) => num + order), order);
+    const poly3 = new Polynomial(coeffs3, order);
     expect(poly3.isEqual(poly1.add(poly2))).toBe(true);
     expect(poly3.isEqual(poly2.add(poly1))).toBe(true);
   });
@@ -61,9 +48,7 @@ describe('addition - predefined polynomials with small order', () => {
 
 describe('addition - random polynomials with prime order', () => {
   it.each(cartesian([
-    [
-      [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9],
-    ],
+    [[0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]],
     __big_primes
   ]))('degrees: %s, order: %s', async (degrees, order) => {
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
@@ -82,16 +67,16 @@ describe('addition - random polynomials with prime order', () => {
 
 describe('multiplication errors', () => {
   test('different orders', async () => {
-    const poly1 = new Polynomial([], BigInt(2));
-    const poly2 = new Polynomial([], BigInt(3));
+    const poly1 = new Polynomial([], 2);
+    const poly2 = new Polynomial([], 3);
     expect(() => poly1.mult(poly2)).toThrow(
-      'Could not multiply polynomials: different orders'
+      'Can not multiply polynomials: Different orders'
     );
   });
 });
 
 
-describe('multiplication - predefined polynomials with small order', () => {
+describe('multiplication - fixed polynomials small small order', () => {
   it.each(cartesian([
     [
       [[1, 2, 3, 4], [],                    []],
@@ -105,9 +90,9 @@ describe('multiplication - predefined polynomials with small order', () => {
     ],
     __small_orders
   ]))('%s %s', async ([coeffs1, coeffs2, coeffs3], order) => {
-    const poly1 = new Polynomial(coeffs1.map(BigInt), order);
-    const poly2 = new Polynomial(coeffs2.map((num: number) => BigInt(num) + order), order);
-    const poly3 = new Polynomial(coeffs3.map(BigInt), order);
+    const poly1 = new Polynomial(coeffs1, order);
+    const poly2 = new Polynomial(coeffs2.map((num: number) => num + order), order);
+    const poly3 = new Polynomial(coeffs3, order);
     expect(poly3.isEqual(poly1.mult(poly2))).toBe(true);
     expect(poly3.isEqual(poly2.mult(poly1))).toBe(true);
   });
@@ -116,9 +101,7 @@ describe('multiplication - predefined polynomials with small order', () => {
 
 describe('multiplication - random polynomials with prime order', () => {
   it.each(cartesian([
-    [
-      [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9],
-    ],
+    [[0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]],
     __big_primes
   ]))('degrees: %s, order: %s', async (degrees, order) => {
     let [degree1, degree2] = degrees;
@@ -138,7 +121,7 @@ describe('multiplication - random polynomials with prime order', () => {
 });
 
 
-describe('scalar multiplication - predefined polynomials with small order', () => {
+describe('scalar multiplication - fixed polynomials small small order', () => {
   it.each(cartesian([
     [
       [],
@@ -150,16 +133,16 @@ describe('scalar multiplication - predefined polynomials with small order', () =
       [1, 2, 3, 4, 5, 6],
       [1, 2, 3, 4, 5, 6, 7],
     ],
-      [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     __small_orders,
   ]))('%s %s, %s', async (coeffs, scalar, order) => {
-    const poly1 = new Polynomial(coeffs.map(BigInt), order);
-    const poly2 = poly1.multScalar(BigInt(scalar));
+    const poly1 = new Polynomial(coeffs, order);
+    const poly2 = poly1.multScalar(scalar);
 
-    const poly3 = new Polynomial(coeffs.map((c: number) => BigInt(scalar * c)), order);
+    const poly3 = new Polynomial(coeffs.map((c: number) => scalar * c), order);
     expect(poly2.isEqual(poly3)).toBe(true);
 
-    const poly4 = new Polynomial([BigInt(scalar)], order);
+    const poly4 = new Polynomial([scalar], order);
     expect(poly2.isEqual(poly1.mult(poly4))).toBe(true);
   });
 });
@@ -183,7 +166,7 @@ describe('scalar multiplication - random polynomials with prime order', () => {
 });
 
 
-describe('evaluation - predefined polynomials with small order', () => {
+describe('evaluation - fixed polynomials small small order', () => {
   it.each(cartesian([
     [
       [],
@@ -195,19 +178,15 @@ describe('evaluation - predefined polynomials with small order', () => {
       [1, 2, 3, 4, 5, 6],
       [1, 2, 3, 4, 5, 6, 7],
     ],
-    [
-      0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
-    ],
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
     __small_orders,
   ]))('%s %s, %s', async (coeffs, value, order) => {
-    const poly = new Polynomial(coeffs.map(BigInt), order);
+    const poly = new Polynomial(coeffs, order);
     let acc = 0;
     for (const [i, c] of coeffs.entries()) {
       acc += c * value ** i;
     }
-    const expected = BigInt(acc) % order;
-    const result = poly.evaluate(BigInt(value));
-    expect(result).toEqual(expected);
+    expect(poly.evaluate(value)).toEqual(BigInt(acc % order));
   });
 });
 
@@ -223,8 +202,6 @@ describe('evaluation - random polynomials with prime order', () => {
     for (const [i, c] of poly.coeffs.entries()) {
       acc += c * value ** BigInt(i);
     }
-    const expected = BigInt(acc) % order;
-    const result = poly.evaluate(BigInt(value));
-    expect(result).toEqual(expected);
+    expect(poly.evaluate(value)).toEqual(acc % order);
   });
 });
