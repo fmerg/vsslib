@@ -94,7 +94,7 @@ describe('encryption - decryption with randomness failure', () => {
 
 
 describe('encryption - proof of encryption', () => {
-  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
     const secret = await ctx.randomScalar();
@@ -134,7 +134,7 @@ describe('encryption - proof of encryption failure', () => {
 
 
 describe('encryption - proof of decryptor', () => {
-  it.each(cartesian(__labels, __algorithms))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = elgamal.initCrypto(label);
 
     const secret = await ctx.randomScalar();
