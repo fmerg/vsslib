@@ -1,8 +1,8 @@
 import { Systems } from '../src/enums';
-import { Polynomial } from '../src/polynomial';
+import { Polynomial } from '../src/lagrange/base';
 import { byteLen, randomInteger } from '../src/utils';
-import { cartesian, trimZeroes } from './helpers';
-const polynomial = require('../src/polynomial');
+import { cartesian } from './helpers';
+const lagrange = require('../src/lagrange');
 const elgamal = require('../src/elgamal');
 
 
@@ -12,12 +12,19 @@ const __small_orders = [2, 3, 4, 5, 6, 7];
 const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(label).order);
 
 
-describe('addition errors', () => {
-  test('different orders', async () => {
+describe('errors', () => {
+  test('addition - different orders', async () => {
     const poly1 = new Polynomial([], 2);
     const poly2 = new Polynomial([], 3);
     expect(() => poly1.add(poly2)).toThrow(
-      'Can not add polynomials: Different orders'
+      'Cannot add polynomials: Different orders'
+    );
+  });
+  test('multiplication - different orders', async () => {
+    const poly1 = new Polynomial([], 2);
+    const poly2 = new Polynomial([], 3);
+    expect(() => poly1.mult(poly2)).toThrow(
+      'Cannot multiply polynomials: Different orders'
     );
   });
 });
@@ -47,10 +54,12 @@ describe('addition - fixed polynomials small small order', () => {
 
 
 describe('addition - random polynomials with prime order', () => {
-  it.each(cartesian([
-    [[0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]],
-    __big_primes
-  ]))('degrees: %s, order: %s', async (degrees, order) => {
+  const degree_pairs = [
+    [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]
+  ];
+  it.each(cartesian([degree_pairs, __big_primes]))('degrees: %s, order: %s', async (
+    degrees, order
+  ) => {
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await Polynomial.random({ degree: degree1, order });
     const poly2 = await Polynomial.random({ degree: degree2, order });
@@ -60,18 +69,6 @@ describe('addition - random polynomials with prime order', () => {
     );
     expect(poly3.isEqual(poly1.add(poly2))).toBe(true);
     expect(poly3.isEqual(poly2.add(poly1))).toBe(true);
-  });
-});
-
-
-
-describe('multiplication errors', () => {
-  test('different orders', async () => {
-    const poly1 = new Polynomial([], 2);
-    const poly2 = new Polynomial([], 3);
-    expect(() => poly1.mult(poly2)).toThrow(
-      'Can not multiply polynomials: Different orders'
-    );
   });
 });
 
@@ -100,14 +97,15 @@ describe('multiplication - fixed polynomials small small order', () => {
 
 
 describe('multiplication - random polynomials with prime order', () => {
-  it.each(cartesian([
-    [[0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]],
-    __big_primes
-  ]))('degrees: %s, order: %s', async (degrees, order) => {
+  const degree_pairs = [
+    [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]
+  ];
+  it.each(cartesian([degree_pairs, __big_primes]))('degrees: %s, order: %s', async (
+    degrees, order
+  ) => {
     let [degree1, degree2] = degrees;
     const poly1 = await Polynomial.random({ degree: degree1, order });
     const poly2 = await Polynomial.random({ degree: degree2, order });
-
     let newCoeffs = new Array(degree1 + degree2 + 1).fill(__0n);
     for (let i = 0; i <= degree1; i++) {
       for (let j = 0; j <= degree2; j++) {
@@ -149,10 +147,10 @@ describe('scalar multiplication - fixed polynomials small small order', () => {
 
 
 describe('scalar multiplication - random polynomials with prime order', () => {
-  it.each(cartesian([
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    __big_primes
-  ]))('degrees: %s, order: %s', async (degree, order) => {
+  const degrees = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  it.each(cartesian([degrees, __big_primes]))('degrees: %s, order: %s', async (
+    degree, order
+  ) => {
     const scalar = await randomInteger(byteLen(order));
     const poly1 = await Polynomial.random({ degree, order });
     const poly2 = poly1.multScalar(scalar);
@@ -192,10 +190,10 @@ describe('evaluation - fixed polynomials small small order', () => {
 
 
 describe('evaluation - random polynomials with prime order', () => {
-  it.each(cartesian([
-    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9],
-    __big_primes
-  ]))('degrees: %s, order: %s', async (degree, order) => {
+  const degrees = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+  it.each(cartesian([degrees, __big_primes]))('degrees: %s, order: %s', async (
+    degree, order
+  ) => {
     const value = await randomInteger(byteLen(order));
     const poly = await Polynomial.random({ degree, order });
     let acc = __0n;

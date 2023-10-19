@@ -1,9 +1,12 @@
-import { Polynomial } from './polynomial';
-import { mod, modInv } from './utils';
+import { Polynomial } from './base';
+import { mod, modInv } from '../utils';
+
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 
+
+export type XYPoint = [bigint | number, bigint | number];
 
 export class Lagrange extends Polynomial {
   _xs: bigint[];
@@ -72,11 +75,4 @@ export class Lagrange extends Polynomial {
     }
     return mod(b * modInv(c, order), order);
   }
-}
-
-export type XYPoint = [bigint | number, bigint | number];
-
-export const interpolate = (points: XYPoint[], opts: { order: bigint }): Lagrange => {
-  const castPoints: [bigint, bigint][] = points.map(([x, y]) => [BigInt(x), BigInt(y)]);
-  return new Lagrange(castPoints, BigInt(opts.order));
 }

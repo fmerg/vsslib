@@ -4,8 +4,7 @@ import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
 import { DlogPair, DDHTuple } from '../src/elgamal/crypto';
-import { Polynomial } from '../src/polynomial';
-import { XYPoint } from '../src/lagrange';
+import { XYPoint, Polynomial } from '../src/lagrange';
 
 const utils = require('../src/utils');
 
@@ -13,6 +12,7 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
+/** Generates the cartesian product of the provided arrays */
 export const cartesian = (arrays: any[]): any[] => {
   const xs = arrays[0];
   const ys = arrays.length > 2 ? cartesian(arrays.slice(1)) : arrays[1].map((a: any[]) => [a]);

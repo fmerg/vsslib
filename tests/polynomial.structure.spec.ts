@@ -1,10 +1,9 @@
 import { Systems } from '../src/enums';
-import { Polynomial } from '../src/polynomial';
+import { Polynomial } from '../src/lagrange';
 import { cartesian, trimZeroes } from './helpers';
 
-const polynomial = require('../src/polynomial');
+const lagrange = require('../src/lagrange');
 const elgamal = require('../src/elgamal');
-
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -28,7 +27,7 @@ const __coeffs_and_degree = [
 const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(label).order);
 
 
-describe('construction - coeffs smaller than order', () => {
+describe('construction - coefficients smaller than order', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
@@ -42,7 +41,7 @@ describe('construction - coeffs smaller than order', () => {
 });
 
 
-describe('construction - coeffs greater than order', () => {
+describe('construction - coefficients greater than order', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
@@ -65,7 +64,7 @@ describe('construction errors', () => {
 });
 
 
-describe('equal', () => {
+describe('equal polynomials', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
@@ -87,7 +86,7 @@ describe('equal', () => {
 });
 
 
-describe('non-equal', () => {
+describe('non-equal polynomials', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {

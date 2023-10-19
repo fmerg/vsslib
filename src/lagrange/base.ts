@@ -77,7 +77,7 @@ export class Polynomial {
   }
 
   add = (other: Polynomial): Polynomial => {
-    if (this._order !== other.order) throw new Error('Can not add polynomials: Different orders');
+    if (this._order !== other.order) throw new Error('Cannot add polynomials: Different orders');
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     if (short.isZero()) return long.clone();
     let newCoeffs = new Array(long.degree).fill(__0n);
@@ -91,7 +91,7 @@ export class Polynomial {
   }
 
   mult = (other: Polynomial): Polynomial => {
-    if (this._order !== other.order) throw new Error('Can not multiply polynomials: Different orders');
+    if (this._order !== other.order) throw new Error('Cannot multiply polynomials: Different orders');
     if (this.isZero() || other.isZero()) return new Polynomial([], this.order);
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     let newCoeffs = new Array(long.degree + short.degree + 1).fill(__0n);
