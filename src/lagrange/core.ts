@@ -43,7 +43,7 @@ export class Lagrange extends Polynomial {
       try {
         wj = modInv(w, order);
       } catch (err: any) {
-        if (err.message == 'Non-positive inputs') throw new Error(
+        if (err.message == 'No inverse exists for provided modulo') throw new Error(
           'Not all provided x\'s are distinct modulo order'
         );
         else throw err;
