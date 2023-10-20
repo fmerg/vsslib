@@ -1,11 +1,125 @@
+import { ExtPointType, CurveFn as NobleCurve } from '@noble/curves/abstract/edwards';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
 import { secp256k1 } from '@noble/curves/secp256k1';
-
 import { Label } from '../../../types';
-import { Group, Point } from '../../abstract';
 import { Elliptic } from '../../../enums';
+import { Point, Group } from '../../abstract';
+import { byteLen, randomInteger } from '../../../utils';
+
+
+const __0n = BigInt(0);
+
+
+interface NoblePoint extends ExtPointType {
+  toRawBytes?: Function;
+  toHex?: Function;
+};
+
+
+class EcPoint implements Point {
+  _wrapped: NoblePoint;
+
+  constructor(wrapped: NoblePoint) {
+    this._wrapped = wrapped;
+  }
+
+  public get wrapped(): NoblePoint {
+    return this._wrapped;
+  }
+
+  async isEqual<Q extends Point>(other: Q): Promise<boolean> {
+    return (other instanceof EcPoint) && (this._wrapped.equals(other.wrapped));
+  }
+
+  toBytes = (): Uint8Array => {
+    return this._wrapped.toRawBytes!();
+  }
+
+  toHex = (): string => {
+    return this._wrapped.toHex!();
+  }
+}
+
+
+export class EcGroup extends Group<EcPoint> {
+  _base: NoblePoint;
+  _zero: NoblePoint;
+  _curve: NobleCurve;
+
+  constructor(label: Label, curve: NobleCurve) {
+    super(label, curve.CURVE.Fp.ORDER, curve.CURVE.n);
+    this._base = curve.ExtendedPoint.BASE;
+    this._zero = curve.ExtendedPoint.ZERO;
+    this._curve = curve;
+  }
+
+  public get generator(): EcPoint {
+    return new EcPoint(this._base);
+  }
+
+  public get neutral(): EcPoint {
+    return new EcPoint(this._zero);
+  }
+
+  public get curve(): NobleCurve {
+    return this._curve;
+  }
+
+  async isEqual<Q extends Point>(other: Group<Q>): Promise<boolean> {
+    return (other instanceof EcGroup) && (this._curve == other.curve);
+  }
+
+  assertEqual = async (lhs: EcPoint, rhs: EcPoint): Promise<boolean> => {
+    return await lhs.wrapped.equals(rhs.wrapped);
+  }
+
+  assertValid = async (point: EcPoint): Promise<boolean> => {
+    // TODO: Consider using wrapped objects directly to avoid function calls
+    if (await this.assertEqual(point, this.neutral)) return true;
+    // TODO: Refine error handling
+    try { point.wrapped.assertValidity(); } catch {
+      throw new Error('Point not on curve');
+    }
+    return true;
+  }
+
+  randomScalar = async (): Promise<bigint> => {
+    // TODO: Refine
+    const size = byteLen(this._order);
+    return (await randomInteger(size)) % this._order;
+  }
+
+  randomPoint = async (): Promise<EcPoint> => {
+    // TODO: Consider avoiding call to randomScalar
+    return new EcPoint(this._base.multiply(await this.randomScalar()));
+  }
+
+  generatePoint = async (scalar: bigint): Promise<EcPoint> => {
+    return new EcPoint(scalar !== __0n ? this._base.multiply(scalar) : this._zero);
+  }
+
+  operate = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {
+    return new EcPoint(scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero);
+  }
+
+  combine = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => {
+    return new EcPoint(lhs.wrapped.add(rhs.wrapped));
+  }
+
+  invert = async (point: EcPoint): Promise<EcPoint> => {
+    return new EcPoint(point.wrapped.negate());
+  }
+
+  unpack = (bytes: Uint8Array): EcPoint => {
+    return new EcPoint(this._curve.ExtendedPoint.fromHex(bytes));
+  }
+
+  unhexify = (hexnum: string): EcPoint => {
+    return new EcPoint(this._curve.ExtendedPoint.fromHex(hexnum));
+  }
+}
 
 
 const __curves = {
@@ -20,159 +134,6 @@ const __curves = {
   // 'p521': p521,
   // 'bn254': bn254,
 };
-
-
-// Models the point structure provided by @noble/curves
-type NoblePoint = {
-  equals: Function
-  multiply: Function
-  add: Function
-  negate: Function
-  assertValidity: Function
-  toRawBytes: Function
-  toHex: Function
-}
-
-
-// Models the curve structure provided by @noble/curves
-type NobleCurve = {
-  CURVE: {
-    n: bigint,
-    Fp: {
-      ORDER: bigint
-    }
-  },
-  ExtendedPoint: {
-    BASE: NoblePoint,
-    ZERO: NoblePoint,
-    fromHex: Function,
-  },
-}
-
-
-class EcGroup extends Group {
-  _curve: NobleCurve;
-  _base:  NoblePoint;
-  _zero:  NoblePoint;
-
-  constructor(label: Label, curve: any) {
-    super(label, curve.CURVE.Fp.ORDER, curve.CURVE.n);
-
-    this._curve = curve;
-    this._base  = curve.ExtendedPoint.BASE;
-    this._zero  = curve.ExtendedPoint.ZERO;
-  }
-
-  public get curve(): NobleCurve {
-    return this._curve;
-  }
-
-  public get generator(): Point {
-    return new EcPoint(this, this._base);
-  }
-
-  public get neutral(): Point {
-    return new EcPoint(this, this._zero);
-  }
-
-  isEqual = async (other: Group): Promise<Boolean> => {
-    return (
-      (other instanceof EcGroup) && (this._curve == other.curve)
-    );
-  }
-
-  operate = async (s: bigint, p: Point): Promise<Point> => {
-    return new EcPoint(
-      this,
-      s != BigInt(0) ?
-        (p as EcPoint).wrapped.multiply(s) :
-        this._zero
-    );
-  }
-
-  combine = async (p: Point, q: Point): Promise<Point> => {
-    return new EcPoint(this, (p as EcPoint).wrapped.add((q as EcPoint).wrapped));
-  }
-
-  invert = async (p: Point): Promise<Point> => {
-    return new EcPoint(this, (p as EcPoint).wrapped.negate());
-  }
-
-  randomPoint = async (): Promise<Point> => {
-    const r = await this.randomScalar();;
-    return new EcPoint(this, this._base.multiply(r));
-  }
-
-  generatePoint = async (s: bigint): Promise<Point> => {
-    return new EcPoint(this, s != BigInt(0) ? this._base.multiply(s) : this._zero);
-  }
-
-  assertValid = async (p: Point): Promise<Boolean> => {
-    if (!(p instanceof EcPoint)) {
-      throw new Error('Point not of type `EcPoint`');
-    }
-
-    if (!(await p.group.isEqual(this))) {
-      throw new Error('Point not in group');
-    }
-
-    if (await p.isEqual(this.neutral)) return true;
-
-    try {
-      p.wrapped.assertValidity();
-    } catch {
-      throw new Error('Point not on curve');
-    }
-
-    return true;
-  }
-
-  assertEqual = async (p: Point, q: Point): Promise<Boolean> => {
-    if (!(p instanceof EcPoint)) {
-      throw new Error('Point not of type `EcPoint`');
-    }
-    if (!(q instanceof EcPoint)) {
-      throw new Error('Point not of type `EcPoint`');
-    }
-
-    return (
-      await p.group.isEqual(this) &&
-      await q.group.isEqual(this) &&
-      await p.wrapped.equals(q.wrapped)
-    );
-  }
-
-  pack = (p: Point): Uint8Array => {
-    return (p as EcPoint).wrapped.toRawBytes();
-  }
-
-  unpack = (pBytes: Uint8Array): Point => {
-    return new EcPoint(this, this._curve.ExtendedPoint.fromHex(pBytes));
-  }
-
-  hexify = (p: Point): string => {
-    return (p as EcPoint).wrapped.toHex();
-  }
-
-  unhexify = (pHex: string): Point => {
-    return new EcPoint(this, this._curve.ExtendedPoint.fromHex(pHex));
-  }
-}
-
-
-class EcPoint extends Point {
-  _wrapped: NoblePoint;
-
-  constructor(group: EcGroup, wrapped: NoblePoint) {
-    super(group);
-    this._wrapped = wrapped;
-  }
-
-  public get wrapped(): NoblePoint {
-    return this._wrapped;
-  }
-}
-
 
 export default function(label: Label): EcGroup {
   let group: EcGroup;

@@ -1,5 +1,5 @@
+import { Ctx } from './elgamal';
 import { Point } from './elgamal/abstract';
-import { CryptoSystem } from './elgamal/crypto';
 import {
   SerializedKey,
   SerializedPublic,
@@ -10,17 +10,17 @@ const elgamal = require('./elgamal');
 
 
 export class Key {
-  _crypto: CryptoSystem;
+  _ctx: Ctx;
   _secret: bigint;
 
-  constructor(ctx: CryptoSystem, scalar: bigint) {
-    this._crypto = ctx;
+  constructor(ctx: Ctx, scalar: bigint) {
+    this._ctx = ctx;
     // TODO: scalar validation according to cryptosystem
     this._secret = scalar;
   }
 
-  public get ctx(): CryptoSystem {
-    return this._crypto;
+  public get ctx(): Ctx {
+    return this._ctx;
   }
 
   public get secret(): bigint {
@@ -28,12 +28,12 @@ export class Key {
   }
 
   public get point(): Promise<Point> {
-    return this._crypto.generatePoint(this._secret);
+    return this._ctx.generatePoint(this._secret);
   }
 
-  isEqual = async (other: Key): Promise<Boolean> => {
+  isEqual = async (other: Key): Promise<boolean> => {
     return (
-      (await this._crypto.isEqual(other.ctx)) &&
+      (await this._ctx.isEqual(other.ctx)) &&
       (this._secret == other.secret)
     );
   }
@@ -56,39 +56,39 @@ export class Key {
   }
 
   extractPublic = async (): Promise<Public> => {
-    const point = await this._crypto.generatePoint(this._secret);
+    const point = await this._ctx.generatePoint(this._secret);
 
-    return new Public(this._crypto, point);
+    return new Public(this._ctx, point);
   }
 
   diffieHellman = async (pub: Public): Promise<Point> => {
-    await this._crypto.assertValid(pub.point);
+    await this._ctx.assertValid(pub.point);
 
-    return this._crypto.operate(this._secret, pub.point);
+    return this._ctx.operate(this._secret, pub.point);
   }
 
   decryptPoint = async (ciphertext: Ciphertext): Promise<Point> => {
     const { alpha, beta } = ciphertext;
-    const d = await this._crypto.operate(this._secret, beta);  // b ^ x = (g ^ r) ^ x
-    const dInv = await this._crypto.invert(d)
+    const d = await this._ctx.operate(this._secret, beta);  // b ^ x = (g ^ r) ^ x
+    const dInv = await this._ctx.invert(d)
 
-    return await this._crypto.combine(alpha, dInv);
+    return await this._ctx.combine(alpha, dInv);
   }
 
 }
 
 
 export class Public {
-  _crypto: CryptoSystem;
+  _ctx: Ctx;
   _point: Point;
 
-  constructor(ctx: CryptoSystem, point: Point) {
-    this._crypto = ctx;
+  constructor(ctx: Ctx, point: Point) {
+    this._ctx = ctx;
     this._point = point;
   }
 
-  public get ctx(): CryptoSystem {
-    return this._crypto;
+  public get ctx(): Ctx {
+    return this._ctx;
   }
 
   public get point(): Point {
@@ -96,7 +96,7 @@ export class Public {
   }
 
   serialize = async (): Promise<SerializedPublic> => {
-    const value = this._crypto.hexify(this._point);
+    const value = this._point.toHex();
 
     return { value };
   }
@@ -108,18 +108,18 @@ export class Public {
     return new Public(ctx, ctx.unhexify(value));
   }
 
-  isEqual = async (other: Public): Promise<Boolean> => {
+  isEqual = async (other: Public): Promise<boolean> => {
     return (
-      (await this._crypto.isEqual(other.ctx)) &&
+      (await this._ctx.isEqual(other.ctx)) &&
       (await this._point.isEqual(other.point))
     );
   }
 
   encryptPoint = async (msgPoint: Point): Promise<[Ciphertext, bigint]> => {
-    const r = await this._crypto.randomScalar();                          // r
-    const d = await this._crypto.operate(r, this._point);                // y ^ r
-    const alpha = await this._crypto.combine(d, msgPoint);          // d * m
-    const beta  = await this._crypto.operate(r, this._crypto.generator); // g ^ r
+    const r = await this._ctx.randomScalar();                          // r
+    const d = await this._ctx.operate(r, this._point);                // y ^ r
+    const alpha = await this._ctx.combine(d, msgPoint);          // d * m
+    const beta  = await this._ctx.operate(r, this._ctx.generator); // g ^ r
     return [{ alpha, beta }, r];
   }
 }

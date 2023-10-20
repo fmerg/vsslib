@@ -104,7 +104,7 @@ Verify the proof against the `(u, v)` pair as follows:
 
 
 ```js
-const valid = await ctx.verifyDlog({ u, v }, proof);   // Boolean
+const valid = await ctx.verifyDlog({ u, v }, proof);   // boolean
 ```
 
 ### Multiple AND Dlog proof
