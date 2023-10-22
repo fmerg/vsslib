@@ -1,4 +1,4 @@
-import { CryptoSystem } from '../src/elgamal/crypto';
+import { CryptoSystem } from '../src/elgamal/core';
 import { Point } from '../src/elgamal/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { cartesian } from './helpers';

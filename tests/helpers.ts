@@ -1,9 +1,9 @@
-import { CryptoSystem } from '../src/elgamal/crypto';
+import { CryptoSystem } from '../src/elgamal/core';
 import { Point, Group } from '../src/elgamal/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
-import { DlogPair, DDHTuple } from '../src/elgamal/crypto';
+import { DlogPair, DDHTuple } from '../src/elgamal/core';
 import { XYPoint, Polynomial } from '../src/lagrange';
 
 const utils = require('../src/utils');

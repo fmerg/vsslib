@@ -2,7 +2,7 @@ import { Label } from '../types';
 import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
 import { Group, Point } from './abstract';
-import { leInt2Buff, leBuff2Int } from '../utils';
+import { leInt2Buff, leBuff2Int, mod } from '../utils';
 
 const utils = require('../utils');
 
@@ -59,15 +59,16 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
 
 
   constructor(group: G) {
+    const { label, modulus, order, generator, neutral } = group;
     this._group = group;
-    this._label = group.label;
-    this._modulus = group.modulus;
-    this._order = group.order;
-    this._generator = group.generator;
-    this._neutral = group.neutral;
-    this._modBytes = leInt2Buff(this._modulus);
-    this._ordBytes = leInt2Buff(this._order);
-    this._genBytes = this._generator.toBytes();
+    this._label = label;
+    this._modulus = modulus;
+    this._order = order;
+    this._generator = generator;
+    this._neutral = neutral;
+    this._modBytes = leInt2Buff(modulus);
+    this._ordBytes = leInt2Buff(order);
+    this._genBytes = generator.toBytes();
   }
 
   public get group(): Group<P> {
@@ -135,14 +136,13 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
   }
 
   leBuff2Scalar = (buff: Uint8Array): bigint => {
-    // TODO: Apply mod function
-    return (leBuff2Int(buff) as bigint) % this._order;
+    return mod(leBuff2Int(buff), this._order);
   }
 
   fiatShamir = async (points: Point[], scalars: bigint[], opts?: { algorithm?: Algorithm }): Promise<bigint> => {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-
-    const fixedBuff = [...this._modBytes, ...this._ordBytes, ...this._genBytes];
+    const { _modBytes, _ordBytes, _genBytes } = this;
+    const fixedBuff = [..._modBytes, ..._ordBytes, ..._genBytes];
     const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
     const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
 
@@ -154,12 +154,13 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
 
   proveEqDlog = async (z: bigint, pairs: DlogPair<P>[], opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> => {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const { _group, _order } = this;
 
-    const r = await this._group.randomScalar();
+    const r = await _group.randomScalar();
 
     const commitments = [];
     for (const { u, v } of pairs) {
-      commitments.push(await this._group.operate(r, u));
+      commitments.push(await _group.operate(r, u));
     }
 
     const c = await this.fiatShamir(
@@ -171,8 +172,7 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
       { algorithm }
     );
 
-    // TODO: Apply mod function
-    const response = (r + c * z) % this._order;
+    const response = mod(r + c * z, _order);
 
     return { commitments, response, algorithm };
   }
@@ -183,6 +183,8 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
     if (pairs.length !== commitments.length) {
       throw new Error('TODO');
     }
+
+    const { _group } = this;
 
     const c = await this.fiatShamir(
       [
@@ -195,9 +197,9 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
 
     let flag = true;
     for (const [i, { u, v }] of pairs.entries()) {
-      const lhs = await this._group.operate(response, u);
-      const rhs = await this._group.combine(
-        commitments[i], await this._group.operate(c, v)
+      const lhs = await _group.operate(response, u);
+      const rhs = await _group.combine(
+        commitments[i], await _group.operate(c, v)
       );
       flag &&= await lhs.isEqual(rhs);
     }
@@ -227,34 +229,28 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
   }
 
   encrypt = async (message: P, pub: P): Promise<{ ciphertext: Ciphertext<P>, randomness: bigint, decryptor: P }> => {
-    const randomness = await this._group.randomScalar();
-    const k = await this._group.operate(randomness, pub);
+    const { _group, _generator } = this;
 
-    const alpha = await this._group.combine(k, message);
-    const beta = await this._group.operate(randomness, this._generator);
+    const randomness = await _group.randomScalar();
+    const decryptor = await _group.operate(randomness, pub);
 
-    return { ciphertext: { alpha, beta }, randomness, decryptor: k };
+    const alpha = await _group.combine(decryptor, message);
+    const beta = await _group.operate(randomness, _generator);
+
+    return { ciphertext: { alpha, beta }, randomness, decryptor };
   }
 
   decrypt = async (ciphertext: Ciphertext<P>, opts: DecryptionOptions<P>): Promise<P> => {
+    const { _group } = this;
+
     const { alpha, beta } = ciphertext;
-    let decryptor;
+    let { secret, decryptor, randomness, pub } = opts;
 
-    if (opts.secret) {
-      decryptor = await this._group.operate(opts.secret, beta);
-    }
-
-    if (opts.randomness) {
-      decryptor = await this._group.operate(opts.randomness, opts.pub);
-    }
-
-    if (opts.decryptor) {
-      decryptor = opts.decryptor;
-    }
-
-    // TODO: Avoid casting
-    const decryptorInverse = await this._group.invert(decryptor as P);
-    return this._group.combine(alpha, decryptorInverse);
+    decryptor = decryptor || (
+      secret ? await _group.operate(secret, beta) : await _group.operate(randomness!, pub!)
+    )
+    const dInv = await _group.invert(decryptor);
+    return _group.combine(alpha, dInv);
   }
 
   proveEncryption = async (ciphertext: Ciphertext<P>, randomness: bigint, opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> => {
@@ -267,7 +263,9 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
   }
 
   proveDecryptor = async (ciphertext: Ciphertext<P>, secret: bigint, decryptor: P, opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> => {
-    const pub = await this._group.operate(secret, this._generator);
+    const { _group, _generator } = this;
+
+    const pub = await _group.operate(secret, _generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
 
     return this.proveDDH(secret, { u: ciphertext.beta, v: pub, w: decryptor }, { algorithm });

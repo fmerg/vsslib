@@ -44,7 +44,7 @@ describe('group equality', () => {
 describe('neutral element', () => {
   it.each(__labels)('over %s', async (label) => {
     const group = backend.initGroup(label);
-    await group.assertValid(group.generator);
+    await group.assertValid(group.neutral);
 
     const neutral = await group.generatePoint(__0n);
     expect(await neutral.isEqual(group.neutral)).toBe(true);

@@ -1,5 +1,5 @@
-import { Ctx } from './elgamal';
-import { Point } from './elgamal/abstract';
+import { Group, Point } from './elgamal/abstract';
+import { CryptoSystem } from './elgamal/core';
 import {
   SerializedKey,
   SerializedPublic,
@@ -8,6 +8,8 @@ import {
 
 const elgamal = require('./elgamal');
 
+
+export type Ctx = CryptoSystem<Point, Group<Point>>;
 
 export class Key {
   _ctx: Ctx;

@@ -76,11 +76,10 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   assertValid = async (point: EcPoint): Promise<boolean> => {
-    // TODO: Consider using wrapped objects directly to avoid function calls
-    if (await this.assertEqual(point, this.neutral)) return true;
-    // TODO: Refine error handling
-    try { point.wrapped.assertValidity(); } catch {
-      throw new Error('Point not on curve');
+    if (await point.wrapped.equals(this._zero)) return true;
+    try { point.wrapped.assertValidity(); } catch (err: any) {
+      if (err.message.startsWith('bad point: ')) throw new Error('Point not on curve');
+      throw err;
     }
     return true;
   }
