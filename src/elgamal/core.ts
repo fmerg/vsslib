@@ -45,6 +45,10 @@ export type DecryptionOptions<P>= {
   pub: P,
 }
 
+const extractAlgorithm = (opts: any): Algorithm => opts ?
+  (opts.algorithm || Algorithms.DEFAULT) :
+  Algorithms.DEFAULT;
+
 
 export class CryptoSystem<P extends Point, G extends Group<P>> {
   _group: Group<P>;
@@ -140,20 +144,18 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
   }
 
   fiatShamir = async (points: Point[], scalars: bigint[], opts?: { algorithm?: Algorithm }): Promise<bigint> => {
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = extractAlgorithm(opts);
     const { _modBytes, _ordBytes, _genBytes } = this;
     const fixedBuff = [..._modBytes, ..._ordBytes, ..._genBytes];
     const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
     const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
-
-    const digest = await utils.hash(new Uint8Array([...fixedBuff, ...pointsBuff, ...scalarsBuff]), {
-      algorithm
-    });
+    const bytes = new Uint8Array([...fixedBuff, ...pointsBuff, ...scalarsBuff]);
+    const digest = await utils.hash(bytes, { algorithm });
     return this.leBuff2Scalar(digest);
   }
 
   proveEqDlog = async (z: bigint, pairs: DlogPair<P>[], opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> => {
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = extractAlgorithm(opts);
     const { _group, _order } = this;
 
     const r = await _group.randomScalar();
@@ -207,7 +209,7 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
   }
 
   proveDlog = async (z: bigint, u: P, v: P, opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> => {
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = extractAlgorithm(opts);
     return this.proveEqDlog(z, [{ u, v }], { algorithm });
   }
 
@@ -217,7 +219,7 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
 
   proveDDH = async (z: bigint, ddh: DDHTuple<P>, opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> => {
     const { u, v, w } = ddh;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = extractAlgorithm(opts);
 
     return this.proveEqDlog(z, [{ u: this._generator, v }, { u, v: w }], { algorithm });
   }
@@ -254,7 +256,7 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
   }
 
   proveEncryption = async (ciphertext: Ciphertext<P>, randomness: bigint, opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> => {
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = extractAlgorithm(opts);
     return this.proveDlog(randomness, this._generator,  ciphertext.beta, { algorithm });
   }
 
@@ -266,7 +268,7 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
     const { _group, _generator } = this;
 
     const pub = await _group.operate(secret, _generator);
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = extractAlgorithm(opts);
 
     return this.proveDDH(secret, { u: ciphertext.beta, v: pub, w: decryptor }, { algorithm });
   }
