@@ -13,7 +13,7 @@ export const byteLen = (num: BigInt | bigint): number => {
 }
 
 
-export const leBuff2Int = (buff: Uint8Array): BigInt => {
+export const leBuff2Int = (buff: Uint8Array): bigint => {
   let num = BigInt(0);
   let i = 0;
   const view = new DataView(buff.buffer, buff.byteOffset, buff.byteLength);

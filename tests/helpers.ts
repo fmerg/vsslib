@@ -1,9 +1,9 @@
-import { CryptoSystem } from '../src/elgamal/crypto';
-import { Point } from '../src/elgamal/abstract';
+import { CryptoSystem } from '../src/elgamal/core';
+import { Point, Group } from '../src/elgamal/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
-import { DlogPair, DDHTuple } from '../src/elgamal/crypto';
+import { DlogPair, DDHTuple } from '../src/elgamal/core';
 import { XYPoint, Polynomial } from '../src/lagrange';
 
 const utils = require('../src/utils');
@@ -27,12 +27,12 @@ export const cartesian = (arrays: any[]): any[] => {
 
 
 /** Reproduces externally the fiat-shamir computation */
-export const computeFiatShamir = async (
-  ctx: CryptoSystem,
+export async function computeFiatShamir<P extends Point>(
+  ctx: CryptoSystem<P, Group<P>>,
   points: Point[],
   scalars: bigint[],
   algorithm: Algorithm | undefined,
-): Promise<bigint> => {
+): Promise<bigint> {
   const fixedBuff = [...leInt2Buff(ctx.modulus), ...leInt2Buff(ctx.order), ...ctx.generator.toBytes()];
   const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
   const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
@@ -45,7 +45,11 @@ export const computeFiatShamir = async (
 
 
 /** Creates dlog pairs with uniform logarithm */
-export const createDlogPairs = async (ctx: CryptoSystem, z: bigint, nrPairs: number): Promise<DlogPair[]> => {
+export async function createDlogPairs<P extends Point>(
+  ctx: CryptoSystem<P, Group<P>>,
+  z: bigint,
+  nrPairs: number
+): Promise<DlogPair<P>[]> {
   const pairs = [];
   for (let i = 0; i < nrPairs; i++) {
     const u = await ctx.randomPoint();
@@ -57,7 +61,10 @@ export const createDlogPairs = async (ctx: CryptoSystem, z: bigint, nrPairs: num
 
 
 /** Create DDH-tuples */
-export const createDDH = async (ctx: CryptoSystem, z?: bigint): Promise<{ z: bigint, ddh: DDHTuple }> => {
+export async function createDDH<P extends Point>(
+  ctx: CryptoSystem<P, Group<P>>,
+  z?: bigint
+): Promise<{ z: bigint, ddh: DDHTuple<P> }> {
   z = z || await ctx.randomScalar();
 
   const u = await ctx.randomPoint();
