@@ -1,5 +1,6 @@
 import { Systems } from '../src/enums';
 import { Polynomial } from '../src/lagrange/base';
+import { Messages } from '../src/lagrange/enums';
 import { byteLen, randomInteger } from '../src/utils';
 import { cartesian } from './helpers';
 const lagrange = require('../src/lagrange');
@@ -17,14 +18,14 @@ describe('errors', () => {
     const poly1 = new Polynomial([], 2);
     const poly2 = new Polynomial([], 3);
     expect(() => poly1.add(poly2)).toThrow(
-      'Cannot add polynomials: Different orders'
+      Messages.DIFFERENT_ORDERS_CANNOT_ADD
     );
   });
   test('multiplication - different orders', async () => {
     const poly1 = new Polynomial([], 2);
     const poly2 = new Polynomial([], 3);
     expect(() => poly1.mult(poly2)).toThrow(
-      'Cannot multiply polynomials: Different orders'
+      Messages.DIFFERENT_ORDERS_CANNOT_MULTIPLY
     );
   });
 });

@@ -1,16 +1,17 @@
+import { Messages } from '../src/utils/enums';
 import { cartesian } from './helpers';
 const utils = require('../src/utils');
 
 
 describe('errors', () => {
   test('mod - Modulus <= 2', async () => {
-    expect(() => utils.mod(1, 0)).toThrow('Modulus must be > 2');
-    expect(() => utils.mod(1, 1)).toThrow('Modulus must be > 2');
+    expect(() => utils.mod(1, 0)).toThrow(Messages.MODULUS_MUST_BE_GT_TWO);
+    expect(() => utils.mod(1, 1)).toThrow(Messages.MODULUS_MUST_BE_GT_TWO);
   });
   test('gcd - Non-positive inputs', async () => {
-    expect(() => utils.gcd(0, 1)).toThrow('Non-positive inputs');
-    expect(() => utils.gcd(1, 0)).toThrow('Non-positive inputs');
-    expect(() => utils.gcd(0, 0)).toThrow('Non-positive inputs');
+    expect(() => utils.gcd(0, 1)).toThrow(Messages.NON_POSITIVE_INPUTS);
+    expect(() => utils.gcd(1, 0)).toThrow(Messages.NON_POSITIVE_INPUTS);
+    expect(() => utils.gcd(0, 0)).toThrow(Messages.NON_POSITIVE_INPUTS);
   });
 });
 
@@ -161,7 +162,7 @@ describe('Inverse not exists', () => {
   ];
   it.each(fixtures)('%s, %s', async (x, q) => {
     expect(() => utils.modInv(BigInt(x), BigInt(q))).toThrow(
-      'No inverse exists for provided modulo'
+      Messages.INVERSE_NOT_EXISTS
     );
   })
 })

@@ -1,6 +1,7 @@
 import { Systems } from '../src/enums';
 import { byteLen, randomInteger } from '../src/utils';
 import { cartesian } from './helpers';
+import { Messages } from '../src/lagrange/enums';
 const lagrange = require('../src/lagrange');
 const elgamal = require('../src/elgamal');
 const test_helpers = require('./helpers');
@@ -15,19 +16,19 @@ const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(la
 describe('interpolation - errors', () => {
   test('less than two points', async () => {
     expect(() => (lagrange.interpolate([[1, 2]], { order: 7 }))).toThrow(
-      'At least two points are needed for interpolation'
+      Messages.INTERPOLATION_AT_LEAST_TWO_POINTS_NEEDED
     );
   });
   test('points more than order', async () => {
     const points = [[1, 2],[2, 3],[3, 4]];
     expect(() => (lagrange.interpolate(points, { order: 2 }))).toThrow(
-      'Number of provided points exceeds order'
+      Messages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER
     );
   });
   test('non-distinct x\'s', async () => {
     const points = [[1, 2], [1, 3]];
     expect(() => (lagrange.interpolate(points, { order: 7 }))).toThrow(
-      'Not all provided x\'s are distinct modulo order'
+      Messages.INTERPOLATION_NON_DISTINCT_XS
     );
   });
 });

@@ -5,6 +5,7 @@ import { jubjub } from '@noble/curves/jubjub';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { Label } from '../../../types';
 import { Elliptic } from '../../../enums';
+import { Messages } from '../../enums';
 import { Point, Group } from '../../abstract';
 import { byteLen, randomInteger } from '../../../utils';
 
@@ -78,8 +79,10 @@ export class EcGroup extends Group<EcPoint> {
   assertValid = async (point: EcPoint): Promise<boolean> => {
     if (await point.wrapped.equals(this._zero)) return true;
     try { point.wrapped.assertValidity(); } catch (err: any) {
-      if (err.message.startsWith('bad point: ')) throw new Error('Point not on curve');
-      throw err;
+      if (err.message.startsWith('bad point: ')) throw new Error(
+        Messages.POINT_NOT_IN_SUBGROUP
+      );
+      else throw err;
     }
     return true;
   }

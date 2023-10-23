@@ -1,5 +1,6 @@
 import { Systems } from '../src/enums';
 import { Polynomial } from '../src/lagrange';
+import { Messages } from '../src/lagrange/enums';
 import { cartesian, trimZeroes } from './helpers';
 
 const lagrange = require('../src/lagrange');
@@ -58,7 +59,7 @@ describe('construction - coefficients greater than order', () => {
 describe('construction errors', () => {
   test('order not greater than one', async () => {
     expect(() => { new Polynomial([], 1) }).toThrow(
-      'Polynomial order must be > 1'
+      Messages.ORDER_MUST_BE_GT_ONE
     );
   });
 });
@@ -120,7 +121,7 @@ describe('zero polynomial', () => {
 describe('random polynomial error', () => {
   test('non-positive degree', async () => {
     await expect(Polynomial.random({ degree: -1, order: 2 })).rejects.toThrow(
-      'Polynomial degree must be >= 0'
+      Messages.DEGREE_MUST_BE_GE_ZERO
     );
   });
 });

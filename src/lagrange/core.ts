@@ -1,5 +1,6 @@
 import { Polynomial } from './base';
-import { mod, modInv } from '../utils';
+import { Messages } from './enums';
+import { mod, modInv, Messages as utilMessages } from '../utils';
 
 
 const __0n = BigInt(0);
@@ -15,8 +16,8 @@ export class Lagrange extends Polynomial {
 
   constructor(points: [bigint, bigint][], order: bigint) {
     const k = points.length
-    if (k < 2) throw new Error('At least two points are needed for interpolation');
-    if (k > order) throw new Error('Number of provided points exceeds order');
+    if (k < 2) throw new Error(Messages.INTERPOLATION_AT_LEAST_TWO_POINTS_NEEDED);
+    if (k > order) throw new Error(Messages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER);
     const xs = new Array(k);
     const ys = new Array(k);
     const ws = new Array(k);
@@ -40,11 +41,9 @@ export class Lagrange extends Polynomial {
         }
       }
       let wj;
-      try {
-        wj = modInv(w, order);
-      } catch (err: any) {
-        if (err.message == 'No inverse exists for provided modulo') throw new Error(
-          'Not all provided x\'s are distinct modulo order'
+      try { wj = modInv(w, order); } catch (err: any) {
+        if (err.message == utilMessages.INVERSE_NOT_EXISTS) throw new Error(
+          Messages.INTERPOLATION_NON_DISTINCT_XS
         );
         else throw err;
       }
