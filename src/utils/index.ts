@@ -5,7 +5,7 @@ import {
   leInt2Buff,
 } from './bitwise';
 
-import { randomInteger } from './random';
+import { randBigint } from './random';
 
 import { default as hash } from './hash';
 
@@ -18,7 +18,7 @@ export {
   byteLen,
   leBuff2Int,
   leInt2Buff,
-  randomInteger,
+  randBigint,
   hash,
   mod,
   gcd,

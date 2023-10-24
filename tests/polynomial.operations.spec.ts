@@ -1,7 +1,7 @@
 import { Systems } from '../src/enums';
 import { Polynomial } from '../src/lagrange/base';
 import { Messages } from '../src/lagrange/enums';
-import { byteLen, randomInteger } from '../src/utils';
+import { byteLen, randBigint } from '../src/utils';
 import { cartesian } from './helpers';
 const lagrange = require('../src/lagrange');
 const elgamal = require('../src/elgamal');
@@ -152,7 +152,7 @@ describe('scalar multiplication - random polynomials with prime order', () => {
   it.each(cartesian([degrees, __big_primes]))('degrees: %s, order: %s', async (
     degree, order
   ) => {
-    const scalar = await randomInteger(byteLen(order));
+    const scalar = await randBigint(byteLen(order));
     const poly1 = await Polynomial.random({ degree, order });
     const poly2 = poly1.multScalar(scalar);
 
@@ -195,7 +195,7 @@ describe('evaluation - random polynomials with prime order', () => {
   it.each(cartesian([degrees, __big_primes]))('degrees: %s, order: %s', async (
     degree, order
   ) => {
-    const value = await randomInteger(byteLen(order));
+    const value = await randBigint(byteLen(order));
     const poly = await Polynomial.random({ degree, order });
     let acc = __0n;
     for (const [i, c] of poly.coeffs.entries()) {

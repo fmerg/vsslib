@@ -1,5 +1,5 @@
 import { Systems } from '../src/enums';
-import { byteLen, randomInteger } from '../src/utils';
+import { byteLen, randBigint } from '../src/utils';
 import { cartesian } from './helpers';
 import { Messages } from '../src/lagrange/enums';
 const lagrange = require('../src/lagrange');
@@ -68,8 +68,8 @@ describe('interpolation - random points against big prime order', () => {
   it.each(cartesian([numbers, __big_primes]))('nr: %s, order: %s', async (nrPoints, order) => {
     const points = new Array(nrPoints);
     for (let i = 0; i < points.length; i++) {
-      const x = await randomInteger(byteLen(order));
-      const y = await randomInteger(byteLen(order));
+      const x = await randBigint(byteLen(order));
+      const y = await randBigint(byteLen(order));
       points[i] = [x, y];
     }
     const poly1 = test_helpers.interpolate(points, { order });
@@ -79,7 +79,7 @@ describe('interpolation - random points against big prime order', () => {
       expect(poly1.evaluate(x)).toEqual(y % order);
       expect(poly2.evaluate(x)).toEqual(y % order);
     }
-    const x = await randomInteger(byteLen(order));
+    const x = await randBigint(byteLen(order));
     expect(poly2.evaluate(x)).toEqual(poly1.evaluate(x));
   });
 });

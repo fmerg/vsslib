@@ -7,7 +7,7 @@ import { Label } from '../../../types';
 import { Elliptic } from '../../../enums';
 import { Messages } from '../../enums';
 import { Point, Group } from '../../abstract';
-import { byteLen, randomInteger } from '../../../utils';
+import { mod, leBuff2Int } from '../../../utils';
 
 
 const __0n = BigInt(0);
@@ -88,14 +88,14 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   randomScalar = async (): Promise<bigint> => {
-    // TODO: Refine
-    const size = byteLen(this._order);
-    return (await randomInteger(size)) % this._order;
+    const { randomBytes, Fp } = this.curve.CURVE;
+    return mod(leBuff2Int(randomBytes(Fp.BYTES)), this._order);
   }
 
   randomPoint = async (): Promise<EcPoint> => {
-    // TODO: Consider avoiding call to randomScalar
-    return new EcPoint(this._base.multiply(await this.randomScalar()));
+    const { randomBytes, Fp } = this.curve.CURVE;
+    const scalar = mod(leBuff2Int(randomBytes(Fp.BYTES)), this._order);
+    return new EcPoint(this._base.multiply(scalar));
   }
 
   generatePoint = async (scalar: bigint): Promise<EcPoint> => {

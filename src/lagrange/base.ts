@@ -1,5 +1,5 @@
 import { Label } from '../types';
-import { byteLen, randomInteger, mod } from '../utils';
+import { byteLen, randBigint, mod } from '../utils';
 import { Messages } from './enums';
 
 const __0n = BigInt(0);
@@ -45,7 +45,7 @@ export class Polynomial {
     const coeffs = new Array(degree + 1);
     const nrBytes = byteLen(BigInt(order));
     for (let i = 0; i < coeffs.length; i++) {
-      coeffs[i] = await randomInteger(nrBytes);
+      coeffs[i] = await randBigint(nrBytes);
     }
     return new Polynomial(coeffs, order);
   }

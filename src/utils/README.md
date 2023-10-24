@@ -20,7 +20,7 @@ const b64Digest = utils.hash(textBytes, { algorithm: 'sha256', encoding: 'base64
 ### Random
 
 ```js
-const num = await utils.randomInteger(64);
+const num = await utils.randBigint(64);
 ```
 
 ### Bitwise
