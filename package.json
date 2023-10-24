@@ -23,6 +23,7 @@
     "test-hash:reload": "jest tests/utils.hash --watch --maxWorkers=1 --verbose",
     "test-polynomial:reload": "jest tests/polynomial --watch --maxWorkers=1 --verbose",
     "test-lagrange:reload": "jest tests/lagrange --watch --maxWorkers=1 --verbose",
+    "test-shamir:reload": "jest tests/shamir --watch --maxWorkers=1 --verbose",
     "build": "rm -rf ./build && tsc",
     "docs": "typedoc --out docs src/*.ts"
   },
