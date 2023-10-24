@@ -11,6 +11,12 @@ type KeyShare = {
   index: number,
 };
 
+type DecryptorShare = {
+  decryptor: Point,
+  index: number,
+  proof: any,
+};
+
 export function permutations(array: any[]): any[] {
   return [...Permutation.of(array)];
 }
@@ -32,7 +38,7 @@ export function collections(array: any[]): any[] {
 
 
 describe('demo', () => {
-  test('demo 1 - with dealer', async () => {
+  test('demo 1 - sharing with dealer', async () => {
     const label = 'ed25519';
 
     // Setup from (t, n)
@@ -102,6 +108,82 @@ describe('demo', () => {
       expect(await reconstructed.isEqual(key)).toBe(qualified.length >= t);
     });
   });
-  test('demo 2 - without dealer', async () => {
+  test('demo 2 - sharing without dealer', async () => {
+  });
+  test('demo 3 - threshold decryption', async () => {
+    const label = 'ed25519';
+
+    // Setup from (t, n)
+    // TODO: Assert t <= n
+    const n = 3;
+    const t = 2;
+    const ctx = elgamal.initCrypto(label);
+    const { order } = ctx;
+    const degree = t - 1;
+    const poly = await Polynomial.random({ degree, order });
+    const key = new Key(ctx, poly.coeffs[0]);
+    // Compute commitments
+    const commitments: Point[] = [];
+    for (let i = 0; i < t; i++) {
+      const comm = await ctx.operate(poly.coeffs[i], ctx.generator);
+      commitments.push(comm);
+    }
+    // Compute key shares
+    const shares: KeyShare[] = [];
+    for (let i = 1; i <= n; i++) {
+      const key = new Key(ctx, poly.evaluate(i));
+      const index = i;
+      shares.push({
+        key,
+        index,
+      });
+    }
+    const setup = { n, t, key, poly, shares, commitments };
+
+    // Encrypt something with respect to the combined public key
+    const message = await ctx.randomPoint();
+    const pub = (await key.extractPublic()).point;
+    const { ciphertext, decryptor: _decryptor } = await ctx.encrypt(message, pub);
+
+    // Iterate over all combinations of involved parties
+    collections(shares).forEach(async (qualified: KeyShare[]) => {
+      const decryptorShares = [];
+      for (const share of qualified) {
+        const { index, key } = share;
+        const decryptor = await ctx.operate(key.secret, ciphertext.beta);
+        const proof = await ctx.proveDecryptor(ciphertext, key.secret, decryptor, { algorithm: 'sha256' });
+        decryptorShares.push({
+          decryptor,
+          index,
+          proof,
+        });
+      }
+      // Retrieve decryptor from shares
+      const qualifiedIndexes = decryptorShares.map(share => share.index);
+      let decryptor = ctx.neutral;
+      for (const share of decryptorShares) {
+        const { index: i, decryptor: dshare, proof } = share;
+        // TODO: Selection by index
+        const pubi = (await shares[i - 1].key.extractPublic()).point;
+        const isValid = await ctx.verifyDecryptor(dshare, ciphertext, pubi, proof);
+        expect(isValid).toBe(true);
+        // Compute lambdai
+        let lambdai = BigInt(1);
+        qualifiedIndexes.forEach(j => {
+          if (i != j) {
+            const curr = mod(BigInt(j) * modInv(BigInt(j - i), order), order);
+            lambdai = mod(lambdai * curr, order);
+          }
+        });
+        const curr = await ctx.operate(lambdai, dshare);
+        decryptor = await ctx.combine(decryptor, curr);
+      }
+      // Decryptor correctly retrieved IFF >= t parties are involved
+      expect(await decryptor.isEqual(_decryptor)).toBe(qualified.length >= t);
+      // Decrypt with recryptor
+      const plaintext = await ctx.decrypt(ciphertext, { decryptor });
+      // Message correctly retrieved IFF >= t parties are involved
+      expect(await plaintext.isEqual(message)).toBe(qualified.length >= t);
+    });
   });
 });
