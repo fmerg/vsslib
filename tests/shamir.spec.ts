@@ -2,8 +2,7 @@ const elgamal = require('../src/elgamal');
 const shamir = require('../src/shamir');
 import { Point } from '../src/elgamal/abstract';
 import { Polynomial } from '../src/lagrange';
-import { KeyShare, DecryptorShare } from '../src/shamir';
-import { Key } from '../src/key';
+import { SecretShare, DecryptorShare } from '../src/shamir';
 import { mod, modInv } from '../src/utils';
 import { partialPermutations } from './helpers';
 
@@ -18,7 +17,7 @@ describe('demo', () => {
       nrShares,
       threshold,
       polynomial,
-      key,
+      secret,
       shares,
       commitments,
     } = await shamir.shareSecret(ctx, n, t);
@@ -28,20 +27,20 @@ describe('demo', () => {
     expect(polynomial.degree).toEqual(t - 1);
     expect(commitments.length).toEqual(t);
 
-    // Verify computation of each key share
-    shares.forEach(async (share: KeyShare ) => {
-      const isValid = await shamir.verifyKeyShare(ctx, share, commitments);
+    // Verify computation of each secret share
+    shares.forEach(async (share: SecretShare ) => {
+      const isValid = await shamir.verifySecretShare(ctx, share, commitments);
       expect(isValid).toBe(true);
     });
 
-    // Reconstruct key for each combination of involved parties
-    partialPermutations(shares).forEach(async (qualified: KeyShare[]) => {
+    // Reconstruct secret for each combination of involved parties
+    partialPermutations(shares).forEach(async (qualified: SecretShare[]) => {
       const { order } = ctx;
       const qualifiedIndexes = qualified.map(share => share.index);
-      let secret = BigInt(0);
+      let reconstructed = BigInt(0);
       qualified.forEach(async share => {
         // Compute lambdai
-        const sharei = share.key.secret;
+        const sharei = share.secret;
         let lambdai = BigInt(1);
         const i = share.index;
         qualifiedIndexes.forEach(j => {
@@ -50,11 +49,10 @@ describe('demo', () => {
             lambdai = mod(lambdai * curr, order);
           }
         });
-        secret = mod(secret + mod(sharei * lambdai, order), order);
+        reconstructed = mod(reconstructed + mod(sharei * lambdai, order), order);
       });
-      const reconstructed = new Key(ctx, secret);
-      // Private key correctly reconstructed IFF >= t parties are involved
-      expect(await reconstructed.isEqual(key)).toBe(qualified.length >= t);
+      // Secret correctly reconstructed IFF >= t parties are involved
+      expect(reconstructed == secret).toBe(qualified.length >= t);
     });
   });
   test('demo 2 - sharing without dealer', async () => {
@@ -68,28 +66,23 @@ describe('demo', () => {
       nrShares,
       threshold,
       polynomial,
-      key,
+      secret,
       shares,
       commitments,
     } = await shamir.shareSecret(ctx, n, t);
-    expect(nrShares).toEqual(n);
-    expect(threshold).toEqual(t);
-    expect(shares.length).toEqual(n);
-    expect(polynomial.degree).toEqual(t - 1);
-    expect(commitments.length).toEqual(t);
 
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
-    const pub = (await key.extractPublic()).point;
+    const pub = await ctx.operate(secret, ctx.generator);
     const { ciphertext, decryptor: _decryptor } = await ctx.encrypt(message, pub);
 
     // Iterate over all combinations of involved parties
-    partialPermutations(shares).forEach(async (qualified: KeyShare[]) => {
+    partialPermutations(shares).forEach(async (qualified: SecretShare[]) => {
       const decryptorShares = [];
       for (const share of qualified) {
-        const { index, key } = share;
-        const decryptor = await ctx.operate(key.secret, ciphertext.beta);
-        const proof = await ctx.proveDecryptor(ciphertext, key.secret, decryptor, { algorithm: 'sha256' });
+        const { index, secret } = share;
+        const decryptor = await ctx.operate(secret, ciphertext.beta);
+        const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, { algorithm: 'sha256' });
         decryptorShares.push({
           decryptor,
           index,
@@ -102,7 +95,7 @@ describe('demo', () => {
       for (const share of decryptorShares) {
         const { index: i, decryptor: dshare, proof } = share;
         // TODO: Selection by index
-        const pubi = (await shares[i - 1].key.extractPublic()).point;
+        const pubi = await ctx.operate(shares[i - 1].secret, ctx.generator);
         const isValid = await ctx.verifyDecryptor(dshare, ciphertext, pubi, proof);
         expect(isValid).toBe(true);
         // Compute lambdai
