@@ -64,29 +64,23 @@ describe('demo', () => {
     // Iterate over all combinations of involved parties
     partialPermutations(shares).forEach(async (qualified: SecretShare[]) => {
       const decryptorShares = [];
-      for (const share of qualified) {
-        const { index, secret } = share;
-        const decryptor = await ctx.operate(secret, ciphertext.beta);
-        const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, { algorithm: 'sha256' });
-        decryptorShares.push({
-          decryptor,
-          index,
-          proof,
-        });
+      for (const secretShare of qualified) {
+        const decryptorShare = await shamir.generateDecryptorShare(ctx, ciphertext, secretShare);
+        decryptorShares.push(decryptorShare)
       }
       // Retrieve decryptor from shares
       const qualifiedIndexes = decryptorShares.map(share => share.index);
       let decryptor = ctx.neutral;
       for (const share of decryptorShares) {
-        const { index: i, decryptor: dshare, proof } = share;
+        const i = share.index;
         // TODO: Selection by index
         const pubi = await ctx.operate(shares[i - 1].secret, ctx.generator);
-        const isValid = await ctx.verifyDecryptor(dshare, ciphertext, pubi, proof);
+        const isValid = await shamir.verifyDecryptorShare(ctx, share, ciphertext, pubi);
         expect(isValid).toBe(true);
         // Compute lambdai
         const { order } = ctx;
         const lambdai = shamir.computeLambda(share.index, qualifiedIndexes, order);
-        const curr = await ctx.operate(lambdai, dshare);
+        const curr = await ctx.operate(lambdai, share.decryptor);
         decryptor = await ctx.combine(decryptor, curr);
       }
       // Decryptor correctly retrieved IFF >= t parties are involved

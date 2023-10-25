@@ -1,5 +1,7 @@
+import { Algorithm } from '../types';
+import { Algorithms } from '../enums';
 import { Point, Group } from '../elgamal/abstract';
-import { CryptoSystem } from '../elgamal/core';
+import { CryptoSystem, Ciphertext } from '../elgamal/core';
 import { mod, modInv } from '../utils';
 import { Polynomial } from '../lagrange';
 import { Messages } from './enums';
@@ -29,6 +31,11 @@ export type DecryptorShare = {
   index: number,
   proof: any,   // TODO
 };
+
+
+const extractAlgorithm = (opts: any): Algorithm => opts ?
+  (opts.algorithm || Algorithms.DEFAULT) :
+  Algorithms.DEFAULT;
 
 
 export const computeCommitments = async (ctx: any, poly: Polynomial): Promise<Point[]> => {
@@ -93,4 +100,31 @@ export const reconstructSecret = (qualifiedSet: SecretShare[], order: bigint): b
     const lambda = computeLambda(index, indexes, order);
     return mod(acc + mod(secret * lambda, order), order);
   }, __0n);
+}
+
+
+export const generateDecryptorShare = async (
+  ctx: any,
+  ciphertext: Ciphertext<Point>,
+  share: SecretShare,
+  opts?: { algorithm?: Algorithm },
+): Promise<DecryptorShare> => {
+  const algorithm = extractAlgorithm(opts);
+  const { index, secret } = share;
+  const decryptor = await ctx.operate(secret, ciphertext.beta);
+  const proof = await ctx.proveDecryptor(ciphertext, secret, decryptor, { algorithm });
+  return { decryptor, index, proof };
+}
+
+
+export const verifyDecryptorShare = async (
+  ctx: any,
+  share: DecryptorShare,
+  ciphertext: Ciphertext<Point>,
+  pub: Point
+): Promise<boolean> => {
+  const { decryptor, proof } = share;
+  const isValid = await ctx.verifyDecryptor(decryptor, ciphertext, pub, proof);
+  if (!isValid) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);
+  return true;
 }
