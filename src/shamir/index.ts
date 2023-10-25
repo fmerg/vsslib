@@ -72,6 +72,7 @@ export const verifySecretShare = async (ctx: any, share: SecretShare, commitment
   return true;
 }
 
+
 export const computeLambda = (index: number, qualifiedIndexes: number[], order: bigint): bigint => {
   let lambda = __1n;
   const i = index;
@@ -82,4 +83,14 @@ export const computeLambda = (index: number, qualifiedIndexes: number[], order: 
     }
   });
   return lambda;
+}
+
+
+export const reconstructSecret = (qualifiedSet: SecretShare[], order: bigint): bigint => {
+  const indexes = qualifiedSet.map(share => share.index);
+  return qualifiedSet.reduce((acc, share) => {
+    const { secret, index } = share;
+    const lambda = computeLambda(index, indexes, order);
+    return mod(acc + mod(secret * lambda, order), order);
+  }, __0n);
 }

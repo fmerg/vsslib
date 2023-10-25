@@ -34,18 +34,10 @@ describe('demo', () => {
     });
 
     // Reconstruct secret for each combination of involved parties
-    partialPermutations(shares).forEach(async (qualified: SecretShare[]) => {
-      const { order } = ctx;
-      const qualifiedIndexes = qualified.map(share => share.index);
-      let reconstructed = BigInt(0);
-      qualified.forEach(async share => {
-        // Compute lambdai
-        const sharei = share.secret;
-        const lambdai = shamir.computeLambda(share.index, qualifiedIndexes, order);
-        reconstructed = mod(reconstructed + mod(sharei * lambdai, order), order);
-      });
-      // Secret correctly reconstructed IFF >= t parties are involved
-      expect(reconstructed == secret).toBe(qualified.length >= t);
+    const { order } = ctx;
+    partialPermutations(shares).forEach(async (qualifiedSet) => {
+      let reconstructed = shamir.reconstructSecret(qualifiedSet, order);
+      expect(reconstructed == secret).toBe(qualifiedSet.length >= t);
     });
   });
   test('demo 2 - sharing without dealer', async () => {
