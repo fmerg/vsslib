@@ -2,39 +2,10 @@ const elgamal = require('../src/elgamal');
 const shamir = require('../src/shamir');
 import { Point } from '../src/elgamal/abstract';
 import { Polynomial } from '../src/lagrange';
+import { KeyShare, DecryptorShare } from '../src/shamir';
 import { Key } from '../src/key';
 import { mod, modInv } from '../src/utils';
-import { Combination, Permutation, PowerSet } from "js-combinatorics";
-
-type KeyShare = {
-  key: Key,
-  index: number,
-};
-
-type DecryptorShare = {
-  decryptor: Point,
-  index: number,
-  proof: any,
-};
-
-export function permutations(array: any[]): any[] {
-  return [...Permutation.of(array)];
-}
-
-export function powerSet(array: any[]): any[] {
-  return [...PowerSet.of(array)];
-}
-
-export function collections(array: any[]): any[] {
-  let collections: any[] = [];
-
-  powerSet(array).forEach((combination) => {
-    const current = permutations(combination);
-    collections = collections.concat(current);
-  });
-
-  return collections;
-}
+import { partialPermutations } from './helpers';
 
 
 describe('demo', () => {
@@ -86,7 +57,7 @@ describe('demo', () => {
     });
 
     // Reconstruct key for each combination of involved parties
-    collections(shares).forEach(async (qualified: KeyShare[]) => {
+    partialPermutations(shares).forEach(async (qualified: KeyShare[]) => {
       const { order } = ctx;
       const qualifiedIndexes = qualified.map(share => share.index);
       let secret = BigInt(0);
@@ -146,7 +117,7 @@ describe('demo', () => {
     const { ciphertext, decryptor: _decryptor } = await ctx.encrypt(message, pub);
 
     // Iterate over all combinations of involved parties
-    collections(shares).forEach(async (qualified: KeyShare[]) => {
+    partialPermutations(shares).forEach(async (qualified: KeyShare[]) => {
       const decryptorShares = [];
       for (const share of qualified) {
         const { index, key } = share;
