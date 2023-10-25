@@ -1,8 +1,12 @@
 import { Point, Group } from '../elgamal/abstract';
 import { CryptoSystem } from '../elgamal/core';
-import { mod } from '../utils';
+import { mod, modInv } from '../utils';
 import { Polynomial } from '../lagrange';
 import { Messages } from './enums';
+
+
+const __0n = BigInt(0);
+const __1n = BigInt(1);
 
 export type SecretShare = {
   secret: bigint,
@@ -66,4 +70,16 @@ export const verifySecretShare = async (ctx: any, share: SecretShare, commitment
   }
   if (!(await acc.isEqual(target))) throw new Error(Messages.INVALID_SECRET_SHARE);
   return true;
+}
+
+export const computeLambda = (index: number, qualifiedIndexes: number[], order: bigint): bigint => {
+  let lambda = __1n;
+  const i = index;
+  qualifiedIndexes.forEach(j => {
+    if (i != j) {
+      const curr = BigInt(j) * modInv(BigInt(j - i), order);
+      lambda = mod(lambda * curr, order);
+    }
+  });
+  return lambda;
 }

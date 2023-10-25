@@ -41,14 +41,7 @@ describe('demo', () => {
       qualified.forEach(async share => {
         // Compute lambdai
         const sharei = share.secret;
-        let lambdai = BigInt(1);
-        const i = share.index;
-        qualifiedIndexes.forEach(j => {
-          if (i != j) {
-            const curr = mod(BigInt(j) * modInv(BigInt(j - i), order), order);
-            lambdai = mod(lambdai * curr, order);
-          }
-        });
+        const lambdai = shamir.computeLambda(share.index, qualifiedIndexes, order);
         reconstructed = mod(reconstructed + mod(sharei * lambdai, order), order);
       });
       // Secret correctly reconstructed IFF >= t parties are involved
@@ -100,13 +93,7 @@ describe('demo', () => {
         expect(isValid).toBe(true);
         // Compute lambdai
         const { order } = ctx;
-        let lambdai = BigInt(1);
-        qualifiedIndexes.forEach(j => {
-          if (i != j) {
-            const curr = mod(BigInt(j) * modInv(BigInt(j - i), order), order);
-            lambdai = mod(lambdai * curr, order);
-          }
-        });
+        const lambdai = shamir.computeLambda(share.index, qualifiedIndexes, order);
         const curr = await ctx.operate(lambdai, dshare);
         decryptor = await ctx.combine(decryptor, curr);
       }
