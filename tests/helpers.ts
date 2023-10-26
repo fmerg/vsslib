@@ -99,8 +99,7 @@ export const trimZeroes = (arr: number[]): number[] => {
 }
 
 
-/** Textbook lagrange interpolation. At least two points needed and number of
- * points must not exceed order.
+/** Textbook lagrange interpolation. Number of points must not exceed order.
  */
 export const interpolate = (points: XYPoint[], opts: { order: bigint }): Polynomial => {
   const order = BigInt(opts.order);

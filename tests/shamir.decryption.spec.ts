@@ -1,60 +1,17 @@
 const elgamal = require('../src/elgamal');
 const shamir = require('../src/shamir');
-import { Point } from '../src/elgamal/abstract';
-import { Polynomial } from '../src/lagrange';
-import { SecretShare, PublicShare, DecryptorShare } from '../src/shamir';
-import { mod, modInv } from '../src/utils';
+import { Messages } from '../src/shamir/enums';
 import { partialPermutations } from './helpers';
 
 
 describe('demo', () => {
-  test('demo 1 - sharing with dealer', async () => {
+  test('Threshold decryption - success', async () => {
     const label = 'ed25519';
     const ctx = elgamal.initCrypto(label);
-    const n = 5;
-    const t = 3;
-    const {
-      nrShares,
-      threshold,
-      polynomial,
-      secret,
-      shares,
-      commitments,
-    } = await shamir.shareSecret(ctx, n, t);
-    expect(nrShares).toEqual(n);
-    expect(threshold).toEqual(t);
-    expect(shares.length).toEqual(n);
-    expect(polynomial.degree).toEqual(t - 1);
-    expect(commitments.length).toEqual(t);
-
-    // Verify computation of each secret share
-    shares.forEach(async (share: any) => {
-      const isValid = await shamir.verifySecretShare(ctx, share, commitments);
-      expect(isValid).toBe(true);
-    });
-
-    // Reconstruct secret for each combination of involved parties
-    const { order } = ctx;
-    partialPermutations(shares).forEach(async (qualifiedSet) => {
-      let reconstructed = shamir.reconstructSecret(qualifiedSet, order);
-      expect(reconstructed == secret).toBe(qualifiedSet.length >= t);
-    });
-  });
-  test('demo 2 - sharing without dealer', async () => {
-  });
-  test('demo 3 - threshold decryption', async () => {
-    const label = 'ed25519';
-    const ctx = elgamal.initCrypto(label);
+    const secret = await ctx.randomScalar();
     const n = 3;
     const t = 2;
-    const {
-      nrShares,
-      threshold,
-      polynomial,
-      secret,
-      shares,
-      commitments,
-    } = await shamir.shareSecret(ctx, n, t);
+    const { threshold, shares, polynomial, commitments } = await shamir.shareSecret(ctx, secret, n, t);
 
     const publicShares: any[] = [];
     for (const share of shares) {
@@ -90,14 +47,15 @@ describe('demo', () => {
         publicShares
       );
       expect(areValid).toBe(true);
-      // Reconstruct decryptor from shares
-      const decryptor = await shamir.reconstructDecryptor(ctx, decryptorShares);
+
       // Decryptor correctly retrieved IFF >= t parties are involved
+      const decryptor = await shamir.reconstructDecryptor(ctx, decryptorShares);
       expect(await decryptor.isEqual(_decryptor)).toBe(qualified.length >= t);
-      // Decrypt with decryptor
-      const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares);
+
       // Message correctly retrieved IFF >= t parties are involved
+      const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares);
       expect(await plaintext.isEqual(message)).toBe(qualified.length >= t);
+      expect(await plaintext.isEqual(await ctx.decrypt(ciphertext, { secret }))).toBe(qualified.length >= t);
     });
   });
 });

@@ -6,6 +6,7 @@ import { mod, modInv } from '../utils';
 import { Polynomial } from '../lagrange';
 import { Messages } from './enums';
 
+const lagrange = require('../lagrange');
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -57,12 +58,10 @@ export class DecryptorShare<P extends Point> implements Share<P> {
 };
 
 
-export type ShareSetup<P extends Point> = {
-  nrShares: number,
+export type Distribution<P extends Point> = {
   threshold: number,
-  polynomial: Polynomial
-  secret: bigint,
   shares: SecretShare<P>[],
+  polynomial: Polynomial,
   commitments: P[],
 };
 
@@ -92,18 +91,6 @@ export function selectShare<T>(index: number, shares: Share<T>[]): Share<T> {
 }
 
 
-export async function computeCommitments<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
-  polynomial: Polynomial
-): Promise<P[]> {
-  const commitments = new Array(polynomial.degree + 1);
-  for (const [index, coeff] of polynomial.coeffs.entries()) {
-    commitments[index] = await ctx.operate(coeff, ctx.generator);
-  }
-  return commitments;
-}
-
-
 export async function computeSecretShares<P extends Point>(
   polynomial: Polynomial,
   nrShares: number
@@ -117,17 +104,43 @@ export async function computeSecretShares<P extends Point>(
 }
 
 
+export async function computeCommitments<P extends Point>(
+  ctx: CryptoSystem<P, Group<P>>,
+  polynomial: Polynomial
+): Promise<P[]> {
+  const commitments = new Array(polynomial.degree + 1);
+  for (const [index, coeff] of polynomial.coeffs.entries()) {
+    commitments[index] = await ctx.operate(coeff, ctx.generator);
+  }
+  return commitments;
+}
+
+
 export async function shareSecret<P extends Point>(
   ctx: CryptoSystem<P, Group<P>>,
+  secret: bigint,
   nrShares: number,
-  threshold: number
-): Promise<ShareSetup<P>> {
+  threshold: number,
+  givenShares?: bigint[],
+): Promise<Distribution<P>> {
+  givenShares = givenShares || [];
   if (threshold > nrShares) throw new Error(Messages.THRESHOLD_EXCEEDS_NR_SHARES);
-  const polynomial = await Polynomial.random({ degree: threshold - 1, order: ctx.order });
-  const secret = polynomial.coeffs[0];
+  if (threshold < 1) throw new Error (Messages.THRESHOLD_MUST_BE_GE_ONE);
+  if (threshold <= givenShares.length) throw new Error(Messages.NR_GIVEN_SHARES_GT_THRESHOLD)
+  const degree = threshold - 1;
+  const points = new Array(degree + 1);
+  points[0] = [0, secret];
+  let index = 1;
+  while (index < points.length) {
+    const x = index;
+    const y = index <= givenShares.length ? givenShares[index - 1] : await ctx.randomScalar();
+    points[index] = [x, y];
+    index++;
+  }
+  const polynomial = lagrange.interpolate(points, { order: ctx.order });
   const shares = await computeSecretShares(polynomial, nrShares);
   const commitments = await computeCommitments(ctx, polynomial);
-  return { nrShares, threshold, polynomial, secret, shares, commitments };
+  return { threshold, shares, polynomial, commitments };
 }
 
 
@@ -137,7 +150,7 @@ export async function verifySecretShare<P extends Point>(
   commitments: P[],
 ): Promise<boolean> {
   const target = await ctx.operate(share.value, ctx.generator);
-  const i = share.index;
+  const { index: i } = share;
   let acc = ctx.neutral;
   for (const [j, comm] of commitments.entries()) {
     const curr = await ctx.operate(mod(BigInt(i ** j), ctx.order), comm);
@@ -156,7 +169,7 @@ export function reconstructSecret<P extends Point>(
   return qualifiedSet.reduce((acc, share) => {
     const { value, index } = share;
     const lambda = computeLambda(index, indexes, order);
-    return mod(acc + mod(value * lambda, order), order);
+    return mod(acc + value * lambda, order);
   }, __0n);
 }
 
@@ -197,7 +210,7 @@ export async function verifyDecryptorShares<P extends Point>(
   // TODO: Make it constant time
   // TODO: Refine error handling
   for (const share of shares) {
-    const pub = selectShare(share.index, publicShares).value;
+    const { value: pub } = selectShare(share.index, publicShares);
     const { value, proof } = share;
     const isValid = await ctx.verifyDecryptor(value, ciphertext, pub, proof);
     if (!isValid) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);
