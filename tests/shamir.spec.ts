@@ -58,7 +58,7 @@ describe('demo', () => {
 
     const publicShares: PublicShare[] = [];
     for (const share of shares) {
-      const { secret, index } = share;
+      const { value: secret, index } = share;
       const value = await ctx.operate(secret, ctx.generator);
       publicShares.push({ value, index });
     }
