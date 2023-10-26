@@ -2,7 +2,7 @@ const elgamal = require('../src/elgamal');
 const shamir = require('../src/shamir');
 import { Point } from '../src/elgamal/abstract';
 import { Polynomial } from '../src/lagrange';
-import { SecretShare, DecryptorShare } from '../src/shamir';
+import { SecretShare, PublicShare, DecryptorShare } from '../src/shamir';
 import { mod, modInv } from '../src/utils';
 import { partialPermutations } from './helpers';
 
@@ -56,6 +56,13 @@ describe('demo', () => {
       commitments,
     } = await shamir.shareSecret(ctx, n, t);
 
+    const publicShares: PublicShare[] = [];
+    for (const share of shares) {
+      const { secret, index } = share;
+      const value = await ctx.operate(secret, ctx.generator);
+      publicShares.push({ value, index });
+    }
+
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
     const pub = await ctx.operate(secret, ctx.generator);
@@ -63,29 +70,31 @@ describe('demo', () => {
 
     // Iterate over all combinations of involved parties
     partialPermutations(shares).forEach(async (qualified: SecretShare[]) => {
+      // Generate decryptor per involved party
       const decryptorShares = [];
       for (const secretShare of qualified) {
         const decryptorShare = await shamir.generateDecryptorShare(ctx, ciphertext, secretShare);
         decryptorShares.push(decryptorShare)
       }
-      // Retrieve decryptor from shares
-      const qualifiedIndexes = decryptorShares.map(share => share.index);
-      let decryptor = ctx.neutral;
+      // Verify decryptors individually
       for (const share of decryptorShares) {
-        const i = share.index;
-        // TODO: Selection by index
-        const pubi = await ctx.operate(shares[i - 1].secret, ctx.generator);
-        const isValid = await shamir.verifyDecryptorShare(ctx, share, ciphertext, pubi);
+        const pub = shamir.selectShare(share.index, publicShares).value;
+        const isValid = await shamir.verifyDecryptorShare(ctx, share, ciphertext, pub);
         expect(isValid).toBe(true);
-        // Compute lambdai
-        const { order } = ctx;
-        const lambdai = shamir.computeLambda(share.index, qualifiedIndexes, order);
-        const curr = await ctx.operate(lambdai, share.decryptor);
-        decryptor = await ctx.combine(decryptor, curr);
       }
+      // Verify decryptors all together
+      const areValid = await shamir.verifyDecryptorShares(
+        ctx,
+        decryptorShares,
+        ciphertext,
+        publicShares
+      );
+      expect(areValid).toBe(true);
+      // Reconstruct decryptor from shares
+      const decryptor = await shamir.reconstructDecryptor(ctx, decryptorShares);
       // Decryptor correctly retrieved IFF >= t parties are involved
       expect(await decryptor.isEqual(_decryptor)).toBe(qualified.length >= t);
-      // Decrypt with recryptor
+      // Decrypt with decryptor
       const plaintext = await ctx.decrypt(ciphertext, { decryptor });
       // Message correctly retrieved IFF >= t parties are involved
       expect(await plaintext.isEqual(message)).toBe(qualified.length >= t);

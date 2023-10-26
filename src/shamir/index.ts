@@ -16,6 +16,12 @@ export type SecretShare = {
 };
 
 
+export type PublicShare = {
+  value: Point,
+  index: number,
+};
+
+
 export type ShareSetup = {
   nrShares: number,
   threshold: number,
@@ -127,4 +133,38 @@ export const verifyDecryptorShare = async (
   const isValid = await ctx.verifyDecryptor(decryptor, ciphertext, pub, proof);
   if (!isValid) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);
   return true;
+}
+
+
+export const selectShare = (index: number, shares: PublicShare[]): PublicShare => {
+  const selected = shares.filter(share => share.index == index)[0];
+  if (!selected) throw new Error(Messages.NO_SHARE_FOUND_FOR_INDEX);
+  return selected;
+}
+
+
+export const verifyDecryptorShares = async (
+  ctx: any,
+  shares: DecryptorShare[],
+  ciphertext: Ciphertext<Point>,
+  publicShares: PublicShare[],
+): Promise<boolean> => {
+  // TODO: Make it constant time
+  // TODO: Refine error handling
+  for (const share of shares) {
+    const pub = selectShare(share.index, publicShares).value;
+    verifyDecryptorShare(ctx, share, ciphertext, pub);
+  }
+  return true
+}
+
+export const reconstructDecryptor = async (ctx: any, shares: DecryptorShare[]): Promise<Point> => {
+  const qualifiedIndexes = shares.map(share => share.index);
+  let acc = ctx.neutral;
+  for (const share of shares) {
+    const lambdai = computeLambda(share.index, qualifiedIndexes, ctx.order);
+    const curr = await ctx.operate(lambdai, share.decryptor);
+    acc = await ctx.combine(acc, curr);
+  }
+  return acc;
 }
