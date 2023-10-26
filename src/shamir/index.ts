@@ -205,6 +205,7 @@ export async function verifyDecryptorShares<P extends Point>(
   return true
 }
 
+
 export async function reconstructDecryptor<P extends Point>(
   ctx: CryptoSystem<P, Group<P>>,
   shares: DecryptorShare<P>[],
@@ -217,4 +218,17 @@ export async function reconstructDecryptor<P extends Point>(
     acc = await ctx.combine(acc, curr);
   }
   return acc;
+}
+
+
+export async function decrypt<P extends Point>(
+  ctx: CryptoSystem<P, Group<P>>,
+  ciphertext: Ciphertext<P>,
+  decryptors: DecryptorShare<P>[],
+  publicShares?: PublicShare<P>[],
+): Promise<P> {
+  // TODO: Handle error
+  if (publicShares) await verifyDecryptorShares(ctx, decryptors, ciphertext, publicShares);
+  const decryptor = await reconstructDecryptor(ctx, decryptors);
+  return ctx.decrypt(ciphertext, { decryptor });
 }

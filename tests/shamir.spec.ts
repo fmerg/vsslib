@@ -28,7 +28,7 @@ describe('demo', () => {
     expect(commitments.length).toEqual(t);
 
     // Verify computation of each secret share
-    shares.forEach(async (share: SecretShare ) => {
+    shares.forEach(async (share: any) => {
       const isValid = await shamir.verifySecretShare(ctx, share, commitments);
       expect(isValid).toBe(true);
     });
@@ -56,7 +56,7 @@ describe('demo', () => {
       commitments,
     } = await shamir.shareSecret(ctx, n, t);
 
-    const publicShares: PublicShare[] = [];
+    const publicShares: any[] = [];
     for (const share of shares) {
       const { value: secret, index } = share;
       const value = await ctx.operate(secret, ctx.generator);
@@ -69,7 +69,7 @@ describe('demo', () => {
     const { ciphertext, decryptor: _decryptor } = await ctx.encrypt(message, pub);
 
     // Iterate over all combinations of involved parties
-    partialPermutations(shares).forEach(async (qualified: SecretShare[]) => {
+    partialPermutations(shares).forEach(async (qualified: any[]) => {
       // Generate decryptor per involved party
       const decryptorShares = [];
       for (const secretShare of qualified) {
@@ -95,7 +95,7 @@ describe('demo', () => {
       // Decryptor correctly retrieved IFF >= t parties are involved
       expect(await decryptor.isEqual(_decryptor)).toBe(qualified.length >= t);
       // Decrypt with decryptor
-      const plaintext = await ctx.decrypt(ciphertext, { decryptor });
+      const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares);
       // Message correctly retrieved IFF >= t parties are involved
       expect(await plaintext.isEqual(message)).toBe(qualified.length >= t);
     });
