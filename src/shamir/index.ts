@@ -58,11 +58,37 @@ export class DecryptorShare<P extends Point> implements Share<P> {
 };
 
 
-export type Distribution<P extends Point> = {
-  threshold: number,
-  shares: SecretShare<P>[],
-  polynomial: Polynomial,
-  commitments: P[],
+export class Distribution<P extends Point> {
+  ctx: CryptoSystem<P, Group<P>>;
+  threshold: number;
+  shares: SecretShare<P>[];
+  polynomial: Polynomial;
+  commitments: P[];
+
+  constructor(
+    ctx: CryptoSystem<P, Group<P>>,
+    threshold: number,
+    shares: SecretShare<P>[],
+    polynomial: Polynomial,
+    commitments: P[]
+  ) {
+    this.ctx = ctx;
+    this.threshold = threshold;
+    this.shares = shares;
+    this.polynomial = polynomial;
+    this.commitments = commitments;
+  }
+
+  getPublicShares = async (): Promise<PublicShare<P>[]> => {
+    const { operate, generator } = this.ctx;
+    const out = [];
+    for (const share of this.shares) {
+      const { value: secret, index } = share;
+      const value = await operate(secret, generator);
+      out.push({ value, index });
+    }
+    return out;
+  }
 };
 
 
@@ -140,7 +166,7 @@ export async function shareSecret<P extends Point>(
   const polynomial = lagrange.interpolate(points, { order: ctx.order });
   const shares = await computeSecretShares(polynomial, nrShares);
   const commitments = await computeCommitments(ctx, polynomial);
-  return { threshold, shares, polynomial, commitments };
+  return new Distribution<P>(ctx, threshold, shares, polynomial, commitments);
 }
 
 
@@ -192,8 +218,9 @@ export async function verifyDecryptorShare<P extends Point>(
   ctx: CryptoSystem<P, Group<P>>,
   share: DecryptorShare<P>,
   ciphertext: Ciphertext<P>,
-  pub: P,
+  publicShare: PublicShare<P>,
 ): Promise<boolean> {
+  const { value: pub } = publicShare;
   const { value, proof } = share;
   const isValid = await ctx.verifyDecryptor(value, ciphertext, pub, proof);
   if (!isValid) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);

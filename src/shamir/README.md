@@ -17,7 +17,15 @@ const shamir = require('vsslib/shamir');
 ### Secret sharing
 
 ```js
-const { threshold, shares, polynomial, commitments } = await shamir.shareSecret(ctx, secret, 5, 3);
+const distribution = await shamir.shareSecret(ctx, secret, 5, 3);
+```
+
+```js
+const { threshold, shares, polynomial, commitments } = distribution;
+```
+
+```js
+const publicShares = await distribution.getPublicShares();
 ```
 
 #### Share verification
@@ -28,7 +36,7 @@ await shamir.verifySecretShare(ctx, share, commitments);
 
 #### Secret reconstruction
 
-```
+```js
 const reconstructed = await shamir.reconstructSecret([1, 2, 3], ctx.order);
 ```
 
@@ -46,6 +54,7 @@ const decryptorShare = await shamir.generateDecryptorShare(ctx, ciphertext, shar
 ```
 
 ```js
+const publicShare = shamir.selectShare(publicShares);
 await shamir.verifyDecryptorShare(ctx, decryptorShare, ciphertext, publicShare);
 ```
 

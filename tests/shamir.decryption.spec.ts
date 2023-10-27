@@ -11,14 +11,9 @@ describe('demo', () => {
     const secret = await ctx.randomScalar();
     const n = 3;
     const t = 2;
-    const { threshold, shares, polynomial, commitments } = await shamir.shareSecret(ctx, secret, n, t);
-
-    const publicShares: any[] = [];
-    for (const share of shares) {
-      const { value: secret, index } = share;
-      const value = await ctx.operate(secret, ctx.generator);
-      publicShares.push({ value, index });
-    }
+    const distribution = await shamir.shareSecret(ctx, secret, n, t);
+    const { threshold, shares, polynomial, commitments } = distribution;
+    const publicShares = await distribution.getPublicShares();
 
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
@@ -35,8 +30,8 @@ describe('demo', () => {
       }
       // Verify decryptors individually
       for (const share of decryptorShares) {
-        const pub = shamir.selectShare(share.index, publicShares).value;
-        const isValid = await shamir.verifyDecryptorShare(ctx, share, ciphertext, pub);
+        const publicShare = shamir.selectShare(share.index, publicShares);
+        const isValid = await shamir.verifyDecryptorShare(ctx, share, ciphertext, publicShare);
         expect(isValid).toBe(true);
       }
       // Verify decryptors all together
