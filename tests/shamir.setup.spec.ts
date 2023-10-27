@@ -22,7 +22,7 @@ const thresholdParams = [
 ];
 
 
-describe('setup errors', () => {
+describe('Setup errors', () => {
   const ctx = elgamal.initCrypto('ed25519');
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
@@ -36,7 +36,7 @@ describe('setup errors', () => {
       Messages.THRESHOLD_MUST_BE_GE_ONE
     );
   });
-  test('Number of given shares exceeds threshold', async () => {
+  test('Number of predefined shares exceeds threshold', async () => {
     const secret = await ctx.randomScalar();
     await expect(shamir.shareSecret(ctx, secret, 3, 2, [
       [BigInt(0), BigInt(1)],
@@ -48,8 +48,8 @@ describe('setup errors', () => {
 })
 
 
-describe('setup without predefined shares', () => {
-  it.each(thresholdParams)('n: %s, t: %s', async (n, t) => {
+describe('Setup without predefined shares', () => {
+  it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const label = 'ed25519';
     const ctx = elgamal.initCrypto(label);
     const secret = await ctx.randomScalar();
@@ -63,8 +63,8 @@ describe('setup without predefined shares', () => {
 });
 
 
-describe('setup with predefined shares', () => {
-  it.each(thresholdParams)('n: %s, t: %s', async (n, t) => {
+describe('Setup with predefined shares', () => {
+  it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const label = 'ed25519';
     const ctx = elgamal.initCrypto(label);
     const secret = await ctx.randomScalar();

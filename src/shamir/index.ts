@@ -81,13 +81,13 @@ export class Distribution<P extends Point> {
 
   getPublicShares = async (): Promise<PublicShare<P>[]> => {
     const { operate, generator } = this.ctx;
-    const out = [];
+    const shares = [];
     for (const share of this.shares) {
       const { value: secret, index } = share;
       const value = await operate(secret, generator);
-      out.push({ value, index });
+      shares.push({ value, index });
     }
-    return out;
+    return shares;
   }
 };
 
@@ -134,9 +134,10 @@ export async function computeCommitments<P extends Point>(
   ctx: CryptoSystem<P, Group<P>>,
   polynomial: Polynomial
 ): Promise<P[]> {
+  const { operate, generator } = ctx;
   const commitments = new Array(polynomial.degree + 1);
   for (const [index, coeff] of polynomial.coeffs.entries()) {
-    commitments[index] = await ctx.operate(coeff, ctx.generator);
+    commitments[index] = await operate(coeff, generator);
   }
   return commitments;
 }
@@ -149,6 +150,7 @@ export async function shareSecret<P extends Point>(
   threshold: number,
   givenShares?: bigint[],
 ): Promise<Distribution<P>> {
+  const { order, randomScalar } = ctx;
   givenShares = givenShares || [];
   if (threshold > nrShares) throw new Error(Messages.THRESHOLD_EXCEEDS_NR_SHARES);
   if (threshold < 1) throw new Error (Messages.THRESHOLD_MUST_BE_GE_ONE);
@@ -159,11 +161,11 @@ export async function shareSecret<P extends Point>(
   let index = 1;
   while (index < points.length) {
     const x = index;
-    const y = index <= givenShares.length ? givenShares[index - 1] : await ctx.randomScalar();
+    const y = index <= givenShares.length ? givenShares[index - 1] : await randomScalar();
     points[index] = [x, y];
     index++;
   }
-  const polynomial = lagrange.interpolate(points, { order: ctx.order });
+  const polynomial = lagrange.interpolate(points, { order });
   const shares = await computeSecretShares(polynomial, nrShares);
   const commitments = await computeCommitments(ctx, polynomial);
   return new Distribution<P>(ctx, threshold, shares, polynomial, commitments);
@@ -175,12 +177,13 @@ export async function verifySecretShare<P extends Point>(
   share: SecretShare<P>,
   commitments: P[],
 ): Promise<boolean> {
-  const target = await ctx.operate(share.value, ctx.generator);
+  const { order, generator, neutral, operate, combine } = ctx;
+  const target = await operate(share.value, generator);
   const { index: i } = share;
-  let acc = ctx.neutral;
+  let acc = neutral;
   for (const [j, comm] of commitments.entries()) {
-    const curr = await ctx.operate(mod(BigInt(i ** j), ctx.order), comm);
-    acc = await ctx.combine(acc, curr);
+    const curr = await operate(mod(BigInt(i ** j), order), comm);
+    acc = await combine(acc, curr);
   }
   if (!(await acc.isEqual(target))) throw new Error(Messages.INVALID_SECRET_SHARE);
   return true;
@@ -188,9 +191,10 @@ export async function verifySecretShare<P extends Point>(
 
 
 export function reconstructSecret<P extends Point>(
+  ctx: CryptoSystem<P, Group<P>>,
   qualifiedSet: SecretShare<P>[],
-  order: bigint
 ): bigint {
+  const { order } = ctx;
   const indexes = qualifiedSet.map(share => share.index);
   return qualifiedSet.reduce((acc, share) => {
     const { value, index } = share;
@@ -206,10 +210,11 @@ export async function generateDecryptorShare<P extends Point>(
   share: SecretShare<P>,
   opts?: { algorithm?: Algorithm },
 ): Promise<DecryptorShare<P>> {
+  const { operate, proveDecryptor } = ctx;
   const algorithm = extractAlgorithm(opts);
   const { value, index } = share;
-  const decryptor = await ctx.operate(value, ciphertext.beta);
-  const proof = await ctx.proveDecryptor(ciphertext, value, decryptor, { algorithm });
+  const decryptor = await operate(value, ciphertext.beta);
+  const proof = await proveDecryptor(ciphertext, value, decryptor, { algorithm });
   return { value: decryptor, index, proof}
 }
 
@@ -222,8 +227,8 @@ export async function verifyDecryptorShare<P extends Point>(
 ): Promise<boolean> {
   const { value: pub } = publicShare;
   const { value, proof } = share;
-  const isValid = await ctx.verifyDecryptor(value, ciphertext, pub, proof);
-  if (!isValid) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);
+  const verified = await ctx.verifyDecryptor(value, ciphertext, pub, proof);
+  if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);
   return true;
 }
 
@@ -233,16 +238,17 @@ export async function verifyDecryptorShares<P extends Point>(
   shares: DecryptorShare<P>[],
   ciphertext: Ciphertext<P>,
   publicShares: PublicShare<P>[],
-): Promise<boolean> {
-  // TODO: Make it constant time
-  // TODO: Refine error handling
+): Promise<[boolean, number[]]> {
+  let flag = true;
+  let indexes = [];
   for (const share of shares) {
-    const { value: pub } = selectShare(share.index, publicShares);
-    const { value, proof } = share;
-    const isValid = await ctx.verifyDecryptor(value, ciphertext, pub, proof);
-    if (!isValid) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);
+    const { value, index, proof } = share;
+    const { value: pub } = selectShare(index, publicShares);
+    const verified = await ctx.verifyDecryptor(value, ciphertext, pub, proof);
+    flag &&= verified;
+    if (!verified) indexes.push(index);
   }
-  return true
+  return [flag, indexes];
 }
 
 
@@ -250,12 +256,14 @@ export async function reconstructDecryptor<P extends Point>(
   ctx: CryptoSystem<P, Group<P>>,
   shares: DecryptorShare<P>[],
 ): Promise<P> {
+  const { order, neutral, operate, combine } = ctx;
   const qualifiedIndexes = shares.map(share => share.index);
-  let acc = ctx.neutral;
+  let acc = neutral;
   for (const share of shares) {
-    const lambda = computeLambda(share.index, qualifiedIndexes, ctx.order);
-    const curr = await ctx.operate(lambda, share.value);
-    acc = await ctx.combine(acc, curr);
+    const { value, index } = share;
+    const lambda = computeLambda(index, qualifiedIndexes, order);
+    const curr = await operate(lambda, value);
+    acc = await combine(acc, curr);
   }
   return acc;
 }
@@ -264,11 +272,20 @@ export async function reconstructDecryptor<P extends Point>(
 export async function decrypt<P extends Point>(
   ctx: CryptoSystem<P, Group<P>>,
   ciphertext: Ciphertext<P>,
-  decryptors: DecryptorShare<P>[],
-  publicShares?: PublicShare<P>[],
+  shares: DecryptorShare<P>[],
+  opts?: { threshold?: number, publicShares?: PublicShare<P>[] },
 ): Promise<P> {
-  // TODO: Handle error
-  if (publicShares) await verifyDecryptorShares(ctx, decryptors, ciphertext, publicShares);
-  const decryptor = await reconstructDecryptor(ctx, decryptors);
+  const threshold = opts ? opts.threshold : undefined;
+  const publicShares = opts ? opts.publicShares : undefined;
+  if (threshold && shares.length < threshold) throw new Error(Messages.NOT_ENOUGH_SHARES);
+  if (publicShares) {
+    const [verified, indexes] = await verifyDecryptorShares(
+      ctx, shares, ciphertext, publicShares
+    );
+    if (!verified) throw new Error(
+      `${Messages.INVALID_DECRYPTOR_SHARES_DETECTED}: ${indexes}`
+    );
+  }
+  const decryptor = await reconstructDecryptor(ctx, shares);
   return ctx.decrypt(ciphertext, { decryptor });
 }

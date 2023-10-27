@@ -37,7 +37,8 @@ await shamir.verifySecretShare(ctx, share, commitments);
 #### Secret reconstruction
 
 ```js
-const reconstructed = await shamir.reconstructSecret([1, 2, 3], ctx.order);
+const qualifiedShares = shares.slice(0, 3);
+const reconstructed = await shamir.reconstructSecret(ctx, qualifiedShares);
 ```
 
 ### Threshold encryption
