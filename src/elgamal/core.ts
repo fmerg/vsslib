@@ -1,7 +1,7 @@
 import { Label } from '../types';
 import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
-import { Group, Point } from './abstract';
+import { Group, Point } from '../backend/abstract';
 import { leInt2Buff, leBuff2Int, mod } from '../utils';
 
 const utils = require('../utils');

@@ -1,7 +1,7 @@
 import { assertLabel } from '../utils/checkers';
 import { Label } from '../types';
-import { Point, Group } from './abstract';
-import { initGroup } from './backend';
+import { Point, Group } from '../backend/abstract';
+import { initGroup } from '../backend';
 import { CryptoSystem } from './core';
 
 

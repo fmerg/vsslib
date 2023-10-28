@@ -1,7 +1,7 @@
-import { Point } from '../src/elgamal/abstract';
+import { Point } from '../src/backend/abstract';
 import { Systems } from '../src/enums';
 
-const backend = require('../src/elgamal/backend');
+const backend = require('../src/backend');
 
 const __labels = Object.values(Systems);
 const __0n     = BigInt(0)

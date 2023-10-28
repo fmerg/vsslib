@@ -14,7 +14,7 @@ const neutral = ctx.neutral;      // Group neutral element (Point)
 ```
 
 
-## Algebraic operation
+## Algebraic operations
 
 
 ### Generalities

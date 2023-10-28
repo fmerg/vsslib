@@ -1,9 +1,8 @@
-import { CryptoSystem } from '../src/elgamal/core';
-import { Point, Group } from '../src/elgamal/abstract';
+import { Point, Group } from '../src/backend/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
-import { DlogPair, DDHTuple } from '../src/elgamal/core';
+import { CryptoSystem, DlogPair, DDHTuple } from '../src/elgamal/core';
 import { XYPoint, Polynomial } from '../src/lagrange';
 import { Permutation, PowerSet } from "js-combinatorics";
 

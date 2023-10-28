@@ -1,5 +1,5 @@
 import { Algorithm } from '../types';
-import { Point, Group } from '../elgamal/abstract';
+import { Point, Group } from '../backend/abstract';
 import { CryptoSystem, Ciphertext, DlogProof } from '../elgamal/core';
 import { SecretShare, PublicShare } from './sharing';
 import { Share, computeLambda, extractAlgorithm, selectShare } from './common';

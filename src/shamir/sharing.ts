@@ -1,4 +1,4 @@
-import { Point, Group } from '../elgamal/abstract';
+import { Point, Group } from '../backend/abstract';
 import { CryptoSystem } from '../elgamal/core';
 import { mod } from '../utils';
 import { Polynomial } from '../lagrange';

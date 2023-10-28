@@ -1,4 +1,4 @@
-import { Point } from './elgamal/abstract';
+import { Point } from './backend/abstract';
 import { Modular, Elliptic, Algorithms, Encodings } from './enums';
 
 

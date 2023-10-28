@@ -1,4 +1,4 @@
-import { Group, Point } from './elgamal/abstract';
+import { Group, Point } from './backend/abstract';
 import { CryptoSystem } from './elgamal/core';
 import {
   SerializedKey,

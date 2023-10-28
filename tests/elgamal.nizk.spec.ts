@@ -1,5 +1,5 @@
 import { CryptoSystem } from '../src/elgamal/core';
-import { Point } from '../src/elgamal/abstract';
+import { Point } from '../src/backend/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
@@ -7,7 +7,7 @@ import { DDHTuple } from '../src/elgamal/core';
 import { cartesian, computeFiatShamir, createDlogPairs, createDDH } from './helpers';
 
 const elgamal = require('../src/elgamal');
-const backend = require('../src/elgamal/backend');
+const backend = require('../src/backend');
 
 
 const __labels      = Object.values(Systems);
