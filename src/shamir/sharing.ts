@@ -34,14 +34,14 @@ export class PublicShare<P extends Point> implements Share<P> {
 
 
 export class Distribution<P extends Point> {
-  ctx: CryptoSystem<P, Group<P>>;
+  ctx: CryptoSystem<P>;
   threshold: number;
   shares: SecretShare<P>[];
   polynomial: Polynomial;
   commitments: P[];
 
   constructor(
-    ctx: CryptoSystem<P, Group<P>>,
+    ctx: CryptoSystem<P>,
     threshold: number,
     shares: SecretShare<P>[],
     polynomial: Polynomial,
@@ -81,7 +81,7 @@ export async function computeSecretShares<P extends Point>(
 
 
 export async function computeCommitments<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   polynomial: Polynomial
 ): Promise<P[]> {
   const { operate, generator } = ctx;
@@ -94,7 +94,7 @@ export async function computeCommitments<P extends Point>(
 
 
 export async function shareSecret<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   secret: bigint,
   nrShares: number,
   threshold: number,
@@ -123,7 +123,7 @@ export async function shareSecret<P extends Point>(
 
 
 export async function verifySecretShare<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   share: SecretShare<P>,
   commitments: P[],
 ): Promise<boolean> {
@@ -141,7 +141,7 @@ export async function verifySecretShare<P extends Point>(
 
 
 export function reconstructSecret<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   qualifiedSet: SecretShare<P>[],
 ): bigint {
   const { order } = ctx;

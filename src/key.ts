@@ -9,19 +9,17 @@ import {
 const elgamal = require('./elgamal');
 
 
-export type Ctx = CryptoSystem<Point, Group<Point>>;
-
 export class Key {
-  _ctx: Ctx;
+  _ctx: CryptoSystem<Point>;
   _secret: bigint;
 
-  constructor(ctx: Ctx, scalar: bigint) {
+  constructor(ctx: CryptoSystem<Point>, scalar: bigint) {
     this._ctx = ctx;
     // TODO: scalar validation according to cryptosystem
     this._secret = scalar;
   }
 
-  public get ctx(): Ctx {
+  public get ctx(): CryptoSystem<Point> {
     return this._ctx;
   }
 
@@ -81,15 +79,15 @@ export class Key {
 
 
 export class Public {
-  _ctx: Ctx;
+  _ctx: CryptoSystem<Point>;
   _point: Point;
 
-  constructor(ctx: Ctx, point: Point) {
+  constructor(ctx: CryptoSystem<Point>, point: Point) {
     this._ctx = ctx;
     this._point = point;
   }
 
-  public get ctx(): Ctx {
+  public get ctx(): CryptoSystem<Point> {
     return this._ctx;
   }
 

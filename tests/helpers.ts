@@ -43,7 +43,7 @@ export const cartesian = (arrays: any[]): any[] => {
 
 /** Reproduces externally the fiat-shamir computation */
 export async function computeFiatShamir<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   points: Point[],
   scalars: bigint[],
   algorithm: Algorithm | undefined,
@@ -61,7 +61,7 @@ export async function computeFiatShamir<P extends Point>(
 
 /** Creates dlog pairs with uniform logarithm */
 export async function createDlogPairs<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   z: bigint,
   nrPairs: number
 ): Promise<DlogPair<P>[]> {
@@ -77,7 +77,7 @@ export async function createDlogPairs<P extends Point>(
 
 /** Create DDH-tuples */
 export async function createDDH<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   z?: bigint
 ): Promise<{ z: bigint, ddh: DDHTuple<P> }> {
   z = z || await ctx.randomScalar();

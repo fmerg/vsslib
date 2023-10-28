@@ -20,7 +20,7 @@ export class DecryptorShare<P extends Point> implements Share<P> {
 
 
 export async function generateDecryptorShare<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   ciphertext: Ciphertext<P>,
   share: SecretShare<P>,
   opts?: { algorithm?: Algorithm },
@@ -35,7 +35,7 @@ export async function generateDecryptorShare<P extends Point>(
 
 
 export async function verifyDecryptorShare<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   share: DecryptorShare<P>,
   ciphertext: Ciphertext<P>,
   publicShare: PublicShare<P>,
@@ -49,7 +49,7 @@ export async function verifyDecryptorShare<P extends Point>(
 
 
 export async function verifyDecryptorShares<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   shares: DecryptorShare<P>[],
   ciphertext: Ciphertext<P>,
   publicShares: PublicShare<P>[],
@@ -68,7 +68,7 @@ export async function verifyDecryptorShares<P extends Point>(
 
 
 export async function reconstructDecryptor<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   shares: DecryptorShare<P>[],
 ): Promise<P> {
   const { order, neutral, operate, combine } = ctx;
@@ -85,7 +85,7 @@ export async function reconstructDecryptor<P extends Point>(
 
 
 export async function decrypt<P extends Point>(
-  ctx: CryptoSystem<P, Group<P>>,
+  ctx: CryptoSystem<P>,
   ciphertext: Ciphertext<P>,
   shares: DecryptorShare<P>[],
   opts?: { threshold?: number, publicShares?: PublicShare<P>[] },

@@ -50,7 +50,7 @@ const extractAlgorithm = (opts: any): Algorithm => opts ?
   Algorithms.DEFAULT;
 
 
-export class CryptoSystem<P extends Point, G extends Group<P>> {
+export class CryptoSystem<P extends Point> {
   _group: Group<P>;
   _label: Label;
   _modulus: bigint;
@@ -62,7 +62,7 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
   _genBytes: Uint8Array;
 
 
-  constructor(group: G) {
+  constructor(group: Group<P>) {
     const { label, modulus, order, generator, neutral } = group;
     this._group = group;
     this._label = label;
@@ -99,7 +99,7 @@ export class CryptoSystem<P extends Point, G extends Group<P>> {
     return this._neutral;
   }
 
-  async isEqual<Q extends Point>(other: CryptoSystem<Q, Group<Q>>): Promise<boolean> {
+  async isEqual<Q extends Point>(other: CryptoSystem<Q>): Promise<boolean> {
     return this._group.isEqual(other.group);
   }
 
