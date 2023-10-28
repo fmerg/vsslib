@@ -7,7 +7,6 @@ const ctx = elgamal.initCrypto('ed25519');
 
 ```js
 const secret = await ctx.randomScalar();
-const pub = await ctx.operate(secret, ctx.generator);
 ```
 
 ```js
@@ -44,6 +43,7 @@ const reconstructed = await shamir.reconstructSecret(ctx, qualifiedShares);
 ### Threshold encryption
 
 ```js
+const pub = await ctx.operate(secret, ctx.generator);
 const message = await ctx.randomPoint();
 const { ciphertext } = await ctx.encrypt(message, pub);
 ```
@@ -78,4 +78,8 @@ await shamir.verifyDecryptorShares(ctx, decryptorShares, ciphertext, publicShare
 
 ```js
 const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares);
+```
+
+```js
+const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares, { threshold, publicShares });
 ```
