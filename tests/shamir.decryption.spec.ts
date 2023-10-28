@@ -118,7 +118,7 @@ describe('Threshold encryption', () => {
     // Decryption raises error if share verification enforced
     await expect(
       shamir.decrypt(ctx, ciphertext, decryptorShares, { publicShares })
-    ).rejects.toThrow(`Invalid decryptor shares detected: ${corruptedIndexes}`);
+    ).rejects.toThrow(Messages.INVALID_DECRYPTOR_SHARES_DETECTED);
 
     // Decryption raises error if less than threshold shares provided
     await expect(

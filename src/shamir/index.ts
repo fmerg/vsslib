@@ -112,7 +112,7 @@ export const computeLambda = (index: number, qualifiedIndexes: number[], order: 
 
 export function selectShare<T>(index: number, shares: Share<T>[]): Share<T> {
   const selected = shares.filter(share => share.index == index)[0];
-  if (!selected) throw new Error(Messages.NO_SHARE_FOUND_FOR_INDEX);
+  if (!selected) throw new Error(Messages.NO_SHARE_WITH_INDEX);
   return selected;
 }
 
@@ -153,7 +153,7 @@ export async function shareSecret<P extends Point>(
   const { order, randomScalar } = ctx;
   givenShares = givenShares || [];
   if (threshold > nrShares) throw new Error(Messages.THRESHOLD_EXCEEDS_NR_SHARES);
-  if (threshold < 1) throw new Error (Messages.THRESHOLD_MUST_BE_GE_ONE);
+  if (threshold < 1) throw new Error (Messages.THRESHOLD_NOT_GE_ONE);
   if (threshold <= givenShares.length) throw new Error(Messages.NR_GIVEN_SHARES_GT_THRESHOLD)
   const degree = threshold - 1;
   const points = new Array(degree + 1);
@@ -282,9 +282,7 @@ export async function decrypt<P extends Point>(
     const [verified, indexes] = await verifyDecryptorShares(
       ctx, shares, ciphertext, publicShares
     );
-    if (!verified) throw new Error(
-      `${Messages.INVALID_DECRYPTOR_SHARES_DETECTED}: ${indexes}`
-    );
+    if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_SHARES_DETECTED);
   }
   const decryptor = await reconstructDecryptor(ctx, shares);
   return ctx.decrypt(ciphertext, { decryptor });

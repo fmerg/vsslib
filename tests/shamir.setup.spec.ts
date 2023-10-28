@@ -33,7 +33,7 @@ describe('Setup errors', () => {
   test('Threshold is < 1', async () => {
     const secret = await ctx.randomScalar();
     await expect(shamir.shareSecret(ctx, secret, 1, 0)).rejects.toThrow(
-      Messages.THRESHOLD_MUST_BE_GE_ONE
+      Messages.THRESHOLD_NOT_GE_ONE
     );
   });
   test('Number of predefined shares exceeds threshold', async () => {
