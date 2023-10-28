@@ -16,7 +16,6 @@ export class Lagrange extends Polynomial {
 
   constructor(points: [bigint, bigint][], order: bigint) {
     const k = points.length
-    if (k < 2) throw new Error(Messages.INTERPOLATION_AT_LEAST_TWO_POINTS_NEEDED);
     if (k > order) throw new Error(Messages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER);
     const xs = new Array(k);
     const ys = new Array(k);

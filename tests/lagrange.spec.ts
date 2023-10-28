@@ -6,7 +6,6 @@ const lagrange = require('../src/lagrange');
 const elgamal = require('../src/elgamal');
 const test_helpers = require('./helpers');
 
-
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 const __small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
@@ -14,11 +13,6 @@ const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(la
 
 
 describe('interpolation - errors', () => {
-  test('less than two points', async () => {
-    expect(() => (lagrange.interpolate([[1, 2]], { order: 7 }))).toThrow(
-      Messages.INTERPOLATION_AT_LEAST_TWO_POINTS_NEEDED
-    );
-  });
   test('points more than order', async () => {
     const points = [[1, 2],[2, 3],[3, 4]];
     expect(() => (lagrange.interpolate(points, { order: 2 }))).toThrow(
@@ -36,6 +30,7 @@ describe('interpolation - errors', () => {
 
 describe('interpolation - fixed points against small prime order', () => {
   const all_collections: ([number, number][])[] = [
+    [[0, 1]],
     [[0, 1], [1, 2]],
     [[0, 1], [1, 2], [2, 3]],
     [[0, 1], [1, 2], [2, 3], [3, 4]],
@@ -64,7 +59,7 @@ describe('interpolation - fixed points against small prime order', () => {
 
 
 describe('interpolation - random points against big prime order', () => {
-  const numbers = [2, 3, 4, 5, 6, 7, 8, 9];
+  const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
   it.each(cartesian([numbers, __big_primes]))('nr: %s, order: %s', async (nrPoints, order) => {
     const points = new Array(nrPoints);
     for (let i = 0; i < points.length; i++) {

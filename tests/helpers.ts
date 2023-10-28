@@ -5,6 +5,7 @@ import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
 import { DlogPair, DDHTuple } from '../src/elgamal/core';
 import { XYPoint, Polynomial } from '../src/lagrange';
+import { Permutation, PowerSet } from "js-combinatorics";
 
 const utils = require('../src/utils');
 
@@ -12,7 +13,21 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-/** Generates the cartesian product of the provided arrays */
+/** Powerset of the provided collection **/
+export const powerSet = (array: any[]): any[] => [...PowerSet.of(array)];
+
+
+/** Permutations of the provided collection **/
+export const permutations = (array: any[]): any[] => [...Permutation.of(array)];
+
+
+/** Union of sets of permutations of each member of the powerset of
+* the provided collection */
+export const partialPermutations = (array: any[]): any[] => powerSet(array).reduce(
+  (acc: any[], comb: any[]) => acc = acc.concat(permutations(comb)), []
+)
+
+/** Cartesian product of the provided arrays */
 export const cartesian = (arrays: any[]): any[] => {
   const xs = arrays[0];
   const ys = arrays.length > 2 ? cartesian(arrays.slice(1)) : arrays[1].map((a: any[]) => [a]);
@@ -84,8 +99,7 @@ export const trimZeroes = (arr: number[]): number[] => {
 }
 
 
-/** Textbook lagrange interpolation. At least two points needed and number of
- * points must not exceed order.
+/** Textbook lagrange interpolation. Number of points must not exceed order.
  */
 export const interpolate = (points: XYPoint[], opts: { order: bigint }): Polynomial => {
   const order = BigInt(opts.order);
