@@ -50,18 +50,16 @@ export class EcGroup extends Group<EcPoint> {
   _curve: NobleCurve;
 
   constructor(label: Label, curve: NobleCurve) {
-    super(label, curve.CURVE.Fp.ORDER, curve.CURVE.n);
-    this._base = curve.ExtendedPoint.BASE;
-    this._zero = curve.ExtendedPoint.ZERO;
+    const modulus = curve.CURVE.Fp.ORDER;
+    const order = curve.CURVE.n;
+    const base = curve.ExtendedPoint.BASE;
+    const zero = curve.ExtendedPoint.ZERO;
+    const generator = new EcPoint(base);
+    const neutral = new EcPoint(zero);
+    super(label, modulus, order, generator, neutral);
+    this._base = base;
+    this._zero = zero;
     this._curve = curve;
-  }
-
-  public get generator(): EcPoint {
-    return new EcPoint(this._base);
-  }
-
-  public get neutral(): EcPoint {
-    return new EcPoint(this._zero);
   }
 
   public get curve(): NobleCurve {

@@ -2,7 +2,7 @@ import { Point, Group } from '../src/backend/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
-import { CryptoSystem, DlogPair, DDHTuple } from '../src/elgamal/core';
+import { DlogPair, DDHTuple } from '../src/sigma';
 import { XYPoint, Polynomial } from '../src/lagrange';
 import { Permutation, PowerSet } from "js-combinatorics";
 
@@ -42,7 +42,7 @@ export const cartesian = (arrays: any[]): any[] => {
 
 /** Reproduces externally the fiat-shamir computation */
 export async function computeFiatShamir<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   points: Point[],
   scalars: bigint[],
   algorithm: Algorithm | undefined,
@@ -60,7 +60,7 @@ export async function computeFiatShamir<P extends Point>(
 
 /** Creates dlog pairs with uniform logarithm */
 export async function createDlogPairs<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   z: bigint,
   nrPairs: number
 ): Promise<DlogPair<P>[]> {
@@ -76,7 +76,7 @@ export async function createDlogPairs<P extends Point>(
 
 /** Create DDH-tuples */
 export async function createDDH<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   z?: bigint
 ): Promise<{ z: bigint, ddh: DDHTuple<P> }> {
   z = z || await ctx.randomScalar();

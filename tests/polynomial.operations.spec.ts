@@ -4,13 +4,13 @@ import { Messages } from '../src/lagrange/enums';
 import { byteLen, randBigint } from '../src/utils';
 import { cartesian } from './helpers';
 const lagrange = require('../src/lagrange');
-const elgamal = require('../src/elgamal');
+const backend = require('../src/backend');
 
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 const __small_orders = [2, 3, 4, 5, 6, 7];
-const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(label).order);
+const __big_primes = Object.values(Systems).map((label) => backend.initGroup(label).order);
 
 
 describe('errors', () => {

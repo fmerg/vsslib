@@ -1,9 +1,13 @@
 import { Algorithm } from '../types';
 import { Point, Group } from '../backend/abstract';
-import { CryptoSystem, Ciphertext, DlogProof } from '../elgamal/core';
+import { Ciphertext } from '../elgamal/core';
+import { DlogProof } from '../sigma';
 import { SecretShare, PublicShare } from './sharing';
-import { Share, computeLambda, extractAlgorithm, selectShare } from './common';
+import { Share, computeLambda, selectShare } from './common';
 import { Messages } from './enums';
+
+const elgamal = require('../elgamal');
+const sigma = require('../sigma');
 
 
 export class DecryptorShare<P extends Point> implements Share<P> {
@@ -20,36 +24,35 @@ export class DecryptorShare<P extends Point> implements Share<P> {
 
 
 export async function generateDecryptorShare<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   ciphertext: Ciphertext<P>,
   share: SecretShare<P>,
   opts?: { algorithm?: Algorithm },
 ): Promise<DecryptorShare<P>> {
-  const { operate, proveDecryptor } = ctx;
-  const algorithm = extractAlgorithm(opts);
+  const { operate } = ctx;
   const { value, index } = share;
   const decryptor = await operate(value, ciphertext.beta);
-  const proof = await proveDecryptor(ciphertext, value, decryptor, { algorithm });
+  const proof = await elgamal.proveDecryptor(ctx, ciphertext, value, decryptor, opts);
   return { value: decryptor, index, proof}
 }
 
 
 export async function verifyDecryptorShare<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   share: DecryptorShare<P>,
   ciphertext: Ciphertext<P>,
   publicShare: PublicShare<P>,
 ): Promise<boolean> {
   const { value: pub } = publicShare;
   const { value, proof } = share;
-  const verified = await ctx.verifyDecryptor(value, ciphertext, pub, proof);
+  const verified = await elgamal.verifyDecryptor(ctx, value, ciphertext, pub, proof);
   if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);
   return true;
 }
 
 
 export async function verifyDecryptorShares<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   shares: DecryptorShare<P>[],
   ciphertext: Ciphertext<P>,
   publicShares: PublicShare<P>[],
@@ -59,7 +62,7 @@ export async function verifyDecryptorShares<P extends Point>(
   for (const share of shares) {
     const { value, index, proof } = share;
     const { value: pub } = selectShare(index, publicShares);
-    const verified = await ctx.verifyDecryptor(value, ciphertext, pub, proof);
+    const verified = await elgamal.verifyDecryptor(ctx, value, ciphertext, pub, proof);
     flag &&= verified;
     if (!verified) indexes.push(index);
   }
@@ -68,7 +71,7 @@ export async function verifyDecryptorShares<P extends Point>(
 
 
 export async function reconstructDecryptor<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   shares: DecryptorShare<P>[],
 ): Promise<P> {
   const { order, neutral, operate, combine } = ctx;
@@ -85,7 +88,7 @@ export async function reconstructDecryptor<P extends Point>(
 
 
 export async function decrypt<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   ciphertext: Ciphertext<P>,
   shares: DecryptorShare<P>[],
   opts?: { threshold?: number, publicShares?: PublicShare<P>[] },
@@ -100,5 +103,5 @@ export async function decrypt<P extends Point>(
     if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_SHARES_DETECTED);
   }
   const decryptor = await reconstructDecryptor(ctx, shares);
-  return ctx.decrypt(ciphertext, { decryptor });
+  return elgamal.decrypt(ctx, ciphertext, { decryptor });
 }

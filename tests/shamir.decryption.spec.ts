@@ -1,3 +1,4 @@
+const backend = require('../src/backend');
 const elgamal = require('../src/elgamal');
 const shamir = require('../src/shamir');
 import { Messages } from '../src/shamir/enums';
@@ -7,7 +8,7 @@ import { partialPermutations } from './helpers';
 describe('Threshold encryption', () => {
   test('Verifiable decryption - success', async () => {
     const label = 'ed25519';
-    const ctx = elgamal.initCrypto(label);
+    const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
     const n = 3;
     const t = 2;
@@ -18,7 +19,7 @@ describe('Threshold encryption', () => {
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
     const pub = await ctx.operate(secret, ctx.generator);
-    const { ciphertext, decryptor: expectedDecryptor } = await ctx.encrypt(message, pub);
+    const { ciphertext, decryptor: expectedDecryptor } = await elgamal.encrypt(ctx, message, pub);
 
     // Iterate over all combinations of involved parties
     partialPermutations(shares).forEach(async (qualified: any[]) => {
@@ -51,13 +52,13 @@ describe('Threshold encryption', () => {
       // Message correctly retrieved IFF >= t parties are involved
       const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares);
       expect(await plaintext.isEqual(message)).toBe(qualified.length >= t);
-      expect(await plaintext.isEqual(await ctx.decrypt(ciphertext, { secret }))).toBe(qualified.length >= t);
+      expect(await plaintext.isEqual(await elgamal.decrypt(ctx, ciphertext, { secret }))).toBe(qualified.length >= t);
     });
   });
 
   test('Verifiable decryption - failure', async () => {
     const label = 'ed25519';
-    const ctx = elgamal.initCrypto(label);
+    const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
     const n = 5;
     const t = 3;
@@ -68,7 +69,7 @@ describe('Threshold encryption', () => {
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
     const pub = await ctx.operate(secret, ctx.generator);
-    const { ciphertext, decryptor: expectedDecryptor } = await ctx.encrypt(message, pub);
+    const { ciphertext, decryptor: expectedDecryptor } = await elgamal.encrypt(ctx, message, pub);
 
     // Generate decryptor per involved party
     let decryptorShares = [];

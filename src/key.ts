@@ -1,25 +1,24 @@
 import { Group, Point } from './backend/abstract';
-import { CryptoSystem } from './elgamal/core';
 import {
   SerializedKey,
   SerializedPublic,
   Ciphertext,
 } from './types';
 
-const elgamal = require('./elgamal');
+const backend = require('./backend');
 
 
 export class Key {
-  _ctx: CryptoSystem<Point>;
+  _ctx: Group<Point>;
   _secret: bigint;
 
-  constructor(ctx: CryptoSystem<Point>, scalar: bigint) {
+  constructor(ctx: Group<Point>, scalar: bigint) {
     this._ctx = ctx;
     // TODO: scalar validation according to cryptosystem
     this._secret = scalar;
   }
 
-  public get ctx(): CryptoSystem<Point> {
+  public get ctx(): Group<Point> {
     return this._ctx;
   }
 
@@ -43,14 +42,14 @@ export class Key {
   }
 
   static deserialize = async (serialized: SerializedKey, opts: any): Promise<Key> => {
-    const ctx = elgamal.initCrypto(opts.crypto);
+    const ctx = backend.initGroup(opts.crypto);
 
     const { value: scalar } = serialized;
     return new Key(ctx, scalar);
   }
 
   static generate = async (opts: any): Promise<Key> => {
-    const ctx = elgamal.initCrypto(opts.crypto);
+    const ctx = backend.initGroup(opts.crypto);
 
     return new Key(ctx, await ctx.randomScalar());
   }
@@ -79,15 +78,15 @@ export class Key {
 
 
 export class Public {
-  _ctx: CryptoSystem<Point>;
+  _ctx: Group<Point>;
   _point: Point;
 
-  constructor(ctx: CryptoSystem<Point>, point: Point) {
+  constructor(ctx: Group<Point>, point: Point) {
     this._ctx = ctx;
     this._point = point;
   }
 
-  public get ctx(): CryptoSystem<Point> {
+  public get ctx(): Group<Point> {
     return this._ctx;
   }
 
@@ -102,7 +101,7 @@ export class Public {
   }
 
   static deserialize = async (serialized: SerializedPublic, opts: any): Promise<Public> => {
-    const ctx = elgamal.initCrypto(opts.crypto);
+    const ctx = backend.initGroup(opts.crypto);
     const { value } = serialized;
 
     return new Public(ctx, ctx.unhexify(value));

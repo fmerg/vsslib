@@ -1,8 +1,8 @@
 ## `vsslib.shamir`
 
 ```js
-const elgamal = require('vsslib/elgamal');
-const ctx = elgamal.initCrypto('ed25519');
+const backend = require('vsslib/backend');
+const ctx = backend.initGroup('ed25519');
 ```
 
 ```js

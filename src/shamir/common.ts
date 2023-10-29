@@ -37,8 +37,3 @@ export const computeLambda = (index: number, qualifiedIndexes: number[], order: 
   });
   return lambda;
 }
-
-
-export const extractAlgorithm = (opts: any): Algorithm => opts ?
-  (opts.algorithm || Algorithms.DEFAULT) :
-  Algorithms.DEFAULT;

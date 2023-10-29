@@ -1,14 +1,14 @@
 const { Key, Public } = require('../src');
 import { Systems } from '../src/enums';
 
-const elgamal = require('../src/elgamal');
+const backend = require('../src/backend');
 
 const __labels = Object.values(Systems);
 
 
 describe('construct key', () => {
   it.each(__labels)('over %s', async (label) => {
-    const ctx = elgamal.initCrypto(label);
+    const ctx = backend.initGroup(label);
 
     const key1 = await Key.generate({ crypto: label });
     const key2 = new Key(ctx, key1.secret, key1.seed);

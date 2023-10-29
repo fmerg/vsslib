@@ -1,5 +1,4 @@
 import { Point, Group } from '../backend/abstract';
-import { CryptoSystem } from '../elgamal/core';
 import { mod } from '../utils';
 import { Polynomial } from '../lagrange';
 import { Share, selectShare, computeLambda } from './common';
@@ -34,14 +33,14 @@ export class PublicShare<P extends Point> implements Share<P> {
 
 
 export class Distribution<P extends Point> {
-  ctx: CryptoSystem<P>;
+  ctx: Group<P>;
   threshold: number;
   shares: SecretShare<P>[];
   polynomial: Polynomial;
   commitments: P[];
 
   constructor(
-    ctx: CryptoSystem<P>,
+    ctx: Group<P>,
     threshold: number,
     shares: SecretShare<P>[],
     polynomial: Polynomial,
@@ -81,7 +80,7 @@ export async function computeSecretShares<P extends Point>(
 
 
 export async function computeCommitments<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   polynomial: Polynomial
 ): Promise<P[]> {
   const { operate, generator } = ctx;
@@ -94,7 +93,7 @@ export async function computeCommitments<P extends Point>(
 
 
 export async function shareSecret<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   secret: bigint,
   nrShares: number,
   threshold: number,
@@ -123,7 +122,7 @@ export async function shareSecret<P extends Point>(
 
 
 export async function verifySecretShare<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   share: SecretShare<P>,
   commitments: P[],
 ): Promise<boolean> {
@@ -141,7 +140,7 @@ export async function verifySecretShare<P extends Point>(
 
 
 export function reconstructSecret<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   qualifiedSet: SecretShare<P>[],
 ): bigint {
   const { order } = ctx;

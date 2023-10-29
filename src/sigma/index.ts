@@ -3,7 +3,8 @@ import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
 import { leInt2Buff, leBuff2Int, mod } from '../utils';
-import { CryptoSystem } from '../elgamal/core';
+
+const utils = require('../utils');
 
 
 export type DlogPair<P extends Point> = {
@@ -26,13 +27,30 @@ export type DlogProof<P extends Point> = {
 }
 
 
+export async function fiatShamir<P extends Point>(
+  ctx: Group<P>,
+  points: P[],
+  scalars: bigint[],
+  opts?: { algorithm?: Algorithm },
+): Promise<bigint> {
+  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+  const { _modBytes, _ordBytes, _genBytes, leBuff2Scalar } = ctx;
+  const configBuff = [..._modBytes, ..._ordBytes, ..._genBytes];
+  const pointsBuff = points.reduce((acc: number[], p: P) => [...acc, ...p.toBytes()], []);
+  const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
+  const bytes = new Uint8Array([...configBuff, ...pointsBuff, ...scalarsBuff]);
+  const digest = await utils.hash(bytes, { algorithm });
+  return leBuff2Scalar(digest);
+}
+
+
 export async function proveEqDlog<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   z: bigint,
   pairs: DlogPair<P>[],
   opts?: { algorithm?: Algorithm },
 ): Promise<DlogProof<P>> {
-  const { order, randomScalar, operate, fiatShamir } = ctx;
+  const { order, randomScalar, operate } = ctx;
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const r = await randomScalar();
   const commitments = new Array(pairs.length);
@@ -40,6 +58,7 @@ export async function proveEqDlog<P extends Point>(
     commitments[i] = await operate(r, u);
   }
   const c = await fiatShamir(
+    ctx,
     [
       ...pairs.reduce((acc: P[], { u, v }: DlogPair<P>) => [...acc, u, v], []),
       ...commitments
@@ -52,14 +71,15 @@ export async function proveEqDlog<P extends Point>(
 }
 
 export async function verifyEqDlog<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   pairs: DlogPair<P>[],
   proof: DlogProof<P>,
 ): Promise<boolean> {
   const { commitments, response, algorithm } = proof;
   if (pairs.length !== commitments.length) throw new Error('TODO');
-  const { operate, combine, fiatShamir } = ctx;
+  const { operate, combine } = ctx;
   const c = await fiatShamir(
+    ctx,
     [
       ...pairs.reduce((acc: P[], { u, v }: DlogPair<P>) => [...acc, u, v], []),
       ...commitments
@@ -78,7 +98,7 @@ export async function verifyEqDlog<P extends Point>(
 
 
 export async function proveDlog<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   z: bigint,
   u: P,
   v: P,
@@ -89,7 +109,7 @@ export async function proveDlog<P extends Point>(
 
 
 export async function verifyDlog<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   u: P,
   v: P,
   proof: DlogProof<P>,
@@ -99,7 +119,7 @@ export async function verifyDlog<P extends Point>(
 
 
 export async function proveDDH<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   z: bigint,
   ddh: DDHTuple<P>,
   opts?: { algorithm?: Algorithm }
@@ -110,7 +130,7 @@ export async function proveDDH<P extends Point>(
 
 
 export async function verifyDDH<P extends Point>(
-  ctx: CryptoSystem<P>,
+  ctx: Group<P>,
   ddh: DDHTuple<P>,
   proof: DlogProof<P>,
 ): Promise<boolean> {

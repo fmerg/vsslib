@@ -1,4 +1,5 @@
 const elgamal = require('../src/elgamal');
+const backend = require('../src/backend');
 const shamir = require('../src/shamir');
 import { Messages } from '../src/shamir/enums';
 import { partialPermutations } from './helpers';
@@ -7,7 +8,7 @@ import { partialPermutations } from './helpers';
 describe('secret sharing', () => {
   test('Share with dealer', async () => {
     const label = 'ed25519';
-    const ctx = elgamal.initCrypto(label);
+    const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
     const n = 5;
     const t = 3;
