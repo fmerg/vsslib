@@ -1,13 +1,13 @@
 # `vsslib.backend`
 
 ```js
-const backend = require('vsslib/backend');
+const { backend } = require('vsslib');
 
-const group = backend.initGroup('ed25519');
+const ctx = backend.initGroup('ed25519');
 ```
 
 ```js
-const { modulus, order, generator, neutral } = group;
+const { modulus, order, generator, neutral } = ctx;
 ```
 
 ## Interface
@@ -16,38 +16,34 @@ const { modulus, order, generator, neutral } = group;
 ### Generalities
 
 ```js
-const s = await group.randomScalar();
+const s = await ctx.randomScalar();
 ```
 
 ```js
-const p = await group.randomPoint();
+const p = await ctx.randomPoint();
 ```
 
 ```js
-const p = await group.generatePoint(s);
+const isValid = await ctx.assertValid(p);
 ```
 
 ```js
-const isValid = await group.assertValid(p);
-```
-
-```js
-const areEqual = await group.assertEqual(p, q);
+const areEqual = await ctx.assertEqual(p, q);
 ```
 
 
 ### Group operations
 
 ```js
-const u = await group.combine(p, q);
+const u = await ctx.combine(p, q);
 ```
 
 ```js
-const v = await group.invert(p);
+const v = await ctx.invert(p);
 ```
 
 ```js
-const w = await group.operate(s, p);
+const w = await ctx.operate(s, p);
 ```
 
 
@@ -58,7 +54,7 @@ const pBytes = p.toBytes();
 ```
 
 ```js
-const pBack = group.unpack(pBytes);
+const pBack = ctx.unpack(pBytes);
 ```
 
 ```js
@@ -66,6 +62,6 @@ const pHex = p.toHex();
 ```
 
 ```js
-const pBack = group.unhexify(pHex);
+const pBack = ctx.unhexify(pHex);
 ```
 

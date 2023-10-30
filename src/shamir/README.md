@@ -1,16 +1,12 @@
 ## `vsslib.shamir`
 
 ```js
-const backend = require('vsslib/backend');
+const { shamir, backend } = require('vsslib');
 const ctx = backend.initGroup('ed25519');
 ```
 
 ```js
 const secret = await ctx.randomScalar();
-```
-
-```js
-const shamir = require('vsslib/shamir');
 ```
 
 ### Secret sharing

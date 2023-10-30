@@ -1,4 +1,4 @@
-const utils = require('../src/utils');
+import { utils } from '../src';
 
 
 describe('bits & bytes length', () => {

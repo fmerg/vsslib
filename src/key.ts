@@ -27,7 +27,7 @@ export class Key {
   }
 
   public get point(): Promise<Point> {
-    return this._ctx.generatePoint(this._secret);
+    return this._ctx.operate(this._secret, this._ctx.generator);
   }
 
   isEqual = async (other: Key): Promise<boolean> => {
@@ -55,7 +55,7 @@ export class Key {
   }
 
   extractPublic = async (): Promise<Public> => {
-    const point = await this._ctx.generatePoint(this._secret);
+    const point = await this._ctx.operate(this._secret, this._ctx.generator);
 
     return new Public(this._ctx, point);
   }

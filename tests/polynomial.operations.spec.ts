@@ -1,10 +1,9 @@
+import { backend } from '../src';
 import { Systems } from '../src/enums';
 import { Polynomial } from '../src/lagrange/base';
 import { Messages } from '../src/lagrange/enums';
 import { byteLen, randBigint } from '../src/utils';
 import { cartesian } from './helpers';
-const lagrange = require('../src/lagrange');
-const backend = require('../src/backend');
 
 
 const __0n = BigInt(0);

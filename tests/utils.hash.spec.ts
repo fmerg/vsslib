@@ -1,9 +1,8 @@
+import { utils } from '../src';
 import { createHash } from 'node:crypto';
 import { Algorithms, Encodings } from '../src/enums';
 import { Algorithm, Encoding } from '../src/types';
 import { cartesian } from './helpers';
-
-const utils = require('../src/utils');
 
 const __algorithms  = [...Object.values(Algorithms), undefined];
 const __encodings   = [...Object.values(Encodings), undefined];

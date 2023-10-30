@@ -1,10 +1,7 @@
+import { elgamal, backend, utils } from '../src';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { cartesian } from './helpers';
-
-const elgamal = require('../src/elgamal');
-const backend = require('../src/backend');
-const utils = require('../src/utils');
 
 
 const __labels      = Object.values(Systems);

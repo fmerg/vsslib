@@ -1,13 +1,10 @@
+import { sigma, backend } from '../src';
 import { Point } from '../src/backend/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { cartesian } from './helpers';
 
-const sigma = require('../src/sigma');
-const backend = require('../src/backend');
 const helpers = require('./helpers');
-
-
 
 const __labels      = Object.values(Systems);
 const __algorithms  = [...Object.values(Algorithms), undefined];

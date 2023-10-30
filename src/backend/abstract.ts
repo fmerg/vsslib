@@ -60,7 +60,6 @@ export abstract class Group<P extends Point> {
   abstract assertValid: (point: P) => Promise<boolean>;
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
-  abstract generatePoint: (scalar: bigint) => Promise<P>;
   abstract operate: (scalar: bigint, point: P) => Promise<P>;
   abstract combine: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;

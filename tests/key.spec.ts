@@ -1,7 +1,5 @@
-const { Key, Public } = require('../src');
 import { Systems } from '../src/enums';
-
-const backend = require('../src/backend');
+const { backend, Key, Public } = require('../src')
 
 const __labels = Object.values(Systems);
 
@@ -30,7 +28,7 @@ describe('extract public', () => {
     const key = await Key.generate({ crypto: label});
     const pub = await key.extractPublic();
     expect(await pub.ctx.isEqual(key.ctx)).toBe(true);
-    expect(await pub.point.isEqual(await key.ctx.generatePoint(key.secret)));
+    expect(await pub.point.isEqual(await key.ctx.operate(key.secret, key.ctx.generator)));
   });
 });
 

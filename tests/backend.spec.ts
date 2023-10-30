@@ -1,7 +1,6 @@
-import { Point } from '../src/backend/abstract';
+import { backend } from '../src';
 import { Systems } from '../src/enums';
-
-const backend = require('../src/backend');
+import { Point } from '../src/backend/abstract';
 
 const __labels = Object.values(Systems);
 const __0n     = BigInt(0)
@@ -10,8 +9,8 @@ const __1n     = BigInt(1)
 
 describe('group initialization', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
-    expect(group.label).toEqual(label);
+    const ctx = backend.initGroup(label);
+    expect(ctx.label).toEqual(label);
   });
 })
 
@@ -28,9 +27,9 @@ describe('group initialization failure', () => {
 
 describe('group equality', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
-    expect(await group.isEqual(backend.initGroup(label))).toBe(true);
-    expect(await group.isEqual(
+    const ctx = backend.initGroup(label);
+    expect(await ctx.isEqual(backend.initGroup(label))).toBe(true);
+    expect(await ctx.isEqual(
       backend.initGroup(
         label == Systems.ED25519 ?
           Systems.ED448 :
@@ -43,35 +42,35 @@ describe('group equality', () => {
 
 describe('neutral element', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
-    await group.assertValid(group.neutral);
+    const ctx = backend.initGroup(label);
+    await ctx.assertValid(ctx.neutral);
 
-    const neutral = await group.generatePoint(__0n);
-    expect(await neutral.isEqual(group.neutral)).toBe(true);
+    const neutral = await ctx.operate(__0n, ctx.generator);
+    expect(await neutral.isEqual(ctx.neutral)).toBe(true);
   });
 });
 
 
 describe('group generator', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
-    await group.assertValid(group.generator);
+    const ctx = backend.initGroup(label);
+    await ctx.assertValid(ctx.generator);
 
-    const generator = await group.generatePoint(__1n);
-    expect(await generator.isEqual(group.generator)).toBe(true);
+    const generator = await ctx.operate(__1n, ctx.generator);
+    expect(await generator.isEqual(ctx.generator)).toBe(true);
   });
 });
 
 
 describe('group law with neutral element', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
+    const ctx = backend.initGroup(label);
 
-    const p = await group.randomPoint();
-    const q = await group.combine(p, group.neutral);
+    const p = await ctx.randomPoint();
+    const q = await ctx.combine(p, ctx.neutral);
     expect(await q.isEqual(p)).toBe(true);
 
-    const u = await group.combine(group.neutral, p);
+    const u = await ctx.combine(ctx.neutral, p);
     expect(await u.isEqual(p)).toBe(true);
   });
 });
@@ -79,17 +78,17 @@ describe('group law with neutral element', () => {
 
 describe('group law with random pair', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
+    const ctx = backend.initGroup(label);
 
-    const r = await group.randomScalar();
-    const s = await group.randomScalar();
+    const r = await ctx.randomScalar();
+    const s = await ctx.randomScalar();
 
-    const p = await group.generatePoint(r);
-    const q = await group.generatePoint(s);
-    const u = await group.combine(p, q);
+    const p = await ctx.operate(r, ctx.generator);
+    const q = await ctx.operate(s, ctx.generator);
+    const u = await ctx.combine(p, q);
 
-    const t = (r + s) % group.order;            // TODO: scalar combination
-    const v = await group.generatePoint(t);
+    const t = (r + s) % ctx.order;            // TODO: scalar combination
+    const v = await ctx.operate(t, ctx.generator);
 
     expect(await v.isEqual(u)).toBe(true);
   });
@@ -98,62 +97,62 @@ describe('group law with random pair', () => {
 
 describe('inverse of neutral', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
+    const ctx = backend.initGroup(label);
 
-    const neutInv = await group.invert(group.neutral);
-    expect(await neutInv.isEqual(group.neutral)).toBe(true);
+    const neutInv = await ctx.invert(ctx.neutral);
+    expect(await neutInv.isEqual(ctx.neutral)).toBe(true);
 
-    const neutral = await group.combine(group.neutral, neutInv);
-    expect(await neutral.isEqual(group.neutral)).toBe(true);
+    const neutral = await ctx.combine(ctx.neutral, neutInv);
+    expect(await neutral.isEqual(ctx.neutral)).toBe(true);
   });
 });
 
 
 describe('inverse of generator', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
+    const ctx = backend.initGroup(label);
 
-    const minusOne = group.order - __1n;             // TODO: scalar -1
-    const expected = await group.generatePoint(minusOne);
-    const genInv = await group.invert(group.generator);
+    const minusOne = ctx.order - __1n;             // TODO: scalar -1
+    const expected = await ctx.operate(minusOne, ctx.generator);
+    const genInv = await ctx.invert(ctx.generator);
     expect(await genInv.isEqual(expected)).toBe(true);
 
-    const neutral = await group.combine(group.generator, genInv);
-    expect(await neutral.isEqual(group.neutral)).toBe(true);
+    const neutral = await ctx.combine(ctx.generator, genInv);
+    expect(await neutral.isEqual(ctx.neutral)).toBe(true);
   });
 });
 
 
 describe('inverse of random point', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
+    const ctx = backend.initGroup(label);
 
-    const r = await group.randomScalar();
-    const p = await group.generatePoint(r);
-    const pInv = await group.invert(p);
+    const r = await ctx.randomScalar();
+    const p = await ctx.operate(r, ctx.generator);
+    const pInv = await ctx.invert(p);
 
-    const minusR = group.order - BigInt(r);             // TODO: scalar -r
-    const expected = await group.generatePoint(minusR);
+    const minusR = ctx.order - BigInt(r);             // TODO: scalar -r
+    const expected = await ctx.operate(minusR, ctx.generator);
     expect(await pInv.isEqual(expected)).toBe(true);
 
-    const neutral = await group.combine(p, pInv);
-    expect(await neutral.isEqual(group.neutral)).toBe(true);
+    const neutral = await ctx.combine(p, pInv);
+    expect(await neutral.isEqual(ctx.neutral)).toBe(true);
   });
 });
 
 
 describe('scalar operation on generator', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
+    const ctx = backend.initGroup(label);
 
-    let expected = await group.operate(__0n, group.generator)
-    expect(await group.neutral.isEqual(expected)).toBe(true);
-    expected = await group.generatePoint(__0n)
-    expect(await group.neutral.isEqual(expected)).toBe(true);
+    let expected = await ctx.operate(__0n, ctx.generator)
+    expect(await ctx.neutral.isEqual(expected)).toBe(true);
+    expected = await ctx.operate(__0n, ctx.generator)
+    expect(await ctx.neutral.isEqual(expected)).toBe(true);
 
-    const s = await group.randomScalar();
-    const p = await group.generatePoint(s);
-    const q = await group.operate(s, group.generator);
+    const s = await ctx.randomScalar();
+    const p = await ctx.operate(s, ctx.generator);
+    const q = await ctx.operate(s, ctx.generator);
     expect(await q.isEqual(p)).toBe(true);
   })
 });
@@ -161,32 +160,32 @@ describe('scalar operation on generator', () => {
 
 describe('scalar operation on random point', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
+    const ctx = backend.initGroup(label);
 
     let s: bigint;
     let current: Point;
     let expected: Point
 
-    const p = await group.randomPoint();                      // p
+    const p = await ctx.randomPoint();                      // p
 
     s = __0n;
-    current = group.neutral;                                  // 0
-    expected = await group.operate(s, p);                     // 0 * p
+    current = ctx.neutral;                                  // 0
+    expected = await ctx.operate(s, p);                     // 0 * p
     expect(await current.isEqual(expected)).toBe(true);
 
     s += __1n;
     current = p;                                              // p
-    expected = await group.operate(s, p);                     // 1 * p
+    expected = await ctx.operate(s, p);                     // 1 * p
     expect(await current.isEqual(expected)).toBe(true);
 
     s += __1n;
-    current = await group.combine(p, current);                // p + p
-    expected = await group.operate(s, p);                     // 2 * p
+    current = await ctx.combine(p, current);                // p + p
+    expected = await ctx.operate(s, p);                     // 2 * p
     expect(await current.isEqual(expected)).toBe(true);
 
     s += __1n;
-    current = await group.combine(p, current);                // p + (p + p)
-    expected = await group.operate(s, p);                     // 3 * p
+    current = await ctx.combine(p, current);                // p + (p + p)
+    expected = await ctx.operate(s, p);                     // 3 * p
     expect(await current.isEqual(expected)).toBe(true);
   });
 });
@@ -194,10 +193,10 @@ describe('scalar operation on random point', () => {
 
 describe('point to bytes and back', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
-    const p = await group.randomPoint();
+    const ctx = backend.initGroup(label);
+    const p = await ctx.randomPoint();
     const pBytes = p.toBytes();
-    const pBack = group.unpack(pBytes);
+    const pBack = ctx.unpack(pBytes);
     expect(await pBack.isEqual(p)).toBe(true);
   })
 });
@@ -205,10 +204,10 @@ describe('point to bytes and back', () => {
 
 describe('point to hex and back', () => {
   it.each(__labels)('over %s', async (label) => {
-    const group = backend.initGroup(label);
-    const p = await group.randomPoint();
+    const ctx = backend.initGroup(label);
+    const p = await ctx.randomPoint();
     const pHex = p.toHex();
-    const pBack = group.unhexify(pHex);
+    const pBack = ctx.unhexify(pHex);
     expect(await pBack.isEqual(p)).toBe(true);
   })
 });

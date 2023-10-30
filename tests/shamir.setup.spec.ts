@@ -1,5 +1,4 @@
-const backend = require('../src/backend');
-const shamir = require('../src/shamir');
+import { shamir, elgamal, backend } from '../src';
 import { Messages } from '../src/shamir/enums';
 
 

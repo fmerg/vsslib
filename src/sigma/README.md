@@ -1,19 +1,25 @@
 # `vsslib.sigma`
 
+```js
+const { sigma, backend } = require('vsslib');
+
+const ctx = backend.initGroup('ed25519');
+```
+
 ## Dlog proof (Schnorr protocol)
 
 Generate a SHA256-based NIZK proof-of-knowledge of a secret scalar `z` being
 the discrete logarithm of a point `u` with base point `v` as follows:
 
 ```js
-const proof = await ctx.proveDlog(z, u, v, { algorithm: 'sha256' });
+const proof = await sigma.proveDlog(ctx, z, u, v, { algorithm: 'sha256' });
 ```
 
 Verify the proof against the `(u, v)` pair as follows:
 
 
 ```js
-const valid = await ctx.verifyDlog({ u, v }, proof);   // boolean
+const valid = await sigma.verifyDlog(ctx, u, v, proof);   // boolean
 ```
 
 ## Multiple AND Dlog proof
@@ -29,13 +35,13 @@ scalar `z` being the discrete logarithm of `vi` with base `ui` for all `i`.
 Generate a SHA256-based NIZK proof-of-knowledge of this secret as follows:
 
 ```js
-const proof = await ctx.proveEqDlog(z, [{ u: u1, v: v1 }, { u: u2, v: v2 }, ...], { algorithm: 'sha256' });
+const proof = await sigma.proveEqDlog(ctx, z, [{ u: u1, v: v1 }, { u: u2, v: v2 }, ...], { algorithm: 'sha256' });
 ```
 
 Verify the proof against the acclaimed pairs as follows:
 
 ```js
-const valid = await ctx.verifyEqDlog([{ u: u1, v: v1 }, { u: u2, v: v2 }, ...], proof);
+const valid = await sigma.verifyEqDlog(ctx, [{ u: u1, v: v1 }, { u: u2, v: v2 }, ...], proof);
 ```
 
 ## DDH proof (Chaum-Pedersen protocol)
@@ -49,13 +55,13 @@ Genearate a SHA256-based NIZK proof-of-knowledge of the secret scalar
 `z` as follows:
 
 ```js
-const proof = await ctx.proveDDH(z, { u, v, w }, { algorithm: 'sha256' });
+const proof = await sigma.proveDDH(ctx, z, { u, v, w }, { algorithm: 'sha256' });
 ```
 
 Verify the proof against the `(u, v, w)` DDH-tuple as follows:
 
 ```js
-const valid = await ctx.verifyDDH({ u, v, w }, proof);
+const valid = await sigma.verifyDDH(ctx, { u, v, w }, proof);
 ```
 
 Note that `(u, v, w)` being a DDH-tuple as above is equivalent to

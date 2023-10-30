@@ -96,10 +96,6 @@ export class EcGroup extends Group<EcPoint> {
     return new EcPoint(this._base.multiply(scalar));
   }
 
-  generatePoint = async (scalar: bigint): Promise<EcPoint> => {
-    return new EcPoint(scalar !== __0n ? this._base.multiply(scalar) : this._zero);
-  }
-
   operate = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {
     return new EcPoint(scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero);
   }

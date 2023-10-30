@@ -1,6 +1,4 @@
-const backend = require('../src/backend');
-const elgamal = require('../src/elgamal');
-const shamir = require('../src/shamir');
+import { shamir, elgamal, backend } from '../src';
 import { Messages } from '../src/shamir/enums';
 import { partialPermutations } from './helpers';
 
