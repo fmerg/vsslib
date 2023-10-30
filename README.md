@@ -9,24 +9,24 @@
 ### Key generation
 
 ```js
-import { Key } from 'vsslib';
+import { key } from 'vsslib';
 
-const key = await Key.generate({ crypto: 'ed25519' });
-const pub = await key.extractPublic();
+const priv = await key.generate('ed25519');
+const pub = await priv.extractPublic();
 ```
 
 
 ### Key serialization
 
 ```js
-const serialized = await key.serialize();
+const serialized = await priv.serialize();
 ```
 
 The original key is recovered as follows:
 
 ```js
-const keyBack = await Key.deserialize(serialized, { crypto: 'ed25519' });
-const areEqual = await keyBack.isEqual(key);  // true;
+const privBack = await Key.deserialize(serialized, { crypto: 'ed25519' });
+const areEqual = await privBack.isEqual(priv);  // true;
 ```
 
 The public counterpart is serialized in a similar fashion:

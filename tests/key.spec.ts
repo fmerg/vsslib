@@ -1,5 +1,5 @@
 import { Systems } from '../src/enums';
-const { backend, Key, Public } = require('../src')
+const { backend, key, Key, Public } = require('../src')
 
 const __labels = Object.values(Systems);
 
@@ -8,16 +8,16 @@ describe('construct key', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
 
-    const key1 = await Key.generate({ crypto: label });
-    const key2 = new Key(ctx, key1.secret, key1.seed);
-    expect(await key1.isEqual(key2)).toBe(true);
+    const priv1 = await key.generate(label);
+    const priv2 = new Key(ctx, priv1.secret, priv1.seed);
+    expect(await priv1.isEqual(priv2)).toBe(true);
 
-    const point1 = await key1.point;
-    const point2 = await key2.point;
+    const point1 = await priv1.point;
+    const point2 = await priv2.point;
     expect(await point2.isEqual(point1)).toBe(true);
 
-    const pub1 = await key1.extractPublic();
-    const pub2 = await key2.extractPublic();
+    const pub1 = await priv1.extractPublic();
+    const pub2 = await priv2.extractPublic();
     expect(await pub2.isEqual(pub1)).toBe(true);
   });
 });
@@ -25,28 +25,28 @@ describe('construct key', () => {
 
 describe('extract public', () => {
   it.each(__labels)('over %s', async (label) => {
-    const key = await Key.generate({ crypto: label});
-    const pub = await key.extractPublic();
-    expect(await pub.ctx.isEqual(key.ctx)).toBe(true);
-    expect(await pub.point.isEqual(await key.ctx.operate(key.secret, key.ctx.generator)));
+    const priv = await key.generate(label);
+    const pub = await priv.extractPublic();
+    expect(await pub.ctx.isEqual(priv.ctx)).toBe(true);
+    expect(await pub.point.isEqual(await priv.ctx.operate(priv.secret, priv.ctx.generator)));
   });
 });
 
 
 describe('serialize key', () => {
   it.each(__labels)('over %s', async (label) => {
-    const key = await Key.generate({ crypto: label });
-    const serialized = await key.serialize();
+    const priv = await key.generate(label);
+    const serialized = await priv.serialize();
     const keyBack = await Key.deserialize(serialized, { crypto: label });
-    expect(await keyBack.isEqual(key)).toBe(true);
+    expect(await keyBack.isEqual(priv)).toBe(true);
   });
 });
 
 
 describe('serialize public', () => {
   it.each(__labels)('over %s', async (label) => {
-    const key = await Key.generate({ crypto: label });
-    const pub = await key.extractPublic();
+    const priv = await key.generate(label);
+    const pub = await priv.extractPublic();
     const serialized = await pub.serialize()
     const pubBack = await Public.deserialize(serialized, { crypto: label });
     expect(await pubBack.isEqual(pub)).toBe(true);
@@ -56,14 +56,14 @@ describe('serialize public', () => {
 
 describe('diffie-hellman', () => {
   it.each(__labels)('over %s', async (label) => {
-    const key1 = await Key.generate({ crypto: label });
-    const pub1 = await key1.extractPublic();
+    const priv1 = await key.generate(label);
+    const pub1 = await priv1.extractPublic();
 
-    const key2 = await Key.generate({ crypto: label });
-    const pub2 = await key2.extractPublic();
+    const priv2 = await key.generate(label);
+    const pub2 = await priv2.extractPublic();
 
-    const pt1 = await key1.diffieHellman(pub2);
-    const pt2 = await key2.diffieHellman(pub1);
+    const pt1 = await priv1.diffieHellman(pub2);
+    const pt2 = await priv2.diffieHellman(pub1);
 
     expect(await pt1.isEqual(pt2)).toBe(true);
   });
@@ -72,13 +72,13 @@ describe('diffie-hellman', () => {
 
 describe('encryption and decryption of point', () => {
   it.each(__labels)('over %s', async (label) => {
-    const key = await Key.generate({ crypto: label });
-    const pub = await key.extractPublic();
+    const priv = await key.generate(label);
+    const pub = await priv.extractPublic();
 
-    const msgPoint = await key.ctx.randomPoint();
+    const msgPoint = await priv.ctx.randomPoint();
 
     const [ciphertext, r] = await pub.encryptPoint(msgPoint);
-    const plaintext = await key.decryptPoint(ciphertext);
+    const plaintext = await priv.decryptPoint(ciphertext);
     expect(await plaintext.isEqual(msgPoint)).toBe(true);
   });
 });

@@ -8,10 +8,6 @@ export type SerializedKey = {
   value: bigint;
 }
 
-export type SerializedPublic = {
-  value: string;
-}
-
 export type Ciphertext = {
   alpha:  Point,
   beta:   Point,
@@ -56,12 +52,6 @@ export class Key {
 
     const { value: scalar } = serialized;
     return new Key(ctx, scalar);
-  }
-
-  static generate = async (opts: any): Promise<Key> => {
-    const ctx = backend.initGroup(opts.crypto);
-
-    return new Key(ctx, await ctx.randomScalar());
   }
 
   extractPublic = async (): Promise<Public> => {

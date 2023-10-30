@@ -1,6 +1,7 @@
 import { Key, Public } from './key';
 
 const backend = require('./backend');
+const key = require('./key');
 const elgamal = require('./elgamal');
 const sigma = require('./sigma');
 const lagrange = require('./lagrange');
@@ -11,6 +12,7 @@ export {
   Key,
   Public,
   backend,
+  key,
   elgamal,
   sigma,
   lagrange,
