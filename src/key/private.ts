@@ -6,6 +6,7 @@ import { Label } from '../types';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
+const elgamal = require('../elgamal');
 
 
 export type SerializedPrivateKey = {
@@ -53,17 +54,13 @@ export class PrivateKey<P extends Point> {
   }
 
   async proveIdentity(opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> {
-    const { ctx: ctx, secret: secret } = this;
+    const { ctx, secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     return sigma.proveDlog(ctx, secret, ctx.generator, pub, opts);
   }
 
-  async decryptPoint(ciphertext: Ciphertext<P>): Promise<P> {
-    const { alpha, beta } = ciphertext;
-    const { ctx, secret } = this;
-    const d = await ctx.operate(secret, beta);  // b ^ x = (g ^ r) ^ x
-    const dInv = await ctx.invert(d)
-    return ctx.combine(alpha, dInv);
+  async decrypt(ciphertext: Ciphertext<P>): Promise<P> {
+    return elgamal.decrypt(this.ctx, ciphertext, { secret: this.secret });
   }
 
 }

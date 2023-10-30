@@ -72,20 +72,6 @@ describe('diffie-hellman', () => {
 });
 
 
-describe('encryption and decryption of point', () => {
-  it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-
-    const msgPoint = await priv.ctx.randomPoint();
-
-    const [ciphertext, r] = await pub.encryptPoint(msgPoint);
-    const plaintext = await priv.decryptPoint(ciphertext);
-    expect(await plaintext.isEqual(msgPoint)).toBe(true);
-  });
-});
-
-
 describe('identity proof - success', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
@@ -121,5 +107,17 @@ describe('identity proof - failure if wrong algorithm', () => {
     await expect(pub.verifyIdentity(proof)).rejects.toThrow(
       Messages.INVALID_IDENTITY_PROOF
     );
+  });
+});
+
+
+describe('encryption and decryption', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const priv = await key.generate(label);
+    const pub = await priv.publicKey();
+    const message = await priv.ctx.randomPoint();
+    const { ciphertext } = await pub.encrypt(message);
+    const plaintext = await priv.decrypt(ciphertext);
+    expect(await plaintext.isEqual(message)).toBe(true);
   });
 });

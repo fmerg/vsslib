@@ -13,7 +13,6 @@ const pub = await priv.publicKey();
 
 ## Serialization
 
-
 ```js
 const serialized = priv.serialize();
 const privBack = key.deserialize(serialized);
@@ -26,9 +25,20 @@ const pubBack = key.deserialize(serialized);
 
 ## Identity proof (Schnorr identification)
 
-
 ```js
 const proof = await priv.proveIdentity({ algorithm: 'sha256'});
 
 await pub.verifyIdentity(proof);
 ```
+
+
+## Encryption
+
+```js
+const { ciphertext, decryptor } = await pub.encrypt(message);
+const plaintext = await priv.decrypt(ciphertext);
+```
+
+### Proof of encryption
+
+### Proof of decryptor

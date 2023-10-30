@@ -6,6 +6,7 @@ import { Messages } from './enums';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
+const elgamal = require('../elgamal');
 
 
 export type SerializedPublicKey = {
@@ -36,18 +37,15 @@ export class PublicKey<P extends Point> {
   }
 
   async verifyIdentity(proof: DlogProof<P>): Promise<boolean> {
-    const { ctx: ctx, point: pub } = this;
+    const { ctx, point: pub } = this;
     const verified = await sigma.verifyDlog(ctx, ctx.generator, pub, proof);
     if (!verified) throw new Error(Messages.INVALID_IDENTITY_PROOF);
     return verified;
   }
 
-  async encryptPoint (msgPoint: P): Promise<[Ciphertext<P>, bigint]> {
-    const { ctx, point } = this;
-    const r = await ctx.randomScalar();                          // r
-    const d = await ctx.operate(r, point);                // y ^ r
-    const alpha = await ctx.combine(d, msgPoint);          // d * m
-    const beta  = await ctx.operate(r, ctx.generator); // g ^ r
-    return [{ alpha, beta }, r];
+  async encrypt(message: P): Promise<{
+    ciphertext: Ciphertext<P>, randomness: bigint, decryptor: P
+  }> {
+    return elgamal.encrypt(this.ctx, message, this.point);
   }
 }
