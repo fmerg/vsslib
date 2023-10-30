@@ -7,14 +7,14 @@ import { Point } from '../backend/abstract';
 const backend = require('../backend');
 
 
-async function generate(label: Label): Promise<Key> {
+async function generate(label: Label): Promise<Key<Point>> {
   assertLabel(label);
   const ctx = backend.initGroup(label);
   const secret = await ctx.randomScalar();
   return new Key(ctx, secret);
 }
 
-function deserialize(serialized: SerializedKey | SerializedPublic): Key | Public {
+function deserialize(serialized: SerializedKey | SerializedPublic): Key<Point> | Public<Point> {
   const { value, system: label } = serialized;
   const ctx = backend.initGroup(label);
   return typeof value == 'bigint' ?

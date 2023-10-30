@@ -1,4 +1,5 @@
 import { Group, Point } from '../backend/abstract';
+import { Ciphertext } from '../elgamal/core';
 import { Label } from '../types';
 
 const backend = require('../backend');
@@ -10,41 +11,35 @@ export type SerializedPublic = {
 }
 
 
-export type Ciphertext = {
-  alpha:  Point,
-  beta:   Point,
-}
+export class Public<P extends Point> {
+  _ctx: Group<P>;
+  _point: P;
 
-
-export class Public {
-  _ctx: Group<Point>;
-  _point: Point;
-
-  constructor(ctx: Group<Point>, point: Point) {
+  constructor(ctx: Group<P>, point: P) {
     this._ctx = ctx;
     this._point = point;
-  }
-
-  public get ctx(): Group<Point> {
-    return this._ctx;
-  }
-
-  public get point(): Point {
-    return this._point;
   }
 
   serialize = (): SerializedPublic => {
     return { value: this._point.toHex(), system: this._ctx.label };
   }
 
-  isEqual = async (other: Public): Promise<boolean> => {
+  public get ctx(): Group<P> {
+    return this._ctx;
+  }
+
+  public get point(): P {
+    return this._point;
+  }
+
+  async isEqual<Q extends Point>(other: Public<Q>): Promise<boolean> {
     return (
       (await this._ctx.isEqual(other.ctx)) &&
       (await this._point.isEqual(other.point))
     );
   }
 
-  encryptPoint = async (msgPoint: Point): Promise<[Ciphertext, bigint]> => {
+  async encryptPoint (msgPoint: P): Promise<[Ciphertext<P>, bigint]> {
     const r = await this._ctx.randomScalar();                          // r
     const d = await this._ctx.operate(r, this._point);                // y ^ r
     const alpha = await this._ctx.combine(d, msgPoint);          // d * m

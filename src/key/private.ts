@@ -1,4 +1,5 @@
 import { Group, Point } from '../backend/abstract';
+import { Ciphertext } from '../elgamal/core';
 import { Public } from './public';
 import { Label } from '../types';
 
@@ -10,23 +11,21 @@ export type SerializedKey = {
   system: Label;
 }
 
-export type Ciphertext = {
-  alpha:  Point,
-  beta:   Point,
-}
 
-
-export class Key {
-  _ctx: Group<Point>;
+export class Key<P extends Point> {
+  _ctx: Group<P>;
   _secret: bigint;
 
-  constructor(ctx: Group<Point>, scalar: bigint) {
+  constructor(ctx: Group<P>, scalar: bigint) {
     this._ctx = ctx;
-    // TODO: scalar validation according to cryptosystem
     this._secret = scalar;
   }
 
-  public get ctx(): Group<Point> {
+  serialize = (): SerializedKey => {
+    return { value: this._secret, system: this._ctx.label };
+  }
+
+  public get ctx(): Group<P> {
     return this._ctx;
   }
 
@@ -34,34 +33,30 @@ export class Key {
     return this._secret;
   }
 
-  public get point(): Promise<Point> {
+  public get point(): Promise<P> {
     return this._ctx.operate(this._secret, this._ctx.generator);
   }
 
-  isEqual = async (other: Key): Promise<boolean> => {
+  async isEqual<Q extends Point>(other: Key<Q>): Promise<boolean> {
     return (
       (await this._ctx.isEqual(other.ctx)) &&
       (this._secret == other.secret)
     );
   }
 
-  serialize = (): SerializedKey => {
-    return { value: this._secret, system: this._ctx.label };
-  }
-
-  extractPublic = async (): Promise<Public> => {
+  async extractPublic(): Promise<Public<P>> {
     const point = await this._ctx.operate(this._secret, this._ctx.generator);
 
     return new Public(this._ctx, point);
   }
 
-  diffieHellman = async (pub: Public): Promise<Point> => {
+  async diffieHellman(pub: Public<P>): Promise<P> {
     await this._ctx.assertValid(pub.point);
 
     return this._ctx.operate(this._secret, pub.point);
   }
 
-  decryptPoint = async (ciphertext: Ciphertext): Promise<Point> => {
+  async decryptPoint(ciphertext: Ciphertext<P>): Promise<P> {
     const { alpha, beta } = ciphertext;
     const d = await this._ctx.operate(this._secret, beta);  // b ^ x = (g ^ r) ^ x
     const dInv = await this._ctx.invert(d)
