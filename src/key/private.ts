@@ -1,11 +1,13 @@
 import { Group, Point } from '../backend/abstract';
 import { Public } from './public';
+import { Label } from '../types';
 
 const backend = require('../backend');
 
 
 export type SerializedKey = {
   value: bigint;
+  system: Label;
 }
 
 export type Ciphertext = {
@@ -44,14 +46,7 @@ export class Key {
   }
 
   serialize = (): SerializedKey => {
-    return { value: this._secret };
-  }
-
-  static deserialize = async (serialized: SerializedKey, opts: any): Promise<Key> => {
-    const ctx = backend.initGroup(opts.crypto);
-
-    const { value: scalar } = serialized;
-    return new Key(ctx, scalar);
+    return { value: this._secret, system: this._ctx.label };
   }
 
   extractPublic = async (): Promise<Public> => {

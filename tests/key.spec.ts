@@ -36,9 +36,9 @@ describe('extract public', () => {
 describe('serialize key', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
-    const serialized = await priv.serialize();
-    const keyBack = await Key.deserialize(serialized, { crypto: label });
-    expect(await keyBack.isEqual(priv)).toBe(true);
+    const serialized = priv.serialize();
+    const privBack = key.deserialize(serialized);
+    expect(await privBack.isEqual(priv)).toBe(true);
   });
 });
 
@@ -47,8 +47,8 @@ describe('serialize public', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
     const pub = await priv.extractPublic();
-    const serialized = await pub.serialize()
-    const pubBack = await Public.deserialize(serialized, { crypto: label });
+    const serialized = pub.serialize()
+    const pubBack = key.deserialize(serialized);
     expect(await pubBack.isEqual(pub)).toBe(true);
   });
 });

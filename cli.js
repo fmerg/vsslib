@@ -12,20 +12,21 @@ const enums = require('./dist/enums')
 const program = new Command();
 
 async function generateKey(options) {
+  console.log(options);
   const priv = await key.generate(options.crypto);
   const pub = await priv.extractPublic();
 
-  const privSerialized = await priv.serialize();
+  const privSerialized = priv.serialize();
   console.log(privSerialized);
 
-  const privBack = await Key.deserialize(privSerialized, { crypto: options.crypto });
+  const privBack = key.deserialize(privSerialized);
   let areEqual = await privBack.isEqual(priv);
   console.log(areEqual);
 
-  const pubSerialized = await pub.serialize();
+  const pubSerialized = pub.serialize();
   console.log(pubSerialized);
 
-  const pubBack = await Public.deserialize(pubSerialized, { crypto: options.crypto });
+  const pubBack = key.deserialize(pubSerialized);
   areEqual = await pubBack.isEqual(pub);
   console.log(areEqual);
 }

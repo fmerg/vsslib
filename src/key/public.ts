@@ -1,10 +1,12 @@
 import { Group, Point } from '../backend/abstract';
+import { Label } from '../types';
 
 const backend = require('../backend');
 
 
 export type SerializedPublic = {
   value: string;
+  system: Label;
 }
 
 
@@ -31,17 +33,8 @@ export class Public {
     return this._point;
   }
 
-  serialize = async (): Promise<SerializedPublic> => {
-    const value = this._point.toHex();
-
-    return { value };
-  }
-
-  static deserialize = async (serialized: SerializedPublic, opts: any): Promise<Public> => {
-    const ctx = backend.initGroup(opts.crypto);
-    const { value } = serialized;
-
-    return new Public(ctx, ctx.unhexify(value));
+  serialize = (): SerializedPublic => {
+    return { value: this._point.toHex(), system: this._ctx.label };
   }
 
   isEqual = async (other: Public): Promise<boolean> => {
