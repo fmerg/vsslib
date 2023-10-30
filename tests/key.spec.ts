@@ -1,5 +1,5 @@
 import { Systems } from '../src/enums';
-const { backend, key, Key, Public } = require('../src')
+const { backend, key, PrivateKey, PublicKey } = require('../src')
 
 const __labels = Object.values(Systems);
 
@@ -9,7 +9,7 @@ describe('construct key', () => {
     const ctx = backend.initGroup(label);
 
     const priv1 = await key.generate(label);
-    const priv2 = new Key(ctx, priv1.secret, priv1.seed);
+    const priv2 = new PrivateKey(ctx, priv1.secret, priv1.seed);
     expect(await priv1.isEqual(priv2)).toBe(true);
 
     const point1 = await priv1.point;

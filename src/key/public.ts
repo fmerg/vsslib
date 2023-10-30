@@ -11,7 +11,7 @@ export type SerializedPublic = {
 }
 
 
-export class Public<P extends Point> {
+export class PublicKey<P extends Point> {
   _ctx: Group<P>;
   _point: P;
 
@@ -32,7 +32,7 @@ export class Public<P extends Point> {
     return this._point;
   }
 
-  async isEqual<Q extends Point>(other: Public<Q>): Promise<boolean> {
+  async isEqual<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
     return (
       (await this._ctx.isEqual(other.ctx)) &&
       (await this._point.isEqual(other.point))

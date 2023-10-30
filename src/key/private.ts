@@ -1,6 +1,6 @@
 import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
-import { Public } from './public';
+import { PublicKey } from './public';
 import { Label } from '../types';
 
 const backend = require('../backend');
@@ -12,7 +12,7 @@ export type SerializedKey = {
 }
 
 
-export class Key<P extends Point> {
+export class PrivateKey<P extends Point> {
   _ctx: Group<P>;
   _secret: bigint;
 
@@ -37,20 +37,20 @@ export class Key<P extends Point> {
     return this._ctx.operate(this._secret, this._ctx.generator);
   }
 
-  async isEqual<Q extends Point>(other: Key<Q>): Promise<boolean> {
+  async isEqual<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
     return (
       (await this._ctx.isEqual(other.ctx)) &&
       (this._secret == other.secret)
     );
   }
 
-  async extractPublic(): Promise<Public<P>> {
+  async extractPublic(): Promise<PublicKey<P>> {
     const point = await this._ctx.operate(this._secret, this._ctx.generator);
 
-    return new Public(this._ctx, point);
+    return new PublicKey(this._ctx, point);
   }
 
-  async diffieHellman(pub: Public<P>): Promise<P> {
+  async diffieHellman(pub: PublicKey<P>): Promise<P> {
     await this._ctx.assertValid(pub.point);
 
     return this._ctx.operate(this._secret, pub.point);

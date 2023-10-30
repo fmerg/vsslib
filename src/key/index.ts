@@ -1,5 +1,5 @@
-import { Key, SerializedKey } from './private';
-import { Public, SerializedPublic } from './public';
+import { PrivateKey, SerializedKey } from './private';
+import { PublicKey, SerializedPublic } from './public';
 
 import { Label } from '../types';
 import { assertLabel } from '../utils/checkers';
@@ -7,24 +7,26 @@ import { Point } from '../backend/abstract';
 const backend = require('../backend');
 
 
-async function generate(label: Label): Promise<Key<Point>> {
+async function generate(label: Label): Promise<PrivateKey<Point>> {
   assertLabel(label);
   const ctx = backend.initGroup(label);
   const secret = await ctx.randomScalar();
-  return new Key(ctx, secret);
+  return new PrivateKey(ctx, secret);
 }
 
-function deserialize(serialized: SerializedKey | SerializedPublic): Key<Point> | Public<Point> {
+function deserialize(
+  serialized: SerializedKey | SerializedPublic
+): PrivateKey<Point> | PublicKey<Point> {
   const { value, system: label } = serialized;
   const ctx = backend.initGroup(label);
   return typeof value == 'bigint' ?
-    new Key(ctx, value) :
-    new Public(ctx, ctx.unhexify(value));
+    new PrivateKey(ctx, value) :
+    new PublicKey(ctx, ctx.unhexify(value));
 }
 
 export {
-  Key,
-  Public,
+  PrivateKey,
+  PublicKey,
   generate,
   deserialize,
 }
