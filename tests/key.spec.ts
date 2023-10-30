@@ -1,4 +1,6 @@
-import { Systems } from '../src/enums';
+import { Algorithms, Systems } from '../src/enums';
+import { Messages } from '../src/key/enums';
+import { Algorithm } from '../src/types';
 const { backend, key, PrivateKey, PublicKey } = require('../src')
 
 const __labels = Object.values(Systems);
@@ -80,5 +82,44 @@ describe('encryption and decryption of point', () => {
     const [ciphertext, r] = await pub.encryptPoint(msgPoint);
     const plaintext = await priv.decryptPoint(ciphertext);
     expect(await plaintext.isEqual(msgPoint)).toBe(true);
+  });
+});
+
+
+describe('identity proof - success', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const priv = await key.generate(label);
+    const pub = await priv.extractPublic();
+    const proof = await priv.proveIdentity();
+    const verified = await pub.verifyIdentity(proof);
+    expect(verified).toBe(true);
+  });
+});
+
+
+describe('identity proof - failure if tampered proof', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const priv = await key.generate(label);
+    const pub = await priv.extractPublic();
+    const proof = await priv.proveIdentity();
+    proof.commitments[0] = await priv.ctx.randomPoint();
+    await expect(pub.verifyIdentity(proof)).rejects.toThrow(
+      Messages.INVALID_IDENTITY_PROOF
+    );
+  });
+});
+
+
+describe('identity proof - failure if wrong algorithm', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const priv = await key.generate(label);
+    const pub = await priv.extractPublic();
+    const proof = await priv.proveIdentity();
+    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
+      Algorithms.SHA512 :
+      Algorithms.SHA256;
+    await expect(pub.verifyIdentity(proof)).rejects.toThrow(
+      Messages.INVALID_IDENTITY_PROOF
+    );
   });
 });

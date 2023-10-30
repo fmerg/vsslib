@@ -1,9 +1,11 @@
 import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
+import { DlogProof } from '../sigma';
 import { PublicKey } from './public';
 import { Label } from '../types';
 
 const backend = require('../backend');
+const sigma = require('../sigma');
 
 
 export type SerializedKey = {
@@ -54,6 +56,12 @@ export class PrivateKey<P extends Point> {
     await this._ctx.assertValid(pub.point);
 
     return this._ctx.operate(this._secret, pub.point);
+  }
+
+  async proveIdentity(opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> {
+    const { _ctx: ctx, _secret: secret } = this;
+    const pub = await ctx.operate(secret, ctx.generator);
+    return sigma.proveDlog(ctx, secret, ctx.generator, pub, opts);
   }
 
   async decryptPoint(ciphertext: Ciphertext<P>): Promise<P> {

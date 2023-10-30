@@ -23,3 +23,12 @@ const privBack = key.deserialize(serialized);
 const serialized = pub.serialize();
 const pubBack = key.deserialize(serialized);
 ```
+
+## Identity proof (Schnorr identification)
+
+
+```js
+const proof = await priv.proveIdentity({ algorithm: 'sha256'});
+
+await pub.verifyIdentity(proof);
+```
