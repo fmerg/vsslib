@@ -1,7 +1,7 @@
-import { Modular } from '../../enums';
-import { Label } from '../../types';
-import { Point, Group } from '../abstract';
-import { assertLabel } from '../../utils/checkers';
+import { Modular } from '../enums';
+import { Label } from '../types';
+import { assertLabel } from '../utils/checkers';
+import { Point, Group } from './abstract';
 import { default as initModular } from './modular';
 import { default as initElliptic } from './elliptic';
 

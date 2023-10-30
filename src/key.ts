@@ -1,27 +1,24 @@
-import { Group, Point } from './elgamal/abstract';
-import { CryptoSystem } from './elgamal/core';
+import { Group, Point } from './backend/abstract';
 import {
   SerializedKey,
   SerializedPublic,
   Ciphertext,
 } from './types';
 
-const elgamal = require('./elgamal');
+const backend = require('./backend');
 
-
-export type Ctx = CryptoSystem<Point, Group<Point>>;
 
 export class Key {
-  _ctx: Ctx;
+  _ctx: Group<Point>;
   _secret: bigint;
 
-  constructor(ctx: Ctx, scalar: bigint) {
+  constructor(ctx: Group<Point>, scalar: bigint) {
     this._ctx = ctx;
     // TODO: scalar validation according to cryptosystem
     this._secret = scalar;
   }
 
-  public get ctx(): Ctx {
+  public get ctx(): Group<Point> {
     return this._ctx;
   }
 
@@ -30,7 +27,7 @@ export class Key {
   }
 
   public get point(): Promise<Point> {
-    return this._ctx.generatePoint(this._secret);
+    return this._ctx.operate(this._secret, this._ctx.generator);
   }
 
   isEqual = async (other: Key): Promise<boolean> => {
@@ -45,20 +42,20 @@ export class Key {
   }
 
   static deserialize = async (serialized: SerializedKey, opts: any): Promise<Key> => {
-    const ctx = elgamal.initCrypto(opts.crypto);
+    const ctx = backend.initGroup(opts.crypto);
 
     const { value: scalar } = serialized;
     return new Key(ctx, scalar);
   }
 
   static generate = async (opts: any): Promise<Key> => {
-    const ctx = elgamal.initCrypto(opts.crypto);
+    const ctx = backend.initGroup(opts.crypto);
 
     return new Key(ctx, await ctx.randomScalar());
   }
 
   extractPublic = async (): Promise<Public> => {
-    const point = await this._ctx.generatePoint(this._secret);
+    const point = await this._ctx.operate(this._secret, this._ctx.generator);
 
     return new Public(this._ctx, point);
   }
@@ -81,15 +78,15 @@ export class Key {
 
 
 export class Public {
-  _ctx: Ctx;
+  _ctx: Group<Point>;
   _point: Point;
 
-  constructor(ctx: Ctx, point: Point) {
+  constructor(ctx: Group<Point>, point: Point) {
     this._ctx = ctx;
     this._point = point;
   }
 
-  public get ctx(): Ctx {
+  public get ctx(): Group<Point> {
     return this._ctx;
   }
 
@@ -104,7 +101,7 @@ export class Public {
   }
 
   static deserialize = async (serialized: SerializedPublic, opts: any): Promise<Public> => {
-    const ctx = elgamal.initCrypto(opts.crypto);
+    const ctx = backend.initGroup(opts.crypto);
     const { value } = serialized;
 
     return new Public(ctx, ctx.unhexify(value));

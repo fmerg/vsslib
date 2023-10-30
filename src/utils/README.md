@@ -1,7 +1,7 @@
 ## `vsslib.utils`
 
 ```js
-const utils = require('vsslib/utils');
+const { utils } = require('vsslib');
 ```
 
 ### Hashing

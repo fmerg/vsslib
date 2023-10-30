@@ -1,5 +1,4 @@
-const elgamal = require('../src/elgamal');
-const shamir = require('../src/shamir');
+import { shamir, elgamal, backend } from '../src';
 import { Messages } from '../src/shamir/enums';
 
 
@@ -23,7 +22,7 @@ const thresholdParams = [
 
 
 describe('Setup errors', () => {
-  const ctx = elgamal.initCrypto('ed25519');
+  const ctx = backend.initGroup('ed25519');
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
     await expect(shamir.shareSecret(ctx, secret, 1, 2)).rejects.toThrow(
@@ -51,7 +50,7 @@ describe('Setup errors', () => {
 describe('Setup without predefined shares', () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const label = 'ed25519';
-    const ctx = elgamal.initCrypto(label);
+    const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
     const { threshold, shares, polynomial, commitments } = await shamir.shareSecret(ctx, secret, n, t);
     expect(threshold).toEqual(t);
@@ -66,7 +65,7 @@ describe('Setup without predefined shares', () => {
 describe('Setup with predefined shares', () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const label = 'ed25519';
-    const ctx = elgamal.initCrypto(label);
+    const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
     for (let nrGivenShares = 1; nrGivenShares < t; nrGivenShares++) {
       const givenShares = [];

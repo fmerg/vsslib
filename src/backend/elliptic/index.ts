@@ -3,11 +3,11 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
 import { secp256k1 } from '@noble/curves/secp256k1';
-import { Label } from '../../../types';
-import { Elliptic } from '../../../enums';
-import { Messages } from '../../enums';
-import { Point, Group } from '../../abstract';
-import { mod, leBuff2Int } from '../../../utils';
+import { Label } from '../../types';
+import { Elliptic } from '../../enums';
+import { Messages } from '../enums';
+import { Point, Group } from '../abstract';
+import { mod, leBuff2Int } from '../../utils';
 
 
 const __0n = BigInt(0);
@@ -50,18 +50,16 @@ export class EcGroup extends Group<EcPoint> {
   _curve: NobleCurve;
 
   constructor(label: Label, curve: NobleCurve) {
-    super(label, curve.CURVE.Fp.ORDER, curve.CURVE.n);
-    this._base = curve.ExtendedPoint.BASE;
-    this._zero = curve.ExtendedPoint.ZERO;
+    const modulus = curve.CURVE.Fp.ORDER;
+    const order = curve.CURVE.n;
+    const base = curve.ExtendedPoint.BASE;
+    const zero = curve.ExtendedPoint.ZERO;
+    const generator = new EcPoint(base);
+    const neutral = new EcPoint(zero);
+    super(label, modulus, order, generator, neutral);
+    this._base = base;
+    this._zero = zero;
     this._curve = curve;
-  }
-
-  public get generator(): EcPoint {
-    return new EcPoint(this._base);
-  }
-
-  public get neutral(): EcPoint {
-    return new EcPoint(this._zero);
   }
 
   public get curve(): NobleCurve {
@@ -96,10 +94,6 @@ export class EcGroup extends Group<EcPoint> {
     const { randomBytes, Fp } = this.curve.CURVE;
     const scalar = mod(leBuff2Int(randomBytes(Fp.BYTES)), this._order);
     return new EcPoint(this._base.multiply(scalar));
-  }
-
-  generatePoint = async (scalar: bigint): Promise<EcPoint> => {
-    return new EcPoint(scalar !== __0n ? this._base.multiply(scalar) : this._zero);
   }
 
   operate = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {

@@ -1,10 +1,8 @@
+import { lagrange, backend } from '../src';
 import { Systems } from '../src/enums';
 import { Polynomial } from '../src/lagrange';
 import { Messages } from '../src/lagrange/enums';
 import { cartesian, trimZeroes } from './helpers';
-
-const lagrange = require('../src/lagrange');
-const elgamal = require('../src/elgamal');
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -25,7 +23,7 @@ const __coeffs_and_degree = [
   [[0, 1, 1], 2],
   [[1, 1, 1], 2],
 ];
-const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(label).order);
+const __big_primes = Object.values(Systems).map((label) => backend.initGroup(label).order);
 
 
 describe('construction - coefficients smaller than order', () => {

@@ -1,15 +1,14 @@
+import { lagrange, backend } from '../src'
 import { Systems } from '../src/enums';
 import { byteLen, randBigint } from '../src/utils';
 import { cartesian } from './helpers';
 import { Messages } from '../src/lagrange/enums';
-const lagrange = require('../src/lagrange');
-const elgamal = require('../src/elgamal');
 const test_helpers = require('./helpers');
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 const __small_primes = [2, 3, 5, 7, 11, 13, 17, 19, 23, 29];
-const __big_primes = Object.values(Systems).map((label) => elgamal.initCrypto(label).order);
+const __big_primes = Object.values(Systems).map((label) => backend.initGroup(label).order);
 
 
 describe('interpolation - errors', () => {

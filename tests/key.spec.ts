@@ -1,14 +1,12 @@
-const { Key, Public } = require('../src');
 import { Systems } from '../src/enums';
-
-const elgamal = require('../src/elgamal');
+const { backend, Key, Public } = require('../src')
 
 const __labels = Object.values(Systems);
 
 
 describe('construct key', () => {
   it.each(__labels)('over %s', async (label) => {
-    const ctx = elgamal.initCrypto(label);
+    const ctx = backend.initGroup(label);
 
     const key1 = await Key.generate({ crypto: label });
     const key2 = new Key(ctx, key1.secret, key1.seed);
@@ -30,7 +28,7 @@ describe('extract public', () => {
     const key = await Key.generate({ crypto: label});
     const pub = await key.extractPublic();
     expect(await pub.ctx.isEqual(key.ctx)).toBe(true);
-    expect(await pub.point.isEqual(await key.ctx.generatePoint(key.secret)));
+    expect(await pub.point.isEqual(await key.ctx.operate(key.secret, key.ctx.generator)));
   });
 });
 

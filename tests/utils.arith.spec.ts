@@ -1,6 +1,6 @@
+import { utils } from '../src';
 import { Messages } from '../src/utils/enums';
 import { cartesian } from './helpers';
-const utils = require('../src/utils');
 
 
 describe('errors', () => {
