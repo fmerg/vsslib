@@ -47,6 +47,7 @@ const areEqual = await pubBack.isEqual(pub);  // true
 ## Modules
 
 - [`vsslib.backend`](./src/backend)
+- [`vsslib.key`](./src/key)
 - [`vsslib.sigma`](./src/sigma)
 - [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.lagrange`](./src/lagrange)

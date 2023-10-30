@@ -1,11 +1,20 @@
-import { Group, Point } from './backend/abstract';
-import {
-  SerializedKey,
-  SerializedPublic,
-  Ciphertext,
-} from './types';
+import { Group, Point } from '../backend/abstract';
 
-const backend = require('./backend');
+const backend = require('../backend');
+
+
+export type SerializedKey = {
+  value: bigint;
+}
+
+export type SerializedPublic = {
+  value: string;
+}
+
+export type Ciphertext = {
+  alpha:  Point,
+  beta:   Point,
+}
 
 
 export class Key {

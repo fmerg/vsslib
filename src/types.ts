@@ -1,19 +1,5 @@
-import { Point } from './backend/abstract';
 import { Modular, Elliptic, Algorithms, Encodings } from './enums';
 
-
-export type SerializedKey = {
-  value: bigint;
-}
-
-export type SerializedPublic = {
-  value: string;
-}
-
-export type Ciphertext = {
-  alpha:  Point,
-  beta:   Point,
-}
 
 export type Label =
   | Modular.BITS_2048
