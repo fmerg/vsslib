@@ -14,12 +14,12 @@ describe('construct key', () => {
     const priv2 = new PrivateKey(ctx, priv1.secret, priv1.seed);
     expect(await priv1.isEqual(priv2)).toBe(true);
 
-    const point1 = await priv1.point;
-    const point2 = await priv2.point;
+    const point1 = await priv1.publicPoint();
+    const point2 = await priv2.publicPoint();
     expect(await point2.isEqual(point1)).toBe(true);
 
-    const pub1 = await priv1.extractPublic();
-    const pub2 = await priv2.extractPublic();
+    const pub1 = await priv1.publicKey();
+    const pub2 = await priv2.publicKey();
     expect(await pub2.isEqual(pub1)).toBe(true);
   });
 });
@@ -28,9 +28,9 @@ describe('construct key', () => {
 describe('extract public', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
-    const pub = await priv.extractPublic();
+    const pub = await priv.publicKey();
     expect(await pub.ctx.isEqual(priv.ctx)).toBe(true);
-    expect(await pub.point.isEqual(await priv.ctx.operate(priv.secret, priv.ctx.generator)));
+    expect(await pub.point.isEqual(await priv.publicPoint()));
   });
 });
 
@@ -48,7 +48,7 @@ describe('serialize key', () => {
 describe('serialize public', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
-    const pub = await priv.extractPublic();
+    const pub = await priv.publicKey();
     const serialized = pub.serialize()
     const pubBack = key.deserialize(serialized);
     expect(await pubBack.isEqual(pub)).toBe(true);
@@ -59,10 +59,10 @@ describe('serialize public', () => {
 describe('diffie-hellman', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv1 = await key.generate(label);
-    const pub1 = await priv1.extractPublic();
+    const pub1 = await priv1.publicKey();
 
     const priv2 = await key.generate(label);
-    const pub2 = await priv2.extractPublic();
+    const pub2 = await priv2.publicKey();
 
     const pt1 = await priv1.diffieHellman(pub2);
     const pt2 = await priv2.diffieHellman(pub1);
@@ -75,7 +75,7 @@ describe('diffie-hellman', () => {
 describe('encryption and decryption of point', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
-    const pub = await priv.extractPublic();
+    const pub = await priv.publicKey();
 
     const msgPoint = await priv.ctx.randomPoint();
 
@@ -89,7 +89,7 @@ describe('encryption and decryption of point', () => {
 describe('identity proof - success', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
-    const pub = await priv.extractPublic();
+    const pub = await priv.publicKey();
     const proof = await priv.proveIdentity();
     const verified = await pub.verifyIdentity(proof);
     expect(verified).toBe(true);
@@ -100,7 +100,7 @@ describe('identity proof - success', () => {
 describe('identity proof - failure if tampered proof', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
-    const pub = await priv.extractPublic();
+    const pub = await priv.publicKey();
     const proof = await priv.proveIdentity();
     proof.commitments[0] = await priv.ctx.randomPoint();
     await expect(pub.verifyIdentity(proof)).rejects.toThrow(
@@ -113,7 +113,7 @@ describe('identity proof - failure if tampered proof', () => {
 describe('identity proof - failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
-    const pub = await priv.extractPublic();
+    const pub = await priv.publicKey();
     const proof = await priv.proveIdentity();
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :

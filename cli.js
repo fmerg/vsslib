@@ -14,7 +14,7 @@ const program = new Command();
 async function generateKey(options) {
   console.log(options);
   const priv = await key.generate(options.crypto);
-  const pub = await priv.extractPublic();
+  const pub = await priv.publicKey();
 
   const privSerialized = priv.serialize();
   console.log(privSerialized);

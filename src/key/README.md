@@ -8,7 +8,7 @@ import { key } from 'vsslib';
 
 ```js
 const priv = await key.generate('ed25519');
-const pub = await priv.extractPublic();
+const pub = await priv.publicKey();
 ```
 
 ## Serialization

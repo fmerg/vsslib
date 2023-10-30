@@ -8,68 +8,62 @@ const backend = require('../backend');
 const sigma = require('../sigma');
 
 
-export type SerializedKey = {
+export type SerializedPrivateKey = {
   value: bigint;
   system: Label;
 }
 
 
 export class PrivateKey<P extends Point> {
-  _ctx: Group<P>;
-  _secret: bigint;
+  ctx: Group<P>;
+  secret: bigint;
 
   constructor(ctx: Group<P>, scalar: bigint) {
-    this._ctx = ctx;
-    this._secret = scalar;
+    this.ctx = ctx;
+    this.secret = scalar;
   }
 
-  serialize = (): SerializedKey => {
-    return { value: this._secret, system: this._ctx.label };
-  }
-
-  public get ctx(): Group<P> {
-    return this._ctx;
-  }
-
-  public get secret(): bigint {
-    return this._secret;
-  }
-
-  public get point(): Promise<P> {
-    return this._ctx.operate(this._secret, this._ctx.generator);
+  serialize = (): SerializedPrivateKey => {
+    const { ctx, secret } = this;
+    return { value: secret, system: ctx.label };
   }
 
   async isEqual<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
     return (
-      (await this._ctx.isEqual(other.ctx)) &&
-      (this._secret == other.secret)
+      (await this.ctx.isEqual(other.ctx)) &&
+      (this.secret == other.secret)
     );
   }
 
-  async extractPublic(): Promise<PublicKey<P>> {
-    const point = await this._ctx.operate(this._secret, this._ctx.generator);
+  async publicPoint(): Promise<P> {
+    const { ctx, secret } = this;
+    return ctx.operate(secret, ctx.generator);
+  }
 
-    return new PublicKey(this._ctx, point);
+  async publicKey(): Promise<PublicKey<P>> {
+    const { ctx, secret } = this;
+    const point = await ctx.operate(secret, ctx.generator);
+    return new PublicKey(ctx, point);
   }
 
   async diffieHellman(pub: PublicKey<P>): Promise<P> {
-    await this._ctx.assertValid(pub.point);
-
-    return this._ctx.operate(this._secret, pub.point);
+    const { ctx, secret } = this;
+    await ctx.assertValid(pub.point);
+    return ctx.operate(secret, pub.point);
   }
 
   async proveIdentity(opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> {
-    const { _ctx: ctx, _secret: secret } = this;
+    const { ctx: ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     return sigma.proveDlog(ctx, secret, ctx.generator, pub, opts);
   }
 
   async decryptPoint(ciphertext: Ciphertext<P>): Promise<P> {
     const { alpha, beta } = ciphertext;
-    const d = await this._ctx.operate(this._secret, beta);  // b ^ x = (g ^ r) ^ x
-    const dInv = await this._ctx.invert(d)
-
-    return await this._ctx.combine(alpha, dInv);
+    const { ctx, secret } = this;
+    const d = await ctx.operate(secret, beta);  // b ^ x = (g ^ r) ^ x
+    const dInv = await ctx.invert(d)
+    return ctx.combine(alpha, dInv);
   }
 
 }

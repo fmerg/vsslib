@@ -1,5 +1,5 @@
-import { PrivateKey, SerializedKey } from './private';
-import { PublicKey, SerializedPublic } from './public';
+import { PrivateKey, SerializedPrivateKey } from './private';
+import { PublicKey, SerializedPublicKey } from './public';
 
 import { Label } from '../types';
 import { assertLabel } from '../utils/checkers';
@@ -15,7 +15,7 @@ async function generate(label: Label): Promise<PrivateKey<Point>> {
 }
 
 function deserialize(
-  serialized: SerializedKey | SerializedPublic
+  serialized: SerializedPrivateKey | SerializedPublicKey
 ): PrivateKey<Point> | PublicKey<Point> {
   const { value, system: label } = serialized;
   const ctx = backend.initGroup(label);
