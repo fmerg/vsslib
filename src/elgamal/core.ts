@@ -66,7 +66,7 @@ export async function proveEncryption<P extends Point>(
   randomness: bigint, 
   opts?: { algorithm?: Algorithm }
 ): Promise<DlogProof<P>> {
-  return sigma.proveDlog(ctx, randomness, ctx.generator,  ciphertext.beta, opts);
+  return sigma.proveDlog(ctx, randomness, ctx.generator, ciphertext.beta, opts);
 }
 
 export async function verifyEncryption<P extends Point>(

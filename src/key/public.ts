@@ -48,4 +48,12 @@ export class PublicKey<P extends Point> {
   }> {
     return elgamal.encrypt(this.ctx, message, this.point);
   }
+
+  async proveEncryption(
+    ciphertext: Ciphertext<P>,
+    randomness: bigint,
+    opts?: { algorithm?: Algorithm }
+  ): Promise<DlogProof<P>> {
+    return elgamal.proveEncryption(this.ctx, ciphertext, randomness, opts);
+  }
 }

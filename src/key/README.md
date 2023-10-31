@@ -35,10 +35,16 @@ await pub.verifyIdentity(proof);
 ## Encryption
 
 ```js
-const { ciphertext, decryptor } = await pub.encrypt(message);
+const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
 const plaintext = await priv.decrypt(ciphertext);
 ```
 
 ### Proof of encryption
+
+```js
+const proof = await pub.proveEncryption(ciphertext, randomness, { algorithm: 'sh256' });
+
+await priv.verifyEncryption(ciphertext, proof);
+```
 
 ### Proof of decryptor

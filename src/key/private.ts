@@ -3,6 +3,7 @@ import { Ciphertext } from '../elgamal/core';
 import { DlogProof } from '../sigma';
 import { PublicKey } from './public';
 import { Label } from '../types';
+import { Messages } from './enums';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
@@ -63,4 +64,9 @@ export class PrivateKey<P extends Point> {
     return elgamal.decrypt(this.ctx, ciphertext, { secret: this.secret });
   }
 
+  async verifyEncryption(ciphertext: Ciphertext<P>, proof: DlogProof<P>): Promise<boolean> {
+    const verified = await elgamal.verifyEncryption(this.ctx, ciphertext, proof);
+    if (!verified) throw new Error(Messages.INVALID_ENCRYPTION_PROOF);
+    return verified;
+  }
 }
