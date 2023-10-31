@@ -6,47 +6,17 @@
 
 ## Usage
 
-### Key generation
-
 ```js
-import { Key } from 'vsslib';
+import { key } from 'vsslib';
 
-const key = await Key.generate({ crypto: 'ed25519' });
-const pub = await key.extractPublic();
-```
-
-
-### Key serialization
-
-```js
-const serialized = await key.serialize();
-```
-
-The original key is recovered as follows:
-
-```js
-const keyBack = await Key.deserialize(serialized, { crypto: 'ed25519' });
-const areEqual = await keyBack.isEqual(key);  // true;
-```
-
-The public counterpart is serialized in a similar fashion:
-
-```js
-const serialized = await pub.serialize();
-```
-
-It can be recovered as follows:
-
-```js
-import { Public } from 'vsslib';
-
-const pubBack = await Public.deserialize(serialized, { crypto: 'ed25519' });
-const areEqual = await pubBack.isEqual(pub);  // true
+const priv = await key.generate('ed25519');
+const pub = await priv.publicKey();
 ```
 
 ## Modules
 
 - [`vsslib.backend`](./src/backend)
+- [`vsslib.key`](./src/key)
 - [`vsslib.sigma`](./src/sigma)
 - [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.lagrange`](./src/lagrange)

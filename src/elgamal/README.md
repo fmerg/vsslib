@@ -43,6 +43,6 @@ const valid = await elgamal.verifyEncryption(ctx, ciphertext, proof);
 ```js
 const proof = await elgamal.proveDecryptor(ctx, ciphertext, secret, decryptor, { algorithm: 'sha256' });
 
-const valid = await elgamal.verifyDecryptor(ctx, decryptor, ciphertext, pub, proof);
+const valid = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
 ```
 

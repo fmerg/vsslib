@@ -3,30 +3,30 @@ const { Command, Option } = require('commander');
 const {
   Key,
   Public,
+  key,
   elgamal,
 } = require('./dist');
 
 const enums = require('./dist/enums')
 
-
 const program = new Command();
 
-
 async function generateKey(options) {
-  const key = await Key.generate({ crypto: options.crypto });
-  const pub = await key.extractPublic();
+  console.log(options);
+  const priv = await key.generate(options.crypto);
+  const pub = await priv.publicKey();
 
-  const keySerialized = await key.serialize();
-  console.log(keySerialized);
+  const privSerialized = priv.serialize();
+  console.log(privSerialized);
 
-  const keyBack = await Key.deserialize(keySerialized, { crypto: options.crypto });
-  let areEqual = await keyBack.isEqual(key);
+  const privBack = key.deserialize(privSerialized);
+  let areEqual = await privBack.isEqual(priv);
   console.log(areEqual);
 
-  const pubSerialized = await pub.serialize();
+  const pubSerialized = pub.serialize();
   console.log(pubSerialized);
 
-  const pubBack = await Public.deserialize(pubSerialized, { crypto: options.crypto });
+  const pubBack = key.deserialize(pubSerialized);
   areEqual = await pubBack.isEqual(pub);
   console.log(areEqual);
 }

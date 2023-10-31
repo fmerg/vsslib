@@ -39,13 +39,13 @@ export async function generateDecryptorShare<P extends Point>(
 
 export async function verifyDecryptorShare<P extends Point>(
   ctx: Group<P>,
-  share: DecryptorShare<P>,
   ciphertext: Ciphertext<P>,
   publicShare: PublicShare<P>,
+  share: DecryptorShare<P>,
 ): Promise<boolean> {
   const { value: pub } = publicShare;
   const { value, proof } = share;
-  const verified = await elgamal.verifyDecryptor(ctx, value, ciphertext, pub, proof);
+  const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, value, proof);
   if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_SHARE);
   return true;
 }
@@ -53,16 +53,16 @@ export async function verifyDecryptorShare<P extends Point>(
 
 export async function verifyDecryptorShares<P extends Point>(
   ctx: Group<P>,
-  shares: DecryptorShare<P>[],
   ciphertext: Ciphertext<P>,
   publicShares: PublicShare<P>[],
+  shares: DecryptorShare<P>[],
 ): Promise<[boolean, number[]]> {
   let flag = true;
   let indexes = [];
   for (const share of shares) {
     const { value, index, proof } = share;
     const { value: pub } = selectShare(index, publicShares);
-    const verified = await elgamal.verifyDecryptor(ctx, value, ciphertext, pub, proof);
+    const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, value, proof);
     flag &&= verified;
     if (!verified) indexes.push(index);
   }
@@ -98,7 +98,7 @@ export async function decrypt<P extends Point>(
   if (threshold && shares.length < threshold) throw new Error(Messages.NOT_ENOUGH_SHARES);
   if (publicShares) {
     const [verified, indexes] = await verifyDecryptorShares(
-      ctx, shares, ciphertext, publicShares
+      ctx, ciphertext, publicShares, shares
     );
     if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_SHARES_DETECTED);
   }
