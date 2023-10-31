@@ -145,7 +145,7 @@ describe('encryption - proof of decryptor', () => {
     });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
 
-    const valid = await elgamal.verifyDecryptor(ctx, decryptor, ciphertext, pub, proof);
+    const valid = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
     expect(valid).toBe(true);
   });
 });
@@ -163,7 +163,7 @@ describe('encryption - proof of decryptor failure', () => {
     const proof = await elgamal.proveDecryptor(ctx, ciphertext, secret, decryptor);
 
     const forged = await ctx.randomPoint();
-    const valid = await elgamal.verifyDecryptor(ctx, forged, ciphertext, pub, proof);
+    const valid = await elgamal.verifyDecryptor(ctx, ciphertext, pub, forged, proof);
     expect(valid).toBe(false);
   });
 });

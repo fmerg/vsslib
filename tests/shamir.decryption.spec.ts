@@ -30,15 +30,15 @@ describe('Threshold encryption', () => {
       // Verify decryptors individually
       for (const share of decryptorShares) {
         const publicShare = shamir.selectShare(share.index, publicShares);
-        const verified = await shamir.verifyDecryptorShare(ctx, share, ciphertext, publicShare);
+        const verified = await shamir.verifyDecryptorShare(ctx, ciphertext, publicShare, share);
         expect(verified).toBe(true);
       }
       // Verify decryptors all together
       const [verified, indexes] = await shamir.verifyDecryptorShares(
         ctx,
-        decryptorShares,
         ciphertext,
-        publicShares
+        publicShares,
+        decryptorShares,
       );
       expect(verified).toBe(true);
       expect(indexes).toEqual([]);
@@ -87,10 +87,10 @@ describe('Threshold encryption', () => {
     for (const share of decryptorShares) {
       const publicShare = shamir.selectShare(share.index, publicShares);
       if (share.index == 1) {
-        const verified = await shamir.verifyDecryptorShare(ctx, share, ciphertext, publicShare);
+        const verified = await shamir.verifyDecryptorShare(ctx, ciphertext, publicShare, share);
         expect(verified).toBe(true);
       } else {
-        await expect(shamir.verifyDecryptorShare(ctx, share, ciphertext, publicShare)).rejects.toThrow(
+        await expect(shamir.verifyDecryptorShare(ctx, ciphertext, publicShare, share)).rejects.toThrow(
           Messages.INVALID_DECRYPTOR_SHARE
         );
       }
@@ -99,9 +99,9 @@ describe('Threshold encryption', () => {
     // Verify decryptors all together
     const [verified, detected] = await shamir.verifyDecryptorShares(
       ctx,
-      decryptorShares,
       ciphertext,
-      publicShares
+      publicShares,
+      decryptorShares,
     );
     expect(verified).toBe(false);
     expect(detected).toEqual(corruptedIndexes);

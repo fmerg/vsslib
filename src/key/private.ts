@@ -69,4 +69,13 @@ export class PrivateKey<P extends Point> {
     if (!verified) throw new Error(Messages.INVALID_ENCRYPTION_PROOF);
     return verified;
   }
+
+  async proveDecryptor(
+    ciphertext: Ciphertext<P>,
+    decryptor: P,
+    opts?: { algorithm?: Algorithm }
+  ): Promise<DlogProof<P>> {
+    const { ctx, secret } = this;
+    return elgamal.proveDecryptor(ctx, ciphertext, secret, decryptor, opts);
+  }
 }

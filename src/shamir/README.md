@@ -52,14 +52,14 @@ const decryptorShare = await shamir.generateDecryptorShare(ctx, ciphertext, shar
 
 ```js
 const publicShare = shamir.selectShare(publicShares);
-await shamir.verifyDecryptorShare(ctx, decryptorShare, ciphertext, publicShare);
+await shamir.verifyDecryptorShare(ctx, ciphertext, publicShare, decryptorShare);
 ```
 
 
 #### Decryptor reconstruction
 
 ```js
-await shamir.verifyDecryptorShares(ctx, decryptorShares, ciphertext, publicShares);
+await shamir.verifyDecryptorShares(ctx, ciphertext, publicShares, decryptorShares);
 ```
 
 ```js
@@ -69,7 +69,7 @@ const decryptor = await shamir.reconstructDecryptor(ctx, decryptorShares);
 #### Decryption
 
 ```js
-await shamir.verifyDecryptorShares(ctx, decryptorShares, ciphertext, publicShares);
+await shamir.verifyDecryptorShares(ctx, ciphertext, publicShares, decryptorShares);
 ```
 
 ```js

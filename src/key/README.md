@@ -48,3 +48,9 @@ await priv.verifyEncryption(ciphertext, proof);
 ```
 
 ### Proof of decryptor
+
+```js
+const proof = await priv.proveDecryptor(ciphertext, decryptor, { algorithm: 'sha256' });
+
+await pub.verifyDecryptor(ciphertext, decryptor, proof);
+```

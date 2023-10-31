@@ -56,4 +56,15 @@ export class PublicKey<P extends Point> {
   ): Promise<DlogProof<P>> {
     return elgamal.proveEncryption(this.ctx, ciphertext, randomness, opts);
   }
+
+  async verifyDecryptor(
+    ciphertext: Ciphertext<P>,
+    decryptor: P,
+    proof: DlogProof<P>,
+  ): Promise<boolean> {
+    const { ctx, point: pub } = this;
+    const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
+    if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_PROOF);
+    return verified;
+  }
 }

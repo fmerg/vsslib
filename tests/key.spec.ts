@@ -169,3 +169,50 @@ describe('encryption proof - failure if wrong algorithm', () => {
   });
 });
 
+
+describe('decryptor proof - success', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const priv = await key.generate(label);
+    const pub = await priv.publicKey();
+    const message = await priv.ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
+    const proof = await priv.proveDecryptor(ciphertext, decryptor);
+    const verified = await pub.verifyDecryptor(ciphertext, decryptor, proof);
+    expect(verified).toBe(true);
+  });
+});
+
+
+describe('decryptor proof - failure if tampered proof', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const priv = await key.generate(label);
+    const pub = await priv.publicKey();
+    const message = await priv.ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
+    const proof = await priv.proveDecryptor(ciphertext, decryptor);
+    // Tamper commitments
+    proof.commitments[0] = await pub.ctx.randomPoint();
+    await expect(pub.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
+      Messages.INVALID_DECRYPTOR_PROOF
+    );
+  });
+});
+
+
+describe('decryptor proof - failure if wrong algorithm', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const priv = await key.generate(label);
+    const pub = await priv.publicKey();
+    const message = await priv.ctx.randomPoint();
+    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
+    const proof = await priv.proveDecryptor(ciphertext, decryptor);
+    // Tamper algorithm
+    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
+      Algorithms.SHA512 :
+      Algorithms.SHA256;
+    await expect(pub.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
+      Messages.INVALID_DECRYPTOR_PROOF
+    );
+  });
+});
+
