@@ -1,6 +1,7 @@
 import { backend } from '../src';
 import { Systems } from '../src/enums';
 import { Point } from '../src/backend/abstract';
+import { Messages } from '../src/backend/enums';
 
 const __labels = Object.values(Systems);
 const __0n     = BigInt(0)
@@ -43,7 +44,7 @@ describe('group equality', () => {
 describe('neutral element', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    await ctx.assertValid(ctx.neutral);
+    await ctx.validatePoint(ctx.neutral);
 
     const neutral = await ctx.operate(__0n, ctx.generator);
     expect(await neutral.isEqual(ctx.neutral)).toBe(true);
@@ -54,7 +55,7 @@ describe('neutral element', () => {
 describe('group generator', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    await ctx.assertValid(ctx.generator);
+    await ctx.validatePoint(ctx.generator);
 
     const generator = await ctx.operate(__1n, ctx.generator);
     expect(await generator.isEqual(ctx.generator)).toBe(true);
@@ -209,5 +210,33 @@ describe('point to hex and back', () => {
     const pHex = p.toHex();
     const pBack = ctx.unhexify(pHex);
     expect(await pBack.isEqual(p)).toBe(true);
+  })
+});
+
+
+describe('scalar validation', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = backend.initGroup(label);
+    const s = await ctx.randomScalar();
+    const isValid = await ctx.validateScalar(s);
+    expect(isValid).toBe(true);
+    const t = ctx.order;
+    await expect(ctx.validateScalar(t)).rejects.toThrow(
+      Messages.INVALID_SCALAR
+    );
+  })
+});
+
+
+describe('bytes validation', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = backend.initGroup(label);
+    const b = await ctx.randomBytes();
+    const isValid = await ctx.validateBytes(b);
+    expect(isValid).toBe(true);
+    const c = new Uint8Array([...b, 0]);
+    await expect(ctx.validateBytes(c)).rejects.toThrow(
+      Messages.INVALID_BYTELENGTH
+    );
   })
 });

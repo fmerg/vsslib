@@ -50,7 +50,7 @@ export class PrivateKey<P extends Point> {
 
   async diffieHellman(pub: PublicKey<P>): Promise<P> {
     const { ctx, secret } = this;
-    await ctx.assertValid(pub.point);
+    await ctx.validatePoint(pub.point);
     return ctx.operate(secret, pub.point);
   }
 

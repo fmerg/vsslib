@@ -51,15 +51,17 @@ export abstract class Group<P extends Point> {
     return this._neutral;
   }
 
-  leBuff2Scalar = (buff: Uint8Array): bigint => {
-    return mod(leBuff2Int(buff), this._order);
+  leBuff2Scalar = (bytes: Uint8Array): bigint => {
+    return mod(leBuff2Int(bytes), this._order);
   }
 
   abstract isEqual<Q extends Point>(other: Group<Q>): Promise<boolean>;
-  abstract assertEqual: (lhs: P, rhs: P) => Promise<boolean>;
-  abstract assertValid: (point: P) => Promise<boolean>;
+  abstract randomBytes: () => Promise<Uint8Array>;
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
+  abstract validateBytes: (bytes: Uint8Array) => Promise<boolean>;
+  abstract validateScalar: (scalar: bigint) => Promise<boolean>;
+  abstract validatePoint: (point: P) => Promise<boolean>;
   abstract operate: (scalar: bigint, point: P) => Promise<P>;
   abstract combine: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;

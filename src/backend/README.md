@@ -16,21 +16,28 @@ const { modulus, order, generator, neutral } = ctx;
 ### Generalities
 
 ```js
-const s = await ctx.randomScalar();
-```
-
-```js
 const p = await ctx.randomPoint();
 ```
 
 ```js
-const isValid = await ctx.assertValid(p);
+await ctx.validatePoint(p);
 ```
 
 ```js
-const areEqual = await ctx.assertEqual(p, q);
+const s = await ctx.randomScalar();
 ```
 
+```js
+await ctx.validateScalar(s);
+```
+
+```js
+const b = await ctx.randomBytes();
+```
+
+```js
+await ctx.validateBytes(b);
+```
 
 ### Group operations
 

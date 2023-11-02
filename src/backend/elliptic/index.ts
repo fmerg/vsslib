@@ -70,19 +70,9 @@ export class EcGroup extends Group<EcPoint> {
     return (other instanceof EcGroup) && (this._curve == other.curve);
   }
 
-  assertEqual = async (lhs: EcPoint, rhs: EcPoint): Promise<boolean> => {
-    return await lhs.wrapped.equals(rhs.wrapped);
-  }
-
-  assertValid = async (point: EcPoint): Promise<boolean> => {
-    if (await point.wrapped.equals(this._zero)) return true;
-    try { point.wrapped.assertValidity(); } catch (err: any) {
-      if (err.message.startsWith('bad point: ')) throw new Error(
-        Messages.POINT_NOT_IN_SUBGROUP
-      );
-      else throw err;
-    }
-    return true;
+  randomBytes = async (): Promise<Uint8Array> => {
+    const { randomBytes, Fp } = this.curve.CURVE;
+    return randomBytes(Fp.BYTES);
   }
 
   randomScalar = async (): Promise<bigint> => {
@@ -94,6 +84,28 @@ export class EcGroup extends Group<EcPoint> {
     const { randomBytes, Fp } = this.curve.CURVE;
     const scalar = mod(leBuff2Int(randomBytes(Fp.BYTES)), this._order);
     return new EcPoint(this._base.multiply(scalar));
+  }
+
+  validateBytes = async (bytes: Uint8Array): Promise<boolean> => {
+    if (bytes.length !== this.curve.CURVE.Fp.BYTES)
+      throw new Error(Messages.INVALID_BYTELENGTH);
+    return true;
+  }
+
+  validateScalar = async (scalar: bigint): Promise<boolean> => {
+    if (!(0 < scalar && scalar < this._order))
+      throw new Error(Messages.INVALID_SCALAR)
+    return true;
+  }
+
+  validatePoint = async (point: EcPoint): Promise<boolean> => {
+    if (await point.wrapped.equals(this._zero)) return true;
+    try { point.wrapped.assertValidity(); } catch (err: any) {
+      if (err.message.startsWith('bad point: '))
+        throw new Error(Messages.POINT_NOT_IN_SUBGROUP);
+      else throw err;
+    }
+    return true;
   }
 
   operate = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {
