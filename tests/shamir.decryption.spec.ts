@@ -22,33 +22,33 @@ describe('Threshold encryption', () => {
     // Iterate over all combinations of involved parties
     partialPermutations(shares).forEach(async (qualified: any[]) => {
       // Generate decryptor per involved party
-      const decryptorShares = [];
+      const partialDecryptors = [];
       for (const secretShare of qualified) {
-        const decryptorShare = await shamir.generateDecryptorShare(ctx, ciphertext, secretShare);
-        decryptorShares.push(decryptorShare)
+        const partialDecryptor = await shamir.generatePartialDecryptor(ctx, ciphertext, secretShare);
+        partialDecryptors.push(partialDecryptor)
       }
       // Verify decryptors individually
-      for (const share of decryptorShares) {
+      for (const share of partialDecryptors) {
         const publicShare = shamir.selectShare(share.index, publicShares);
-        const verified = await shamir.verifyDecryptorShare(ctx, ciphertext, publicShare, share);
+        const verified = await shamir.verifyPartialDecryptor(ctx, ciphertext, publicShare, share);
         expect(verified).toBe(true);
       }
       // Verify decryptors all together
-      const [verified, indexes] = await shamir.verifyDecryptorShares(
+      const [verified, indexes] = await shamir.verifyPartialDecryptors(
         ctx,
         ciphertext,
         publicShares,
-        decryptorShares,
+        partialDecryptors,
       );
       expect(verified).toBe(true);
       expect(indexes).toEqual([]);
 
       // Decryptor correctly retrieved IFF >= t parties are involved
-      const decryptor = await shamir.reconstructDecryptor(ctx, decryptorShares);
+      const decryptor = await shamir.reconstructDecryptor(ctx, partialDecryptors);
       expect(await decryptor.isEqual(expectedDecryptor)).toBe(qualified.length >= t);
 
       // Message correctly retrieved IFF >= t parties are involved
-      const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares);
+      const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors);
       expect(await plaintext.isEqual(message)).toBe(qualified.length >= t);
       expect(await plaintext.isEqual(await elgamal.decrypt(ctx, ciphertext, { secret }))).toBe(qualified.length >= t);
     });
@@ -70,58 +70,58 @@ describe('Threshold encryption', () => {
     const { ciphertext, decryptor: expectedDecryptor } = await elgamal.encrypt(ctx, message, pub);
 
     // Generate decryptor per involved party
-    let decryptorShares = [];
+    let partialDecryptors = [];
     const qualified = shares.slice(0, t);
     for (const secretShare of qualified) {
-      const decryptorShare = await shamir.generateDecryptorShare(ctx, ciphertext, secretShare);
-      decryptorShares.push(decryptorShare)
+      const partialDecryptor = await shamir.generatePartialDecryptor(ctx, ciphertext, secretShare);
+      partialDecryptors.push(partialDecryptor)
     }
 
     // Forge all decryptors besides the first one
     const corruptedIndexes = qualified.slice(1, t).map((share: any) => share.index);
     for (const index of corruptedIndexes) {
-      shamir.selectShare(index, decryptorShares).value = await ctx.randomPoint();
+      shamir.selectShare(index, partialDecryptors).value = await ctx.randomPoint();
     }
 
     // Verify decryptors individually
-    for (const share of decryptorShares) {
+    for (const share of partialDecryptors) {
       const publicShare = shamir.selectShare(share.index, publicShares);
       if (share.index == 1) {
-        const verified = await shamir.verifyDecryptorShare(ctx, ciphertext, publicShare, share);
+        const verified = await shamir.verifyPartialDecryptor(ctx, ciphertext, publicShare, share);
         expect(verified).toBe(true);
       } else {
-        await expect(shamir.verifyDecryptorShare(ctx, ciphertext, publicShare, share)).rejects.toThrow(
+        await expect(shamir.verifyPartialDecryptor(ctx, ciphertext, publicShare, share)).rejects.toThrow(
           Messages.INVALID_DECRYPTOR_SHARE
         );
       }
     }
 
     // Verify decryptors all together
-    const [verified, detected] = await shamir.verifyDecryptorShares(
+    const [verified, detected] = await shamir.verifyPartialDecryptors(
       ctx,
       ciphertext,
       publicShares,
-      decryptorShares,
+      partialDecryptors,
     );
     expect(verified).toBe(false);
     expect(detected).toEqual(corruptedIndexes);
 
     // Decryptor is not correctly retrieved
-    const decryptor = await shamir.reconstructDecryptor(ctx, decryptorShares);
+    const decryptor = await shamir.reconstructDecryptor(ctx, partialDecryptors);
     expect(await decryptor.isEqual(expectedDecryptor)).toBe(false);
 
     // Message is not correctly retrieved
-    const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares);
+    const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors);
     expect(await plaintext.isEqual(message)).toBe(false);
 
     // Decryption raises error if share verification enforced
     await expect(
-      shamir.decrypt(ctx, ciphertext, decryptorShares, { publicShares })
+      shamir.decrypt(ctx, ciphertext, partialDecryptors, { publicShares })
     ).rejects.toThrow(Messages.INVALID_DECRYPTOR_SHARES_DETECTED);
 
     // Decryption raises error if less than threshold shares provided
     await expect(
-      shamir.decrypt(ctx, ciphertext, decryptorShares.slice(0, t - 1), { threshold })
+      shamir.decrypt(ctx, ciphertext, partialDecryptors.slice(0, t - 1), { threshold })
     ).rejects.toThrow(Messages.NOT_ENOUGH_SHARES);
   });
 });

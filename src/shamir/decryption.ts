@@ -10,7 +10,7 @@ const elgamal = require('../elgamal');
 const sigma = require('../sigma');
 
 
-export class DecryptorShare<P extends Point> implements Share<P> {
+export class PartialDecryptor<P extends Point> implements Share<P> {
   value: P;
   index: number;
   proof: DlogProof<P>;
@@ -23,12 +23,12 @@ export class DecryptorShare<P extends Point> implements Share<P> {
 };
 
 
-export async function generateDecryptorShare<P extends Point>(
+export async function generatePartialDecryptor<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,
   share: SecretShare<P>,
   opts?: { algorithm?: Algorithm },
-): Promise<DecryptorShare<P>> {
+): Promise<PartialDecryptor<P>> {
   const { operate } = ctx;
   const { value, index } = share;
   const decryptor = await elgamal.generateDecryptor(ctx, value, ciphertext);
@@ -37,11 +37,11 @@ export async function generateDecryptorShare<P extends Point>(
 }
 
 
-export async function verifyDecryptorShare<P extends Point>(
+export async function verifyPartialDecryptor<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,
   publicShare: PublicShare<P>,
-  share: DecryptorShare<P>,
+  share: PartialDecryptor<P>,
 ): Promise<boolean> {
   const { value: pub } = publicShare;
   const { value, proof } = share;
@@ -51,11 +51,11 @@ export async function verifyDecryptorShare<P extends Point>(
 }
 
 
-export async function verifyDecryptorShares<P extends Point>(
+export async function verifyPartialDecryptors<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,
   publicShares: PublicShare<P>[],
-  shares: DecryptorShare<P>[],
+  shares: PartialDecryptor<P>[],
 ): Promise<[boolean, number[]]> {
   let flag = true;
   let indexes = [];
@@ -72,7 +72,7 @@ export async function verifyDecryptorShares<P extends Point>(
 
 export async function reconstructDecryptor<P extends Point>(
   ctx: Group<P>,
-  shares: DecryptorShare<P>[],
+  shares: PartialDecryptor<P>[],
 ): Promise<P> {
   const { order, neutral, operate, combine } = ctx;
   const qualifiedIndexes = shares.map(share => share.index);
@@ -90,14 +90,14 @@ export async function reconstructDecryptor<P extends Point>(
 export async function decrypt<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,
-  shares: DecryptorShare<P>[],
+  shares: PartialDecryptor<P>[],
   opts?: { threshold?: number, publicShares?: PublicShare<P>[] },
 ): Promise<P> {
   const threshold = opts ? opts.threshold : undefined;
   const publicShares = opts ? opts.publicShares : undefined;
   if (threshold && shares.length < threshold) throw new Error(Messages.NOT_ENOUGH_SHARES);
   if (publicShares) {
-    const [verified, indexes] = await verifyDecryptorShares(
+    const [verified, indexes] = await verifyPartialDecryptors(
       ctx, ciphertext, publicShares, shares
     );
     if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_SHARES_DETECTED);

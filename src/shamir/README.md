@@ -47,35 +47,35 @@ const { ciphertext } = await ctx.encrypt(message, pub);
 #### Decryptor shares
 
 ```js
-const decryptorShare = await shamir.generateDecryptorShare(ctx, ciphertext, share);
+const partialDecryptor = await shamir.generatePartialDecryptor(ctx, ciphertext, share);
 ```
 
 ```js
 const publicShare = shamir.selectShare(publicShares);
-await shamir.verifyDecryptorShare(ctx, ciphertext, publicShare, decryptorShare);
+await shamir.verifyPartialDecryptor(ctx, ciphertext, publicShare, partialDecryptor);
 ```
 
 
 #### Decryptor reconstruction
 
 ```js
-await shamir.verifyDecryptorShares(ctx, ciphertext, publicShares, decryptorShares);
+await shamir.verifyPartialDecryptors(ctx, ciphertext, publicShares, partialDecryptors);
 ```
 
 ```js
-const decryptor = await shamir.reconstructDecryptor(ctx, decryptorShares);
+const decryptor = await shamir.reconstructDecryptor(ctx, partialDecryptors);
 ```
 
 #### Decryption
 
 ```js
-await shamir.verifyDecryptorShares(ctx, ciphertext, publicShares, decryptorShares);
+await shamir.verifyPartialDecryptors(ctx, ciphertext, publicShares, partialDecryptors);
 ```
 
 ```js
-const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares);
+const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors);
 ```
 
 ```js
-const plaintext = await shamir.decrypt(ctx, ciphertext, decryptorShares, { threshold, publicShares });
+const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors, { threshold, publicShares });
 ```
