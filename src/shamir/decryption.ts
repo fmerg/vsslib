@@ -31,7 +31,7 @@ export async function generateDecryptorShare<P extends Point>(
 ): Promise<DecryptorShare<P>> {
   const { operate } = ctx;
   const { value, index } = share;
-  const decryptor = await operate(value, ciphertext.beta);
+  const decryptor = await elgamal.generateDecryptor(ctx, value, ciphertext);
   const proof = await elgamal.proveDecryptor(ctx, ciphertext, value, decryptor, opts);
   return { value: decryptor, index, proof}
 }

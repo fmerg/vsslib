@@ -77,6 +77,14 @@ export async function verifyEncryption<P extends Point>(
   return sigma.verifyDlog(ctx, ctx.generator, ciphertext.beta, proof);
 }
 
+export async function generateDecryptor<P extends Point>(
+  ctx: Group<P>,
+  secret: bigint,
+  ciphertext: Ciphertext<P>,
+): Promise<P> {
+  return ctx.operate(secret, ciphertext.beta);
+}
+
 export async function proveDecryptor<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,

@@ -56,7 +56,7 @@ await publicKey.verifyIdentity(proof);
 ```
 
 
-## Verifiable encryption
+## Elgamal encryption
 
 ```js
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message);
@@ -64,7 +64,7 @@ const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message);
 const plaintext = await privateKey.decrypt(ciphertext);
 ```
 
-### Proof of encryption
+### Verifiable encryption (Schnorr scheme)
 
 ```js
 const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: 'sh256' });
@@ -72,10 +72,22 @@ const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorith
 await privateKey.verifyEncryption(ciphertext, proof);
 ```
 
-### Proof of decryptor
+### Decryptor verification (Chaum-Pedersen scheme)
 
 ```js
 const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm: 'sha256' });
 
 await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
+```
+
+### Decryptor generation
+
+```js
+const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { algorithm: 'sha256' });
+
+await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
+```
+
+```js
+const { decryptor } = await privateKey.generateDecryptor(ciphertext, { noProof: true });
 ```

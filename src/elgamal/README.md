@@ -38,6 +38,12 @@ const proof = await elgamal.proveEncryption(ctx, ciphertext, randomness, { algor
 const valid = await elgamal.verifyEncryption(ctx, ciphertext, proof);
 ```
 
+## Decryptor generation
+
+```js
+const decryptor = await elgamal.generateDecryptor(ctz, ciphertext, secret, ciphertext);
+```
+
 ## Proof of decryptor
 
 ```js

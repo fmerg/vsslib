@@ -158,6 +158,18 @@ describe('Elgamal encryption proof - failure if wrong algorithm', () => {
 });
 
 
+describe('Decryptor generation', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, decryptor: expectedDecryptor } = await publicKey.encrypt(message);
+    const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { noProof: false });
+    expect(await decryptor.isEqual(expectedDecryptor)).toBe(true);
+    expect(await publicKey.verifyDecryptor(ciphertext, decryptor, proof)).toBe(true);
+  });
+});
+
+
 describe('Decryptor proof - success', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);

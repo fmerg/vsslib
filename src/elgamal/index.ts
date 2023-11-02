@@ -3,6 +3,7 @@ import {
   decrypt,
   proveEncryption,
   verifyEncryption,
+  generateDecryptor,
   proveDecryptor,
   verifyDecryptor,
 } from './core';
@@ -12,6 +13,7 @@ export {
   decrypt,
   proveEncryption,
   verifyEncryption,
+  generateDecryptor,
   proveDecryptor,
   verifyDecryptor,
 }

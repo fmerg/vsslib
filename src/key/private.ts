@@ -99,4 +99,17 @@ export class PrivateKey<P extends Point> {
     const { ctx, scalar } = this;
     return elgamal.proveDecryptor(ctx, ciphertext, scalar, decryptor, opts);
   }
+
+
+  async generateDecryptor(
+    ciphertext: Ciphertext<P>,
+    opts?: { noProof?: boolean, algorithm?: Algorithm },
+  ): Promise<{ decryptor: P, proof?: DlogProof<P> }> {
+    const { ctx, scalar: secret } = this;
+    const decryptor = await elgamal.generateDecryptor(ctx, secret, ciphertext);
+    const noProof = opts ? opts.noProof : false;
+    if (noProof) return { decryptor };
+    const proof = await elgamal.proveDecryptor(ctx, ciphertext, secret, decryptor, opts);
+    return { decryptor, proof };
+  }
 }

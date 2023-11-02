@@ -131,6 +131,21 @@ describe('encryption - proof of encryption failure', () => {
 });
 
 
+describe('encryption - decryptor generation', () => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+    const ctx = backend.initGroup(label);
+
+    const secret = await ctx.randomScalar();
+    const pub = await ctx.operate(secret, ctx.generator);
+
+    const message = await ctx.randomPoint();
+    const { ciphertext, decryptor: expectedDecryptor } = await elgamal.encrypt(ctx, message, pub);
+    const decryptor = await elgamal.generateDecryptor(ctx, secret, ciphertext);
+    expect(await decryptor.isEqual(expectedDecryptor)).toBe(true);
+  });
+});
+
+
 describe('encryption - proof of decryptor', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
