@@ -91,3 +91,31 @@ await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
 ```js
 const { decryptor } = await privateKey.generateDecryptor(ciphertext, { noProof: true });
 ```
+
+## Verifiable key sharing (Shamir scheme)
+
+```js
+const { threshold, privateShares, publicShares, polynomial, commitments } = privateKey.distribute(5, 3);
+```
+
+### Share verification
+
+```js
+await privateShare.verify(commitments);
+```
+
+### Private key reconstruction
+
+```js
+const qualifiedShares = privateShares.slice(0, 3);
+
+const reconstructed = await PrivateKey.fromShares(qualifiedShares);
+```
+
+### Public key reconstruction
+
+```js
+const qualifiedShares = privateShares.slice(0, 3);
+
+const reconstructed = await PublicKey.fromShares(qualifiedShares);
+```
