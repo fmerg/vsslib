@@ -17,16 +17,29 @@ export type SerializedPublicKey = {
 
 export class PublicKey<P extends Point> {
   ctx: Group<P>;
+  bytes: Uint8Array;
   point: P;
 
   constructor(ctx: Group<P>, point: P) {
     this.ctx = ctx;
+    this.bytes = point.toBytes();
     this.point = point;
+  }
+
+  static async fromPoint(ctx: Group<Point>, point: Point): Promise<PublicKey<Point>> {
+    await ctx.validatePoint(point);
+    return new PublicKey(ctx, point);
   }
 
   serialize = (): SerializedPublicKey => {
     const { ctx, point } = this;
     return { value: point.toHex(), system: ctx.label };
+  }
+
+  static async deserialize(serialized: SerializedPublicKey): Promise<PublicKey<Point>> {
+    const { value, system: label } = serialized;
+    const ctx = backend.initGroup(label);
+    return PublicKey.fromPoint(ctx, ctx.unhexify(value));
   }
 
   async isEqual<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {

@@ -11,7 +11,7 @@ describe('construct key', () => {
     const ctx = backend.initGroup(label);
 
     const priv1 = await key.generate(label);
-    const priv2 = new PrivateKey(ctx, priv1.secret, priv1.seed);
+    const priv2 = await PrivateKey.fromScalar(ctx, priv1.secret);
     expect(await priv1.isEqual(priv2)).toBe(true);
 
     const point1 = await priv1.publicPoint();
@@ -39,7 +39,7 @@ describe('serialize key', () => {
   it.each(__labels)('over %s', async (label) => {
     const priv = await key.generate(label);
     const serialized = priv.serialize();
-    const privBack = key.deserialize(serialized);
+    const privBack = await PrivateKey.deserialize(serialized);
     expect(await privBack.isEqual(priv)).toBe(true);
   });
 });
@@ -50,7 +50,7 @@ describe('serialize public', () => {
     const priv = await key.generate(label);
     const pub = await priv.publicKey();
     const serialized = pub.serialize()
-    const pubBack = key.deserialize(serialized);
+    const pubBack = await PublicKey.deserialize(serialized);
     expect(await pubBack.isEqual(pub)).toBe(true);
   });
 });

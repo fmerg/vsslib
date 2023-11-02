@@ -4,6 +4,7 @@ import { DlogProof } from '../sigma';
 import { PublicKey } from './public';
 import { Label } from '../types';
 import { Messages } from './enums';
+import { leInt2Buff } from '../utils';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
@@ -11,28 +12,48 @@ const elgamal = require('../elgamal');
 
 
 export type SerializedPrivateKey = {
-  value: bigint;
+  value: string;
   system: Label;
 }
 
 
 export class PrivateKey<P extends Point> {
   ctx: Group<P>;
+  bytes: Uint8Array;
   secret: bigint;
 
-  constructor(ctx: Group<P>, scalar: bigint) {
+  constructor(ctx: Group<P>, bytes: Uint8Array) {
     this.ctx = ctx;
-    this.secret = scalar;
+    this.bytes = bytes;
+    this.secret = ctx.leBuff2Scalar(bytes);
+  }
+
+  static async fromBytes(ctx: Group<Point>, bytes: Uint8Array): Promise<PrivateKey<Point>> {
+    await ctx.validateBytes(bytes);
+    return new PrivateKey(ctx, bytes);
+  }
+
+  static async fromScalar(ctx: Group<Point>, scalar: bigint): Promise<PrivateKey<Point>> {
+    await ctx.validateScalar(scalar);
+    return new PrivateKey(ctx, leInt2Buff(scalar));
   }
 
   serialize = (): SerializedPrivateKey => {
-    const { ctx, secret } = this;
-    return { value: secret, system: ctx.label };
+    const { ctx, bytes } = this;
+    return { value: Buffer.from(bytes).toString('hex'), system: ctx.label };
+  }
+
+  static async deserialize(serialized: SerializedPrivateKey): Promise<PrivateKey<Point>> {
+    const { value, system: label } = serialized;
+    const ctx = backend.initGroup(label);
+    const bytes = Uint8Array.from(Buffer.from(value, 'hex'));
+    return PrivateKey.fromBytes(ctx, bytes);
   }
 
   async isEqual<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
     return (
       (await this.ctx.isEqual(other.ctx)) &&
+      // TODO: Constant time bytes comparison
       (this.secret == other.secret)
     );
   }

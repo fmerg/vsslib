@@ -87,7 +87,7 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   validateBytes = async (bytes: Uint8Array): Promise<boolean> => {
-    if (bytes.length !== this.curve.CURVE.Fp.BYTES)
+    if (bytes.length > this.curve.CURVE.Fp.BYTES)
       throw new Error(Messages.INVALID_BYTELENGTH);
     return true;
   }
