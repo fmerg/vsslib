@@ -1,56 +1,81 @@
 # `vsslib.key`
 
 ```js
-import { key } from 'vsslib';
+const { key, PrivateKey, PublicKey } = require('vsslib/key');
 ```
 
 ## Generation
 
 ```js
-const priv = await key.generate('ed25519');
-const pub = await priv.publicKey();
+const { privateKey, publicKey } = await key.generate('ed25519');
 ```
 
-## Serialization
+### Key attributes
 
 ```js
-const serialized = priv.serialize();
-const privBack = key.deserialize(serialized);
+const { ctx, bytes, scalar } = privateKey;
 ```
 
 ```js
-const serialized = pub.serialize();
-const pubBack = key.deserialize(serialized);
-```
-
-## Identity proof (Schnorr identification)
-
-```js
-const proof = await priv.proveIdentity({ algorithm: 'sha256'});
-
-await pub.verifyIdentity(proof);
+const { ctx, bytes, point } = publicKey;
 ```
 
 
-## Encryption
+### Public key extraction
 
 ```js
-const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
-const plaintext = await priv.decrypt(ciphertext);
+const publicKey = await privateKey.publicKey();
+```
+
+```js
+const publicPoint = await privateKey.publicPoint();
+```
+
+
+### Serialization
+
+```js
+const serialized = privateKey.serialize();
+
+const privBack = await PrivateKey.deserialize(serialized);
+```
+
+```js
+const serialized = publicKey.serialize();
+
+const pubBack = await PublicKey.deserialize(serialized);
+```
+
+
+## Verifiable identity (Schnorr scheme)
+
+```js
+const proof = await privateKey.proveIdentity({ algorithm: 'sha256'});
+
+await publicKey.verifyIdentity(proof);
+```
+
+
+## Verifiable encryption
+
+```js
+const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message);
+
+const plaintext = await privateKey.decrypt(ciphertext);
 ```
 
 ### Proof of encryption
 
 ```js
-const proof = await pub.proveEncryption(ciphertext, randomness, { algorithm: 'sh256' });
+const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: 'sh256' });
 
-await priv.verifyEncryption(ciphertext, proof);
+await privateKey.verifyEncryption(ciphertext, proof);
 ```
 
 ### Proof of decryptor
 
 ```js
-const proof = await priv.proveDecryptor(ciphertext, decryptor, { algorithm: 'sha256' });
+const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm: 'sha256' });
 
-await pub.verifyDecryptor(ciphertext, decryptor, proof);
+await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
 ```

@@ -20,12 +20,12 @@ export type SerializedPrivateKey = {
 export class PrivateKey<P extends Point> {
   ctx: Group<P>;
   bytes: Uint8Array;
-  secret: bigint;
+  scalar: bigint;
 
   constructor(ctx: Group<P>, bytes: Uint8Array) {
     this.ctx = ctx;
     this.bytes = bytes;
-    this.secret = ctx.leBuff2Scalar(bytes);
+    this.scalar = ctx.leBuff2Scalar(bytes);
   }
 
   static async fromBytes(ctx: Group<Point>, bytes: Uint8Array): Promise<PrivateKey<Point>> {
@@ -54,35 +54,35 @@ export class PrivateKey<P extends Point> {
     return (
       (await this.ctx.isEqual(other.ctx)) &&
       // TODO: Constant time bytes comparison
-      (this.secret == other.secret)
+      (this.scalar == other.scalar)
     );
   }
 
   async publicPoint(): Promise<P> {
-    const { ctx, secret } = this;
-    return ctx.operate(secret, ctx.generator);
+    const { ctx, scalar } = this;
+    return ctx.operate(scalar, ctx.generator);
   }
 
   async publicKey(): Promise<PublicKey<P>> {
-    const { ctx, secret } = this;
-    const point = await ctx.operate(secret, ctx.generator);
+    const { ctx, scalar } = this;
+    const point = await ctx.operate(scalar, ctx.generator);
     return new PublicKey(ctx, point);
   }
 
   async diffieHellman(pub: PublicKey<P>): Promise<P> {
-    const { ctx, secret } = this;
+    const { ctx, scalar } = this;
     await ctx.validatePoint(pub.point);
-    return ctx.operate(secret, pub.point);
+    return ctx.operate(scalar, pub.point);
   }
 
   async proveIdentity(opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> {
-    const { ctx, secret } = this;
-    const pub = await ctx.operate(secret, ctx.generator);
-    return sigma.proveDlog(ctx, secret, ctx.generator, pub, opts);
+    const { ctx, scalar } = this;
+    const pub = await ctx.operate(scalar, ctx.generator);
+    return sigma.proveDlog(ctx, scalar, ctx.generator, pub, opts);
   }
 
   async decrypt(ciphertext: Ciphertext<P>): Promise<P> {
-    return elgamal.decrypt(this.ctx, ciphertext, { secret: this.secret });
+    return elgamal.decrypt(this.ctx, ciphertext, { secret: this.scalar });
   }
 
   async verifyEncryption(ciphertext: Ciphertext<P>, proof: DlogProof<P>): Promise<boolean> {
@@ -96,7 +96,7 @@ export class PrivateKey<P extends Point> {
     decryptor: P,
     opts?: { algorithm?: Algorithm }
   ): Promise<DlogProof<P>> {
-    const { ctx, secret } = this;
-    return elgamal.proveDecryptor(ctx, ciphertext, secret, decryptor, opts);
+    const { ctx, scalar } = this;
+    return elgamal.proveDecryptor(ctx, ciphertext, scalar, decryptor, opts);
   }
 }

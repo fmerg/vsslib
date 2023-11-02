@@ -6,211 +6,196 @@ const { backend, key, PrivateKey, PublicKey } = require('../src')
 const __labels = Object.values(Systems);
 
 
-describe('construct key', () => {
+describe('Key generation', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
+    const { privateKey, publicKey } = await key.generate(label);
+    const private1 = await PrivateKey.fromScalar(ctx, privateKey.scalar);
+    const private2 = await PrivateKey.fromBytes(ctx, privateKey.bytes);
+    expect(await private1.isEqual(privateKey)).toBe(true);
+    expect(await private2.isEqual(privateKey)).toBe(true);
+    const public1 = await PublicKey.fromPoint(ctx, publicKey.point);
+    expect(await public1.isEqual(publicKey)).toBe(true);
+  });
+});
 
-    const priv1 = await key.generate(label);
-    const priv2 = await PrivateKey.fromScalar(ctx, priv1.secret);
-    expect(await priv1.isEqual(priv2)).toBe(true);
 
-    const point1 = await priv1.publicPoint();
-    const point2 = await priv2.publicPoint();
+describe('Key serialization and deserialization', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+
+    // Private counterpart
+    const privSerialized = privateKey.serialize();
+    expect(privSerialized).toEqual({
+      value: Buffer.from(privateKey.bytes).toString('hex'),
+      system: privateKey.ctx.label,
+    });
+    const privateBack = await PrivateKey.deserialize(privSerialized);
+    expect(await privateBack.isEqual(privateKey)).toBe(true);
+
+    // Public counterpart
+    const pubSerialized = publicKey.serialize();
+    expect(pubSerialized).toEqual({
+      value: Buffer.from(publicKey.bytes).toString('hex'),
+      system: publicKey.ctx.label,
+    });
+    const publicBack = await PublicKey.deserialize(pubSerialized);
+    expect(await publicBack.isEqual(publicKey)).toBe(true);
+  });
+});
+
+
+describe('Public key extraction', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    expect(await publicKey.ctx.isEqual(privateKey.ctx)).toBe(true);
+    expect(await publicKey.point.isEqual(await privateKey.publicPoint()));
+  });
+});
+
+
+describe('Diffie-Hellman handshake', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey: private1, publicKey: public1 } = await key.generate(label);
+    const { privateKey: private2, publicKey: public2 } = await key.generate(label);
+    const point1 = await private1.diffieHellman(public2);
+    const point2 = await private2.diffieHellman(public1);
+    const expected = await private1.ctx.operate(private1.scalar, public2.point);
+    expect(await point1.isEqual(expected)).toBe(true);
     expect(await point2.isEqual(point1)).toBe(true);
-
-    const pub1 = await priv1.publicKey();
-    const pub2 = await priv2.publicKey();
-    expect(await pub2.isEqual(pub1)).toBe(true);
   });
 });
 
 
-describe('extract public', () => {
+describe('Identity proof - success', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    expect(await pub.ctx.isEqual(priv.ctx)).toBe(true);
-    expect(await pub.point.isEqual(await priv.publicPoint()));
-  });
-});
-
-
-describe('serialize key', () => {
-  it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const serialized = priv.serialize();
-    const privBack = await PrivateKey.deserialize(serialized);
-    expect(await privBack.isEqual(priv)).toBe(true);
-  });
-});
-
-
-describe('serialize public', () => {
-  it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const serialized = pub.serialize()
-    const pubBack = await PublicKey.deserialize(serialized);
-    expect(await pubBack.isEqual(pub)).toBe(true);
-  });
-});
-
-
-describe('diffie-hellman', () => {
-  it.each(__labels)('over %s', async (label) => {
-    const priv1 = await key.generate(label);
-    const pub1 = await priv1.publicKey();
-
-    const priv2 = await key.generate(label);
-    const pub2 = await priv2.publicKey();
-
-    const pt1 = await priv1.diffieHellman(pub2);
-    const pt2 = await priv2.diffieHellman(pub1);
-
-    expect(await pt1.isEqual(pt2)).toBe(true);
-  });
-});
-
-
-describe('identity proof - success', () => {
-  it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const proof = await priv.proveIdentity();
-    const verified = await pub.verifyIdentity(proof);
+    const { privateKey, publicKey } = await key.generate(label);
+    const proof = await privateKey.proveIdentity();
+    const verified = await publicKey.verifyIdentity(proof);
     expect(verified).toBe(true);
   });
 });
 
 
-describe('identity proof - failure if tampered proof', () => {
+describe('Identity proof - failure if tampered proof', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const proof = await priv.proveIdentity();
-    proof.commitments[0] = await priv.ctx.randomPoint();
-    await expect(pub.verifyIdentity(proof)).rejects.toThrow(
+    const { privateKey, publicKey } = await key.generate(label);
+    const proof = await privateKey.proveIdentity();
+    proof.commitments[0] = await privateKey.ctx.randomPoint();
+    await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
       Messages.INVALID_IDENTITY_PROOF
     );
   });
 });
 
 
-describe('identity proof - failure if wrong algorithm', () => {
+describe('Identity proof - failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const proof = await priv.proveIdentity();
+    const { privateKey, publicKey } = await key.generate(label);
+    const proof = await privateKey.proveIdentity();
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
       Algorithms.SHA256;
-    await expect(pub.verifyIdentity(proof)).rejects.toThrow(
+    await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
       Messages.INVALID_IDENTITY_PROOF
     );
   });
 });
 
 
-describe('encryption and decryption', () => {
+describe('Elgamal encryption and decryption', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const message = await priv.ctx.randomPoint();
-    const { ciphertext } = await pub.encrypt(message);
-    const plaintext = await priv.decrypt(ciphertext);
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext } = await publicKey.encrypt(message);
+    const plaintext = await privateKey.decrypt(ciphertext);
     expect(await plaintext.isEqual(message)).toBe(true);
   });
 });
 
 
-describe('encryption proof - success', () => {
+describe('Elgamal encryption proof - success', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const message = await priv.ctx.randomPoint();
-    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
-    const proof = await pub.proveEncryption(ciphertext, randomness);
-    const verified = await priv.verifyEncryption(ciphertext, proof);
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, randomness } = await publicKey.encrypt(message);
+    const proof = await publicKey.proveEncryption(ciphertext, randomness);
+    const verified = await privateKey.verifyEncryption(ciphertext, proof);
     expect(verified).toBe(true);
   });
 });
 
 
-describe('encryption proof - failure if tampered proof', () => {
+describe('Elgamal encryption proof - failure if tampered proof', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const message = await priv.ctx.randomPoint();
-    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
-    const proof = await pub.proveEncryption(ciphertext, randomness);
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, randomness } = await publicKey.encrypt(message);
+    const proof = await publicKey.proveEncryption(ciphertext, randomness);
     // Tamper commitments
-    proof.commitments[0] = await pub.ctx.randomPoint();
-    await expect(priv.verifyEncryption(ciphertext, proof)).rejects.toThrow(
+    proof.commitments[0] = await publicKey.ctx.randomPoint();
+    await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       Messages.INVALID_ENCRYPTION_PROOF
     );
   });
 });
 
 
-describe('encryption proof - failure if wrong algorithm', () => {
+describe('Elgamal encryption proof - failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const message = await priv.ctx.randomPoint();
-    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
-    const proof = await pub.proveEncryption(ciphertext, randomness);
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, randomness } = await publicKey.encrypt(message);
+    const proof = await publicKey.proveEncryption(ciphertext, randomness);
     // Tamper algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
       Algorithms.SHA256;
-    await expect(priv.verifyEncryption(ciphertext, proof)).rejects.toThrow(
+    await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       Messages.INVALID_ENCRYPTION_PROOF
     );
   });
 });
 
 
-describe('decryptor proof - success', () => {
+describe('Decryptor proof - success', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const message = await priv.ctx.randomPoint();
-    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
-    const proof = await priv.proveDecryptor(ciphertext, decryptor);
-    const verified = await pub.verifyDecryptor(ciphertext, decryptor, proof);
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, decryptor } = await publicKey.encrypt(message);
+    const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
+    const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
     expect(verified).toBe(true);
   });
 });
 
 
-describe('decryptor proof - failure if tampered proof', () => {
+describe('Decryptor proof - failure if tampered proof', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const message = await priv.ctx.randomPoint();
-    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
-    const proof = await priv.proveDecryptor(ciphertext, decryptor);
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, decryptor } = await publicKey.encrypt(message);
+    const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     // Tamper commitments
-    proof.commitments[0] = await pub.ctx.randomPoint();
-    await expect(pub.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
+    proof.commitments[0] = await publicKey.ctx.randomPoint();
+    await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       Messages.INVALID_DECRYPTOR_PROOF
     );
   });
 });
 
 
-describe('decryptor proof - failure if wrong algorithm', () => {
+describe('Decryptor proof - failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
-    const priv = await key.generate(label);
-    const pub = await priv.publicKey();
-    const message = await priv.ctx.randomPoint();
-    const { ciphertext, randomness, decryptor } = await pub.encrypt(message);
-    const proof = await priv.proveDecryptor(ciphertext, decryptor);
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, decryptor } = await publicKey.encrypt(message);
+    const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     // Tamper algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
       Algorithms.SHA256;
-    await expect(pub.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
+    await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       Messages.INVALID_DECRYPTOR_PROOF
     );
   });
