@@ -1,30 +1,31 @@
-const elgamal = require('../src/elgamal');
-const backend = require('../src/backend');
-const shamir = require('../src/shamir');
+import { shamir, backend } from '../src';
 import { Messages } from '../src/shamir/enums';
 import { partialPermutations } from './helpers';
 
 
-describe('secret sharing', () => {
-  test('Share with dealer', async () => {
-    const label = 'ed25519';
-    const n = 5;
-    const t = 3;
-    const ctx = backend.initGroup(label);
-    const { secret } = await ctx.generateKeypair();
-    const { threshold, shares, polynomial, commitments } = await shamir.shareSecret(ctx, secret, n, t);
+test('Secret sharing', async () => {
+  const label = 'ed25519';
+  const ctx = backend.initGroup(label);
+  const { secret, point: pub } = await ctx.generateKeypair();
 
-    shares.forEach(async (share: any) => {
-      const verified = await shamir.verifySecretShare(ctx, share, commitments);
-      expect(verified).toBe(true);
-    });
+  const n = 5;
+  const t = 3;
+  const distribution = await shamir.shareSecret(ctx, secret, n, t);
+  const { threshold, secretShares, polynomial, commitments } = distribution;
+  const publicShares = await distribution.publicShares();
 
-    partialPermutations(shares).forEach(async (qualifiedSet) => {
-      let reconstructed = shamir.reconstructSecret(ctx, qualifiedSet);
-      expect(reconstructed == secret).toBe(qualifiedSet.length >= t);
-    });
+  secretShares.forEach(async (share: any) => {
+    const verified = await shamir.verifySecretShare(ctx, share, commitments);
+    expect(verified).toBe(true);
   });
 
-  test('Share without dealer', async () => {
+  partialPermutations(secretShares).forEach(async (qualifiedSet) => {
+    let reconstructed = shamir.reconstructSecret(ctx, qualifiedSet);
+    expect(reconstructed == secret).toBe(qualifiedSet.length >= t);
+  });
+
+  partialPermutations(publicShares).forEach(async (qualifiedSet) => {
+    let reconstructed = await shamir.reconstructPublic(ctx, qualifiedSet);
+    expect(await reconstructed.isEqual(pub)).toBe(qualifiedSet.length >= t);
   });
 });

@@ -7,6 +7,7 @@ import {
   shareSecret,
   verifySecretShare,
   reconstructSecret,
+  reconstructPublic,
 } from './sharing';
 
 import {
@@ -35,6 +36,7 @@ export {
   shareSecret,
   verifySecretShare,
   reconstructSecret,
+  reconstructPublic,
   generatePartialDecryptor,
   verifyPartialDecryptor,
   verifyPartialDecryptors,

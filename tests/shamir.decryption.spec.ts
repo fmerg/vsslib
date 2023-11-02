@@ -3,7 +3,7 @@ import { Messages } from '../src/shamir/enums';
 import { partialPermutations } from './helpers';
 
 
-describe('Threshold encryption', () => {
+describe('Threshold decryption', () => {
   test('Verifiable decryption - success', async () => {
     const label = 'ed25519';
     const n = 3;
@@ -11,15 +11,15 @@ describe('Threshold encryption', () => {
     const ctx = backend.initGroup(label);
     const { secret, point: pub } = await ctx.generateKeypair();
     const distribution = await shamir.shareSecret(ctx, secret, n, t);
-    const { threshold, shares, polynomial, commitments } = distribution;
-    const publicShares = await distribution.getPublicShares();
+    const { threshold, secretShares, polynomial, commitments } = distribution;
+    const publicShares = await distribution.publicShares();
 
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
     const { ciphertext, decryptor: expectedDecryptor } = await elgamal.encrypt(ctx, message, pub);
 
     // Iterate over all combinations of involved parties
-    partialPermutations(shares).forEach(async (qualified: any[]) => {
+    partialPermutations(secretShares).forEach(async (qualified: any[]) => {
       // Generate decryptor per involved party
       const partialDecryptors = [];
       for (const secretShare of qualified) {
@@ -61,8 +61,8 @@ describe('Threshold encryption', () => {
     const ctx = backend.initGroup(label);
     const { secret, point: pub } = await ctx.generateKeypair();
     const distribution = await shamir.shareSecret(ctx, secret, n, t);
-    const { threshold, shares, polynomial, commitments } = distribution;
-    const publicShares = await distribution.getPublicShares();
+    const { threshold, secretShares, polynomial, commitments } = distribution;
+    const publicShares = await distribution.publicShares();
 
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
@@ -70,7 +70,7 @@ describe('Threshold encryption', () => {
 
     // Generate decryptor per involved party
     let partialDecryptors = [];
-    const qualified = shares.slice(0, t);
+    const qualified = secretShares.slice(0, t);
     for (const secretShare of qualified) {
       const partialDecryptor = await shamir.generatePartialDecryptor(ctx, ciphertext, secretShare);
       partialDecryptors.push(partialDecryptor)
@@ -90,7 +90,7 @@ describe('Threshold encryption', () => {
         expect(verified).toBe(true);
       } else {
         await expect(shamir.verifyPartialDecryptor(ctx, ciphertext, publicShare, share)).rejects.toThrow(
-          Messages.INVALID_DECRYPTOR_SHARE
+          Messages.INVALID_PARTIAL_DECRYPTOR
         );
       }
     }
@@ -116,7 +116,7 @@ describe('Threshold encryption', () => {
     // Decryption raises error if share verification enforced
     await expect(
       shamir.decrypt(ctx, ciphertext, partialDecryptors, { publicShares })
-    ).rejects.toThrow(Messages.INVALID_DECRYPTOR_SHARES_DETECTED);
+    ).rejects.toThrow(Messages.INVALID_PARTIAL_DECRYPTORS_DETECTED);
 
     // Decryption raises error if less than threshold shares provided
     await expect(

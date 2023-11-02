@@ -35,29 +35,28 @@ export class PublicShare<P extends Point> implements Share<P> {
 export class Distribution<P extends Point> {
   ctx: Group<P>;
   threshold: number;
-  shares: SecretShare<P>[];
+  secretShares: SecretShare<P>[];
   polynomial: Polynomial;
   commitments: P[];
 
   constructor(
     ctx: Group<P>,
     threshold: number,
-    shares: SecretShare<P>[],
+    secretShares: SecretShare<P>[],
     polynomial: Polynomial,
     commitments: P[]
   ) {
     this.ctx = ctx;
     this.threshold = threshold;
-    this.shares = shares;
+    this.secretShares = secretShares;
     this.polynomial = polynomial;
     this.commitments = commitments;
   }
 
-  getPublicShares = async (): Promise<PublicShare<P>[]> => {
+  publicShares = async (): Promise<PublicShare<P>[]> => {
     const { operate, generator } = this.ctx;
     const shares = [];
-    for (const share of this.shares) {
-      const { value: secret, index } = share;
+    for (const { value: secret, index } of this.secretShares) {
       const value = await operate(secret, generator);
       shares.push({ value, index });
     }
@@ -104,8 +103,7 @@ export async function shareSecret<P extends Point>(
   if (threshold > nrShares) throw new Error(Messages.THRESHOLD_EXCEEDS_NR_SHARES);
   if (threshold < 1) throw new Error (Messages.THRESHOLD_NOT_GE_ONE);
   if (threshold <= givenShares.length) throw new Error(Messages.NR_GIVEN_SHARES_GT_THRESHOLD)
-  const degree = threshold - 1;
-  const points = new Array(degree + 1);
+  const points = new Array(threshold);
   points[0] = [0, secret];
   let index = 1;
   while (index < points.length) {
@@ -115,9 +113,9 @@ export async function shareSecret<P extends Point>(
     index++;
   }
   const polynomial = lagrange.interpolate(points, { order });
-  const shares = await computeSecretShares(polynomial, nrShares);
+  const secretShares = await computeSecretShares(polynomial, nrShares);
   const commitments = await computeCommitments(ctx, polynomial);
-  return new Distribution<P>(ctx, threshold, shares, polynomial, commitments);
+  return new Distribution<P>(ctx, threshold, secretShares, polynomial, commitments);
 }
 
 
@@ -150,4 +148,19 @@ export function reconstructSecret<P extends Point>(
     const lambda = computeLambda(index, indexes, order);
     return mod(acc + value * lambda, order);
   }, __0n);
+}
+
+
+export async function reconstructPublic<P extends Point>(
+  ctx: Group<P>,
+  qualifiedSet: PublicShare<P>[],
+): Promise<P> {
+  const { order, combine, neutral } = ctx;
+  const indexes = qualifiedSet.map(share => share.index);
+  let acc = neutral;
+  for (const { index, value } of qualifiedSet) {
+    const lambda = computeLambda(index, indexes, order);
+    acc = await combine(acc, await ctx.operate(lambda, value));
+  }
+  return acc;
 }

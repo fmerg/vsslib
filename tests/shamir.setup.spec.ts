@@ -52,9 +52,11 @@ describe('Setup without predefined shares', () => {
     const label = 'ed25519';
     const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
-    const { threshold, shares, polynomial, commitments } = await shamir.shareSecret(ctx, secret, n, t);
+    const { threshold, secretShares, polynomial, commitments } = await shamir.shareSecret(
+      ctx, secret, n, t
+    );
     expect(threshold).toEqual(t);
-    expect(shares.length).toEqual(n);
+    expect(secretShares.length).toEqual(n);
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
     expect(commitments.length).toEqual(t);
@@ -72,14 +74,14 @@ describe('Setup with predefined shares', () => {
       for (let i = 0; i < nrGivenShares; i++) {
         givenShares.push(await ctx.randomScalar());
       }
-      const { threshold, shares, polynomial, commitments } = await shamir.shareSecret(
+      const { threshold, secretShares, polynomial, commitments } = await shamir.shareSecret(
         ctx, secret, n, t, givenShares
       );
       expect(threshold).toEqual(t);
-      expect(shares.length).toEqual(n);
+      expect(secretShares.length).toEqual(n);
       expect(polynomial.evaluate(0)).toEqual(secret);
       for (let index = 1; index <= nrGivenShares; index++) {
-        const { value } = shamir.selectShare(index, shares);
+        const { value } = shamir.selectShare(index, secretShares);
         expect(value).toEqual(givenShares[index - 1]);
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
