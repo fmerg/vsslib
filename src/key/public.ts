@@ -7,6 +7,7 @@ import { Messages } from './enums';
 const backend = require('../backend');
 const sigma = require('../sigma');
 const elgamal = require('../elgamal');
+const shamir = require('../shamir');
 
 
 export type SerializedPublicKey = {
@@ -81,4 +82,43 @@ export class PublicKey<P extends Point> {
     if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_PROOF);
     return verified;
   }
+
+  static async fromShares<Q extends Point>(qualifiedSet: PublicShare<Q>[]): Promise<PublicKey<Q>> {
+    if (qualifiedSet.length < 1) throw new Error(Messages.AT_LEAST_ONE_SHARE_NEEDED);
+    const ctx = qualifiedSet[0].ctx;
+    const pointShares = qualifiedSet.map(({ point: value, index }) => { return {
+        value, index
+      };
+    });
+    const point = await shamir.reconstructPublic(ctx, pointShares);
+    return new PublicKey(ctx, point);
+  }
 }
+
+
+export interface SerializedPublicShare extends SerializedPublicKey {
+  index: number;
+}
+
+
+export class PublicShare<P extends Point> extends PublicKey<P> {
+  index: number;
+
+  constructor(ctx: Group<P>, point: P, index: number) {
+    super(ctx, point);
+    this.index = index;
+  }
+
+  serialize = (): SerializedPublicShare => {
+    const { ctx, point, index } = this;
+    return { value: point.toHex(), system: ctx.label, index };
+  }
+
+  static async deserialize(serialized: SerializedPublicShare): Promise<PublicKey<Point>> {
+    const { value, system: label, index } = serialized;
+    const ctx = backend.initGroup(label);
+    const point = ctx.unhexify(value);
+    await ctx.validatePoint(point);
+    return new PublicShare(ctx, point, index);
+  }
+};
