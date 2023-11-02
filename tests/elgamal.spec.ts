@@ -12,8 +12,7 @@ describe('encryption - decryption with secret key failure', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness, decryptor } = await elgamal.encrypt(ctx, message, pub);
@@ -29,8 +28,7 @@ describe('encryption - decryption with decryptor', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness, decryptor } = await elgamal.encrypt(ctx, message, pub);
@@ -45,8 +43,7 @@ describe('encryption - decryption with decryptor failure', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness, decryptor } = await elgamal.encrypt(ctx, message, pub);
@@ -62,8 +59,7 @@ describe('encryption - decryption with randomness', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness, decryptor } = await elgamal.encrypt(ctx, message, pub);
@@ -78,8 +74,7 @@ describe('encryption - decryption with randomness failure', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness, decryptor } = await elgamal.encrypt(ctx, message, pub);
@@ -95,8 +90,7 @@ describe('encryption - proof of encryption', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness } = await elgamal.encrypt(ctx, message, pub);
@@ -115,8 +109,7 @@ describe('encryption - proof of encryption failure', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, randomness } = await elgamal.encrypt(ctx, message, pub);
@@ -135,8 +128,7 @@ describe('encryption - decryptor generation', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, decryptor: expectedDecryptor } = await elgamal.encrypt(ctx, message, pub);
@@ -150,8 +142,7 @@ describe('encryption - proof of decryptor', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, decryptor } = await elgamal.encrypt(ctx, message, pub);
@@ -170,8 +161,7 @@ describe('encryption - proof of decryptor failure', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
 
-    const secret = await ctx.randomScalar();
-    const pub = await ctx.operate(secret, ctx.generator);
+    const { secret, point: pub } = await ctx.generateKeypair();
 
     const message = await ctx.randomPoint();
     const { ciphertext, decryptor } = await elgamal.encrypt(ctx, message, pub);

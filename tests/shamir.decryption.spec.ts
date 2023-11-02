@@ -6,17 +6,16 @@ import { partialPermutations } from './helpers';
 describe('Threshold encryption', () => {
   test('Verifiable decryption - success', async () => {
     const label = 'ed25519';
-    const ctx = backend.initGroup(label);
-    const secret = await ctx.randomScalar();
     const n = 3;
     const t = 2;
+    const ctx = backend.initGroup(label);
+    const { secret, point: pub } = await ctx.generateKeypair();
     const distribution = await shamir.shareSecret(ctx, secret, n, t);
     const { threshold, shares, polynomial, commitments } = distribution;
     const publicShares = await distribution.getPublicShares();
 
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
-    const pub = await ctx.operate(secret, ctx.generator);
     const { ciphertext, decryptor: expectedDecryptor } = await elgamal.encrypt(ctx, message, pub);
 
     // Iterate over all combinations of involved parties
@@ -50,23 +49,23 @@ describe('Threshold encryption', () => {
       // Message correctly retrieved IFF >= t parties are involved
       const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors);
       expect(await plaintext.isEqual(message)).toBe(qualified.length >= t);
-      expect(await plaintext.isEqual(await elgamal.decrypt(ctx, ciphertext, { secret }))).toBe(qualified.length >= t);
+      const plaintext2 = await elgamal.decrypt(ctx, ciphertext, { secret })
+      expect(await plaintext.isEqual(plaintext2)).toBe(qualified.length >= t);
     });
   });
 
   test('Verifiable decryption - failure', async () => {
     const label = 'ed25519';
-    const ctx = backend.initGroup(label);
-    const secret = await ctx.randomScalar();
     const n = 5;
     const t = 3;
+    const ctx = backend.initGroup(label);
+    const { secret, point: pub } = await ctx.generateKeypair();
     const distribution = await shamir.shareSecret(ctx, secret, n, t);
     const { threshold, shares, polynomial, commitments } = distribution;
     const publicShares = await distribution.getPublicShares();
 
     // Encrypt something with respect to the combined public key
     const message = await ctx.randomPoint();
-    const pub = await ctx.operate(secret, ctx.generator);
     const { ciphertext, decryptor: expectedDecryptor } = await elgamal.encrypt(ctx, message, pub);
 
     // Generate decryptor per involved party

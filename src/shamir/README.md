@@ -3,6 +3,8 @@
 ```js
 const { shamir, backend } = require('vsslib');
 const ctx = backend.initGroup('ed25519');
+
+const { secret, point: pub } = await ctx.generateKeypair();
 ```
 
 ```js
@@ -33,14 +35,15 @@ await shamir.verifySecretShare(ctx, share, commitments);
 
 ```js
 const qualifiedShares = shares.slice(0, 3);
+
 const reconstructed = await shamir.reconstructSecret(ctx, qualifiedShares);
 ```
 
-### Threshold encryption
+### Threshold decryption
 
 ```js
-const pub = await ctx.operate(secret, ctx.generator);
 const message = await ctx.randomPoint();
+
 const { ciphertext } = await ctx.encrypt(message, pub);
 ```
 
@@ -52,6 +55,7 @@ const partialDecryptor = await shamir.generatePartialDecryptor(ctx, ciphertext, 
 
 ```js
 const publicShare = shamir.selectShare(publicShares);
+
 await shamir.verifyPartialDecryptor(ctx, ciphertext, publicShare, partialDecryptor);
 ```
 

@@ -39,6 +39,14 @@ const b = await ctx.randomBytes();
 await ctx.validateBytes(b);
 ```
 
+
+### Keypair generation (discrete logarithm)
+
+```js
+const { secret, point } = await ctx.generateKeypair();
+```
+
+
 ### Group operations
 
 ```js

@@ -127,6 +127,12 @@ export class EcGroup extends Group<EcPoint> {
   unhexify = (hexnum: string): EcPoint => {
     return new EcPoint(this._curve.ExtendedPoint.fromHex(hexnum));
   }
+
+  generateKeypair = async (secret?: bigint): Promise<{ secret: bigint, point: EcPoint }> => {
+    secret = secret || await this.randomScalar();
+    const point = await this.operate(secret, this.generator);
+    return { secret, point };
+  }
 }
 
 

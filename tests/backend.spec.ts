@@ -240,3 +240,22 @@ describe('bytes validation', () => {
     );
   })
 });
+
+
+describe('Keypair generation - no given secret', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = backend.initGroup(label);
+    const { secret, point } = await ctx.generateKeypair();
+    expect(await point.isEqual(await ctx.operate(secret, ctx.generator))).toBe(true);
+  })
+});
+
+describe('Keypair generation - given secret', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = backend.initGroup(label);
+    const scalar = await ctx.randomScalar();
+    const { secret, point } = await ctx.generateKeypair(scalar);
+    expect(secret).toEqual(scalar);
+    expect(await point.isEqual(await ctx.operate(scalar, ctx.generator))).toBe(true);
+  })
+});
