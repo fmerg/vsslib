@@ -34,8 +34,8 @@ export async function fiatShamir<P extends Point>(
   opts?: { algorithm?: Algorithm },
 ): Promise<bigint> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const { _modBytes, _ordBytes, _genBytes, leBuff2Scalar } = ctx;
-  const configBuff = [..._modBytes, ..._ordBytes, ..._genBytes];
+  const { modBytes, ordBytes, genBytes, leBuff2Scalar } = ctx;
+  const configBuff = [...modBytes, ...ordBytes, ...genBytes];
   const pointsBuff = points.reduce((acc: number[], p: P) => [...acc, ...p.toBytes()], []);
   const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
   const bytes = new Uint8Array([...configBuff, ...pointsBuff, ...scalarsBuff]);

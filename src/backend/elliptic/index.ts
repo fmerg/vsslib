@@ -77,12 +77,12 @@ export class EcGroup extends Group<EcPoint> {
 
   randomScalar = async (): Promise<bigint> => {
     const { randomBytes, Fp } = this.curve.CURVE;
-    return mod(leBuff2Int(randomBytes(Fp.BYTES)), this._order);
+    return mod(leBuff2Int(randomBytes(Fp.BYTES)), this.order);
   }
 
   randomPoint = async (): Promise<EcPoint> => {
     const { randomBytes, Fp } = this.curve.CURVE;
-    const scalar = mod(leBuff2Int(randomBytes(Fp.BYTES)), this._order);
+    const scalar = mod(leBuff2Int(randomBytes(Fp.BYTES)), this.order);
     return new EcPoint(this._base.multiply(scalar));
   }
 
@@ -93,7 +93,7 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
-    if (!(0 < scalar && scalar < this._order))
+    if (!(0 < scalar && scalar < this.order))
       throw new Error(Messages.INVALID_SCALAR)
     return true;
   }

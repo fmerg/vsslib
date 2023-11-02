@@ -11,48 +11,28 @@ export interface Point {
 }
 
 export abstract class Group<P extends Point> {
-  _label: Label;
-  _modulus: bigint;
-  _order: bigint;
-  _generator: P;
-  _neutral: P;
-  _modBytes: Uint8Array;
-  _ordBytes: Uint8Array;
-  _genBytes: Uint8Array;
+  label: Label;
+  modulus: bigint;
+  order: bigint;
+  generator: P;
+  neutral: P;
+  modBytes: Uint8Array;
+  ordBytes: Uint8Array;
+  genBytes: Uint8Array;
 
   constructor(label: Label, modulus: bigint, order: bigint, generator: P, neutral: P) {
-    this._label = label;
-    this._modulus = modulus;
-    this._order = order;
-    this._generator = generator;;
-    this._neutral = neutral;
-    this._modBytes = leInt2Buff(modulus);
-    this._ordBytes = leInt2Buff(order);
-    this._genBytes = generator.toBytes();
-  }
-
-  public get label(): Label {
-    return this._label;
-  }
-
-  public get modulus(): bigint {
-    return this._modulus;
-  }
-
-  public get order(): bigint {
-    return this._order;
-  }
-
-  public get generator(): P {
-    return this._generator;
-  }
-
-  public get neutral(): P {
-    return this._neutral;
+    this.label = label;
+    this.modulus = modulus;
+    this.order = order;
+    this.generator = generator;;
+    this.neutral = neutral;
+    this.modBytes = leInt2Buff(modulus);
+    this.ordBytes = leInt2Buff(order);
+    this.genBytes = generator.toBytes();
   }
 
   leBuff2Scalar = (bytes: Uint8Array): bigint => {
-    return mod(leBuff2Int(bytes), this._order);
+    return mod(leBuff2Int(bytes), this.order);
   }
 
   abstract isEqual<Q extends Point>(other: Group<Q>): Promise<boolean>;
