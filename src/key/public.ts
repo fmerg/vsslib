@@ -3,6 +3,7 @@ import { Ciphertext } from '../elgamal/core';
 import { Label } from '../types';
 import { DlogProof } from '../sigma';
 import { Messages } from './enums';
+import { PartialDecryptor } from '../shamir';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
@@ -120,5 +121,13 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
     const point = ctx.unhexify(value);
     await ctx.validatePoint(point);
     return new PublicShare(ctx, point, index);
+  }
+
+  async verifyPartialDecryptor(
+    ciphertext: Ciphertext<P>,
+    partialDecryptor: PartialDecryptor<P>,
+  ): Promise<boolean> {
+    const { ctx, point: value, index } = this;
+    return shamir.verifyPartialDecryptor(ctx, ciphertext, { value, index }, partialDecryptor);
   }
 };

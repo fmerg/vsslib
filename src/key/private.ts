@@ -3,7 +3,7 @@ import { Ciphertext } from '../elgamal/core';
 import { DlogProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../lagrange';
-import { SecretShare } from '../shamir';
+import { SecretShare, PartialDecryptor } from '../shamir';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
@@ -168,6 +168,11 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
     const { ctx, index } = this;
     const point = await ctx.operate(this.scalar, ctx.generator);
     return new PublicShare(ctx, point, index);
+  }
+
+  async generatePartialDecryptor(ciphertext: Ciphertext<P>): Promise<PartialDecryptor<P>> {
+    const { ctx, scalar: value, index } = this;
+    return await shamir.generatePartialDecryptor(ctx, ciphertext, { value, index });
   }
 };
 
