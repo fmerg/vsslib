@@ -9,7 +9,7 @@
 ```js
 import { key } from 'vsslib';
 
-const { privateKey, PublicKey } = key.generate('ed25519');
+const { privateKey, PublicKey } = await key.generate('ed25519');
 ```
 
 ## Modules

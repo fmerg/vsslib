@@ -1,5 +1,5 @@
-import { PrivateKey } from './private';
-import { PublicKey } from './public';
+import { PrivateKey, PrivateShare } from './private';
+import { PublicKey, PublicShare } from './public';
 
 import { Label } from '../types';
 import { assertLabel } from '../utils/checkers';
@@ -22,5 +22,7 @@ async function generate(label: Label): Promise<KeyPair<Point>> {
 export {
   PrivateKey,
   PublicKey,
+  PrivateShare,
+  PublicShare,
   generate,
 }

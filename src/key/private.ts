@@ -1,7 +1,9 @@
 import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
 import { DlogProof } from '../sigma';
-import { PublicKey } from './public';
+import { PublicKey, PublicShare } from './public';
+import { Polynomial } from '../lagrange';
+import { SecretShare, PartialDecryptor } from '../shamir';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
@@ -9,6 +11,7 @@ import { leInt2Buff } from '../utils';
 const backend = require('../backend');
 const sigma = require('../sigma');
 const elgamal = require('../elgamal');
+const shamir = require('../shamir');
 
 
 export type SerializedPrivateKey = {
@@ -100,7 +103,6 @@ export class PrivateKey<P extends Point> {
     return elgamal.proveDecryptor(ctx, ciphertext, scalar, decryptor, opts);
   }
 
-
   async generateDecryptor(
     ciphertext: Ciphertext<P>,
     opts?: { noProof?: boolean, algorithm?: Algorithm },
@@ -111,5 +113,92 @@ export class PrivateKey<P extends Point> {
     if (noProof) return { decryptor };
     const proof = await elgamal.proveDecryptor(ctx, ciphertext, secret, decryptor, opts);
     return { decryptor, proof };
+  }
+
+  async distribute(nrShares: number, threshold: number): Promise<KeyDistribution<P>> {
+    const { ctx, scalar: secret } = this;
+    const { secretShares, polynomial, commitments } = await shamir.shareSecret(
+      ctx, secret, nrShares, threshold
+    );
+    const privateShares = secretShares.map(
+      ({ value, index }: SecretShare<P>) => new PrivateShare(ctx, value, index)
+    );
+    return new KeyDistribution(threshold, privateShares, polynomial, commitments);
+  }
+
+  static async fromShares<Q extends Point>(qualifiedSet: PrivateShare<Q>[]): Promise<PrivateKey<Q>> {
+    if (qualifiedSet.length < 1) throw new Error(Messages.AT_LEAST_ONE_SHARE_NEEDED);
+    const ctx = qualifiedSet[0].ctx;
+    const secretShares = qualifiedSet.map(({ scalar: value, index }) => { return {
+        value, index
+      };
+    });
+    const secret = await shamir.reconstructSecret(ctx, secretShares);
+    return new PrivateKey(ctx, leInt2Buff(secret));
+  }
+}
+
+
+export interface SerializedPrivateShare extends SerializedPrivateKey {
+  index: number;
+}
+
+export class PrivateShare<P extends Point> extends PrivateKey<P> {
+  index: number;
+
+  constructor(ctx: Group<P>, scalar: bigint, index: number) {
+    super(ctx, leInt2Buff(scalar));
+    this.index = index;
+  }
+
+  serialize = (): SerializedPrivateShare => {
+    const { ctx, bytes, index } = this;
+    return { value: Buffer.from(bytes).toString('hex'), system: ctx.label, index };
+  }
+
+  static async deserialize(serialized: SerializedPrivateShare): Promise<PrivateKey<Point>> {
+    const { value, system: label, index } = serialized;
+    const ctx = backend.initGroup(label);
+    const bytes = Uint8Array.from(Buffer.from(value, 'hex'));
+    await ctx.validateBytes(bytes);
+    return new PrivateShare(ctx, ctx.leBuff2Scalar(bytes), index);
+  }
+
+  async publicKey(): Promise<PublicKey<P>> {
+    const { ctx, index } = this;
+    const point = await ctx.operate(this.scalar, ctx.generator);
+    return new PublicShare(ctx, point, index);
+  }
+
+  async generatePartialDecryptor(ciphertext: Ciphertext<P>): Promise<PartialDecryptor<P>> {
+    const { ctx, scalar: value, index } = this;
+    return await shamir.generatePartialDecryptor(ctx, ciphertext, { value, index });
+  }
+};
+
+export class KeyDistribution<P extends Point> {
+  threshold: number;
+  privateShares: PrivateShare<P>[];
+  polynomial: Polynomial;
+  commitments: P[];
+
+  constructor(
+    threshold: number,
+    privateShares: PrivateShare<P>[],
+    polynomial: Polynomial,
+    commitments: P[],
+  ) {
+    this.threshold = threshold;
+    this.privateShares = privateShares;
+    this.polynomial = polynomial;
+    this.commitments = commitments;
+  }
+
+  publicShares = async (): Promise<PublicKey<P>[]> => {
+    const shares = [];
+    for (const [index, privateShare] of this.privateShares.entries()) {
+      shares.push(await privateShare.publicKey());
+    }
+    return shares;
   }
 }
