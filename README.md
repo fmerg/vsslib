@@ -9,17 +9,18 @@
 ```js
 import { key } from 'vsslib';
 
-const { privateKey, PublicKey } = await key.generate('ed25519');
+const { privateKey, publicKey } = await key.generate('ed25519');
 ```
 
 ## Modules
 
 - [`vsslib.backend`](./src/backend)
-- [`vsslib.key`](./src/key)
-- [`vsslib.sigma`](./src/sigma)
+- [`vsslib.core`](./src/core)
 - [`vsslib.elgamal`](./src/elgamal)
+- [`vsslib.key`](./src/key)
 - [`vsslib.lagrange`](./src/lagrange)
 - [`vsslib.shamir`](./src/shamir)
+- [`vsslib.sigma`](./src/sigma)
 - [`vsslib.utils`](./src/utils)
 
 ## Development

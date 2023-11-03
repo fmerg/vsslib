@@ -44,8 +44,8 @@ export async function verifyPartialDecryptor<P extends Point>(
   partialDecryptor: PartialDecryptor<P>,
 ): Promise<boolean> {
   const { value: pub } = publicShare;
-  const { value, proof } = partialDecryptor;
-  const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, value, proof);
+  const { value: decryptor, proof } = partialDecryptor;
+  const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
   if (!verified) throw new Error(Messages.INVALID_PARTIAL_DECRYPTOR);
   return true;
 }

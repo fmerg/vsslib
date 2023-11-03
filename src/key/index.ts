@@ -24,5 +24,6 @@ export {
   PublicKey,
   PrivateShare,
   PublicShare,
+  KeyPair,
   generate,
 }
