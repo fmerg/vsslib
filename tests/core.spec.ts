@@ -28,7 +28,7 @@ describe('Key reconstruction', () => {
     distribution = await privateKey.distribute(nrShares, threshold);
     privateShares = await distribution.privateShares;
     publicShares = await distribution.publicShares();
-    combiner = core.initCombiner(label);
+    combiner = core.initCombiner({ label, threshold });
   });
 
   test('Private reconstruction - success', async () => {
@@ -75,7 +75,7 @@ describe('Decryptor reconstruction', () => {
     const encryptionOutput = await publicKey.encrypt(message);
     ciphertext = encryptionOutput.ciphertext;
     expectedDecryptor = encryptionOutput.decryptor;
-    combiner = core.initCombiner(label);
+    combiner = core.initCombiner({ label, threshold });
   });
 
   test('Success', async () => {
@@ -134,7 +134,7 @@ describe('Threshold decryption', () => {
     const encryptionOutput = await publicKey.encrypt(message);
     ciphertext = encryptionOutput.ciphertext;
     expectedDecryptor = encryptionOutput.decryptor;
-    combiner = core.initCombiner(label);
+    combiner = core.initCombiner({ label, threshold });
   });
 
   test('Success', async () => {

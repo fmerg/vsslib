@@ -13,9 +13,12 @@ const backend = require('../backend');
 
 export class Combiner<P extends Point> {
   ctx: Group<P>;
+  threshold: number;
 
-  constructor(ctx: Group<P>) {
+  constructor(ctx: Group<P>, threshold: number) {
+    if (threshold < 1) throw new Error('Threshold parameter must be >= 1');
     this.ctx = ctx;
+    this.threshold = threshold;
   }
 
   async reconstructKey(shares: PrivateShare<P>[]): Promise<KeyPair<P>> {
@@ -70,8 +73,9 @@ export class Combiner<P extends Point> {
   }
 }
 
-export function initCombiner(label: Label): Combiner<Point> {
+export function initCombiner(opts: { label: Label, threshold: number }): Combiner<Point> {
+  const { label, threshold } = opts;
   assertLabel(label);
   const group = backend.initGroup(label);
-  return new Combiner(group);
+  return new Combiner(group, threshold);
 }

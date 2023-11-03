@@ -3,7 +3,7 @@
 ```js
 const core = require('vsslib/core');
 
-const combiner = core.initCombiner('ed25519')
+const combiner = core.initCombiner({ label: 'ed25519', threshold: 5 })
 ```
 
 ## Key reconstruction
