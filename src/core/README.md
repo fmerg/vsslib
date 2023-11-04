@@ -27,7 +27,7 @@ const publicKey = await combiner.reconstructPublic(shares, { skipThreshold: true
 ## Partial decryptors validation
 
 ```js
-const [verified, indexes] = await combiner.validatePartialDecryptors(ciphertext, publicShares, shares);
+const { flag, indexes } = await combiner.validatePartialDecryptors(ciphertext, publicShares, shares);
 ```
 
 ```js

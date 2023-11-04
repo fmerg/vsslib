@@ -77,7 +77,7 @@ export class Combiner<P extends Point> {
     publicShares: PublicShare<P>[],
     shares: PartialDecryptor<P>[],
     opts?: { raiseOnInvalid?: boolean, threshold?: number, skipThreshold?: boolean },
-  ): Promise<[boolean, number[]]> {
+  ): Promise<{ flag: boolean, indexes: number[]}> {
     this.validateNrShares(shares, opts);
     const selectPublicShare = (index: number, shares: PublicShare<P>[]) => {
       const selected = shares.filter(share => share.index == index)[0];
@@ -96,7 +96,7 @@ export class Combiner<P extends Point> {
       flag &&= verified;
       if(!verified) indexes.push(index);
     }
-    return [flag, indexes];
+    return { flag, indexes };
   }
 
   async reconstructDecryptor(

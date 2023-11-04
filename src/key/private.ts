@@ -115,7 +115,8 @@ export class PrivateKey<P extends Point> {
     return { decryptor, proof };
   }
 
-  async distribute(nrShares: number, threshold: number): Promise<KeyDistribution<P>> {
+  async distribute(opts: { nrShares: number, threshold: number }): Promise<KeyDistribution<P>> {
+    const { nrShares, threshold } = opts;
     const { ctx, scalar: secret } = this;
     const { secretShares, polynomial, commitments } = await shamir.shareSecret(
       ctx, secret, nrShares, threshold

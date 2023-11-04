@@ -68,12 +68,15 @@ const publicShare = shamir.selectShare(publicShares);
 await shamir.verifyPartialDecryptor(ctx, ciphertext, publicShare, partialDecryptor);
 ```
 
-
-### Decryptor reconstruction
+### Partial decryptor validation
 
 ```js
-await shamir.verifyPartialDecryptors(ctx, ciphertext, publicShares, partialDecryptors);
+const { flag, indexes } = await shamir.verifyPartialDecryptors(
+  ctx, ciphertext, publicShares, partialDecryptors
+);
 ```
+
+### Decryptor reconstruction
 
 ```js
 const decryptor = await shamir.reconstructDecryptor(ctx, partialDecryptors);
@@ -81,9 +84,6 @@ const decryptor = await shamir.reconstructDecryptor(ctx, partialDecryptors);
 
 ### Decryption
 
-```js
-await shamir.verifyPartialDecryptors(ctx, ciphertext, publicShares, partialDecryptors);
-```
 
 ```js
 const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors);

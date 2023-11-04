@@ -20,7 +20,7 @@ const runSetup = async (opts: {
 }) => {
   const { label, nrShares, threshold } = opts;
   const { privateKey, publicKey } = await key.generate(label);
-  const distribution = await privateKey.distribute(nrShares, threshold);
+  const distribution = await privateKey.distribute({ nrShares, threshold });
   const { privateShares } = distribution;
   const publicShares = await distribution.publicShares();
   const message = await publicKey.ctx.randomPoint();
@@ -121,18 +121,18 @@ describe('Partial decryptors validation', () => {
 
   test('Success', async () => {
     const { combiner, publicShares, ciphertext, partialDecryptors } = setup
-    const [verified, indexes] = await combiner.validatePartialDecryptors(
+    const { flag, indexes } = await combiner.validatePartialDecryptors(
       ciphertext, publicShares, partialDecryptors
     );
-    expect(verified).toBe(true);
+    expect(flag).toBe(true);
     expect(indexes).toEqual([]);
   });
   test('Failure - not raise on invalid', async () => {
     const { combiner, publicShares, ciphertext, invalidDecryptors, invalidIndexes } = setup
-    const [verified, indexes] = await combiner.validatePartialDecryptors(
+    const { flag, indexes } = await combiner.validatePartialDecryptors(
       ciphertext, publicShares, invalidDecryptors
     );
-    expect(verified).toBe(false);
+    expect(flag).toBe(false);
     expect(indexes).toEqual(invalidIndexes);
   });
   test('Failure - raise on invalid', async () => {
@@ -151,10 +151,10 @@ describe('Partial decryptors validation', () => {
   });
   test('Success - skip threshold check', async () => {
     const { combiner, publicShares, ciphertext, partialDecryptors } = setup
-    const [verified, indexes] = await combiner.validatePartialDecryptors(
+    const { flag, indexes } = await combiner.validatePartialDecryptors(
       ciphertext, publicShares, partialDecryptors.slice(0, threshold - 1), { skipThreshold: true }
     )
-    expect(verified).toBe(true);
+    expect(flag).toBe(true);
     expect(indexes).toEqual([]);
   });
   test('Success - single valid', async () => {
