@@ -1,4 +1,4 @@
-import { PrivateKey, PrivateShare } from './private';
+import { PrivateKey, PrivateShare, KeyDistribution } from './private';
 import { PublicKey, PublicShare } from './public';
 
 import { Label } from '../types';
@@ -24,5 +24,7 @@ export {
   PublicKey,
   PrivateShare,
   PublicShare,
+  KeyPair,
+  KeyDistribution,
   generate,
 }

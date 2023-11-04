@@ -44,8 +44,8 @@ export async function verifyPartialDecryptor<P extends Point>(
   partialDecryptor: PartialDecryptor<P>,
 ): Promise<boolean> {
   const { value: pub } = publicShare;
-  const { value, proof } = partialDecryptor;
-  const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, value, proof);
+  const { value: decryptor, proof } = partialDecryptor;
+  const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
   if (!verified) throw new Error(Messages.INVALID_PARTIAL_DECRYPTOR);
   return true;
 }
@@ -56,7 +56,7 @@ export async function verifyPartialDecryptors<P extends Point>(
   ciphertext: Ciphertext<P>,
   publicShares: PublicShare<P>[],
   partialDecryptors: PartialDecryptor<P>[],
-): Promise<[boolean, number[]]> {
+): Promise<{ flag: boolean, indexes: number[]}> {
   let flag = true;
   let indexes = [];
   for (const share of partialDecryptors) {
@@ -66,7 +66,7 @@ export async function verifyPartialDecryptors<P extends Point>(
     flag &&= verified;
     if (!verified) indexes.push(index);
   }
-  return [flag, indexes];
+  return { flag, indexes };
 }
 
 
@@ -98,10 +98,10 @@ export async function decrypt<P extends Point>(
   if (threshold && partialDecryptors.length < threshold)
     throw new Error(Messages.NOT_ENOUGH_SHARES);
   if (publicShares) {
-    const [verified, indexes] = await verifyPartialDecryptors(
+    const { flag, indexes } = await verifyPartialDecryptors(
       ctx, ciphertext, publicShares, partialDecryptors
     );
-    if (!verified) throw new Error(Messages.INVALID_PARTIAL_DECRYPTORS_DETECTED);
+    if (!flag) throw new Error(Messages.INVALID_PARTIAL_DECRYPTORS_DETECTED);
   }
   const decryptor = await reconstructDecryptor(ctx, partialDecryptors);
   return elgamal.decrypt(ctx, ciphertext, { decryptor });

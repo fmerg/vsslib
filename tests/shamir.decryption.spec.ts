@@ -33,13 +33,13 @@ describe('Threshold decryption', () => {
         expect(verified).toBe(true);
       }
       // Verify decryptors all together
-      const [verified, indexes] = await shamir.verifyPartialDecryptors(
+      const { flag, indexes } = await shamir.verifyPartialDecryptors(
         ctx,
         ciphertext,
         publicShares,
         partialDecryptors,
       );
-      expect(verified).toBe(true);
+      expect(flag).toBe(true);
       expect(indexes).toEqual([]);
 
       // Decryptor correctly retrieved IFF >= t parties are involved
@@ -96,14 +96,14 @@ describe('Threshold decryption', () => {
     }
 
     // Verify decryptors all together
-    const [verified, detected] = await shamir.verifyPartialDecryptors(
+    const { flag, indexes } = await shamir.verifyPartialDecryptors(
       ctx,
       ciphertext,
       publicShares,
       partialDecryptors,
     );
-    expect(verified).toBe(false);
-    expect(detected).toEqual(corruptedIndexes);
+    expect(flag).toBe(false);
+    expect(indexes).toEqual(corruptedIndexes);
 
     // Decryptor is not correctly retrieved
     const decryptor = await shamir.reconstructDecryptor(ctx, partialDecryptors);

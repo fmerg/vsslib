@@ -4,8 +4,6 @@ import { PrivateKey, PublicKey, PublicShare } from '../src/key';
 import { Messages } from '../src/key/enums';
 import { partialPermutations } from './helpers';
 
-const shamir = require('../src/shamir');
-
 
 export function selectShare<P extends Point>(index: number, shares: PublicShare<P>[]): PublicShare<P> {
   const selected = shares.filter(share => share.index == index)[0];
@@ -19,7 +17,7 @@ test('Key distribution and reconstruction', async () => {
   const { privateKey, publicKey } = await key.generate(label);
   const n = 5;
   const t = 3;
-  const distribution = await privateKey.distribute(n, t);
+  const distribution = await privateKey.distribute({ nrShares: n, threshold: t });
   const { threshold, privateShares, polynomial, commitments } = distribution;
   const publicShares = await distribution.publicShares();
   expect(threshold).toEqual(t);
@@ -37,6 +35,7 @@ test('Key distribution and reconstruction', async () => {
   partialPermutations(privateShares, 1).forEach(async (qualifiedSet) => {
     const reconstructed = await PrivateKey.fromShares(qualifiedSet);
     expect(await reconstructed.isEqual(privateKey)).toBe(qualifiedSet.length >= t);
+
   });
 
   // Public key correctly retrieved ONLY IFF >= t parties involved
@@ -53,7 +52,7 @@ describe('Threshold decryption', () => {
     const { privateKey, publicKey } = await key.generate(label);
     const n = 3;
     const t = 2;
-    const distribution = await privateKey.distribute(n, t);
+    const distribution = await privateKey.distribute({ nrShares: n, threshold: t });
     const { threshold, privateShares, polynomial, commitments } = distribution;
     const publicShares = await distribution.publicShares();
 
@@ -62,27 +61,19 @@ describe('Threshold decryption', () => {
     const { ciphertext, decryptor: expectedDecryptor } = await publicKey.encrypt(message);
 
     partialPermutations(privateShares, 1).forEach(async (qualifiedSet: any[]) => {
-      const partialDecryptors = [];
+      // Generate partial decryptors per involved party
+      const shares = [];
       for (const privateShare of qualifiedSet) {
-        const partialDecryptor = await privateShare.generatePartialDecryptor(ciphertext);
-        partialDecryptors.push(partialDecryptor);
+        const share = await privateShare.generatePartialDecryptor(ciphertext);
+        shares.push(share);
       }
-      // Verify decryptors individually
-      for (const share of partialDecryptors) {
+
+      // Verify partial decryptors individually
+      for (const share of shares) {
         const publicShare = selectShare(share.index, publicShares);
         const verified = await publicShare.verifyPartialDecryptor(ciphertext, share);
         expect(verified).toBe(true);
       }
-
-      // Decryptor correctly retrieved IFF >= t parties are involved: TODO
-      const decryptor = await shamir.reconstructDecryptor(ctx, partialDecryptors);
-      expect(await decryptor.isEqual(expectedDecryptor)).toBe(qualifiedSet.length >= t);
-
-      // Message correctly retrieved IFF >= t parties are involved: TODO
-      const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors);
-      expect(await plaintext.isEqual(message)).toBe(qualifiedSet.length >= t);
-      const plaintext2 = await privateKey.decrypt(ciphertext);
-      expect(await plaintext.isEqual(plaintext2)).toBe(qualifiedSet.length >= t);
     });
   });
   test('Verifiable decryption - failure', async () => {

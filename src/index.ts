@@ -1,21 +1,25 @@
-import { PrivateKey, PublicKey } from './key';
+import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './key';
 
 const backend = require('./backend');
-const key = require('./key');
+const core = require('./core');
 const elgamal = require('./elgamal');
-const sigma = require('./sigma');
+const key = require('./key');
 const lagrange = require('./lagrange');
 const shamir = require('./shamir');
+const sigma = require('./sigma');
 const utils = require('./utils');
 
 export {
   PrivateKey,
   PublicKey,
+  PrivateShare,
+  PublicShare,
   backend,
-  key,
+  core,
   elgamal,
-  sigma,
+  key,
   lagrange,
   shamir,
+  sigma,
   utils,
 }

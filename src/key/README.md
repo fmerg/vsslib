@@ -95,7 +95,9 @@ const { decryptor } = await privateKey.generateDecryptor(ciphertext, { noProof: 
 ## Key distribution (Shamir scheme)
 
 ```js
-const { threshold, privateShares, publicShares, polynomial, commitments } = privateKey.distribute(5, 3);
+const distribution = privateKey.distribute({ nrShares: 5, threshold: 3 });
+
+const { threshold, privateShares, publicShares, polynomial, commitments } = distribution;
 ```
 
 ### Share verification
@@ -123,9 +125,9 @@ const reconstructed = await PublicKey.fromShares(qualifiedShares);
 ## Threshold decryption
 
 ```js
-const partialDecryptor = await privateShares.generatePartialDecryptor(ciphertext);
+const partialDecryptor = await privateShare.generatePartialDecryptor(ciphertext);
 ```
 
 ```js
 await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
-```
+

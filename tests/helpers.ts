@@ -22,11 +22,11 @@ export const permutations = (array: any[]): any[] => [...Permutation.of(array)];
 
 /** Union of sets of permutations of each member of the powerset of
 * the provided collection */
-export const partialPermutations = (array: any[], minSize: number = 0): any[] => {
+export const partialPermutations = (array: any[], minSize = 0, maxSize = array.length): any[] => {
   const out = powerSet(array).reduce(
     (acc: any[], comb: any[]) => acc = acc.concat(permutations(comb)), []
   );
-  return out.filter((perm: any[]) => perm.length >= minSize);
+  return out.filter((perm: any[]) => perm.length >= minSize && perm.length <= maxSize);
 }
 
 
