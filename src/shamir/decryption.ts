@@ -1,7 +1,7 @@
 import { Algorithm } from '../types';
 import { Point, Group } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
-import { DlogProof } from '../sigma';
+import { SigmaProof } from '../sigma';
 import { SecretShare, PublicShare } from './sharing';
 import { Share, computeLambda, selectShare } from './common';
 import { Messages } from './enums';
@@ -13,9 +13,9 @@ const sigma = require('../sigma');
 export class PartialDecryptor<P extends Point> implements Share<P> {
   value: P;
   index: number;
-  proof: DlogProof<P>;
+  proof: SigmaProof<P>;
 
-  constructor(value: P, index: number, proof: DlogProof<P>) {
+  constructor(value: P, index: number, proof: SigmaProof<P>) {
     this.value = value;
     this.index = index;
     this.proof = proof;

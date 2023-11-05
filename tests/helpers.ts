@@ -2,7 +2,7 @@ import { Point, Group } from '../src/backend/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
-import { DlogPair, DDHTuple } from '../src/sigma';
+import { LinearRelation, DlogPair, DDHTuple } from '../src/sigma';
 import { XYPoint, Polynomial } from '../src/lagrange';
 import { Permutation, PowerSet } from "js-combinatorics";
 
@@ -62,19 +62,60 @@ export async function computeFiatShamir<P extends Point>(
 }
 
 
-/** Creates dlog pairs with uniform logarithm */
-export async function createDlogPairs<P extends Point>(
+
+export async function createLinearRelation<P extends Point>(
   ctx: Group<P>,
-  z: bigint,
+  opts: { m: number, n: number },
+): Promise<[bigint[], LinearRelation<P>]>{
+  const { randomScalar, randomPoint, neutral, operate, combine } = ctx;
+  const { m, n } = opts;
+  const xs = new Array(n);
+  const vs = Array.from({ length: m }, (_, i) => neutral);
+  const us = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => neutral));
+  for (let j = 0; j < n; j++) {
+    const xj = await randomScalar();
+    for (let i = 0; i < m; i++) {
+      const uij = await randomPoint();
+      vs[i] = await combine(vs[i], await operate(xj, uij));
+      us[i][j] = uij;
+    }
+    xs[j] = xj;
+  }
+  return [xs, { us, vs }];
+}
+
+
+
+export async function createAndDlogPairs<P extends Point>(
+  ctx: Group<P>,
+  nrPairs: number,
+): Promise<[bigint[], DlogPair<P>[]]>{
+  const xs = new Array(nrPairs);
+  const pairs = new Array(nrPairs);
+  for (let i = 0; i < nrPairs; i++) {
+    const x = await ctx.randomScalar();
+    const u = await ctx.randomPoint();
+    const v = await ctx.operate(x, u);
+    xs[i] = x;
+    pairs[i] = { u, v };
+  }
+  return [xs, pairs];
+}
+
+
+/** Creates dlog pairs with uniform logarithm */
+export async function createEqDlogPairs<P extends Point>(
+  ctx: Group<P>,
   nrPairs: number
-): Promise<DlogPair<P>[]> {
+): Promise<[bigint, DlogPair<P>[]]> {
+  const x = await ctx.randomScalar();
   const pairs = [];
   for (let i = 0; i < nrPairs; i++) {
     const u = await ctx.randomPoint();
-    const v = await ctx.operate(z, u);
+    const v = await ctx.operate(x, u);
     pairs.push({ u, v });
   }
-  return pairs;
+  return [x, pairs];
 }
 
 

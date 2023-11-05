@@ -2,7 +2,7 @@ import { Label } from '../types';
 import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
-import { DlogProof, DDHTuple } from '../sigma';
+import { SigmaProof, DDHTuple } from '../sigma';
 
 const utils = require('../utils');
 const sigma = require('../sigma');
@@ -65,14 +65,14 @@ export async function proveEncryption<P extends Point>(
   ciphertext: Ciphertext<P>,
   randomness: bigint, 
   opts?: { algorithm?: Algorithm }
-): Promise<DlogProof<P>> {
+): Promise<SigmaProof<P>> {
   return sigma.proveDlog(ctx, randomness, ctx.generator, ciphertext.beta, opts);
 }
 
 export async function verifyEncryption<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,
-  proof: DlogProof<P>
+  proof: SigmaProof<P>
 ): Promise<boolean> {
   return sigma.verifyDlog(ctx, ctx.generator, ciphertext.beta, proof);
 }
@@ -91,7 +91,7 @@ export async function proveDecryptor<P extends Point>(
   secret: bigint,
   decryptor: P,
   opts?: { algorithm?: Algorithm }
-): Promise<DlogProof<P>> {
+): Promise<SigmaProof<P>> {
   const pub = await ctx.operate(secret, ctx.generator);
   return sigma.proveDDH(ctx, secret, { u: ciphertext.beta, v: pub, w: decryptor }, opts);
 }
@@ -101,7 +101,7 @@ export async function verifyDecryptor<P extends Point>(
   ciphertext: Ciphertext<P>,
   pub: P,
   decryptor: P,
-  proof: DlogProof<P>
+  proof: SigmaProof<P>
 ): Promise<boolean> {
   return sigma.verifyDDH(ctx, { u: ciphertext.beta, v: pub, w: decryptor }, proof);
 }
