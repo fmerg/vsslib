@@ -54,7 +54,7 @@ export class PublicKey<P extends Point> {
 
   async verifyIdentity(proof: SigmaProof<P>): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const verified = await sigma.verifyDlog(ctx, ctx.generator, pub, proof);
+    const verified = await sigma.verifyDlog(ctx, { u: ctx.generator, v: pub }, proof);
     if (!verified) throw new Error(Messages.INVALID_IDENTITY_PROOF);
     return verified;
   }

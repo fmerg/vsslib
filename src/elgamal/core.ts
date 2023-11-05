@@ -66,7 +66,7 @@ export async function proveEncryption<P extends Point>(
   randomness: bigint, 
   opts?: { algorithm?: Algorithm }
 ): Promise<SigmaProof<P>> {
-  return sigma.proveDlog(ctx, randomness, ctx.generator, ciphertext.beta, opts);
+  return sigma.proveDlog(ctx, randomness, { u: ctx.generator, v: ciphertext.beta }, opts);
 }
 
 export async function verifyEncryption<P extends Point>(
@@ -74,7 +74,7 @@ export async function verifyEncryption<P extends Point>(
   ciphertext: Ciphertext<P>,
   proof: SigmaProof<P>
 ): Promise<boolean> {
-  return sigma.verifyDlog(ctx, ctx.generator, ciphertext.beta, proof);
+  return sigma.verifyDlog(ctx, { u: ctx.generator, v: ciphertext.beta }, proof);
 }
 
 export async function generateDecryptor<P extends Point>(

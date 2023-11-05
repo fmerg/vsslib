@@ -198,20 +198,20 @@ export async function verifyEqDlog<P extends Point>(
 export async function proveDlog<P extends Point>(
   ctx: Group<P>,
   x: bigint,
-  u: P,
-  v: P,
+  pair: DlogPair<P>,
   opts?: { algorithm?: Algorithm },
 ): Promise<SigmaProof<P>> {
+  const { u, v } = pair;
   return proveLinearRelation(ctx, [x], { us: [[u]], vs: [v] }, opts);
 }
 
 
 export async function verifyDlog<P extends Point>(
   ctx: Group<P>,
-  u: P,
-  v: P,
+  pair: DlogPair<P>,
   proof: SigmaProof<P>,
 ): Promise<boolean> {
+  const { u, v } = pair;
   return verifyLinearRelation(ctx, { us: [[u]], vs: [v] }, proof);
 }
 

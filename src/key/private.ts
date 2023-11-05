@@ -81,7 +81,7 @@ export class PrivateKey<P extends Point> {
   async proveIdentity(opts?: { algorithm?: Algorithm }): Promise<SigmaProof<P>> {
     const { ctx, scalar } = this;
     const pub = await ctx.operate(scalar, ctx.generator);
-    return sigma.proveDlog(ctx, scalar, ctx.generator, pub, opts);
+    return sigma.proveDlog(ctx, scalar, { u: ctx.generator, v: pub }, opts);
   }
 
   async decrypt(ciphertext: Ciphertext<P>): Promise<P> {

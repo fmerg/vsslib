@@ -85,7 +85,7 @@ export async function createLinearRelation<P extends Point>(
 }
 
 
-
+/** Create dlog pair with non-uniform logarithm */
 export async function createAndDlogPairs<P extends Point>(
   ctx: Group<P>,
   nrPairs: number,
@@ -119,21 +119,32 @@ export async function createEqDlogPairs<P extends Point>(
 }
 
 
-/** Create DDH-tuples */
-export async function createDDH<P extends Point>(
+/** Create single dlog pair */
+export async function createDlogPair<P extends Point>(
+  ctx: Group<P>,
+  x?: bigint,
+): Promise<[bigint, DlogPair<P>]> {
+  x = x || await ctx.randomScalar();
+  const u = await ctx.randomPoint();
+  const v = await ctx.operate(x, u);
+  return [x, { u, v }];
+}
+
+
+/** Create DDH-tuple */
+export async function createDDHTuple<P extends Point>(
   ctx: Group<P>,
   z?: bigint
-): Promise<{ z: bigint, ddh: DDHTuple<P> }> {
+): Promise<[bigint, DDHTuple<P>]> {
   z = z || await ctx.randomScalar();
-
   const u = await ctx.randomPoint();
   const v = await ctx.operate(z, ctx.generator);
   const w = await ctx.operate(z, u);
-
-  return { z, ddh: { u, v, w } };
+  return [z, { u, v, w }];
 }
 
-/** Trims trailing zeroes from number array */
+
+/** Trim trailing zeroes from number array */
 export const trimZeroes = (arr: number[]): number[] => {
   let len = arr.length;
   if (len > 0) {

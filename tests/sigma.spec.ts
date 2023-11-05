@@ -134,12 +134,10 @@ describe('Eq Dlog proof failure - if wrong algorithm', () => {
 describe('Dlog proof - success', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
-    const z = await ctx.randomScalar();
-    const u = await ctx.randomPoint();
-    const v = await ctx.operate(z, u);
-    const proof = await sigma.proveDlog(ctx, z, u, v, { algorithm });
+    const [x, { u, v }] = await helpers.createDlogPair(ctx);
+    const proof = await sigma.proveDlog(ctx, x, { u, v }, { algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const valid = await sigma.verifyDlog(ctx, u, v, proof);
+    const valid = await sigma.verifyDlog(ctx, { u, v }, proof);
     expect(valid).toBe(true);
   });
 });
@@ -148,13 +146,11 @@ describe('Dlog proof - success', () => {
 describe('Dlog proof - failure if tampered', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const z = await ctx.randomScalar();
-    const u = await ctx.randomPoint();
-    const v = await ctx.operate(z, u);
-    const proof = await sigma.proveDlog(ctx, z, u, v)
+    const [x, { u, v }] = await helpers.createDlogPair(ctx);
+    const proof = await sigma.proveDlog(ctx, x, { u, v });
     // Tamper response
     proof.response[0] = await ctx.randomScalar();
-    const valid = await sigma.verifyDlog(ctx, u, v, proof);
+    const valid = await sigma.verifyDlog(ctx, { u, v }, proof);
     expect(valid).toBe(false);
   });
 });
@@ -163,15 +159,13 @@ describe('Dlog proof - failure if tampered', () => {
 describe('Dlog proof - failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const z = await ctx.randomScalar();
-    const u = await ctx.randomPoint();
-    const v = await ctx.operate(z, u);
-    const proof = await sigma.proveDlog(ctx, z, u, v)
+    const [x, { u, v }] = await helpers.createDlogPair(ctx);
+    const proof = await sigma.proveDlog(ctx, x, { u, v });
     // change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
       Algorithms.SHA256;
-    const valid = await sigma.verifyDlog(ctx, u, v, proof);
+    const valid = await sigma.verifyDlog(ctx, { u, v }, proof);
     expect(valid).toBe(false);
   });
 });
@@ -180,7 +174,7 @@ describe('Dlog proof - failure if wrong algorithm', () => {
 describe('DDH proof - success', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
-    const { z, ddh: { u, v, w } } = await helpers.createDDH(ctx);
+    const [z, { u, v, w }] = await helpers.createDDHTuple(ctx);
     const proof = await sigma.proveDDH(ctx, z, { u, v, w }, { algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const valid = await sigma.verifyDDH(ctx, { u, v, w }, proof);
@@ -192,7 +186,7 @@ describe('DDH proof - success', () => {
 describe('DDH proof - failure if tampered', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const { z, ddh: { u, v, w } } = await helpers.createDDH(ctx);
+    const [z, { u, v, w }] = await helpers.createDDHTuple(ctx);
     const proof = await sigma.proveDDH(ctx, z, { u, v, w })
     // Tamper response
     proof.response[0] = await ctx.randomScalar();
@@ -205,7 +199,7 @@ describe('DDH proof - failure if tampered', () => {
 describe('DDH proof - failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const { z, ddh: { u, v, w } } = await helpers.createDDH(ctx);
+    const [z, { u, v, w }] = await helpers.createDDHTuple(ctx);
     const proof = await sigma.proveDDH(ctx, z, { u, v, w })
     // Change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
