@@ -37,14 +37,15 @@ export async function fiatShamir<P extends Point>(
   ctx: Group<P>,
   points: P[],
   scalars: bigint[],
-  opts?: { algorithm?: Algorithm },
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<bigint> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+  const nonce = opts ? (opts.nonce || new Uint8Array()) : new Uint8Array([]);
   const { modBytes, ordBytes, genBytes, leBuff2Scalar } = ctx;
   const configBuff = [...modBytes, ...ordBytes, ...genBytes];
   const pointsBuff = points.reduce((acc: number[], p: P) => [...acc, ...p.toBytes()], []);
   const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
-  const bytes = new Uint8Array([...configBuff, ...pointsBuff, ...scalarsBuff]);
+  const bytes = new Uint8Array([...configBuff, ...pointsBuff, ...scalarsBuff, ...nonce]);
   const digest = await utils.hash(bytes, { algorithm });
   return leBuff2Scalar(digest);
 }
@@ -54,7 +55,7 @@ export async function proveLinearRelation<P extends Point>(
   ctx: Group<P>,
   witnesses: bigint[],
   relation: LinearRelation<P>,
-  opts?: { algorithm?: Algorithm },
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<SigmaProof<P>> {
   const { order, randomScalar, neutral, operate, combine } = ctx;
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
@@ -96,7 +97,9 @@ export async function verifyLinearRelation<P extends Point>(
   ctx: Group<P>,
   relation: LinearRelation<P>,
   proof: SigmaProof<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
+  const nonce = opts ? (opts.nonce || new Uint8Array([])) : new Uint8Array([]);
   const { neutral, operate, combine } = ctx;
   const { us, vs } = relation;
   const { commitments, response, algorithm } = proof;
@@ -109,7 +112,7 @@ export async function verifyLinearRelation<P extends Point>(
       ...commitments,
     ],
     [],
-    { algorithm },
+    { algorithm, nonce },
   );
   let flag = true;
   for (const [i, v] of vs.entries()) {
@@ -133,7 +136,7 @@ export async function proveAndDlog<P extends Point>(
   ctx: Group<P>,
   witnesses: bigint[],
   pairs: DlogPair<P>[],
-  opts?: { algorithm?: Algorithm },
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<SigmaProof<P>> {
   const { neutral } = ctx;
   const m = pairs.length;
@@ -151,6 +154,7 @@ export async function verifyAndDlog<P extends Point>(
   ctx: Group<P>,
   pairs: DlogPair<P>[],
   proof: SigmaProof<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
   const { neutral } = ctx;
   const m = pairs.length;
@@ -159,7 +163,7 @@ export async function verifyAndDlog<P extends Point>(
     us[i][i] = pairs[i].u;
   }
   const vs = pairs.map(({ v }) => v);
-  return verifyLinearRelation(ctx, { us, vs }, proof);
+  return verifyLinearRelation(ctx, { us, vs }, proof, opts);
 }
 
 
@@ -167,7 +171,7 @@ export async function proveEqDlog<P extends Point>(
   ctx: Group<P>,
   x: bigint,
   pairs: DlogPair<P>[],
-  opts?: { algorithm?: Algorithm },
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<SigmaProof<P>> {
   const { neutral } = ctx;
   const m = pairs.length;
@@ -184,6 +188,7 @@ export async function verifyEqDlog<P extends Point>(
   ctx: Group<P>,
   pairs: DlogPair<P>[],
   proof: SigmaProof<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
   const { neutral } = ctx;
   const m = pairs.length;
@@ -192,7 +197,7 @@ export async function verifyEqDlog<P extends Point>(
     us[i][i] = pairs[i].u;
   }
   const vs = pairs.map(({ v }) => v);
-  return verifyLinearRelation(ctx, { us, vs }, proof);
+  return verifyLinearRelation(ctx, { us, vs }, proof, opts);
 }
 
 
@@ -200,7 +205,7 @@ export async function proveDlog<P extends Point>(
   ctx: Group<P>,
   x: bigint,
   pair: DlogPair<P>,
-  opts?: { algorithm?: Algorithm },
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<SigmaProof<P>> {
   const { u, v } = pair;
   return proveLinearRelation(ctx, [x], { us: [[u]], vs: [v] }, opts);
@@ -211,9 +216,10 @@ export async function verifyDlog<P extends Point>(
   ctx: Group<P>,
   pair: DlogPair<P>,
   proof: SigmaProof<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
   const { u, v } = pair;
-  return verifyLinearRelation(ctx, { us: [[u]], vs: [v] }, proof);
+  return verifyLinearRelation(ctx, { us: [[u]], vs: [v] }, proof, opts);
 }
 
 
@@ -221,10 +227,11 @@ export async function proveDDH<P extends Point>(
   ctx: Group<P>,
   z: bigint,
   ddh: DDHTuple<P>,
-  opts?: { algorithm?: Algorithm }
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<SigmaProof<P>> {
   const { u, v, w } = ddh;
-  return proveEqDlog(ctx, z, [{ u: ctx.generator, v }, { u, v: w }], opts);
+  const { generator: g } = ctx;
+  return proveEqDlog(ctx, z, [{ u: g, v }, { u, v: w }], opts);
 }
 
 
@@ -232,9 +239,11 @@ export async function verifyDDH<P extends Point>(
   ctx: Group<P>,
   ddh: DDHTuple<P>,
   proof: SigmaProof<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
   const { u, v, w } = ddh;
-  return verifyEqDlog(ctx, [{ u: ctx.generator, v }, { u, v: w }], proof);
+  const { generator: g } = ctx;
+  return verifyEqDlog(ctx, [{ u: g, v }, { u, v: w }], proof, opts);
 }
 
 
@@ -242,7 +251,7 @@ export async function proveRepresentation<P extends Point>(
   ctx: Group<P>,
   witnesses: { s: bigint, t: bigint },
   commitment: { h: P, u: P },
-  opts?: { algorithm?: Algorithm },
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<SigmaProof<P>> {
   const { s, t } = witnesses;
   const { h, u } = commitment;
@@ -255,8 +264,9 @@ export async function verifyRepresentation<P extends Point>(
   ctx: Group<P>,
   commitment: { h: P, u: P },
   proof: SigmaProof<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
   const { h, u } = commitment;
   const { generator: g } = ctx;
-  return verifyLinearRelation(ctx, { us: [[g, h]], vs: [u]}, proof);
+  return verifyLinearRelation(ctx, { us: [[g, h]], vs: [u]}, proof, opts);
 }

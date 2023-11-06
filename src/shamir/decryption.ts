@@ -27,7 +27,7 @@ export async function generatePartialDecryptor<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,
   secetShare: SecretShare<P>,
-  opts?: { algorithm?: Algorithm },
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<PartialDecryptor<P>> {
   const { operate } = ctx;
   const { value, index } = secetShare;
@@ -42,15 +42,17 @@ export async function verifyPartialDecryptor<P extends Point>(
   ciphertext: Ciphertext<P>,
   publicShare: PublicShare<P>,
   partialDecryptor: PartialDecryptor<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
   const { value: pub } = publicShare;
   const { value: decryptor, proof } = partialDecryptor;
-  const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
+  const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof, opts);
   if (!verified) throw new Error(Messages.INVALID_PARTIAL_DECRYPTOR);
   return true;
 }
 
 
+// TODO: Include indexed nonces option?
 export async function verifyPartialDecryptors<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,

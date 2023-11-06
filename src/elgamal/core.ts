@@ -2,7 +2,7 @@ import { Label } from '../types';
 import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
-import { SigmaProof, DDHTuple } from '../sigma';
+import { SigmaProof } from '../sigma';
 
 const utils = require('../utils');
 const sigma = require('../sigma');
@@ -64,7 +64,7 @@ export async function proveEncryption<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,
   randomness: bigint, 
-  opts?: { algorithm?: Algorithm }
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<SigmaProof<P>> {
   return sigma.proveDlog(ctx, randomness, { u: ctx.generator, v: ciphertext.beta }, opts);
 }
@@ -72,9 +72,10 @@ export async function proveEncryption<P extends Point>(
 export async function verifyEncryption<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext<P>,
-  proof: SigmaProof<P>
+  proof: SigmaProof<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
-  return sigma.verifyDlog(ctx, { u: ctx.generator, v: ciphertext.beta }, proof);
+  return sigma.verifyDlog(ctx, { u: ctx.generator, v: ciphertext.beta }, proof, opts);
 }
 
 export async function generateDecryptor<P extends Point>(
@@ -90,7 +91,7 @@ export async function proveDecryptor<P extends Point>(
   ciphertext: Ciphertext<P>,
   secret: bigint,
   decryptor: P,
-  opts?: { algorithm?: Algorithm }
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<SigmaProof<P>> {
   const pub = await ctx.operate(secret, ctx.generator);
   return sigma.proveDDH(ctx, secret, { u: ciphertext.beta, v: pub, w: decryptor }, opts);
@@ -101,7 +102,8 @@ export async function verifyDecryptor<P extends Point>(
   ciphertext: Ciphertext<P>,
   pub: P,
   decryptor: P,
-  proof: SigmaProof<P>
+  proof: SigmaProof<P>,
+  opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
-  return sigma.verifyDDH(ctx, { u: ciphertext.beta, v: pub, w: decryptor }, proof);
+  return sigma.verifyDDH(ctx, { u: ciphertext.beta, v: pub, w: decryptor }, proof, opts);
 }

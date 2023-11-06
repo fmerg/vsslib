@@ -78,7 +78,7 @@ export class PrivateKey<P extends Point> {
     return ctx.operate(scalar, pub.point);
   }
 
-  async proveIdentity(opts?: { algorithm?: Algorithm }): Promise<SigmaProof<P>> {
+  async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<SigmaProof<P>> {
     const { ctx, scalar } = this;
     const pub = await ctx.operate(scalar, ctx.generator);
     return sigma.proveDlog(ctx, scalar, { u: ctx.generator, v: pub }, opts);
@@ -88,8 +88,12 @@ export class PrivateKey<P extends Point> {
     return elgamal.decrypt(this.ctx, ciphertext, { secret: this.scalar });
   }
 
-  async verifyEncryption(ciphertext: Ciphertext<P>, proof: SigmaProof<P>): Promise<boolean> {
-    const verified = await elgamal.verifyEncryption(this.ctx, ciphertext, proof);
+  async verifyEncryption(
+    ciphertext: Ciphertext<P>,
+    proof: SigmaProof<P>,
+    opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
+  ): Promise<boolean> {
+    const verified = await elgamal.verifyEncryption(this.ctx, ciphertext, proof, opts);
     if (!verified) throw new Error(Messages.INVALID_ENCRYPTION_PROOF);
     return verified;
   }
@@ -97,7 +101,7 @@ export class PrivateKey<P extends Point> {
   async proveDecryptor(
     ciphertext: Ciphertext<P>,
     decryptor: P,
-    opts?: { algorithm?: Algorithm }
+    opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
     const { ctx, scalar } = this;
     return elgamal.proveDecryptor(ctx, ciphertext, scalar, decryptor, opts);

@@ -67,11 +67,22 @@ describe('Diffie-Hellman handshake', () => {
 });
 
 
-describe('Identity proof - success', () => {
+describe('Identity proof - success without nonce', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
     const proof = await privateKey.proveIdentity();
     const verified = await publicKey.verifyIdentity(proof);
+    expect(verified).toBe(true);
+  });
+});
+
+
+describe('Identity proof - success with nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const nonce = await privateKey.ctx.randomBytes();
+    const proof = await privateKey.proveIdentity({ nonce });
+    const verified = await publicKey.verifyIdentity(proof, { nonce });
     expect(verified).toBe(true);
   });
 });
@@ -103,6 +114,32 @@ describe('Identity proof - failure if wrong algorithm', () => {
 });
 
 
+describe('Identity proof - failure if missing nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const nonce = await privateKey.ctx.randomBytes();
+    const proof = await privateKey.proveIdentity({ nonce });
+    await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
+      Messages.INVALID_IDENTITY_PROOF
+    );
+  });
+});
+
+
+describe('Identity proof - failure if forged nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const nonce = await privateKey.ctx.randomBytes();
+    const proof = await privateKey.proveIdentity({ nonce });
+    await expect(
+      publicKey.verifyIdentity(proof, { nonce: await publicKey.ctx.randomBytes() })
+    ).rejects.toThrow(
+      Messages.INVALID_IDENTITY_PROOF
+    );
+  });
+});
+
+
 describe('Elgamal encryption and decryption', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
@@ -114,13 +151,26 @@ describe('Elgamal encryption and decryption', () => {
 });
 
 
-describe('Elgamal encryption proof - success', () => {
+describe('Elgamal encryption proof - success without nonce', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, randomness } = await publicKey.encrypt(message);
     const proof = await publicKey.proveEncryption(ciphertext, randomness);
     const verified = await privateKey.verifyEncryption(ciphertext, proof);
+    expect(verified).toBe(true);
+  });
+});
+
+
+describe('Elgamal encryption proof - success with nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, randomness } = await publicKey.encrypt(message);
+    const nonce = await publicKey.ctx.randomBytes();
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { nonce });
+    const verified = await privateKey.verifyEncryption(ciphertext, proof, { nonce });
     expect(verified).toBe(true);
   });
 });
@@ -158,6 +208,36 @@ describe('Elgamal encryption proof - failure if wrong algorithm', () => {
 });
 
 
+describe('Elgamal encryption proof - failure if missing nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, randomness } = await publicKey.encrypt(message);
+    const nonce = await publicKey.ctx.randomBytes();
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { nonce });
+    await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
+      Messages.INVALID_ENCRYPTION_PROOF
+    );
+  });
+});
+
+
+describe('Elgamal encryption proof - failure if forged nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, randomness } = await publicKey.encrypt(message);
+    const nonce = await publicKey.ctx.randomBytes();
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { nonce });
+    await expect(
+      privateKey.verifyEncryption(ciphertext, proof, { nonce: await privateKey.ctx.randomBytes() })
+    ).rejects.toThrow(
+      Messages.INVALID_ENCRYPTION_PROOF
+    );
+  });
+});
+
+
 describe('Decryptor generation', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
@@ -170,13 +250,26 @@ describe('Decryptor generation', () => {
 });
 
 
-describe('Decryptor proof - success', () => {
+describe('Decryptor proof - success without nonce', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, decryptor } = await publicKey.encrypt(message);
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
+    expect(verified).toBe(true);
+  });
+});
+
+
+describe('Decryptor proof - success with nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, decryptor } = await publicKey.encrypt(message);
+    const nonce = await publicKey.ctx.randomBytes();
+    const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
+    const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce });
     expect(verified).toBe(true);
   });
 });
@@ -213,3 +306,32 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
   });
 });
 
+
+describe('Decryptor proof - failure if missing nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, decryptor } = await publicKey.encrypt(message);
+    const nonce = await publicKey.ctx.randomBytes();
+    const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
+    await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
+      Messages.INVALID_DECRYPTOR_PROOF
+    );
+  });
+});
+
+
+describe('Decryptor proof - failure if wrong nonce', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const { privateKey, publicKey } = await key.generate(label);
+    const message = await privateKey.ctx.randomPoint();
+    const { ciphertext, decryptor } = await publicKey.encrypt(message);
+    const nonce = await publicKey.ctx.randomBytes();
+    const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
+    await expect(
+      publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce: await publicKey.ctx.randomBytes() })
+    ).rejects.toThrow(
+      Messages.INVALID_DECRYPTOR_PROOF
+    );
+  });
+});
