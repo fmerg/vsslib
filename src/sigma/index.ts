@@ -52,7 +52,7 @@ export async function fiatShamir<P extends Point>(
 
 export async function proveLinearRelation<P extends Point>(
   ctx: Group<P>,
-  xs: bigint[],
+  witnesses: bigint[],
   relation: LinearRelation<P>,
   opts?: { algorithm?: Algorithm },
 ): Promise<SigmaProof<P>> {
@@ -60,7 +60,7 @@ export async function proveLinearRelation<P extends Point>(
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const { us, vs } = relation;
   const m = vs.length;
-  const n = xs.length;
+  const n = witnesses.length;
   const rs = new Array(n);
   for (let j = 0; j < n; j ++) {
     rs[j] = await randomScalar();
@@ -85,7 +85,7 @@ export async function proveLinearRelation<P extends Point>(
     opts,
   );
   const response = new Array(n);
-  for (const [j, x] of xs.entries()) {
+  for (const [j, x] of witnesses.entries()) {
     response[j] = mod(rs[j] + x * c, order);
   }
   return { commitments, response, algorithm };
@@ -100,7 +100,7 @@ export async function verifyLinearRelation<P extends Point>(
   const { neutral, operate, combine } = ctx;
   const { us, vs } = relation;
   const { commitments, response, algorithm } = proof;
-  if (vs.length !== commitments.length) throw new Error('TODO');
+  if (vs.length !== commitments.length) throw new Error('Invalid dimensions');
   const c = await fiatShamir(
     ctx,
     [
@@ -113,6 +113,7 @@ export async function verifyLinearRelation<P extends Point>(
   );
   let flag = true;
   for (const [i, v] of vs.entries()) {
+    if (us[i].length !== response.length) throw new Error('Invalid dimensions');
     const rhs = await combine(commitments[i], await operate(c, v));
     let lhs = neutral;
     for (const [j, s] of response.entries()) {
@@ -130,7 +131,7 @@ function fillMatrix<P extends Point>(point: P, m: number, n: number): P[][] {
 
 export async function proveAndDlog<P extends Point>(
   ctx: Group<P>,
-  xs: bigint[],
+  witnesses: bigint[],
   pairs: DlogPair<P>[],
   opts?: { algorithm?: Algorithm },
 ): Promise<SigmaProof<P>> {
@@ -141,7 +142,7 @@ export async function proveAndDlog<P extends Point>(
     us[i][i] = pairs[i].u;
   }
   const vs = pairs.map(({ v }) => v);
-  const proof = await proveLinearRelation(ctx, xs, { us, vs }, opts);
+  const proof = await proveLinearRelation(ctx, witnesses, { us, vs }, opts);
   return proof;
 }
 
@@ -170,13 +171,13 @@ export async function proveEqDlog<P extends Point>(
 ): Promise<SigmaProof<P>> {
   const { neutral } = ctx;
   const m = pairs.length;
-  const xs = Array.from({ length: m }, (_, i) => x);
+  const witnesses = Array.from({ length: m }, (_, i) => x);
   const us = fillMatrix(neutral, m, m);
   for (let i = 0; i < m; i++) {
     us[i][i] = pairs[i].u;
   }
   const vs = pairs.map(({ v }) => v);
-  return proveLinearRelation(ctx, xs, { us, vs }, opts);
+  return proveLinearRelation(ctx, witnesses, { us, vs }, opts);
 }
 
 export async function verifyEqDlog<P extends Point>(
@@ -234,4 +235,28 @@ export async function verifyDDH<P extends Point>(
 ): Promise<boolean> {
   const { u, v, w } = ddh;
   return verifyEqDlog(ctx, [{ u: ctx.generator, v }, { u, v: w }], proof);
+}
+
+
+export async function proveRepresentation<P extends Point>(
+  ctx: Group<P>,
+  witnesses: { s: bigint, t: bigint },
+  commitment: { h: P, u: P },
+  opts?: { algorithm?: Algorithm },
+): Promise<SigmaProof<P>> {
+  const { s, t } = witnesses;
+  const { h, u } = commitment;
+  const { generator: g } = ctx;
+  return proveLinearRelation(ctx, [s, t], { us: [[g, h]], vs: [u]}, opts);
+}
+
+
+export async function verifyRepresentation<P extends Point>(
+  ctx: Group<P>,
+  commitment: { h: P, u: P },
+  proof: SigmaProof<P>,
+): Promise<boolean> {
+  const { h, u } = commitment;
+  const { generator: g } = ctx;
+  return verifyLinearRelation(ctx, { us: [[g, h]], vs: [u]}, proof);
 }

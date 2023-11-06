@@ -69,7 +69,7 @@ export async function createLinearRelation<P extends Point>(
 ): Promise<[bigint[], LinearRelation<P>]>{
   const { randomScalar, randomPoint, neutral, operate, combine } = ctx;
   const { m, n } = opts;
-  const xs = new Array(n);
+  const witnesses = new Array(n);
   const vs = Array.from({ length: m }, (_, i) => neutral);
   const us = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => neutral));
   for (let j = 0; j < n; j++) {
@@ -79,9 +79,9 @@ export async function createLinearRelation<P extends Point>(
       vs[i] = await combine(vs[i], await operate(xj, uij));
       us[i][j] = uij;
     }
-    xs[j] = xj;
+    witnesses[j] = xj;
   }
-  return [xs, { us, vs }];
+  return [witnesses, { us, vs }];
 }
 
 
@@ -90,16 +90,16 @@ export async function createAndDlogPairs<P extends Point>(
   ctx: Group<P>,
   nrPairs: number,
 ): Promise<[bigint[], DlogPair<P>[]]>{
-  const xs = new Array(nrPairs);
+  const witnesses = new Array(nrPairs);
   const pairs = new Array(nrPairs);
   for (let i = 0; i < nrPairs; i++) {
     const x = await ctx.randomScalar();
     const u = await ctx.randomPoint();
     const v = await ctx.operate(x, u);
-    xs[i] = x;
+    witnesses[i] = x;
     pairs[i] = { u, v };
   }
-  return [xs, pairs];
+  return [witnesses, pairs];
 }
 
 
@@ -141,6 +141,21 @@ export async function createDDHTuple<P extends Point>(
   const v = await ctx.operate(z, ctx.generator);
   const w = await ctx.operate(z, u);
   return [z, { u, v, w }];
+}
+
+
+/** Create point representation */
+export async function createRepresentation<P extends Point>(
+  ctx: Group<P>,
+  h: P,
+  s?: bigint,
+  t?: bigint,
+): Promise<[{ s: bigint, t: bigint }, { h: P, u: P }]> {
+  const { randomScalar, operate, combine, generator: g } = ctx;
+  s = s || await randomScalar();
+  t = t || await randomScalar();
+  const u = await combine(await operate(s, g), await operate(t, h))
+  return [{ s, t }, { h, u }];
 }
 
 

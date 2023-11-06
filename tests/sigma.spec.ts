@@ -13,8 +13,8 @@ const __algorithms  = [...Object.values(Algorithms), undefined];
 describe('Generic linear relation - success', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const [xs, relation] = await helpers.createLinearRelation(ctx, { m: 5, n: 3 });
-    const proof = await sigma.proveLinearRelation(ctx, xs, relation);
+    const [witnesses, relation] = await helpers.createLinearRelation(ctx, { m: 5, n: 3 });
+    const proof = await sigma.proveLinearRelation(ctx, witnesses, relation);
     const pairs = { us: relation.us, vs: relation.vs };
     const valid = await sigma.verifyLinearRelation(ctx, pairs, proof);
     expect(valid).toBe(true);
@@ -25,8 +25,8 @@ describe('Generic linear relation - success', () => {
 describe('Generic linear relation - failure if tampered proof', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const [xs, relation] = await helpers.createLinearRelation(ctx, { m: 5, n: 3 });
-    const proof = await sigma.proveLinearRelation(ctx, xs, relation);
+    const [witnesses, relation] = await helpers.createLinearRelation(ctx, { m: 5, n: 3 });
+    const proof = await sigma.proveLinearRelation(ctx, witnesses, relation);
     // Tamper response
     proof.response[0] = await ctx.randomScalar();
     const pairs = { us: relation.us, vs: relation.vs };
@@ -39,8 +39,8 @@ describe('Generic linear relation - failure if tampered proof', () => {
 describe('Generic linear relation - failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const [xs, relation] = await helpers.createLinearRelation(ctx, { m: 5, n: 3 });
-    const proof = await sigma.proveLinearRelation(ctx, xs, relation);
+    const [witnesses, relation] = await helpers.createLinearRelation(ctx, { m: 5, n: 3 });
+    const proof = await sigma.proveLinearRelation(ctx, witnesses, relation);
     // Change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
@@ -55,8 +55,8 @@ describe('Generic linear relation - failure if wrong algorithm', () => {
 describe('Multiple AND Dlog - success', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const [xs, pairs] = await helpers.createAndDlogPairs(ctx, 5);
-    const proof = await sigma.proveAndDlog(ctx, xs, pairs);
+    const [witnesses, pairs] = await helpers.createAndDlogPairs(ctx, 5);
+    const proof = await sigma.proveAndDlog(ctx, witnesses, pairs);
     const valid = await sigma.verifyAndDlog(ctx, pairs, proof);
     expect(valid).toBe(true);
   });
@@ -66,8 +66,8 @@ describe('Multiple AND Dlog - success', () => {
 describe('Multiple AND Dlog - failure if tampered proof', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const [xs, pairs] = await helpers.createAndDlogPairs(ctx, 5);
-    const proof = await sigma.proveAndDlog(ctx, xs, pairs);
+    const [witnesses, pairs] = await helpers.createAndDlogPairs(ctx, 5);
+    const proof = await sigma.proveAndDlog(ctx, witnesses, pairs);
     // Tamper response
     proof.response[0] = await ctx.randomScalar();
     const valid = await sigma.verifyAndDlog(ctx, pairs, proof);
@@ -79,8 +79,8 @@ describe('Multiple AND Dlog - failure if tampered proof', () => {
 describe('Multiple AND Dlog - failure if wrong algorithm', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const [xs, pairs] = await helpers.createAndDlogPairs(ctx, 5);
-    const proof = await sigma.proveAndDlog(ctx, xs, pairs);
+    const [witnesses, pairs] = await helpers.createAndDlogPairs(ctx, 5);
+    const proof = await sigma.proveAndDlog(ctx, witnesses, pairs);
     // Change hash algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
@@ -209,3 +209,57 @@ describe('DDH proof - failure if wrong algorithm', () => {
     expect(valid).toBe(false);
   });
 })
+
+
+describe('Representation proof - success', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = backend.initGroup(label);
+    const h = await ctx.randomPoint();
+    const [{ s, t }, { u }] = await helpers.createRepresentation(ctx, h);
+    const proof = await sigma.proveRepresentation(ctx, { s, t }, { h, u });
+    const valid = await sigma.verifyRepresentation(ctx, { h, u }, proof);
+    expect(valid).toBe(true);
+  });
+});
+
+
+describe('Representation proof - failure if swaped scalar factors', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = backend.initGroup(label);
+    const h = await ctx.randomPoint();
+    const [{ s, t }, { u }] = await helpers.createRepresentation(ctx, h);
+    const proof = await sigma.proveRepresentation(ctx, { s: t, t: s}, { h, u });
+    const valid = await sigma.verifyRepresentation(ctx, { h, u }, proof);
+    expect(valid).toBe(false);
+  });
+});
+
+
+describe('Representation proof - failure if tampered proof', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = backend.initGroup(label);
+    const h = await ctx.randomPoint();
+    const [{ s, t }, { u }] = await helpers.createRepresentation(ctx, h);
+    const proof = await sigma.proveRepresentation(ctx, { s, t }, { h, u });
+    // Tamper response
+    proof.response[0] = await ctx.randomScalar();
+    const valid = await sigma.verifyRepresentation(ctx, { h, u }, proof);
+    expect(valid).toBe(false);
+  });
+});
+
+
+describe('Representation proof - failure if wrong algorithm', () => {
+  it.each(__labels)('over %s', async (label) => {
+    const ctx = backend.initGroup(label);
+    const h = await ctx.randomPoint();
+    const [{ s, t }, { u }] = await helpers.createRepresentation(ctx, h);
+    const proof = await sigma.proveRepresentation(ctx, { s, t }, { h, u });
+    // Change hash algorithm
+    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
+      Algorithms.SHA512 :
+      Algorithms.SHA256;
+    const valid = await sigma.verifyRepresentation(ctx, { h, u }, proof);
+    expect(valid).toBe(false);
+  });
+});
