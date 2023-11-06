@@ -88,7 +88,7 @@ describe('Identity proof - success with nonce', () => {
 });
 
 
-describe('Identity proof - failure if tampered proof', () => {
+describe('Identity proof - failure if forged proof', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
     const proof = await privateKey.proveIdentity();
@@ -176,7 +176,7 @@ describe('Elgamal encryption proof - success with nonce', () => {
 });
 
 
-describe('Elgamal encryption proof - failure if tampered proof', () => {
+describe('Elgamal encryption proof - failure if forged proof', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
@@ -275,7 +275,7 @@ describe('Decryptor proof - success with nonce', () => {
 });
 
 
-describe('Decryptor proof - failure if tampered proof', () => {
+describe('Decryptor proof - failure if forged proof', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();

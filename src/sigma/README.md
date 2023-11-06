@@ -6,42 +6,26 @@ const { sigma, backend } = require('vsslib');
 const ctx = backend.initGroup('ed25519');
 ```
 
-## Dlog proof (Schnorr protocol)
-
-Generate a SHA256-based NIZK proof-of-knowledge of a secret scalar `z` being
-the discrete logarithm of a point `u` with base point `v` as follows:
+### Fiat-Shamir heuristic
 
 ```js
-const proof = await sigma.proveDlog(ctx, z, u, v, { algorithm: 'sha256' });
+const scalar = await sigma.fiatShamir(ctx, points, scalars, { algorithm, nonce });
+```
+
+## Dlog proof (Schnorr protocol)
+
+Generate a SHA256-based NIZK proof-of-knowledge of a secret scalar `x` such
+that `v = u ^ x` as follows:
+
+```js
+const proof = await sigma.proveDlog(ctx, x, { u, v }, { algorithm: 'sha256' });
 ```
 
 Verify the proof against the `(u, v)` pair as follows:
 
 
 ```js
-const valid = await sigma.verifyDlog(ctx, u, v, proof);   // boolean
-```
-
-## Multiple AND Dlog proof
-
-The above primitive is special case of this one. Let
-
-```js
-(u1, v1), (u2, v2), ...
-```
-
-be pairs of points with uniform discrete logarithm, i.e., there exists a secret
-scalar `z` being the discrete logarithm of `vi` with base `ui` for all `i`.
-Generate a SHA256-based NIZK proof-of-knowledge of this secret as follows:
-
-```js
-const proof = await sigma.proveEqDlog(ctx, z, [{ u: u1, v: v1 }, { u: u2, v: v2 }, ...], { algorithm: 'sha256' });
-```
-
-Verify the proof against the acclaimed pairs as follows:
-
-```js
-const valid = await sigma.verifyEqDlog(ctx, [{ u: u1, v: v1 }, { u: u2, v: v2 }, ...], proof);
+const valid = await sigma.verifyDlog(ctx, { u, v }, proof);
 ```
 
 ## DDH proof (Chaum-Pedersen protocol)
@@ -68,3 +52,65 @@ Note that `(u, v, w)` being a DDH-tuple as above is equivalent to
 `z` being the common discrete logarithm for the pairs `(g, v), (u, w)`,
 so that the Chaum-Pedersen protocol is actually a special case of the multiple
 AND Dlog protocol.
+
+## Pedersen commitment opening (Okamoto protocol)
+
+Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `s`, `t`
+such that `u = g ^ s * h ^ t` as follows:
+
+```js
+const proof = await sigma.proveRepresentation(ctx, { s, t }, { h, u }, { algorithm: 'sha256'});
+```
+
+Verify the proof againsr the `(h, u)` pair of points as follows:
+
+```js
+const valid = await sigma.verifyRepresentation(ctx, { h, u }, proof);
+```
+
+## Dlog equality 
+
+Generate a SHA256-based NIZK proof-of-knowledge of a uniform secret scalar `x` such
+that `v_i = u_i ^ x` as follows:
+
+```js
+const proof = await sigma.proveEqDlog(ctx, x, [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], { algorithm: 'sha256' });
+```
+
+Verify the proof against the `(u_i, v_i)` pairs as follows:
+
+
+```js
+const valid = await sigma.verifyEqDlog(ctx, [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
+```
+
+## Dlog conjunction 
+
+Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `x_i` such
+that `v_i = u_i ^ x_i` as follows:
+
+```js
+const proof = await sigma.proveAndDlog(ctx, [x1, x2, ...], [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], { algorithm: 'sha256' });
+```
+
+Verify the proof against the `(u_i, v_i)` pairs as follows:
+
+
+```js
+const valid = await sigma.verifyAndDlog(ctx, [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
+```
+
+## Generic linear relation 
+
+Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `x_j` such
+that `v_i = Π_{j} u_ij ^ x_j` as follows:
+
+```js
+const proof = await sigma.proveLinearRelation(ctx, [x1, x2, ...], { us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] }, { algorithm: 'sha256' });
+```
+
+Verify the proof as follows:
+
+```js
+const valid = await sigma.verifyLinearRelation(ctx, { us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] });
+```
