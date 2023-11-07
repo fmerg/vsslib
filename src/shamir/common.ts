@@ -2,21 +2,11 @@ import { Algorithm } from '../types';
 import { Algorithms } from '../enums';
 import { mod, modInv } from '../utils';
 import { Messages } from './enums';
+import { Share } from '../types';
 
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
-
-
-export abstract class Share<T> {
-  value: T;
-  index: number;
-
-  constructor(value: T, index: number) {
-    this.value = value;
-    this.index = index;
-  }
-}
 
 
 export function selectShare<T>(index: number, shares: Share<T>[]): Share<T> {

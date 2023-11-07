@@ -2,7 +2,9 @@ import { Point, Group } from '../backend/abstract';
 import { mod } from '../utils';
 import { Polynomial, Lagrange, verifyFeldmannCommitments, verifyPedersenCommitments } from '../polynomials';
 import { Share, selectShare, computeLambda } from './common';
+import { Share } from '../types';
 import { Messages } from './enums';
+import { Share } from '../types';
 
 const polynomials = require('../polynomials');
 
@@ -21,7 +23,7 @@ export class SecretShare<P extends Point> implements Share<bigint> {
 };
 
 
-export class PublicShare<P extends Point> implements Share<P> {
+export class PointShare<P extends Point> implements Share<P> {
   value: P;
   index: number;
 
@@ -53,7 +55,7 @@ export class Distribution<P extends Point> {
     this.commitments = commitments;
   }
 
-  publicShares = async (): Promise<PublicShare<P>[]> => {
+  publicShares = async (): Promise<PointShare<P>[]> => {
     const { operate, generator } = this.ctx;
     const shares = [];
     for (const { value: secret, index } of this.secretShares) {
@@ -134,7 +136,7 @@ export function reconstructSecret<P extends Point>(
 
 export async function reconstructPublic<P extends Point>(
   ctx: Group<P>,
-  qualifiedSet: PublicShare<P>[],
+  qualifiedSet: PointShare<P>[],
 ): Promise<P> {
   const { order, combine, neutral } = ctx;
   const indexes = qualifiedSet.map(share => share.index);

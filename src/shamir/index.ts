@@ -1,7 +1,7 @@
 import {
   Distribution,
   SecretShare,
-  PublicShare,
+  PointShare,
   computeSecretShares,
   shareSecret,
   verifySecretShare,
@@ -17,7 +17,7 @@ import {
 export {
   Distribution,
   SecretShare,
-  PublicShare,
+  PointShare,
   selectShare,
   computeLambda,
   computeSecretShares,
