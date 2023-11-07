@@ -11,8 +11,9 @@ test('Secret sharing', async () => {
   const n = 5;
   const t = 3;
   const distribution = await shamir.shareSecret(ctx, secret, n, t);
-  const { threshold, secretShares, polynomial, commitments } = distribution;
-  const publicShares = await distribution.publicShares();
+  const secretShares = await distribution.getSecretShares();
+  const publicShares = await distribution.getPublicShares();
+  const { commitments } = await distribution.generateCommitments();
 
   secretShares.forEach(async (share: any) => {
     const verified = await shamir.verifySecretShare(ctx, share, commitments);

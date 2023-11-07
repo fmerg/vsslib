@@ -52,13 +52,23 @@ describe('Setup without predefined shares', () => {
     const label = 'ed25519';
     const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
-    const { threshold, secretShares, polynomial, commitments } = await shamir.shareSecret(
-      ctx, secret, n, t
-    );
+    const distribution = await shamir.shareSecret(ctx, secret, n, t);
+    const { nrShares, threshold, polynomial } = distribution;
+    expect(nrShares).toEqual(n);
     expect(threshold).toEqual(t);
+    const secretShares = await distribution.getSecretShares();
+    const publicShares = await distribution.getPublicShares();
     expect(secretShares.length).toEqual(n);
+    expect(publicShares.length).toEqual(n);
+    const { operate, generator } = ctx;
+    for (let index = 1; index < nrShares; index++) {
+      const { value: secret } = shamir.selectShare(index, secretShares);
+      const { value: pub } = shamir.selectShare(index, publicShares);
+      expect(await pub.isEqual(await operate(secret, generator))).toBe(true);
+    }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
+    const { commitments } = await distribution.generateCommitments();
     expect(commitments.length).toEqual(t);
   });
 });
@@ -74,18 +84,28 @@ describe('Setup with predefined shares', () => {
       for (let i = 0; i < nrGivenShares; i++) {
         givenShares.push(await ctx.randomScalar());
       }
-      const { threshold, secretShares, polynomial, commitments } = await shamir.shareSecret(
-        ctx, secret, n, t, givenShares
-      );
+      const distribution = await shamir.shareSecret(ctx, secret, n, t, givenShares);
+      const { nrShares, threshold, polynomial } = distribution;
+      expect(nrShares).toEqual(n);
       expect(threshold).toEqual(t);
+      const secretShares = await distribution.getSecretShares();
+      const publicShares = await distribution.getPublicShares();
       expect(secretShares.length).toEqual(n);
+      expect(publicShares.length).toEqual(n);
       expect(polynomial.evaluate(0)).toEqual(secret);
       for (let index = 1; index <= nrGivenShares; index++) {
         const { value } = shamir.selectShare(index, secretShares);
         expect(value).toEqual(givenShares[index - 1]);
       }
+      const { operate, generator } = ctx;
+      for (let index = 1; index < nrShares; index++) {
+        const { value: secret } = shamir.selectShare(index, secretShares);
+        const { value: pub } = shamir.selectShare(index, publicShares);
+        expect(await pub.isEqual(await operate(secret, generator))).toBe(true);
+      }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);
+      const { commitments } = await distribution.generateCommitments();
       expect(commitments.length).toEqual(t);
     }
   });

@@ -1,12 +1,75 @@
+import { Point, Group } from '../backend/abstract';
 import { Algorithm } from '../types';
 import { Algorithms } from '../enums';
 import { mod, modInv } from '../utils';
 import { Messages } from './enums';
+import { Polynomial } from '../polynomials';
 import { Share } from '../types';
 
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
+
+
+export class SecretShare<P extends Point> implements Share<bigint> {
+  value: bigint;
+  index: number;
+
+  constructor(value: bigint, index: number) {
+    this.value = value;
+    this.index = index;
+  }
+};
+
+
+export class PointShare<P extends Point> implements Share<P> {
+  value: P;
+  index: number;
+
+  constructor(value: P, index: number) {
+    this.value = value;
+    this.index = index;
+  }
+};
+
+
+export class Distribution<P extends Point> {
+  ctx: Group<P>;
+  nrShares: number;
+  threshold: number;
+  polynomial: Polynomial<P>;
+
+  constructor(ctx: Group<P>, nrShares: number, threshold: number, polynomial: Polynomial<P>) {
+    this.ctx = ctx;
+    this.threshold = threshold;
+    this.nrShares = nrShares;
+    this.polynomial = polynomial;
+  }
+
+  getSecretShares = async (): Promise<SecretShare<P>[]> => {
+    const { polynomial, nrShares } = this;
+    const shares = [];
+    for (let index = 1; index <= nrShares; index++) {
+      const value = polynomial.evaluate(index);
+      shares.push({ value, index });
+    }
+    return shares;
+  }
+
+  getPublicShares = async (): Promise<PointShare<P>[]> => {
+    const { nrShares, polynomial: { evaluate }, ctx: { operate, generator } } = this;
+    const shares = [];
+    for (let index = 1; index <= nrShares; index++) {
+      const value = await operate(evaluate(index), generator);
+      shares.push({ value, index });
+    }
+    return shares;
+  }
+
+  generateCommitments = async (): Promise<{ commitments: P[] }> => {
+    return this.polynomial.generateFeldmannCommitments();
+  }
+};
 
 
 export function selectShare<T>(index: number, shares: Share<T>[]): Share<T> {

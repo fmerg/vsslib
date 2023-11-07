@@ -25,7 +25,7 @@ const distribution = privateKey.distribute({ nrShares: 5, threshold: 3 });
 
 const { threshold, privateShares, publicShares, polynomial, commitments } = distribution;
 
-const publicShares = distribution.publicShares();
+const publicShares = distribution.getPublicShares();
 ```
 
 ```js

@@ -121,14 +121,16 @@ export class PrivateKey<P extends Point> {
   }
 
   async distribute(opts: { nrShares: number, threshold: number }): Promise<KeyDistribution<P>> {
+    // TODO: Comply with distribution interface
     const { nrShares, threshold } = opts;
     const { ctx, scalar: secret } = this;
-    const { secretShares, polynomial, commitments } = await shamir.shareSecret(
-      ctx, secret, nrShares, threshold
-    );
+    const distribution = await shamir.shareSecret(ctx, secret, nrShares, threshold);
+    const { polynomial } = distribution;
+    const secretShares = await distribution.getSecretShares();
     const privateShares = secretShares.map(
       ({ value, index }: SecretShare<P>) => new PrivateShare(ctx, value, index)
     );
+    const { commitments } = await distribution.generateCommitments();
     return new KeyDistribution(threshold, privateShares, polynomial, commitments);
   }
 
@@ -205,7 +207,7 @@ export class KeyDistribution<P extends Point> {
     this.commitments = commitments;
   }
 
-  publicShares = async (): Promise<PublicShare<P>[]> => {
+  getPublicShares = async (): Promise<PublicShare<P>[]> => {
     const shares = [];
     for (const [index, privateShare] of this.privateShares.entries()) {
       shares.push(await privateShare.publicShare());

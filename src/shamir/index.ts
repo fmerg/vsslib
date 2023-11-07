@@ -1,8 +1,4 @@
 import {
-  Distribution,
-  SecretShare,
-  PointShare,
-  computeSecretShares,
   shareSecret,
   verifySecretShare,
   reconstructSecret,
@@ -10,6 +6,9 @@ import {
 } from './sharing';
 
 import {
+  SecretShare,
+  PointShare,
+  Distribution,
   selectShare,
   computeLambda,
 } from './common';
@@ -20,7 +19,6 @@ export {
   PointShare,
   selectShare,
   computeLambda,
-  computeSecretShares,
   shareSecret,
   verifySecretShare,
   reconstructSecret,
