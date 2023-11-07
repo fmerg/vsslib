@@ -2,7 +2,7 @@ import { Point, Group } from '../src/backend/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
-import { DlogPair, DDHTuple } from '../src/sigma';
+import { LinearRelation, DlogPair, DDHTuple } from '../src/sigma';
 import { XYPoint, Polynomial } from '../src/lagrange';
 import { Permutation, PowerSet } from "js-combinatorics";
 
@@ -44,55 +44,7 @@ export const cartesian = (arrays: any[]): any[] => {
 }
 
 
-/** Reproduces externally the fiat-shamir computation */
-export async function computeFiatShamir<P extends Point>(
-  ctx: Group<P>,
-  points: Point[],
-  scalars: bigint[],
-  algorithm: Algorithm | undefined,
-): Promise<bigint> {
-  const fixedBuff = [...leInt2Buff(ctx.modulus), ...leInt2Buff(ctx.order), ...ctx.generator.toBytes()];
-  const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
-  const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
-  const digest = await utils.hash(
-    new Uint8Array([...fixedBuff, ...pointsBuff, ...scalarsBuff]),
-    { algorithm }
-  );
-  return (leBuff2Int(digest) as bigint) % ctx.order;
-}
-
-
-/** Creates dlog pairs with uniform logarithm */
-export async function createDlogPairs<P extends Point>(
-  ctx: Group<P>,
-  z: bigint,
-  nrPairs: number
-): Promise<DlogPair<P>[]> {
-  const pairs = [];
-  for (let i = 0; i < nrPairs; i++) {
-    const u = await ctx.randomPoint();
-    const v = await ctx.operate(z, u);
-    pairs.push({ u, v });
-  }
-  return pairs;
-}
-
-
-/** Create DDH-tuples */
-export async function createDDH<P extends Point>(
-  ctx: Group<P>,
-  z?: bigint
-): Promise<{ z: bigint, ddh: DDHTuple<P> }> {
-  z = z || await ctx.randomScalar();
-
-  const u = await ctx.randomPoint();
-  const v = await ctx.operate(z, ctx.generator);
-  const w = await ctx.operate(z, u);
-
-  return { z, ddh: { u, v, w } };
-}
-
-/** Trims trailing zeroes from number array */
+/** Trim trailing zeroes from number array */
 export const trimZeroes = (arr: number[]): number[] => {
   let len = arr.length;
   if (len > 0) {

@@ -1,7 +1,7 @@
 import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
 import { Label } from '../types';
-import { DlogProof } from '../sigma';
+import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../shamir';
 
@@ -52,9 +52,9 @@ export class PublicKey<P extends Point> {
     );
   }
 
-  async verifyIdentity(proof: DlogProof<P>): Promise<boolean> {
+  async verifyIdentity(proof: SigmaProof<P>, opts?: { nonce?: Uint8Array }): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const verified = await sigma.verifyDlog(ctx, ctx.generator, pub, proof);
+    const verified = await sigma.verifyDlog(ctx, { u: ctx.generator, v: pub }, proof, opts);
     if (!verified) throw new Error(Messages.INVALID_IDENTITY_PROOF);
     return verified;
   }
@@ -68,18 +68,19 @@ export class PublicKey<P extends Point> {
   async proveEncryption(
     ciphertext: Ciphertext<P>,
     randomness: bigint,
-    opts?: { algorithm?: Algorithm }
-  ): Promise<DlogProof<P>> {
+    opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
+  ): Promise<SigmaProof<P>> {
     return elgamal.proveEncryption(this.ctx, ciphertext, randomness, opts);
   }
 
   async verifyDecryptor(
     ciphertext: Ciphertext<P>,
     decryptor: P,
-    proof: DlogProof<P>,
+    proof: SigmaProof<P>,
+    opts?: { nonce?: Uint8Array }
   ): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
+    const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof, opts);
     if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_PROOF);
     return verified;
   }

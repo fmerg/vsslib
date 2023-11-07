@@ -1,6 +1,6 @@
 import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
-import { DlogProof } from '../sigma';
+import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../lagrange';
 import { SecretShare, PartialDecryptor } from '../shamir';
@@ -78,18 +78,22 @@ export class PrivateKey<P extends Point> {
     return ctx.operate(scalar, pub.point);
   }
 
-  async proveIdentity(opts?: { algorithm?: Algorithm }): Promise<DlogProof<P>> {
+  async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<SigmaProof<P>> {
     const { ctx, scalar } = this;
     const pub = await ctx.operate(scalar, ctx.generator);
-    return sigma.proveDlog(ctx, scalar, ctx.generator, pub, opts);
+    return sigma.proveDlog(ctx, scalar, { u: ctx.generator, v: pub }, opts);
   }
 
   async decrypt(ciphertext: Ciphertext<P>): Promise<P> {
     return elgamal.decrypt(this.ctx, ciphertext, { secret: this.scalar });
   }
 
-  async verifyEncryption(ciphertext: Ciphertext<P>, proof: DlogProof<P>): Promise<boolean> {
-    const verified = await elgamal.verifyEncryption(this.ctx, ciphertext, proof);
+  async verifyEncryption(
+    ciphertext: Ciphertext<P>,
+    proof: SigmaProof<P>,
+    opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
+  ): Promise<boolean> {
+    const verified = await elgamal.verifyEncryption(this.ctx, ciphertext, proof, opts);
     if (!verified) throw new Error(Messages.INVALID_ENCRYPTION_PROOF);
     return verified;
   }
@@ -97,8 +101,8 @@ export class PrivateKey<P extends Point> {
   async proveDecryptor(
     ciphertext: Ciphertext<P>,
     decryptor: P,
-    opts?: { algorithm?: Algorithm }
-  ): Promise<DlogProof<P>> {
+    opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
+  ): Promise<SigmaProof<P>> {
     const { ctx, scalar } = this;
     return elgamal.proveDecryptor(ctx, ciphertext, scalar, decryptor, opts);
   }
@@ -106,7 +110,7 @@ export class PrivateKey<P extends Point> {
   async generateDecryptor(
     ciphertext: Ciphertext<P>,
     opts?: { noProof?: boolean, algorithm?: Algorithm },
-  ): Promise<{ decryptor: P, proof?: DlogProof<P> }> {
+  ): Promise<{ decryptor: P, proof?: SigmaProof<P> }> {
     const { ctx, scalar: secret } = this;
     const decryptor = await elgamal.generateDecryptor(ctx, secret, ciphertext);
     const noProof = opts ? opts.noProof : false;

@@ -64,14 +64,16 @@ export class Combiner<P extends Point> {
     ciphertext: Ciphertext<P>,
     publicShare: PublicShare<P>,
     share: PartialDecryptor<P>,
+    opts?: { nonce?: Uint8Array },
   ): Promise<boolean> {
     const { value: decryptor, proof } = share;
     const { point: pub } = publicShare;
-    const verified = await elgamal.verifyDecryptor(this.ctx, ciphertext, pub, decryptor, proof);
+    const verified = await elgamal.verifyDecryptor(this.ctx, ciphertext, pub, decryptor, proof, opts);
     if (!verified) throw new Error('Invalid partial decryptor');
     return verified;
   }
 
+  // TODO: Include indexed nonces option?
   async validatePartialDecryptors(
     ciphertext: Ciphertext<P>,
     publicShares: PublicShare<P>[],
