@@ -1,7 +1,7 @@
 import { Point } from '../src/backend/abstract'
 import { key, backend } from '../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../src/key';
-import { PartialDecryptor } from '../src/shamir';
+import { PartialDecryptor } from '../src/types';
 import { Messages } from '../src/key/enums';
 import { KeyDistribution } from '../src/key';
 import { Ciphertext } from '../src/elgamal/core';

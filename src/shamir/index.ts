@@ -10,15 +10,6 @@ import {
 } from './sharing';
 
 import {
-  PartialDecryptor,
-  generatePartialDecryptor,
-  verifyPartialDecryptor,
-  verifyPartialDecryptors,
-  reconstructDecryptor,
-  decrypt,
-} from './decryption';
-
-import {
   selectShare,
   computeLambda,
 } from './common';
@@ -27,7 +18,6 @@ export {
   Distribution,
   SecretShare,
   PublicShare,
-  PartialDecryptor,
   selectShare,
   computeLambda,
   computeSecretShares,
@@ -35,9 +25,4 @@ export {
   verifySecretShare,
   reconstructSecret,
   reconstructPublic,
-  generatePartialDecryptor,
-  verifyPartialDecryptor,
-  verifyPartialDecryptors,
-  reconstructDecryptor,
-  decrypt,
 }

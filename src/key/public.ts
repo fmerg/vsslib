@@ -3,7 +3,7 @@ import { Ciphertext } from '../elgamal/core';
 import { Label } from '../types';
 import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
-import { PartialDecryptor } from '../shamir';
+import { PartialDecryptor } from '../types';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
@@ -127,8 +127,12 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   async verifyPartialDecryptor(
     ciphertext: Ciphertext<P>,
     partialDecryptor: PartialDecryptor<P>,
+    opts?: { nonce?: Uint8Array },
   ): Promise<boolean> {
-    const { ctx, point: value, index } = this;
-    return shamir.verifyPartialDecryptor(ctx, ciphertext, { value, index }, partialDecryptor);
+    const { ctx, point: pub, index } = this;
+    const { value: decryptor, proof } = partialDecryptor;
+    const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof, opts);
+    if (!verified) throw new Error(Messages.INVALID_PARTIAL_DECRYPTOR);
+    return true;
   }
 };

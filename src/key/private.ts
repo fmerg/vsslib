@@ -3,7 +3,8 @@ import { Ciphertext } from '../elgamal/core';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
-import { SecretShare, PartialDecryptor } from '../shamir';
+import { SecretShare } from '../shamir';
+import { PartialDecryptor } from '../types';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
@@ -175,9 +176,14 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
     return new PublicShare(ctx, point, index);
   }
 
-  async generatePartialDecryptor(ciphertext: Ciphertext<P>): Promise<PartialDecryptor<P>> {
+  async generatePartialDecryptor(
+    ciphertext: Ciphertext<P>,
+    opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
+  ): Promise<PartialDecryptor<P>> {
     const { ctx, scalar: value, index } = this;
-    return await shamir.generatePartialDecryptor(ctx, ciphertext, { value, index });
+    const decryptor = await elgamal.generateDecryptor(ctx, value, ciphertext);
+    const proof = await elgamal.proveDecryptor(ctx, ciphertext, value, decryptor, opts);
+    return { value: decryptor, index, proof}
   }
 };
 
