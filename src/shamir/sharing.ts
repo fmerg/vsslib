@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { mod } from '../utils';
-import { BasePolynomial } from '../lagrange';
+import { Polynomial } from '../lagrange';
 import { Share, selectShare, computeLambda } from './common';
 import { Messages } from './enums';
 
@@ -36,14 +36,14 @@ export class Distribution<P extends Point> {
   ctx: Group<P>;
   threshold: number;
   secretShares: SecretShare<P>[];
-  polynomial: BasePolynomial;
+  polynomial: Polynomial<P>;
   commitments: P[];
 
   constructor(
     ctx: Group<P>,
     threshold: number,
     secretShares: SecretShare<P>[],
-    polynomial: BasePolynomial,
+    polynomial: Polynomial<P>,
     commitments: P[]
   ) {
     this.ctx = ctx;
@@ -66,7 +66,7 @@ export class Distribution<P extends Point> {
 
 
 export async function computeSecretShares<P extends Point>(
-  polynomial: BasePolynomial,
+  polynomial: Polynomial<P>,
   nrShares: number
 ): Promise<SecretShare<P>[]> {
   const shares = [];
@@ -80,7 +80,7 @@ export async function computeSecretShares<P extends Point>(
 
 export async function computeCommitments<P extends Point>(
   ctx: Group<P>,
-  polynomial: BasePolynomial
+  polynomial: Polynomial<P>,
 ): Promise<P[]> {
   const { operate, generator } = ctx;
   const commitments = new Array(polynomial.degree + 1);
@@ -98,7 +98,7 @@ export async function shareSecret<P extends Point>(
   threshold: number,
   givenShares?: bigint[],
 ): Promise<Distribution<P>> {
-  const { order, randomScalar } = ctx;
+  const { label, order, randomScalar } = ctx;
   givenShares = givenShares || [];
   if (threshold > nrShares) throw new Error(Messages.THRESHOLD_EXCEEDS_NR_SHARES);
   if (threshold < 1) throw new Error (Messages.THRESHOLD_NOT_GE_ONE);
@@ -112,7 +112,7 @@ export async function shareSecret<P extends Point>(
     points[index] = [x, y];
     index++;
   }
-  const polynomial = lagrange.interpolate(points, { order });
+  const polynomial = lagrange.interpolate(points, { label });
   const secretShares = await computeSecretShares(polynomial, nrShares);
   const commitments = await computeCommitments(ctx, polynomial);
   return new Distribution<P>(ctx, threshold, secretShares, polynomial, commitments);

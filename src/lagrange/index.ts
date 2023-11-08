@@ -1,5 +1,9 @@
+import { Label } from '../types';
+import { Point } from '../backend/abstract'
 import { BasePolynomial } from './base';
 import { XYPoint, Polynomial, Lagrange } from './core';
+
+const backend = require('../backend');
 
 export {
   XYPoint,
@@ -8,7 +12,7 @@ export {
   BasePolynomial,
 }
 
-export const interpolate = (points: XYPoint[], opts: { order: bigint | number }): Lagrange => {
-  const order = BigInt(opts.order);
-  return new Lagrange(points.map(([x, y]) => [BigInt(x), BigInt(y)]), order);
+export const interpolate = (points: XYPoint[], opts: { label: Label }): Lagrange<Point> => {
+  const ctx = backend.initGroup(opts.label);
+  return new Lagrange(ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)]));
 }

@@ -18,13 +18,14 @@ export class Polynomial<P extends Point> extends BasePolynomial {
   }
 }
 
-export class Lagrange extends BasePolynomial {
+export class Lagrange<P extends Point> extends Polynomial<P> {
   _xs: bigint[];
   _ys: bigint[];
   _ws: bigint[];
 
-  constructor(points: [bigint, bigint][], order: bigint) {
+  constructor(ctx: Group<P>, points: [bigint, bigint][]) {
     const k = points.length
+    const { order } = ctx;
     if (k > order) throw new Error(Messages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER);
     const xs = new Array(k);
     const ys = new Array(k);
@@ -61,7 +62,7 @@ export class Lagrange extends BasePolynomial {
       const fj = yj * wj;
       coeffs = coeffs.map((c, i) => c + fj * pj[i]);
     }
-    super(coeffs, order);
+    super(ctx, coeffs);
     this._xs = xs;
     this._ys = ys;
     this._ws = ws;

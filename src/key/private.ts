@@ -2,7 +2,7 @@ import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
-import { BasePolynomial } from '../lagrange';
+import { Polynomial } from '../lagrange';
 import { SecretShare, PartialDecryptor } from '../shamir';
 import { Label } from '../types';
 import { Messages } from './enums';
@@ -184,13 +184,13 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
 export class KeyDistribution<P extends Point> {
   threshold: number;
   privateShares: PrivateShare<P>[];
-  polynomial: BasePolynomial;
+  polynomial: Polynomial<P>;
   commitments: P[];
 
   constructor(
     threshold: number,
     privateShares: PrivateShare<P>[],
-    polynomial: BasePolynomial,
+    polynomial: Polynomial<P>,
     commitments: P[],
   ) {
     this.threshold = threshold;
