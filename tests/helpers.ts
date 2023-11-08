@@ -3,7 +3,7 @@ import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
 import { LinearRelation, DlogPair, DDHTuple } from '../src/sigma';
-import { XYPoint, Polynomial } from '../src/lagrange';
+import { XYPoint, BasePolynomial } from '../src/lagrange';
 import { Permutation, PowerSet } from "js-combinatorics";
 
 const utils = require('../src/utils');
@@ -56,19 +56,19 @@ export const trimZeroes = (arr: number[]): number[] => {
 
 /** Textbook lagrange interpolation. Number of points must not exceed order.
  */
-export const interpolate = (points: XYPoint[], opts: { order: bigint }): Polynomial => {
+export const interpolate = (points: XYPoint[], opts: { order: bigint }): BasePolynomial => {
   const order = BigInt(opts.order);
   const castPoints = points.map(([x, y]) => [BigInt(x), BigInt(y)]);
-  let poly = Polynomial.zero({ order });
+  let poly = BasePolynomial.zero({ order });
   for (let j = 0; j < castPoints.length; j++) {
     const [xj, yj] = castPoints[j];
     let w = __1n;
-    let pj = new Polynomial([__1n], order);
+    let pj = new BasePolynomial([__1n], order);
     for (let i = 0; i < castPoints.length; i++) {
       if (i !== j) {
         const [xi, _] = castPoints[i];
         w *= xj - xi;
-        pj = pj.mult(new Polynomial([-xi, __1n], order))
+        pj = pj.mult(new BasePolynomial([-xi, __1n], order))
       }
     }
     const wInv = utils.modInv(w, order);

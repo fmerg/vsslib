@@ -1,6 +1,6 @@
 import { lagrange, backend } from '../src';
 import { Systems } from '../src/enums';
-import { Polynomial } from '../src/lagrange';
+import { BasePolynomial } from '../src/lagrange';
 import { Messages } from '../src/lagrange/enums';
 import { cartesian, trimZeroes } from './helpers';
 
@@ -30,7 +30,7 @@ describe('construction - coefficients smaller than order', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
-    const poly = new Polynomial(coeffs, order);
+    const poly = new BasePolynomial(coeffs, order);
     expect(poly.coeffs).toEqual(trimZeroes(coeffs).map(BigInt));
     expect(poly.degree).toBe(degree);
     expect(poly.degree).toBe(
@@ -44,7 +44,7 @@ describe('construction - coefficients greater than order', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
-    const poly = new Polynomial(coeffs, order);
+    const poly = new BasePolynomial(coeffs, order);
     expect(poly.coeffs).toEqual(trimZeroes(coeffs).map(BigInt));
     expect(poly.degree).toBe(degree);
     expect(poly.degree).toBe(
@@ -56,7 +56,7 @@ describe('construction - coefficients greater than order', () => {
 
 describe('construction errors', () => {
   test('order not greater than one', async () => {
-    expect(() => { new Polynomial([], 1) }).toThrow(
+    expect(() => { new BasePolynomial([], 1) }).toThrow(
       Messages.ORDER_MUST_BE_GT_ONE
     );
   });
@@ -67,13 +67,13 @@ describe('equal polynomials', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
-    const poly1 = new Polynomial(coeffs, order);
-    const poly2 = new Polynomial(coeffs, order);
-    const poly3 = new Polynomial(
+    const poly1 = new BasePolynomial(coeffs, order);
+    const poly2 = new BasePolynomial(coeffs, order);
+    const poly3 = new BasePolynomial(
       coeffs.map((num: number) => BigInt(num) + order),
       order
     );
-    const poly4 = new Polynomial(coeffs.concat([0]), order);
+    const poly4 = new BasePolynomial(coeffs.concat([0]), order);
     const poly5 = poly1.clone();
 
     expect(poly1.isEqual(poly1)).toBe(true);
@@ -89,10 +89,10 @@ describe('non-equal polynomials', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
-    const poly1 = new Polynomial(coeffs, order);
-    const poly2 = new Polynomial(coeffs, order + __1n);
-    const poly3 = new Polynomial(coeffs.concat([1]), order);
-    const poly4 = new Polynomial(
+    const poly1 = new BasePolynomial(coeffs, order);
+    const poly2 = new BasePolynomial(coeffs, order + __1n);
+    const poly3 = new BasePolynomial(coeffs.concat([1]), order);
+    const poly4 = new BasePolynomial(
       ([666].concat([...coeffs.slice(coeffs.length - 1)])),
       order
     );
@@ -107,7 +107,7 @@ describe('non-equal polynomials', () => {
 
 describe('zero polynomial', () => {
   it.each(__big_primes)('order: %s', async (order) => {
-    const poly = Polynomial.zero({ order });
+    const poly = BasePolynomial.zero({ order });
     expect(poly.coeffs).toEqual([]);
     expect(poly.degree).toBe(-Infinity);
     expect(poly.order).toBe(order);
@@ -118,7 +118,7 @@ describe('zero polynomial', () => {
 
 describe('random polynomial error', () => {
   test('non-positive degree', async () => {
-    await expect(Polynomial.random({ degree: -1, order: 2 })).rejects.toThrow(
+    await expect(BasePolynomial.random({ degree: -1, order: 2 })).rejects.toThrow(
       Messages.DEGREE_MUST_BE_GE_ZERO
     );
   });
@@ -129,7 +129,7 @@ describe('random polynomial', () => {
   it.each(cartesian([[0, 1, 2, 3, 4, 5, 6, 7, 8], __big_primes]))('degree %s over %s', async (
     degree, order
   ) => {
-    const poly = await Polynomial.random({ degree, order });
+    const poly = await BasePolynomial.random({ degree, order });
     expect(poly.isZero()).toBe(false);
     expect(poly.degree).toEqual(degree);
     expect(poly.order).toEqual(order);

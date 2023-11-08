@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { mod } from '../utils';
-import { Polynomial } from '../lagrange';
+import { BasePolynomial } from '../lagrange';
 import { Share, selectShare, computeLambda } from './common';
 import { Messages } from './enums';
 
@@ -36,14 +36,14 @@ export class Distribution<P extends Point> {
   ctx: Group<P>;
   threshold: number;
   secretShares: SecretShare<P>[];
-  polynomial: Polynomial;
+  polynomial: BasePolynomial;
   commitments: P[];
 
   constructor(
     ctx: Group<P>,
     threshold: number,
     secretShares: SecretShare<P>[],
-    polynomial: Polynomial,
+    polynomial: BasePolynomial,
     commitments: P[]
   ) {
     this.ctx = ctx;
@@ -66,7 +66,7 @@ export class Distribution<P extends Point> {
 
 
 export async function computeSecretShares<P extends Point>(
-  polynomial: Polynomial,
+  polynomial: BasePolynomial,
   nrShares: number
 ): Promise<SecretShare<P>[]> {
   const shares = [];
@@ -80,7 +80,7 @@ export async function computeSecretShares<P extends Point>(
 
 export async function computeCommitments<P extends Point>(
   ctx: Group<P>,
-  polynomial: Polynomial
+  polynomial: BasePolynomial
 ): Promise<P[]> {
   const { operate, generator } = ctx;
   const commitments = new Array(polynomial.degree + 1);

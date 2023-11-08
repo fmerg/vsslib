@@ -1,4 +1,4 @@
-import { Polynomial } from './base';
+import { BasePolynomial } from './base';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
 
@@ -9,7 +9,7 @@ const __1n = BigInt(1);
 
 export type XYPoint = [bigint | number, bigint | number];
 
-export class Lagrange extends Polynomial {
+export class Lagrange extends BasePolynomial {
   _xs: bigint[];
   _ys: bigint[];
   _ws: bigint[];
