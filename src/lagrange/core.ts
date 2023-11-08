@@ -1,3 +1,4 @@
+import { Point, Group } from '../backend/abstract';
 import { BasePolynomial } from './base';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
@@ -8,6 +9,14 @@ const __1n = BigInt(1);
 
 
 export type XYPoint = [bigint | number, bigint | number];
+
+export class Polynomial<P extends Point> extends BasePolynomial {
+  ctx: Group<P>;
+  constructor(ctx: Group<P>, coeffs: bigint[]) {
+    super(coeffs, ctx.order);
+    this.ctx = ctx;
+  }
+}
 
 export class Lagrange extends BasePolynomial {
   _xs: bigint[];

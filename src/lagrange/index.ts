@@ -1,9 +1,10 @@
 import { BasePolynomial } from './base';
-import { XYPoint, Lagrange } from './core';
+import { XYPoint, Polynomial, Lagrange } from './core';
 
 export {
   XYPoint,
   Lagrange,
+  Polynomial,
   BasePolynomial,
 }
 
