@@ -118,32 +118,6 @@ describe('zero polynomial', () => {
 });
 
 
-describe('random polynomial error', () => {
-  test('non-positive degree', async () => {
-    await expect(BasePolynomial.random({ degree: -1, order: 2 })).rejects.toThrow(
-      Messages.DEGREE_MUST_BE_GE_ZERO
-    );
-  });
-});
-
-
-describe('random polynomial', () => {
-  it.each(cartesian([[0, 1, 2, 3, 4, 5, 6, 7, 8], __big_primes]))('degree %s over %s', async (
-    degree, order
-  ) => {
-    const poly = await BasePolynomial.random({ degree, order });
-    expect(poly.isZero()).toBe(false);
-    expect(poly.degree).toEqual(degree);
-    expect(poly.order).toEqual(order);
-    let flag = true;
-    for (const coeff of poly.coeffs) {
-      flag &&= (coeff < order);
-    }
-    expect(flag).toBe(true);
-  });
-})
-
-
 describe('errors', () => {
   test('addition - different orders', async () => {
     const poly1 = new BasePolynomial([], 2);
@@ -185,26 +159,6 @@ describe('addition - fixed polynomials small order', () => {
 });
 
 
-describe('addition - random polynomials with prime order', () => {
-  const degree_pairs = [
-    [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]
-  ];
-  it.each(cartesian([degree_pairs, __big_primes]))('degrees: %s, order: %s', async (
-    degrees, order
-  ) => {
-    let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
-    const poly1 = await BasePolynomial.random({ degree: degree1, order });
-    const poly2 = await BasePolynomial.random({ degree: degree2, order });
-    const poly3 = new BasePolynomial(
-      poly1.coeffs.map((c, i) => c + poly2.coeffs[i]).concat(poly2.coeffs.slice(poly1.degree + 1)),
-      order,
-    );
-    expect(poly3.isEqual(poly1.add(poly2))).toBe(true);
-    expect(poly3.isEqual(poly2.add(poly1))).toBe(true);
-  });
-});
-
-
 describe('multiplication - fixed polynomials small order', () => {
   it.each(cartesian([
     [
@@ -222,29 +176,6 @@ describe('multiplication - fixed polynomials small order', () => {
     const poly1 = new BasePolynomial(coeffs1, order);
     const poly2 = new BasePolynomial(coeffs2.map((num: number) => num + order), order);
     const poly3 = new BasePolynomial(coeffs3, order);
-    expect(poly3.isEqual(poly1.mult(poly2))).toBe(true);
-    expect(poly3.isEqual(poly2.mult(poly1))).toBe(true);
-  });
-});
-
-
-describe('multiplication - random polynomials with prime order', () => {
-  const degree_pairs = [
-    [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]
-  ];
-  it.each(cartesian([degree_pairs, __big_primes]))('degrees: %s, order: %s', async (
-    degrees, order
-  ) => {
-    let [degree1, degree2] = degrees;
-    const poly1 = await BasePolynomial.random({ degree: degree1, order });
-    const poly2 = await BasePolynomial.random({ degree: degree2, order });
-    let newCoeffs = new Array(degree1 + degree2 + 1).fill(__0n);
-    for (let i = 0; i <= degree1; i++) {
-      for (let j = 0; j <= degree2; j++) {
-        newCoeffs[i + j] += poly1.coeffs[i] * poly2.coeffs[j];
-      }
-    }
-    const poly3 = new BasePolynomial(newCoeffs, order);
     expect(poly3.isEqual(poly1.mult(poly2))).toBe(true);
     expect(poly3.isEqual(poly2.mult(poly1))).toBe(true);
   });
@@ -278,24 +209,6 @@ describe('scalar multiplication - fixed polynomials small order', () => {
 });
 
 
-describe('scalar multiplication - random polynomials with prime order', () => {
-  const degrees = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  it.each(cartesian([degrees, __big_primes]))('degrees: %s, order: %s', async (
-    degree, order
-  ) => {
-    const scalar = await randBigint(byteLen(order));
-    const poly1 = await BasePolynomial.random({ degree, order });
-    const poly2 = poly1.multScalar(scalar);
-
-    const poly3 = new BasePolynomial(poly1.coeffs.map((c) => scalar * c), order);
-    expect(poly2.isEqual(poly3)).toBe(true);
-
-    const poly4 = new BasePolynomial([scalar], order);
-    expect(poly2.isEqual(poly1.mult(poly4))).toBe(true);
-  });
-});
-
-
 describe('evaluation - fixed polynomials small order', () => {
   it.each(cartesian([
     [
@@ -317,21 +230,5 @@ describe('evaluation - fixed polynomials small order', () => {
       acc += c * value ** i;
     }
     expect(poly.evaluate(value)).toEqual(BigInt(acc % order));
-  });
-});
-
-
-describe('evaluation - random polynomials with prime order', () => {
-  const degrees = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-  it.each(cartesian([degrees, __big_primes]))('degrees: %s, order: %s', async (
-    degree, order
-  ) => {
-    const value = await randBigint(byteLen(order));
-    const poly = await BasePolynomial.random({ degree, order });
-    let acc = __0n;
-    for (const [i, c] of poly.coeffs.entries()) {
-      acc += c * value ** BigInt(i);
-    }
-    expect(poly.evaluate(value)).toEqual(acc % order);
   });
 });

@@ -2,6 +2,7 @@ import { Point, Group } from '../backend/abstract';
 import { BasePolynomial } from './base';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
+const backend = require('../backend');
 
 
 const __0n = BigInt(0);
@@ -16,7 +17,38 @@ export class Polynomial<P extends Point> extends BasePolynomial {
     super(coeffs, ctx.order);
     this.ctx = ctx;
   }
+
+
+  async generateFeldmannCommitments(): Promise<P[]> {
+    const { operate, generator } = this.ctx;
+    const commitments = new Array(this.degree + 1);
+    for (const [index, coeff] of this.coeffs.entries()) {
+      commitments[index] = await operate(coeff, generator);
+    }
+    return commitments;
+  }
+
+  async generatePedersenCommitments() {}
 }
+
+
+export async function verifyFeldmannCommitments<P extends Point>(
+  ctx: Group<P>,
+  secret: bigint,
+  index: number,
+  commitments: P[],
+): Promise<boolean> {
+  const { order, generator, neutral, operate, combine } = ctx;
+  const target = await operate(secret, generator);
+  let acc = neutral;
+  const i = index;
+  for (const [j, comm] of commitments.entries()) {
+    const curr = await operate(mod(BigInt(i ** j), order), comm);
+    acc = await combine(acc, curr);
+  }
+  return await acc.isEqual(target);
+}
+
 
 export class Lagrange<P extends Point> extends Polynomial<P> {
   _xs: bigint[];
