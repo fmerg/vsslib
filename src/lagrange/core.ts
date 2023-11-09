@@ -2,6 +2,7 @@ import { Point, Group } from '../backend/abstract';
 import { BasePolynomial } from './base';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
+import { byteLen, randBigint } from '../utils';
 const backend = require('../backend');
 
 
@@ -28,7 +29,27 @@ export class Polynomial<P extends Point> extends BasePolynomial {
     return commitments;
   }
 
-  async generatePedersenCommitments() {}
+  async generatePedersenCommitments(h: P): Promise<{ commitments: P[], bs: bigint[] }>{
+    const degree = this.degree;
+    const { order, generator: g, combine, operate } = this.ctx;
+    const coeffs = new Array(degree + 1);
+    const nrBytes = byteLen(order);
+    for (let i = 0; i < coeffs.length; i++) {
+      coeffs[i] = await randBigint(nrBytes);
+    }
+    const polynomial2 = new Polynomial(this.ctx, coeffs);
+    const commitments = new Array(degree + 1);
+    const bs = new Array(degree + 1);
+    for (const [i, a] of this.coeffs.entries()) {
+      const b = polynomial2.coeffs[i];
+      commitments[i] = await combine(
+        await operate(a, g),
+        await operate(b, h),
+      );
+      bs[i] = await polynomial2.evaluate(i);
+    }
+    return { bs, commitments };
+  }
 }
 
 
@@ -47,6 +68,28 @@ export async function verifyFeldmannCommitments<P extends Point>(
     acc = await combine(acc, curr);
   }
   return await acc.isEqual(target);
+}
+
+
+export async function verifyPedersenCommitments<P extends Point>(
+  ctx: Group<P>,
+  secret: bigint,
+  index: number,
+  b: bigint,
+  h: P,
+  commitments: P[],
+): Promise<boolean> {
+  const { order, generator: g, neutral, operate, combine } = ctx;
+  const lhs = await combine(
+    await operate(secret, g),
+    await operate(b, h),
+  );
+  let rhs = neutral;
+  const i = index;
+  for (const [j, c] of commitments.entries()) {
+    rhs = await combine(rhs, await operate(BigInt(i ** j), c));
+  }
+  return await lhs.isEqual(rhs);
 }
 
 

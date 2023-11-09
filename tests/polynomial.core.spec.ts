@@ -1,6 +1,7 @@
 import { backend } from '../src';
 import { Systems } from '../src/enums';
-import { Polynomial, verifyFeldmannCommitments } from '../src/lagrange/core';
+import { Polynomial } from '../src/lagrange/core';
+import { verifyFeldmannCommitments, verifyPedersenCommitments } from '../src/lagrange/core';
 import { Messages } from '../src/lagrange/enums';
 import { byteLen, randBigint } from '../src/utils';
 import { cartesian } from './helpers';
@@ -46,8 +47,24 @@ describe('Feldmann commitments', () => {
 
 
 describe('Pedersen commitments', () => {
-  it.each(__labels)('%s', async (label) => {
+  const degrees = [0, 1, 2, 3, 4, 5];
+  it.each(cartesian([__labels, degrees]))('degree %s over %s', async (label, degree) => {
     const ctx = backend.initGroup(label);
+    const h = await ctx.randomPoint();
+    const polynomial = await lagrange.randomPolynomial({ degree, label });
+    const { commitments, bs } = await polynomial.generatePedersenCommitments(h);
+    for (const [index, b] of bs.entries()) {
+      const secret = await polynomial.evaluate(index);
+      const isValid = await verifyPedersenCommitments(
+        ctx,
+        secret,
+        index,
+        b,
+        h,
+        commitments,
+      );
+      expect(isValid).toBe(true);
+    }
   });
 });
 
