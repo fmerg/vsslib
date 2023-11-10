@@ -10,8 +10,10 @@ const backend = require('../backend');
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 
+export type XYTuple = [bigint, bigint] | [number, number];
 
-export class LagrangePolynomial<P extends Point> extends Polynomial<P> {
+
+export class Lagrange<P extends Point> extends Polynomial<P> {
   _xs: bigint[];
   _ys: bigint[];
   _ws: bigint[];
@@ -61,6 +63,9 @@ export class LagrangePolynomial<P extends Point> extends Polynomial<P> {
     this._ws = ws;
   }
 
+  static async interpolate<Q extends Point>(ctx: Group<Q>, points: XYTuple[]): Promise<Lagrange<Q>> {
+    return new Lagrange(ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)]));
+  }
 
   evaluate = (value: bigint | number): bigint => {
     const { _xs: xs, _ys: ys, _ws: ws, _order: order } = this;
@@ -76,11 +81,4 @@ export class LagrangePolynomial<P extends Point> extends Polynomial<P> {
     }
     return mod(b * modInv(c, order), order);
   }
-}
-
-export type XYTuple = [bigint, bigint] | [number, number];
-
-export const interpolate = (points: XYTuple[], opts: { label: Label }): LagrangePolynomial<Point> => {
-  const ctx = backend.initGroup(opts.label);
-  return new LagrangePolynomial(ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)]));
 }

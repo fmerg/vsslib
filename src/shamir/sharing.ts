@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { mod } from '../utils';
-import { Polynomial, lagrange } from '../polynomials';
+import { Polynomial, Lagrange } from '../polynomials';
 import { Share, selectShare, computeLambda } from './common';
 import { Messages } from './enums';
 
@@ -112,7 +112,7 @@ export async function shareSecret<P extends Point>(
     points[index] = [x, y];
     index++;
   }
-  const polynomial = lagrange.interpolate(points, { label });
+  const polynomial = await Lagrange.interpolate(ctx, points);
   const secretShares = await computeSecretShares(polynomial, nrShares);
   const commitments = await computeCommitments(ctx, polynomial);
   return new Distribution<P>(ctx, threshold, secretShares, polynomial, commitments);
