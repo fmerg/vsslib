@@ -1,7 +1,7 @@
-import { lagrange, backend } from '../src';
+import { polynomials, backend } from '../src';
 import { Systems } from '../src/enums';
-import { BasePolynomial } from '../src/lagrange';
-import { Messages } from '../src/lagrange/enums';
+import { BasePolynomial } from '../src/polynomials';
+import { Messages } from '../src/polynomials/enums';
 import { byteLen, randBigint } from '../src/utils';
 import { cartesian, trimZeroes } from './helpers';
 

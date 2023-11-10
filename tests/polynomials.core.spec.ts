@@ -1,11 +1,11 @@
 import { backend } from '../src';
 import { Systems } from '../src/enums';
-import { Polynomial } from '../src/lagrange/core';
-import { verifyFeldmannCommitments, verifyPedersenCommitments } from '../src/lagrange/core';
-import { Messages } from '../src/lagrange/enums';
+import { Polynomial } from '../src/polynomials/core';
+import { verifyFeldmannCommitments, verifyPedersenCommitments } from '../src/polynomials/core';
+import { Messages } from '../src/polynomials/enums';
 import { byteLen, randBigint } from '../src/utils';
 import { cartesian } from './helpers';
-const lagrange = require('../src/lagrange');
+const polynomials = require('../src/polynomials');
 
 
 const __0n = BigInt(0);
@@ -30,7 +30,7 @@ describe('Feldmann commitments', () => {
   const degrees = [0, 1, 2, 3, 4, 5];
   it.each(cartesian([__labels, degrees]))('degree %s over %s', async (label, degree) => {
     const ctx = backend.initGroup(label);
-    const polynomial = await lagrange.randomPolynomial({ degree, label });
+    const polynomial = await polynomials.randomPolynomial({ degree, label });
     const commitments = await polynomial.generateFeldmannCommitments();
     for (const [index, _] of polynomial.coeffs.entries()) {
       const secret = await polynomial.evaluate(index);
@@ -51,7 +51,7 @@ describe('Pedersen commitments', () => {
   it.each(cartesian([__labels, degrees]))('degree %s over %s', async (label, degree) => {
     const ctx = backend.initGroup(label);
     const h = await ctx.randomPoint();
-    const polynomial = await lagrange.randomPolynomial({ degree, label });
+    const polynomial = await polynomials.randomPolynomial({ degree, label });
     const { commitments, bs } = await polynomial.generatePedersenCommitments(h);
     for (const [index, b] of bs.entries()) {
       const secret = await polynomial.evaluate(index);
@@ -71,7 +71,7 @@ describe('Pedersen commitments', () => {
 
 describe('random polynomial error', () => {
   test('non-positive degree', async () => {
-    await expect(lagrange.randomPolynomial({ degree: -1, label: 'ed25519' })).rejects.toThrow(
+    await expect(polynomials.randomPolynomial({ degree: -1, label: 'ed25519' })).rejects.toThrow(
       Messages.DEGREE_MUST_BE_GE_ZERO
     );
   });
@@ -87,8 +87,8 @@ describe('addition - random polynomials', () => {
   ) => {
     const ctx = backend.initGroup(label);
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
-    const poly1 = await lagrange.randomPolynomial({ degree: degree1, label });
-    const poly2 = await lagrange.randomPolynomial({ degree: degree2, label });
+    const poly1 = await polynomials.randomPolynomial({ degree: degree1, label });
+    const poly2 = await polynomials.randomPolynomial({ degree: degree2, label });
     const poly3 = new Polynomial(
       ctx,
       poly1.coeffs.map((c: bigint, i: number) => c + poly2.coeffs[i]).concat(
@@ -110,8 +110,8 @@ describe('multiplication - random polynomials', () => {
   ) => {
     const ctx = backend.initGroup(label);
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
-    const poly1 = await lagrange.randomPolynomial({ degree: degree1, label });
-    const poly2 = await lagrange.randomPolynomial({ degree: degree2, label });
+    const poly1 = await polynomials.randomPolynomial({ degree: degree1, label });
+    const poly2 = await polynomials.randomPolynomial({ degree: degree2, label });
     let newCoeffs = new Array(degree1 + degree2 + 1).fill(__0n);
     for (let i = 0; i <= degree1; i++) {
       for (let j = 0; j <= degree2; j++) {

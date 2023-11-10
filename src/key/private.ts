@@ -2,7 +2,7 @@ import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
-import { Polynomial } from '../lagrange';
+import { Polynomial } from '../polynomials';
 import { SecretShare, PartialDecryptor } from '../shamir';
 import { Label } from '../types';
 import { Messages } from './enums';
