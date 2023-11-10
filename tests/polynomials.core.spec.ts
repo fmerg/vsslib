@@ -31,7 +31,7 @@ describe('Feldmann commitments', () => {
   it.each(cartesian([__labels, degrees]))('degree %s over %s', async (label, degree) => {
     const ctx = backend.initGroup(label);
     const polynomial = await Polynomial.random(ctx, degree);
-    const commitments = await polynomial.generateFeldmannCommitments();
+    const { commitments } = await polynomial.generateFeldmannCommitments();
     for (const [index, _] of polynomial.coeffs.entries()) {
       const secret = await polynomial.evaluate(index);
       const isValid = await verifyFeldmannCommitments(
@@ -50,17 +50,17 @@ describe('Pedersen commitments', () => {
   const degrees = [0, 1, 2, 3, 4, 5];
   it.each(cartesian([__labels, degrees]))('degree %s over %s', async (label, degree) => {
     const ctx = backend.initGroup(label);
-    const h = await ctx.randomPoint();
+    const pub = await ctx.randomPoint();
     const polynomial = await Polynomial.random(ctx, degree);
-    const { commitments, bs } = await polynomial.generatePedersenCommitments(h);
-    for (const [index, b] of bs.entries()) {
+    const { commitments, bindings } = await polynomial.generatePedersenCommitments(pub);
+    for (const [index, binding] of bindings.entries()) {
       const secret = await polynomial.evaluate(index);
       const isValid = await verifyPedersenCommitments(
         ctx,
         secret,
+        binding,
         index,
-        b,
-        h,
+        pub,
         commitments,
       );
       expect(isValid).toBe(true);

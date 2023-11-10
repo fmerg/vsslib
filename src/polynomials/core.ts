@@ -25,29 +25,30 @@ export class Polynomial<P extends Point> extends BasePolynomial {
     return new Polynomial(ctx, coeffs);
   }
 
-  async generateFeldmannCommitments(): Promise<P[]> {
+  async generateFeldmannCommitments(): Promise<{ commitments: P[] }> {
     const { coeffs, degree, ctx: { operate, generator }} = this;
     const commitments = new Array(degree + 1);
     for (const [index, coeff] of coeffs.entries()) {
       commitments[index] = await operate(coeff, generator);
     }
-    return commitments;
+    return { commitments };
   }
 
-  async generatePedersenCommitments(h: P): Promise<{ commitments: P[], bs: bigint[] }>{
+  async generatePedersenCommitments(pub?: P): Promise<{ bindings: bigint[], pub: P, commitments: P[] }>{
     const { coeffs, degree, ctx: { generator: g, combine, operate }} = this;
-    const polynomial2 = await Polynomial.random(this.ctx, degree);
+    const bindingPolynomial = await Polynomial.random(this.ctx, degree);
     const commitments = new Array(degree + 1);
-    const bs = new Array(degree + 1);
+    const bindings = new Array(degree + 1);
+    const h = pub || await this.ctx.randomPoint();
     for (const [i, a] of coeffs.entries()) {
-      const b = polynomial2.coeffs[i];
+      const b = bindingPolynomial.coeffs[i];
       commitments[i] = await combine(
         await operate(a, g),
         await operate(b, h),
       );
-      bs[i] = await polynomial2.evaluate(i);
+      bindings[i] = await bindingPolynomial.evaluate(i);
     }
-    return { bs, commitments };
+    return { bindings, pub: h, commitments };
   }
 }
 
@@ -59,30 +60,27 @@ export async function verifyFeldmannCommitments<P extends Point>(
   commitments: P[],
 ): Promise<boolean> {
   const { order, generator, neutral, operate, combine } = ctx;
-  const target = await operate(secret, generator);
-  let acc = neutral;
+  const lhs = await operate(secret, generator);
+  let rhs = neutral;
   const i = index;
-  for (const [j, comm] of commitments.entries()) {
-    const curr = await operate(mod(BigInt(i ** j), order), comm);
-    acc = await combine(acc, curr);
+  for (const [j, c] of commitments.entries()) {
+    const curr = await operate(mod(BigInt(i ** j), order), c);
+    rhs = await combine(rhs, curr);
   }
-  return await acc.isEqual(target);
+  return await lhs.isEqual(rhs);
 }
 
 
 export async function verifyPedersenCommitments<P extends Point>(
   ctx: Group<P>,
   secret: bigint,
+  binding: bigint,
   index: number,
-  b: bigint,
-  h: P,
+  pub: P,
   commitments: P[],
 ): Promise<boolean> {
   const { order, generator: g, neutral, operate, combine } = ctx;
-  const lhs = await combine(
-    await operate(secret, g),
-    await operate(b, h),
-  );
+  const lhs = await combine(await operate(secret, g), await operate(binding, pub));
   let rhs = neutral;
   const i = index;
   for (const [j, c] of commitments.entries()) {

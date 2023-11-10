@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { mod } from '../utils';
-import { Polynomial, Lagrange } from '../polynomials';
+import { Polynomial, Lagrange, verifyFeldmannCommitments, verifyPedersenCommitments } from '../polynomials';
 import { Share, selectShare, computeLambda } from './common';
 import { Messages } from './enums';
 
@@ -78,19 +78,6 @@ export async function computeSecretShares<P extends Point>(
 }
 
 
-export async function computeCommitments<P extends Point>(
-  ctx: Group<P>,
-  polynomial: Polynomial<P>,
-): Promise<P[]> {
-  const { operate, generator } = ctx;
-  const commitments = new Array(polynomial.degree + 1);
-  for (const [index, coeff] of polynomial.coeffs.entries()) {
-    commitments[index] = await operate(coeff, generator);
-  }
-  return commitments;
-}
-
-
 export async function shareSecret<P extends Point>(
   ctx: Group<P>,
   secret: bigint,
@@ -114,7 +101,7 @@ export async function shareSecret<P extends Point>(
   }
   const polynomial = await Lagrange.interpolate(ctx, points);
   const secretShares = await computeSecretShares(polynomial, nrShares);
-  const commitments = await computeCommitments(ctx, polynomial);
+  const { commitments } = await polynomial.generateFeldmannCommitments()
   return new Distribution<P>(ctx, threshold, secretShares, polynomial, commitments);
 }
 
@@ -124,16 +111,10 @@ export async function verifySecretShare<P extends Point>(
   share: SecretShare<P>,
   commitments: P[],
 ): Promise<boolean> {
-  const { order, generator, neutral, operate, combine } = ctx;
-  const target = await operate(share.value, generator);
-  const { index: i } = share;
-  let acc = neutral;
-  for (const [j, comm] of commitments.entries()) {
-    const curr = await operate(mod(BigInt(i ** j), order), comm);
-    acc = await combine(acc, curr);
-  }
-  if (!(await acc.isEqual(target))) throw new Error(Messages.INVALID_SECRET_SHARE);
-  return true;
+  const { value: secret, index } = share;
+  const isValid = await verifyFeldmannCommitments(ctx, secret, index, commitments);
+  if (!isValid) throw new Error(Messages.INVALID_SECRET_SHARE);
+  return isValid;
 }
 
 
