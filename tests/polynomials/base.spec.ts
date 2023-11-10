@@ -1,9 +1,8 @@
-import { polynomials, backend } from '../src';
-import { Systems } from '../src/enums';
-import { BasePolynomial } from '../src/polynomials/base';
-import { Messages } from '../src/polynomials/enums';
-import { byteLen, randBigint } from '../src/utils';
-import { cartesian, trimZeroes } from './helpers';
+import { polynomials, backend } from '../../src';
+import { Systems } from '../../src/enums';
+import { BasePolynomial } from '../../src/polynomials/base';
+import { Messages } from '../../src/polynomials/enums';
+import { cartesian, trimZeroes } from '../helpers';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -28,7 +27,7 @@ const __small_orders = [2, 3, 4, 5, 6, 7];
 const __big_primes = Object.values(Systems).map((label) => backend.initGroup(label).order);
 
 
-describe('construction - coefficients smaller than order', () => {
+describe('Construction - coefficients smaller than order', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
@@ -42,7 +41,7 @@ describe('construction - coefficients smaller than order', () => {
 });
 
 
-describe('construction - coefficients greater than order', () => {
+describe('Construction - coefficients greater than order', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
@@ -56,8 +55,8 @@ describe('construction - coefficients greater than order', () => {
 });
 
 
-describe('construction errors', () => {
-  test('order not greater than one', async () => {
+describe('Construction errors', () => {
+  test('Order not greater than one', async () => {
     expect(() => { new BasePolynomial([], 1) }).toThrow(
       Messages.ORDER_MUST_BE_GT_ONE
     );
@@ -65,8 +64,8 @@ describe('construction errors', () => {
 });
 
 
-describe('equal polynomials', () => {
-  it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
+describe('Equal polynomials', () => {
+  it.each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
     [coeffs, degree], order
   ) => {
     const poly1 = new BasePolynomial(coeffs, order);
@@ -87,8 +86,8 @@ describe('equal polynomials', () => {
 });
 
 
-describe('non-equal polynomials', () => {
-  it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
+describe('Non-equal polynomials', () => {
+  it.each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
     [coeffs, degree], order
   ) => {
     const poly1 = new BasePolynomial(coeffs, order);
@@ -107,7 +106,7 @@ describe('non-equal polynomials', () => {
 });
 
 
-describe('zero polynomial', () => {
+describe('Zero polynomial', () => {
   it.each(__big_primes)('order: %s', async (order) => {
     const poly = BasePolynomial.zero({ order });
     expect(poly.coeffs).toEqual([]);
@@ -118,15 +117,15 @@ describe('zero polynomial', () => {
 });
 
 
-describe('errors', () => {
-  test('addition - different orders', async () => {
+describe('Algebraic operations errors', () => {
+  test('Addition error - different orders', async () => {
     const poly1 = new BasePolynomial([], 2);
     const poly2 = new BasePolynomial([], 3);
     expect(() => poly1.add(poly2)).toThrow(
       Messages.DIFFERENT_ORDERS_CANNOT_ADD
     );
   });
-  test('multiplication - different orders', async () => {
+  test('Multiplication error - different orders', async () => {
     const poly1 = new BasePolynomial([], 2);
     const poly2 = new BasePolynomial([], 3);
     expect(() => poly1.mult(poly2)).toThrow(
@@ -136,7 +135,7 @@ describe('errors', () => {
 });
 
 
-describe('addition - fixed polynomials small order', () => {
+describe('Addition', () => {
   it.each(cartesian([
     [
       [[1, 2, 3, 4], [],                    [1, 2, 3, 4]],
@@ -159,7 +158,7 @@ describe('addition - fixed polynomials small order', () => {
 });
 
 
-describe('multiplication - fixed polynomials small order', () => {
+describe('Multiplication', () => {
   it.each(cartesian([
     [
       [[1, 2, 3, 4], [],                    []],
@@ -182,7 +181,7 @@ describe('multiplication - fixed polynomials small order', () => {
 });
 
 
-describe('scalar multiplication - fixed polynomials small order', () => {
+describe('Scalar multiplication', () => {
   it.each(cartesian([
     [
       [],
@@ -209,7 +208,7 @@ describe('scalar multiplication - fixed polynomials small order', () => {
 });
 
 
-describe('evaluation - fixed polynomials small order', () => {
+describe('Evaluation', () => {
   it.each(cartesian([
     [
       [],
