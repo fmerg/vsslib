@@ -3,20 +3,18 @@ import { byteLen, randBigint } from '../utils';
 import { Label } from '../types';
 import { Point } from '../backend/abstract'
 import { BasePolynomial } from './base';
-import { XYPoint, Polynomial, Lagrange } from './core';
+import { Polynomial } from './core';
+import { LagrangePolynomial, XYPoint } from './lagrange';
 
 const backend = require('../backend');
+const lagrange = require('./lagrange');
 
 export {
   XYPoint,
-  Lagrange,
+  LagrangePolynomial,
   Polynomial,
   BasePolynomial,
-}
-
-export const interpolate = (points: XYPoint[], opts: { label: Label }): Lagrange<Point> => {
-  const ctx = backend.initGroup(opts.label);
-  return new Lagrange(ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)]));
+  lagrange,
 }
 
 export const randomPolynomial = async (opts: { degree: number, label: Label }): Promise<Polynomial<Point>> => {
