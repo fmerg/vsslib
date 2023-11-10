@@ -2,8 +2,6 @@ import { Point, Group } from '../backend/abstract';
 import { BasePolynomial } from './base';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
-import { Label } from '../types';
-import { byteLen, randBigint } from '../utils';
 
 
 const __0n = BigInt(0);
@@ -28,21 +26,20 @@ export class Polynomial<P extends Point> extends BasePolynomial {
   }
 
   async generateFeldmannCommitments(): Promise<P[]> {
-    const { operate, generator } = this.ctx;
-    const commitments = new Array(this.degree + 1);
-    for (const [index, coeff] of this.coeffs.entries()) {
+    const { coeffs, degree, ctx: { operate, generator }} = this;
+    const commitments = new Array(degree + 1);
+    for (const [index, coeff] of coeffs.entries()) {
       commitments[index] = await operate(coeff, generator);
     }
     return commitments;
   }
 
   async generatePedersenCommitments(h: P): Promise<{ commitments: P[], bs: bigint[] }>{
-    const degree = this.degree;
-    const { generator: g, combine, operate } = this.ctx;
-    const polynomial2 = await Polynomial.random(this.ctx, this.degree);
+    const { coeffs, degree, ctx: { generator: g, combine, operate }} = this;
+    const polynomial2 = await Polynomial.random(this.ctx, degree);
     const commitments = new Array(degree + 1);
     const bs = new Array(degree + 1);
-    for (const [i, a] of this.coeffs.entries()) {
+    for (const [i, a] of coeffs.entries()) {
       const b = polynomial2.coeffs[i];
       commitments[i] = await combine(
         await operate(a, g),

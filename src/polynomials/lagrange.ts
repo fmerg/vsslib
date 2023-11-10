@@ -2,10 +2,6 @@ import { Polynomial } from './core';
 import { Point, Group } from '../backend/abstract';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
-import { byteLen, randBigint } from '../utils';
-import { Label } from '../types';
-const backend = require('../backend');
-
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -14,9 +10,9 @@ export type XYTuple = [bigint, bigint] | [number, number];
 
 
 export class Lagrange<P extends Point> extends Polynomial<P> {
-  _xs: bigint[];
-  _ys: bigint[];
-  _ws: bigint[];
+  xs: bigint[];
+  ys: bigint[];
+  ws: bigint[];
 
   constructor(ctx: Group<P>, points: [bigint, bigint][]) {
     const k = points.length
@@ -46,9 +42,8 @@ export class Lagrange<P extends Point> extends Polynomial<P> {
       }
       let wj;
       try { wj = modInv(w, order); } catch (err: any) {
-        if (err.message == utilMessages.INVERSE_NOT_EXISTS) throw new Error(
-          Messages.INTERPOLATION_NON_DISTINCT_XS
-        );
+        if (err.message == utilMessages.INVERSE_NOT_EXISTS)
+          throw new Error(Messages.INTERPOLATION_NON_DISTINCT_XS);
         else throw err;
       }
       xs[j] = xj;
@@ -58,9 +53,9 @@ export class Lagrange<P extends Point> extends Polynomial<P> {
       coeffs = coeffs.map((c, i) => c + fj * pj[i]);
     }
     super(ctx, coeffs);
-    this._xs = xs;
-    this._ys = ys;
-    this._ws = ws;
+    this.xs = xs;
+    this.ys = ys;
+    this.ws = ws;
   }
 
   static async interpolate<Q extends Point>(ctx: Group<Q>, points: XYTuple[]): Promise<Lagrange<Q>> {
@@ -68,7 +63,7 @@ export class Lagrange<P extends Point> extends Polynomial<P> {
   }
 
   evaluate = (value: bigint | number): bigint => {
-    const { _xs: xs, _ys: ys, _ws: ws, _order: order } = this;
+    const { xs, ys, ws, order } = this;
     const x = BigInt(value);
     let [a, b, c] = [__0n, __0n, __0n];
     for (let i = 0; i < xs.length; i++) {
