@@ -3,7 +3,8 @@ import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
 import { leInt2Buff, leBuff2Int } from '../src/utils';
 import { LinearRelation, DlogPair, DDHTuple } from '../src/sigma';
-import { XYPoint, BasePolynomial } from '../src/polynomials';
+import { BasePolynomial } from '../src/polynomials/base';
+import { XYTuple } from '../src/polynomials/lagrange'
 import { Permutation, PowerSet } from "js-combinatorics";
 
 const utils = require('../src/utils');
@@ -56,7 +57,7 @@ export const trimZeroes = (arr: number[]): number[] => {
 
 /** Textbook polynomials interpolation. Number of points must not exceed order.
  */
-export const interpolate = (points: XYPoint[], opts: { order: bigint }): BasePolynomial => {
+export const interpolate = (points: XYTuple[], opts: { order: bigint }): BasePolynomial => {
   const order = BigInt(opts.order);
   const castPoints = points.map(([x, y]) => [BigInt(x), BigInt(y)]);
   let poly = BasePolynomial.zero({ order });

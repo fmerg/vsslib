@@ -2,8 +2,8 @@ import { Point, Group } from '../backend/abstract';
 import { BasePolynomial } from './base';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
+import { Label } from '../types';
 import { byteLen, randBigint } from '../utils';
-const backend = require('../backend');
 
 
 const __0n = BigInt(0);
@@ -17,6 +17,15 @@ export class Polynomial<P extends Point> extends BasePolynomial {
     this.ctx = ctx;
   }
 
+  static async random<Q extends Point>(ctx: Group<Q>, degree: number): Promise<Polynomial<Q>> {
+    if (degree < 0) throw new Error(Messages.DEGREE_MUST_BE_GE_ZERO)
+    const { randomScalar } = ctx;
+    const coeffs = new Array(degree + 1);
+    for (let i = 0; i < coeffs.length; i++) {
+      coeffs[i] = await randomScalar();
+    }
+    return new Polynomial(ctx, coeffs);
+  }
 
   async generateFeldmannCommitments(): Promise<P[]> {
     const { operate, generator } = this.ctx;
@@ -29,13 +38,8 @@ export class Polynomial<P extends Point> extends BasePolynomial {
 
   async generatePedersenCommitments(h: P): Promise<{ commitments: P[], bs: bigint[] }>{
     const degree = this.degree;
-    const { order, generator: g, combine, operate } = this.ctx;
-    const coeffs = new Array(degree + 1);
-    const nrBytes = byteLen(order);
-    for (let i = 0; i < coeffs.length; i++) {
-      coeffs[i] = await randBigint(nrBytes);
-    }
-    const polynomial2 = new Polynomial(this.ctx, coeffs);
+    const { generator: g, combine, operate } = this.ctx;
+    const polynomial2 = await Polynomial.random(this.ctx, this.degree);
     const commitments = new Array(degree + 1);
     const bs = new Array(degree + 1);
     for (const [i, a] of this.coeffs.entries()) {

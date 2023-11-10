@@ -1,6 +1,6 @@
 import { polynomials, backend } from '../src';
 import { Systems } from '../src/enums';
-import { BasePolynomial } from '../src/polynomials';
+import { BasePolynomial } from '../src/polynomials/base';
 import { Messages } from '../src/polynomials/enums';
 import { byteLen, randBigint } from '../src/utils';
 import { cartesian, trimZeroes } from './helpers';

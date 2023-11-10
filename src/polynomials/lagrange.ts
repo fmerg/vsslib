@@ -78,9 +78,9 @@ export class LagrangePolynomial<P extends Point> extends Polynomial<P> {
   }
 }
 
-export type XYPoint = [bigint | number, bigint | number];
+export type XYTuple = [bigint, bigint] | [number, number];
 
-export const interpolate = (points: XYPoint[], opts: { label: Label }): LagrangePolynomial<Point> => {
+export const interpolate = (points: XYTuple[], opts: { label: Label }): LagrangePolynomial<Point> => {
   const ctx = backend.initGroup(opts.label);
   return new LagrangePolynomial(ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)]));
 }

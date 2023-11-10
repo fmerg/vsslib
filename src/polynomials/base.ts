@@ -39,17 +39,6 @@ export class BasePolynomial {
     return new BasePolynomial([], opts.order);
   }
 
-  static random = async (opts: { degree: number, order: bigint | number }): Promise<BasePolynomial> => {
-    const { degree, order } = opts;
-    if (degree < 0) throw new Error(Messages.DEGREE_MUST_BE_GE_ZERO)
-    const coeffs = new Array(degree + 1);
-    const nrBytes = byteLen(BigInt(order));
-    for (let i = 0; i < coeffs.length; i++) {
-      coeffs[i] = await randBigint(nrBytes);
-    }
-    return new BasePolynomial(coeffs, order);
-  }
-
   hasEqualCoeffs = (other: BasePolynomial): boolean => {
     const minDegree = Math.min(this.degree, other.degree);
     let index = 0;
