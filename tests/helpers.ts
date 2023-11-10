@@ -1,16 +1,7 @@
 import { Point, Group } from '../src/backend/abstract';
 import { Systems, Algorithms } from '../src/enums';
 import { Algorithm } from '../src/types';
-import { leInt2Buff, leBuff2Int } from '../src/utils';
-import { LinearRelation, DlogPair, DDHTuple } from '../src/sigma';
-import { XYPoint, Polynomial } from '../src/lagrange';
 import { Permutation, PowerSet } from "js-combinatorics";
-
-const utils = require('../src/utils');
-
-const __0n = BigInt(0);
-const __1n = BigInt(1);
-
 
 /** Powerset of the provided collection **/
 export const powerSet = (array: any[]): any[] => [...PowerSet.of(array)];
@@ -51,30 +42,4 @@ export const trimZeroes = (arr: number[]): number[] => {
     while (arr[len - 1] == 0) len--;
   }
   return arr.slice(0, len);
-}
-
-
-/** Textbook lagrange interpolation. Number of points must not exceed order.
- */
-export const interpolate = (points: XYPoint[], opts: { order: bigint }): Polynomial => {
-  const order = BigInt(opts.order);
-  const castPoints = points.map(([x, y]) => [BigInt(x), BigInt(y)]);
-  let poly = Polynomial.zero({ order });
-  for (let j = 0; j < castPoints.length; j++) {
-    const [xj, yj] = castPoints[j];
-    let w = __1n;
-    let pj = new Polynomial([__1n], order);
-    for (let i = 0; i < castPoints.length; i++) {
-      if (i !== j) {
-        const [xi, _] = castPoints[i];
-        w *= xj - xi;
-        pj = pj.mult(new Polynomial([-xi, __1n], order))
-      }
-    }
-    const wInv = utils.modInv(w, order);
-    pj = pj.multScalar(yj * wInv)
-    poly = poly.add(pj);
-  }
-
-  return poly;
 }

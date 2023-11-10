@@ -1,21 +1,22 @@
-import { Polynomial } from './base';
+import { Polynomial } from './core';
+import { Point, Group } from '../backend/abstract';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
-
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 
+export type XYTuple = [bigint, bigint] | [number, number];
 
-export type XYPoint = [bigint | number, bigint | number];
 
-export class Lagrange extends Polynomial {
-  _xs: bigint[];
-  _ys: bigint[];
-  _ws: bigint[];
+export class Lagrange<P extends Point> extends Polynomial<P> {
+  xs: bigint[];
+  ys: bigint[];
+  ws: bigint[];
 
-  constructor(points: [bigint, bigint][], order: bigint) {
+  constructor(ctx: Group<P>, points: [bigint, bigint][]) {
     const k = points.length
+    const { order } = ctx;
     if (k > order) throw new Error(Messages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER);
     const xs = new Array(k);
     const ys = new Array(k);
@@ -41,9 +42,8 @@ export class Lagrange extends Polynomial {
       }
       let wj;
       try { wj = modInv(w, order); } catch (err: any) {
-        if (err.message == utilMessages.INVERSE_NOT_EXISTS) throw new Error(
-          Messages.INTERPOLATION_NON_DISTINCT_XS
-        );
+        if (err.message == utilMessages.INVERSE_NOT_EXISTS)
+          throw new Error(Messages.INTERPOLATION_NON_DISTINCT_XS);
         else throw err;
       }
       xs[j] = xj;
@@ -52,15 +52,18 @@ export class Lagrange extends Polynomial {
       const fj = yj * wj;
       coeffs = coeffs.map((c, i) => c + fj * pj[i]);
     }
-    super(coeffs, order);
-    this._xs = xs;
-    this._ys = ys;
-    this._ws = ws;
+    super(ctx, coeffs);
+    this.xs = xs;
+    this.ys = ys;
+    this.ws = ws;
   }
 
+  static async interpolate<Q extends Point>(ctx: Group<Q>, points: XYTuple[]): Promise<Lagrange<Q>> {
+    return new Lagrange(ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)]));
+  }
 
   evaluate = (value: bigint | number): bigint => {
-    const { _xs: xs, _ys: ys, _ws: ws, _order: order } = this;
+    const { xs, ys, ws, order } = this;
     const x = BigInt(value);
     let [a, b, c] = [__0n, __0n, __0n];
     for (let i = 0; i < xs.length; i++) {

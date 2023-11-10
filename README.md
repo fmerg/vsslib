@@ -78,7 +78,7 @@ const plaintext = await combiner.decrypt(ciphertext, shares);
 - [`vsslib.core`](./src/core)
 - [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.key`](./src/key)
-- [`vsslib.lagrange`](./src/lagrange)
+- [`vsslib.polynomials`](./src/polynomials)
 - [`vsslib.shamir`](./src/shamir)
 - [`vsslib.sigma`](./src/sigma)
 - [`vsslib.utils`](./src/utils)
