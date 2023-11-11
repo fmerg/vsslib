@@ -5,7 +5,7 @@ import { PartialDecryptor } from '../types';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
 import { Ciphertext } from '../elgamal/core';
-import { computeLambda } from '../shamir/common';
+import { computeLambda } from '../shamir';
 import { Share } from '../types';
 
 const shamir = require('../shamir');

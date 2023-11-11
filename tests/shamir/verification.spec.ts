@@ -1,5 +1,5 @@
 import { shamir, backend } from '../../src';
-import { SecretShare, PointShare, Distribution } from '../../src/shamir/common';
+import { SecretShare, PointShare, Distribution } from '../../src/shamir';
 import { Point } from '../../src/backend/abstract';
 
 

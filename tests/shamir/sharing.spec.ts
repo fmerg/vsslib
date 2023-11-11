@@ -1,5 +1,6 @@
 import { shamir, elgamal, backend } from '../../src';
-import { Messages } from '../../src/shamir/enums';
+import { Share } from '../../src/types';
+import { Point } from '../../src/backend/abstract';
 
 
 const thresholdParams = [
@@ -20,19 +21,25 @@ const thresholdParams = [
   [5, 5],
 ];
 
+function selectShare<T>(index: number, shares: Share<T>[]): Share<T> {
+  const selected = shares.filter(share => share.index == index)[0];
+  if (!selected) throw new Error(`No share with index ${index}`);
+  return selected;
+}
+
 
 describe('Sharing parameter errors', () => {
   const ctx = backend.initGroup('ed25519');
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
     await expect(shamir.shareSecret(ctx, secret, 1, 2)).rejects.toThrow(
-      Messages.THRESHOLD_EXCEEDS_NR_SHARES
+      'Threshold exceeds number of shares'
     );
   });
   test('Threshold is < 1', async () => {
     const secret = await ctx.randomScalar();
     await expect(shamir.shareSecret(ctx, secret, 1, 0)).rejects.toThrow(
-      Messages.THRESHOLD_NOT_GE_ONE
+      'Threshold must be >= 1'
     );
   });
   test('Number of predefined shares exceeds threshold', async () => {
@@ -41,7 +48,7 @@ describe('Sharing parameter errors', () => {
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
-      Messages.NR_GIVEN_SHARES_GT_THRESHOLD
+      'Number of given shares exceeds threshold'
     );
   });
 })
@@ -62,9 +69,9 @@ describe('Sharing without predefined shares', () => {
     expect(publicShares.length).toEqual(n);
     const { operate, generator } = ctx;
     for (let index = 1; index < nrShares; index++) {
-      const { value: secret } = shamir.selectShare(index, secretShares);
-      const { value: pub } = shamir.selectShare(index, publicShares);
-      expect(await pub.isEqual(await operate(secret, generator))).toBe(true);
+      const { value: secret } = selectShare(index, secretShares);
+      const { value: pub } = selectShare(index, publicShares);
+      expect(await (pub as Point).isEqual(await operate(secret, generator))).toBe(true);
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
@@ -94,14 +101,14 @@ describe('Sharing with predefined shares', () => {
       expect(publicShares.length).toEqual(n);
       expect(polynomial.evaluate(0)).toEqual(secret);
       for (let index = 1; index <= nrGivenShares; index++) {
-        const { value } = shamir.selectShare(index, secretShares);
+        const { value } = selectShare(index, secretShares);
         expect(value).toEqual(givenShares[index - 1]);
       }
       const { operate, generator } = ctx;
       for (let index = 1; index < nrShares; index++) {
-        const { value: secret } = shamir.selectShare(index, secretShares);
-        const { value: pub } = shamir.selectShare(index, publicShares);
-        expect(await pub.isEqual(await operate(secret, generator))).toBe(true);
+        const { value: secret } = selectShare(index, secretShares);
+        const { value: pub } = selectShare(index, publicShares);
+        expect(await (pub as Point).isEqual(await operate(secret, generator))).toBe(true);
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);
