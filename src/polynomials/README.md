@@ -68,9 +68,10 @@ const verified = await verifyFeldmannCommitments(ctx, secret, index, commitments
 ## Pedersen commitments
 
 ```js
-const pub = await ctx.randomPoint();
+const hPub = await ctx.randomPoint();
+const nr = 7;
 
-const { commitments, bindings } = await polynomial.generatePedersenCommitments(pub);
+const { commitments, bindings } = await polynomial.generatePedersenCommitments(nr, hPub);
 ```
 
 ```js
@@ -82,5 +83,5 @@ const binding = bindings[index];
 ```js
 import { verifyPedersenCommitments } from 'vsslib/polynomials';
 
-const verified = await verifyPedersenCommitments(ctx, secret, binding, index, pub, commitments);
+const verified = await verifyPedersenCommitments(ctx, secret, binding, index, hPub, commitments);
 ```

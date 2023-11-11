@@ -34,13 +34,18 @@ export class Polynomial<P extends Point> extends BasePolynomial {
     return { commitments };
   }
 
-  async generatePedersenCommitments(pub?: P): Promise<{ bindings: bigint[], pub: P, commitments: P[] }>{
+  async generatePedersenCommitments(nr: number, hPub?: P): Promise<{
+    bindings: bigint[],
+    hPub: P,
+    commitments: P[],
+  }> {
     const { coeffs, degree, ctx: { generator: g, combine, operate }} = this;
     const bindingPolynomial = await Polynomial.random(this.ctx, degree);
     const commitments = new Array(degree + 1);
     const bindings = new Array(degree + 1);
-    const h = pub || await this.ctx.randomPoint();
+    const h = hPub || await this.ctx.randomPoint();
     for (const [i, a] of coeffs.entries()) {
+      const a = coeffs[i];
       const b = bindingPolynomial.coeffs[i];
       commitments[i] = await combine(
         await operate(a, g),
@@ -48,7 +53,10 @@ export class Polynomial<P extends Point> extends BasePolynomial {
       );
       bindings[i] = await bindingPolynomial.evaluate(i);
     }
-    return { bindings, pub: h, commitments };
+    for (let j = coeffs.length; j <= nr; j++) {
+      bindings[j] = await bindingPolynomial.evaluate(j);
+    }
+    return { bindings, hPub: h, commitments };
   }
 }
 

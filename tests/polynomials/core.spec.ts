@@ -110,9 +110,10 @@ describe('Pedersen commitments - success', () => {
   const degrees = [0, 1, 2, 3, 4, 5];
   it.each(cartesian([__labels, degrees]))('degree %s over %s', async (label, degree) => {
     const ctx = backend.initGroup(label);
-    const pub = await ctx.randomPoint();
+    const hPub = await ctx.randomPoint();
     const polynomial = await Polynomial.random(ctx, degree);
-    const { commitments, bindings } = await polynomial.generatePedersenCommitments(pub);
+    const nr = degree + 3;
+    const { commitments, bindings } = await polynomial.generatePedersenCommitments(nr, hPub);
     for (const [index, binding] of bindings.entries()) {
       const secret = await polynomial.evaluate(index);
       const isValid = await verifyPedersenCommitments(
@@ -120,7 +121,7 @@ describe('Pedersen commitments - success', () => {
         secret,
         binding,
         index,
-        pub,
+        hPub,
         commitments,
       );
       expect(isValid).toBe(true);
@@ -131,9 +132,10 @@ describe('Pedersen commitments - success', () => {
 
 test('Pedersen commitments - failure', async () => {
   const ctx = backend.initGroup('ed25519');
-  const pub = await ctx.randomPoint();
+  const hPub = await ctx.randomPoint();
   const polynomial = await Polynomial.random(ctx, 3);
-  const { commitments, bindings } = await polynomial.generatePedersenCommitments(pub);
+  const nr = polynomial.degree + 3;
+  const { commitments, bindings } = await polynomial.generatePedersenCommitments(nr, hPub);
   for (const [index, binding] of bindings.entries()) {
     const secret = await ctx.randomScalar();
     const isValid = await verifyPedersenCommitments(
@@ -141,7 +143,7 @@ test('Pedersen commitments - failure', async () => {
       secret,
       binding,
       index,
-      pub,
+      hPub,
       commitments,
     );
     expect(isValid).toBe(false);
