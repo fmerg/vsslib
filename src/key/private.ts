@@ -3,7 +3,8 @@ import { Ciphertext } from '../elgamal/core';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
-import { SecretShare, PartialDecryptor } from '../shamir';
+import { SecretShare } from '../shamir';
+import { PartialDecryptor } from '../types';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
@@ -120,14 +121,16 @@ export class PrivateKey<P extends Point> {
   }
 
   async distribute(opts: { nrShares: number, threshold: number }): Promise<KeyDistribution<P>> {
+    // TODO: Comply with distribution interface
     const { nrShares, threshold } = opts;
     const { ctx, scalar: secret } = this;
-    const { secretShares, polynomial, commitments } = await shamir.shareSecret(
-      ctx, secret, nrShares, threshold
-    );
+    const distribution = await shamir.shareSecret(ctx, secret, nrShares, threshold);
+    const { polynomial } = distribution;
+    const secretShares = await distribution.getSecretShares();
     const privateShares = secretShares.map(
       ({ value, index }: SecretShare<P>) => new PrivateShare(ctx, value, index)
     );
+    const { commitments } = await distribution.getFeldmannCommitments();
     return new KeyDistribution(threshold, privateShares, polynomial, commitments);
   }
 
@@ -175,9 +178,14 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
     return new PublicShare(ctx, point, index);
   }
 
-  async generatePartialDecryptor(ciphertext: Ciphertext<P>): Promise<PartialDecryptor<P>> {
+  async generatePartialDecryptor(
+    ciphertext: Ciphertext<P>,
+    opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
+  ): Promise<PartialDecryptor<P>> {
     const { ctx, scalar: value, index } = this;
-    return await shamir.generatePartialDecryptor(ctx, ciphertext, { value, index });
+    const decryptor = await elgamal.generateDecryptor(ctx, value, ciphertext);
+    const proof = await elgamal.proveDecryptor(ctx, ciphertext, value, decryptor, opts);
+    return { value: decryptor, index, proof}
   }
 };
 
@@ -199,7 +207,7 @@ export class KeyDistribution<P extends Point> {
     this.commitments = commitments;
   }
 
-  publicShares = async (): Promise<PublicShare<P>[]> => {
+  getPublicShares = async (): Promise<PublicShare<P>[]> => {
     const shares = [];
     for (const [index, privateShare] of this.privateShares.entries()) {
       shares.push(await privateShare.publicShare());

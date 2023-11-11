@@ -2,9 +2,8 @@
 
 ```js
 const { shamir, backend } = require('vsslib');
-const ctx = backend.initGroup('ed25519');
 
-const { secret, point: pub } = await ctx.generateKeypair();
+const ctx = backend.initGroup('ed25519');
 ```
 
 ```js
@@ -14,81 +13,65 @@ const secret = await ctx.randomScalar();
 ## Secret sharing
 
 ```js
-const distribution = await shamir.shareSecret(ctx, secret, 5, 3);
+const n = 5;
+const t = 3
+
+const distribution = await shamir.shareSecret(ctx, secret, n, t);
 ```
 
 ```js
-const { threshold, secretShares, polynomial, commitments } = distribution;
+const { nrShares, threshold, polynomial } = distribution;
 ```
 
 ```js
-const publicShares = await distribution.publicShares();
+const secretShares = await distribution.getSecretShares();
 ```
 
-### Share verification
-
 ```js
-await shamir.verifySecretShare(ctx, share, commitments);
+const publicShares = await distribution.getPublicShares();
 ```
 
-## Secret reconstruction
+## Share verification
+
+### Feldmann VSS scheme
 
 ```js
-const qualifiedShares = secretShares.slice(0, 3);
+const commitments = await distribution.getFeldmannCommitments();
+```
+
+```js
+const verified = await shamir.verifySecretShare(ctx, secretShare, commitments);
+```
+
+### Pedersen VSS scheme
+
+```js
+const hPub = await ctx.randomPoint();
+```
+
+```js
+const { bindings, commitments } = await distribution.getPedersenCommitments(hPub);
+```
+
+```js
+const index = { secretShare };
+const binding = bindings[index];
+```
+
+```js
+const verified = await shamir.verifySecretShare(ctx, secretShare, commitments, { binding, hPub });
+```
+
+## Reconstruction
+
+```js
+const qualifiedShares = secretShares.slice(0, threshold);
 
 const reconstructed = await shamir.reconstructSecret(ctx, qualifiedShares);
 ```
 
-## Public reconstruction
-
 ```js
-const qualifiedShares = publicShares.slice(0, 3);
+const qualifiedShares = publicShares.slice(0, threshold);
 
 const reconstructed = await shamir.reconstructPublic(ctx, qualifiedShares);
-```
-
-
-## Threshold decryption
-
-```js
-const message = await ctx.randomPoint();
-
-const { ciphertext } = await ctx.encrypt(message, pub);
-```
-
-### Partial decryptors
-
-```js
-const partialDecryptor = await shamir.generatePartialDecryptor(ctx, ciphertext, share);
-```
-
-```js
-const publicShare = shamir.selectShare(publicShares);
-
-await shamir.verifyPartialDecryptor(ctx, ciphertext, publicShare, partialDecryptor);
-```
-
-### Partial decryptor validation
-
-```js
-const { flag, indexes } = await shamir.verifyPartialDecryptors(
-  ctx, ciphertext, publicShares, partialDecryptors
-);
-```
-
-### Decryptor reconstruction
-
-```js
-const decryptor = await shamir.reconstructDecryptor(ctx, partialDecryptors);
-```
-
-### Decryption
-
-
-```js
-const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors);
-```
-
-```js
-const plaintext = await shamir.decrypt(ctx, ciphertext, partialDecryptors, { threshold, publicShares });
 ```

@@ -1,4 +1,6 @@
 import { Modular, Elliptic, Algorithms, Encodings } from './enums';
+import { Point } from './backend/abstract';
+import { SigmaProof } from './sigma';
 
 
 export type Label =
@@ -22,3 +24,25 @@ export type Encoding =
   | Encodings.HEX
   | Encodings.BASE64;
 
+
+export abstract class Share<T> {
+  value: T;
+  index: number;
+
+  constructor(value: T, index: number) {
+    this.value = value;
+    this.index = index;
+  }
+}
+
+export class PartialDecryptor<P extends Point> implements Share<P> {
+  value: P;
+  index: number;
+  proof: SigmaProof<P>;
+
+  constructor(value: P, index: number, proof: SigmaProof<P>) {
+    this.value = value;
+    this.index = index;
+    this.proof = proof;
+  }
+};

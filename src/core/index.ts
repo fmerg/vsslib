@@ -1,11 +1,12 @@
 import { Point, Group } from '../backend/abstract';
 import { Label } from '../types';
 import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../key';
-import { PartialDecryptor } from '../shamir';
+import { PartialDecryptor } from '../types';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
 import { Ciphertext } from '../elgamal/core';
-import { Share } from '../shamir/common';
+import { computeLambda } from '../shamir';
+import { Share } from '../types';
 
 const shamir = require('../shamir');
 const elgamal = require('../elgamal');
@@ -103,19 +104,36 @@ export class Combiner<P extends Point> {
 
   async reconstructDecryptor(
     shares: PartialDecryptor<P>[],
-    opts?: { threshold?: number, skipThreshold?: boolean },
+    opts?: { threshold?: number, skipThreshold?: boolean, publicShares?: PublicShare<P>[]},
   ): Promise<P> {
     this.validateNrShares(shares, opts);
-    return shamir.reconstructDecryptor(this.ctx, shares);
+    const { order, neutral, operate, combine } = this.ctx;
+    const qualifiedIndexes = shares.map(share => share.index);
+    let acc = neutral;
+    for (const share of shares) {
+      const { value, index } = share;
+      const lambda = computeLambda(index, qualifiedIndexes, order);
+      const curr = await operate(lambda, value);
+      acc = await combine(acc, curr);
+    }
+    return acc;
   }
 
   async decrypt(
     ciphertext: Ciphertext<P>,
     shares: PartialDecryptor<P>[],
-    opts?: { threshold?: number, skipThreshold?: boolean },
+    opts?: { threshold?: number, skipThreshold?: boolean, publicShares?: PublicShare<P>[] },
   ): Promise<P> {
     this.validateNrShares(shares, opts);
-    return shamir.decrypt(this.ctx, ciphertext, shares);
+    const publicShares = opts ? opts.publicShares : undefined;
+    if (publicShares) {
+      const { flag, indexes } = await this.validatePartialDecryptors(
+        ciphertext, publicShares, shares
+      );
+      if (!flag) throw new Error('Invalid partial decryptor detected');
+    }
+    const decryptor = await this.reconstructDecryptor(shares, opts);
+    return elgamal.decrypt(this.ctx, ciphertext, { decryptor });
   }
 }
 

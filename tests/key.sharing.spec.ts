@@ -19,7 +19,7 @@ test('Key distribution and reconstruction', async () => {
   const t = 3;
   const distribution = await privateKey.distribute({ nrShares: n, threshold: t });
   const { threshold, privateShares, polynomial, commitments } = distribution;
-  const publicShares = await distribution.publicShares();
+  const publicShares = await distribution.getPublicShares();
   expect(threshold).toEqual(t);
   expect(privateShares.length).toEqual(n);
   expect(publicShares.length).toEqual(n);
@@ -53,8 +53,8 @@ describe('Threshold decryption', () => {
     const n = 3;
     const t = 2;
     const distribution = await privateKey.distribute({ nrShares: n, threshold: t });
-    const { threshold, privateShares, polynomial, commitments } = distribution;
-    const publicShares = await distribution.publicShares();
+    const { threshold, privateShares, polynomial } = distribution;
+    const publicShares = await distribution.getPublicShares();
 
     const ctx = backend.initGroup(label);
     const message = await ctx.randomPoint();
