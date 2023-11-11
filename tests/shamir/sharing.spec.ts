@@ -1,5 +1,5 @@
-import { shamir, elgamal, backend } from '../src';
-import { Messages } from '../src/shamir/enums';
+import { shamir, elgamal, backend } from '../../src';
+import { Messages } from '../../src/shamir/enums';
 
 
 const thresholdParams = [
@@ -21,7 +21,7 @@ const thresholdParams = [
 ];
 
 
-describe('Setup errors', () => {
+describe('Sharing parameter errors', () => {
   const ctx = backend.initGroup('ed25519');
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
@@ -47,7 +47,7 @@ describe('Setup errors', () => {
 })
 
 
-describe('Setup without predefined shares', () => {
+describe('Sharing without predefined shares', () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const label = 'ed25519';
     const ctx = backend.initGroup(label);
@@ -68,13 +68,13 @@ describe('Setup without predefined shares', () => {
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
-    const { commitments } = await distribution.generateCommitments();
+    const { commitments } = await distribution.getFeldmannCommitments();
     expect(commitments.length).toEqual(t);
   });
 });
 
 
-describe('Setup with predefined shares', () => {
+describe('Sharing with predefined shares', () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const label = 'ed25519';
     const ctx = backend.initGroup(label);
@@ -105,7 +105,7 @@ describe('Setup with predefined shares', () => {
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);
-      const { commitments } = await distribution.generateCommitments();
+      const { commitments } = await distribution.getFeldmannCommitments();
       expect(commitments.length).toEqual(t);
     }
   });

@@ -130,7 +130,7 @@ export class PrivateKey<P extends Point> {
     const privateShares = secretShares.map(
       ({ value, index }: SecretShare<P>) => new PrivateShare(ctx, value, index)
     );
-    const { commitments } = await distribution.generateCommitments();
+    const { commitments } = await distribution.getFeldmannCommitments();
     return new KeyDistribution(threshold, privateShares, polynomial, commitments);
   }
 

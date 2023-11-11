@@ -35,7 +35,8 @@ export async function shareSecret<P extends Point>(
   if (threshold > nrShares) throw new Error(Messages.THRESHOLD_EXCEEDS_NR_SHARES);
   if (threshold < 1) throw new Error (Messages.THRESHOLD_NOT_GE_ONE);
   if (threshold <= givenShares.length) throw new Error(Messages.NR_GIVEN_SHARES_GT_THRESHOLD)
-  const polynomial = await Lagrange.interpolate(ctx, await generatePoints());
+  const points = await generatePoints();
+  const polynomial = await Lagrange.interpolate(ctx, points);
   return new Distribution<P>(ctx, nrShares, threshold, polynomial);
 }
 
@@ -44,11 +45,14 @@ export async function verifySecretShare<P extends Point>(
   ctx: Group<P>,
   share: SecretShare<P>,
   commitments: P[],
+  extras?: { binding: bigint, hPub: P },
 ): Promise<boolean> {
   const { value: secret, index } = share;
-  const isValid = await verifyFeldmannCommitments(ctx, secret, index, commitments);
-  if (!isValid) throw new Error(Messages.INVALID_SECRET_SHARE);
-  return isValid;
+  if (extras) {
+    const { binding, hPub } = extras;
+    return verifyPedersenCommitments(ctx, secret, binding, index, hPub, commitments);
+  }
+  return verifyFeldmannCommitments(ctx, secret, index, commitments);
 }
 
 

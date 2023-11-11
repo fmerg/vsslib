@@ -66,8 +66,17 @@ export class Distribution<P extends Point> {
     return shares;
   }
 
-  generateCommitments = async (): Promise<{ commitments: P[] }> => {
+  getFeldmannCommitments = async (): Promise<{ commitments: P[] }> => {
     return this.polynomial.generateFeldmannCommitments();
+  }
+
+  getPedersenCommitments = async (hPub?: P): Promise<{
+    bindings: bigint[],
+    hPub: P,
+    commitments: P[],
+  }> => {
+    const { ctx, nrShares, polynomial } = this;
+    return polynomial.generatePedersenCommitments(nrShares, hPub || await ctx.randomPoint());
   }
 };
 
