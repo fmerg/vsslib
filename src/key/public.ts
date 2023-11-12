@@ -1,9 +1,9 @@
 import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
-import { Label } from '../types';
+import { Label } from '../common';
 import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
-import { PartialDecryptor } from '../types';
+import { PartialDecryptor } from '../common';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
@@ -104,10 +104,12 @@ export interface SerializedPublicShare extends SerializedPublicKey {
 
 
 export class PublicShare<P extends Point> extends PublicKey<P> {
+  value: P;
   index: number;
 
   constructor(ctx: Group<P>, point: P, index: number) {
     super(ctx, point);
+    this.value = point;
     this.index = index;
   }
 

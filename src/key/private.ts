@@ -3,9 +3,9 @@ import { Ciphertext } from '../elgamal/core';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
-import { SecretShare } from '../shamir';
-import { PartialDecryptor } from '../types';
-import { Label } from '../types';
+import { ScalarShare } from '../shamir';
+import { BaseDistribution, PartialDecryptor } from '../common';
+import { Label, BaseShare } from '../common';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
 
@@ -62,11 +62,6 @@ export class PrivateKey<P extends Point> {
     );
   }
 
-  async publicPoint(): Promise<P> {
-    const { ctx, scalar } = this;
-    return ctx.operate(scalar, ctx.generator);
-  }
-
   async publicKey(): Promise<PublicKey<P>> {
     const { ctx, scalar } = this;
     const point = await ctx.operate(scalar, ctx.generator);
@@ -120,18 +115,10 @@ export class PrivateKey<P extends Point> {
     return { decryptor, proof };
   }
 
-  async distribute(opts: { nrShares: number, threshold: number }): Promise<KeyDistribution<P>> {
-    // TODO: Comply with distribution interface
-    const { nrShares, threshold } = opts;
+  async distribute(nrShares: number, threshold: number): Promise<KeyDistribution<P>> {
     const { ctx, scalar: secret } = this;
-    const distribution = await shamir.shareSecret(ctx, secret, nrShares, threshold);
-    const { polynomial } = distribution;
-    const secretShares = await distribution.getSecretShares();
-    const privateShares = secretShares.map(
-      ({ value, index }: SecretShare<P>) => new PrivateShare(ctx, value, index)
-    );
-    const { commitments } = await distribution.getFeldmannCommitments();
-    return new KeyDistribution(threshold, privateShares, polynomial, commitments);
+    const { polynomial } = await shamir.shareSecret(ctx, secret, nrShares, threshold);
+    return new KeyDistribution(ctx, nrShares, threshold, polynomial);
   }
 
   static async fromShares<Q extends Point>(qualifiedSet: PrivateShare<Q>[]): Promise<PrivateKey<Q>> {
@@ -151,11 +138,13 @@ export interface SerializedPrivateShare extends SerializedPrivateKey {
   index: number;
 }
 
-export class PrivateShare<P extends Point> extends PrivateKey<P> {
+export class PrivateShare<P extends Point> extends PrivateKey<P> implements BaseShare<bigint>{
+  value: bigint;
   index: number;
 
   constructor(ctx: Group<P>, scalar: bigint, index: number) {
     super(ctx, leInt2Buff(scalar));
+    this.value = this.scalar;
     this.index = index;
   }
 
@@ -178,6 +167,14 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
     return new PublicShare(ctx, point, index);
   }
 
+  async verify(commitments: P[], extras?: { binding: bigint, hPub: P }): Promise<boolean> {
+    const { ctx, value, index } = this;
+    const secretShare = new ScalarShare(value, index);
+    const verified = await shamir.verifySecretShare(ctx, secretShare, commitments, extras);
+    if (!verified) throw new Error('Invalid share');
+    return verified;
+  }
+
   async generatePartialDecryptor(
     ciphertext: Ciphertext<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
@@ -189,28 +186,28 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
   }
 };
 
-export class KeyDistribution<P extends Point> {
-  threshold: number;
-  privateShares: PrivateShare<P>[];
-  polynomial: Polynomial<P>;
-  commitments: P[];
-
-  constructor(
-    threshold: number,
-    privateShares: PrivateShare<P>[],
-    polynomial: Polynomial<P>,
-    commitments: P[],
-  ) {
-    this.threshold = threshold;
-    this.privateShares = privateShares;
-    this.polynomial = polynomial;
-    this.commitments = commitments;
+export class KeyDistribution<P extends Point> extends BaseDistribution<
+  bigint,
+  P,
+  PrivateShare<P>,
+  PublicShare<P>
+> {
+  getSecretShares = async (): Promise<PrivateShare<P>[]> => {
+    const { ctx, polynomial, nrShares } = this;
+    const shares = [];
+    for (let index = 1; index <= nrShares; index++) {
+      const value = polynomial.evaluate(index);
+      shares.push(new PrivateShare(ctx, value, index));
+    }
+    return shares;
   }
 
   getPublicShares = async (): Promise<PublicShare<P>[]> => {
+    const { nrShares, polynomial: { evaluate }, ctx: { operate, generator } } = this;
     const shares = [];
-    for (const [index, privateShare] of this.privateShares.entries()) {
-      shares.push(await privateShare.publicShare());
+    for (let index = 1; index <= nrShares; index++) {
+      const value = await operate(evaluate(index), generator);
+      shares.push(new PublicShare(this.ctx, value, index));
     }
     return shares;
   }

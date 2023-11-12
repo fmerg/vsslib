@@ -1,6 +1,6 @@
-import { Label } from '../types';
+import { Label } from '../common';
 import { Algorithms } from '../enums';
-import { Algorithm } from '../types';
+import { Algorithm } from '../common';
 import { Group, Point } from '../backend/abstract';
 import { leInt2Buff, leBuff2Int, mod } from '../utils';
 

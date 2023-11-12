@@ -1,6 +1,6 @@
 import { Algorithms, Systems } from '../src/enums';
 import { Messages } from '../src/key/enums';
-import { Algorithm } from '../src/types';
+import { Algorithm } from '../src/common';
 const { backend, key, PrivateKey, PublicKey } = require('../src')
 
 const __labels = Object.values(Systems);
@@ -48,8 +48,9 @@ describe('Key serialization and deserialization', () => {
 describe('Public key extraction', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
+    const ctx = privateKey.ctx;
     expect(await publicKey.ctx.isEqual(privateKey.ctx)).toBe(true);
-    expect(await publicKey.point.isEqual(await privateKey.publicPoint()));
+    expect(await publicKey.point.isEqual(await ctx.operate(privateKey.scalar, ctx.generator)));
   });
 });
 

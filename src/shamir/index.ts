@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { Polynomial, Lagrange, verifyFeldmannCommitments, verifyPedersenCommitments } from '../polynomials';
-import { Algorithm, Share } from '../types';
+import { Algorithm, BaseShare, BaseDistribution } from '../common';
 import { Algorithms } from '../enums';
 import { mod, modInv } from '../utils';
 
@@ -10,7 +10,7 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-export class SecretShare<P extends Point> implements Share<bigint> {
+export class ScalarShare<P extends Point> implements BaseShare<bigint> {
   value: bigint;
   index: number;
 
@@ -21,7 +21,7 @@ export class SecretShare<P extends Point> implements Share<bigint> {
 };
 
 
-export class PointShare<P extends Point> implements Share<P> {
+export class PointShare<P extends Point> implements BaseShare<P> {
   value: P;
   index: number;
 
@@ -32,20 +32,14 @@ export class PointShare<P extends Point> implements Share<P> {
 };
 
 
-export class Distribution<P extends Point> {
-  ctx: Group<P>;
-  nrShares: number;
-  threshold: number;
-  polynomial: Polynomial<P>;
+export class ScalarDistribution<P extends Point> extends BaseDistribution<
+  bigint,
+  P,
+  ScalarShare<P>,
+  PointShare<P>
+> {
 
-  constructor(ctx: Group<P>, nrShares: number, threshold: number, polynomial: Polynomial<P>) {
-    this.ctx = ctx;
-    this.threshold = threshold;
-    this.nrShares = nrShares;
-    this.polynomial = polynomial;
-  }
-
-  getSecretShares = async (): Promise<SecretShare<P>[]> => {
+  getSecretShares = async (): Promise<ScalarShare<P>[]> => {
     const { polynomial, nrShares } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
@@ -65,18 +59,6 @@ export class Distribution<P extends Point> {
     return shares;
   }
 
-  getFeldmannCommitments = async (): Promise<{ commitments: P[] }> => {
-    return this.polynomial.generateFeldmannCommitments();
-  }
-
-  getPedersenCommitments = async (hPub?: P): Promise<{
-    bindings: bigint[],
-    hPub: P,
-    commitments: P[],
-  }> => {
-    const { ctx, nrShares, polynomial } = this;
-    return polynomial.generatePedersenCommitments(nrShares, hPub || await ctx.randomPoint());
-  }
 };
 
 
@@ -86,7 +68,7 @@ export async function shareSecret<P extends Point>(
   nrShares: number,
   threshold: number,
   givenShares?: bigint[],
-): Promise<Distribution<P>> {
+): Promise<ScalarDistribution<P>> {
   givenShares = givenShares || [];
   if (threshold > nrShares) throw new Error('Threshold exceeds number of shares');
   if (threshold < 1) throw new Error ('Threshold must be >= 1');
@@ -101,13 +83,13 @@ export async function shareSecret<P extends Point>(
     index++;
   }
   const polynomial = await Lagrange.interpolate(ctx, xys);
-  return new Distribution<P>(ctx, nrShares, threshold, polynomial);
+  return new ScalarDistribution<P>(ctx, nrShares, threshold, polynomial);
 }
 
 
 export async function verifySecretShare<P extends Point>(
   ctx: Group<P>,
-  share: SecretShare<P>,
+  share: ScalarShare<P>,
   commitments: P[],
   extras?: { binding: bigint, hPub: P },
 ): Promise<boolean> {
@@ -135,7 +117,7 @@ export function computeLambda(index: number, qualifiedIndexes: number[], order: 
 
 export function reconstructSecret<P extends Point>(
   ctx: Group<P>,
-  qualifiedSet: SecretShare<P>[],
+  qualifiedSet: ScalarShare<P>[],
 ): bigint {
   const { order } = ctx;
   const indexes = qualifiedSet.map(share => share.index);

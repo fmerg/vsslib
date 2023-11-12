@@ -1,5 +1,5 @@
 import { Modular } from '../enums';
-import { Label } from '../types';
+import { Label } from '../common';
 import { assertLabel } from '../utils/checkers';
 import { Point, Group } from './abstract';
 import { default as initModular } from './modular';

@@ -1,5 +1,5 @@
 import { shamir, elgamal, backend } from '../../src';
-import { Share } from '../../src/types';
+import { BaseShare } from '../../src/common';
 import { Point } from '../../src/backend/abstract';
 
 
@@ -21,7 +21,7 @@ const thresholdParams = [
   [5, 5],
 ];
 
-function selectShare<T>(index: number, shares: Share<T>[]): Share<T> {
+function selectShare<T>(index: number, shares: BaseShare<T>[]): BaseShare<T> {
   const selected = shares.filter(share => share.index == index)[0];
   if (!selected) throw new Error(`No share with index ${index}`);
   return selected;

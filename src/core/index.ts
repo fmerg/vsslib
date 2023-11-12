@@ -1,12 +1,12 @@
 import { Point, Group } from '../backend/abstract';
-import { Label } from '../types';
+import { Label } from '../common';
 import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../key';
-import { PartialDecryptor } from '../types';
+import { PartialDecryptor } from '../common';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
 import { Ciphertext } from '../elgamal/core';
 import { computeLambda } from '../shamir';
-import { Share } from '../types';
+import { BaseShare } from '../common';
 
 const shamir = require('../shamir');
 const elgamal = require('../elgamal');
@@ -61,7 +61,7 @@ export class Combiner<P extends Point> {
     return new PublicKey(this.ctx, point);
   }
 
-  async validatePartialDecryptor(
+  async verifyPartialDecryptor(
     ciphertext: Ciphertext<P>,
     publicShare: PublicShare<P>,
     share: PartialDecryptor<P>,
@@ -75,7 +75,7 @@ export class Combiner<P extends Point> {
   }
 
   // TODO: Include indexed nonces option?
-  async validatePartialDecryptors(
+  async verifyPartialDecryptors(
     ciphertext: Ciphertext<P>,
     publicShares: PublicShare<P>[],
     shares: PartialDecryptor<P>[],
@@ -127,7 +127,7 @@ export class Combiner<P extends Point> {
     this.validateNrShares(shares, opts);
     const publicShares = opts ? opts.publicShares : undefined;
     if (publicShares) {
-      const { flag, indexes } = await this.validatePartialDecryptors(
+      const { flag, indexes } = await this.verifyPartialDecryptors(
         ciphertext, publicShares, shares
       );
       if (!flag) throw new Error('Invalid partial decryptor detected');

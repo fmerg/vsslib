@@ -1,6 +1,6 @@
 import { elgamal, backend, utils } from '../src';
 import { Systems, Algorithms } from '../src/enums';
-import { Algorithm } from '../src/types';
+import { Algorithm } from '../src/common';
 import { cartesian } from './helpers';
 
 

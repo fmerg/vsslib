@@ -1,7 +1,7 @@
 // TODO: browser
 import { createHash } from 'node:crypto';
 import { Algorithms } from '../enums';
-import { Algorithm, Encoding } from '../types';
+import { Algorithm, Encoding } from '../common';
 import { assertAlgorithm, assertEncoding } from './checkers';
 
 

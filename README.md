@@ -59,7 +59,7 @@ await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
 ```
 
 ```js
-const { flag, indexes } = await combiner.validatePartialDecryptors(
+const { flag, indexes } = await combiner.verifyPartialDecryptors(
   ciphertext, publicShares, partialDecryptors
 );
 ```

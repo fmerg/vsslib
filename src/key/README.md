@@ -27,11 +27,6 @@ const { ctx, bytes, point } = publicKey;
 const publicKey = await privateKey.publicKey();
 ```
 
-```js
-const publicPoint = await privateKey.publicPoint();
-```
-
-
 ### Serialization
 
 ```js
@@ -95,7 +90,9 @@ const { decryptor } = await privateKey.generateDecryptor(ciphertext, { noProof: 
 ## Key distribution (Shamir scheme)
 
 ```js
-const distribution = privateKey.distribute({ nrShares: 5, threshold: 3 });
+const nrShares = 5;
+const threshold = 3
+const distribution = privateKey.distribute(nrShares, threshold);
 
 const { threshold, privateShares, publicShares, polynomial, commitments } = distribution;
 ```

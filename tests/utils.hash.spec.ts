@@ -1,7 +1,7 @@
 import { utils } from '../src';
 import { createHash } from 'node:crypto';
 import { Algorithms, Encodings } from '../src/enums';
-import { Algorithm, Encoding } from '../src/types';
+import { Algorithm, Encoding } from '../src/common';
 import { cartesian } from './helpers';
 
 const __algorithms  = [...Object.values(Algorithms), undefined];

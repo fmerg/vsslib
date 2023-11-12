@@ -1,13 +1,12 @@
 import { Point } from '../src/backend/abstract'
 import { key, backend } from '../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../src/key';
-import { PartialDecryptor } from '../src/types';
-import { Messages } from '../src/key/enums';
+import { PartialDecryptor } from '../src/common';
 import { KeyDistribution } from '../src/key';
 import { Ciphertext } from '../src/elgamal/core';
 import { partialPermutations } from './helpers';
 import { Combiner } from '../src/core';
-import { Label } from '../src/types';
+import { Label } from '../src/common';
 
 const core = require('../src/core');
 
@@ -20,8 +19,8 @@ const runSetup = async (opts: {
 }) => {
   const { label, nrShares, threshold } = opts;
   const { privateKey, publicKey } = await key.generate(label);
-  const distribution = await privateKey.distribute({ nrShares, threshold });
-  const { privateShares } = distribution;
+  const distribution = await privateKey.distribute(nrShares, threshold);
+  const privateShares = await distribution.getSecretShares();
   const publicShares = await distribution.getPublicShares();
   const message = await publicKey.ctx.randomPoint();
   const { ciphertext, decryptor } = await publicKey.encrypt(message);
@@ -121,7 +120,7 @@ describe('Partial decryptors validation', () => {
 
   test('Success', async () => {
     const { combiner, publicShares, ciphertext, partialDecryptors } = setup
-    const { flag, indexes } = await combiner.validatePartialDecryptors(
+    const { flag, indexes } = await combiner.verifyPartialDecryptors(
       ciphertext, publicShares, partialDecryptors
     );
     expect(flag).toBe(true);
@@ -129,7 +128,7 @@ describe('Partial decryptors validation', () => {
   });
   test('Failure - not raise on invalid', async () => {
     const { combiner, publicShares, ciphertext, invalidDecryptors, invalidIndexes } = setup
-    const { flag, indexes } = await combiner.validatePartialDecryptors(
+    const { flag, indexes } = await combiner.verifyPartialDecryptors(
       ciphertext, publicShares, invalidDecryptors
     );
     expect(flag).toBe(false);
@@ -138,7 +137,7 @@ describe('Partial decryptors validation', () => {
   test('Failure - raise on invalid', async () => {
     const { combiner, publicShares, ciphertext, invalidDecryptors } = setup
     await expect(
-      combiner.validatePartialDecryptors(ciphertext, publicShares, invalidDecryptors, {
+      combiner.verifyPartialDecryptors(ciphertext, publicShares, invalidDecryptors, {
         raiseOnInvalid: true
       })
     ).rejects.toThrow('Invalid partial decryptor detected');
@@ -146,12 +145,12 @@ describe('Partial decryptors validation', () => {
   test('Failure - less than threshold', async () => {
     const { combiner, publicShares, ciphertext, partialDecryptors } = setup
     await expect(
-      combiner.validatePartialDecryptors(ciphertext, publicShares, partialDecryptors.slice(0, threshold - 1))
+      combiner.verifyPartialDecryptors(ciphertext, publicShares, partialDecryptors.slice(0, threshold - 1))
     ).rejects.toThrow('Nr shares less than threshold');
   });
   test('Success - skip threshold check', async () => {
     const { combiner, publicShares, ciphertext, partialDecryptors } = setup
-    const { flag, indexes } = await combiner.validatePartialDecryptors(
+    const { flag, indexes } = await combiner.verifyPartialDecryptors(
       ciphertext, publicShares, partialDecryptors.slice(0, threshold - 1), { skipThreshold: true }
     )
     expect(flag).toBe(true);
@@ -161,7 +160,7 @@ describe('Partial decryptors validation', () => {
     const { combiner, ciphertext, publicShares, partialDecryptors } = setup;
     for (const share of partialDecryptors) {
       const publicShare = publicShares.filter((pubShare: any) => pubShare.index == share.index)[0];
-      const verified = await combiner.validatePartialDecryptor(ciphertext, publicShare, share);
+      const verified = await combiner.verifyPartialDecryptor(ciphertext, publicShare, share);
       expect(verified).toBe(true);
     }
   });
@@ -170,11 +169,11 @@ describe('Partial decryptors validation', () => {
     for (const share of invalidDecryptors) {
       const publicShare = publicShares.filter((pubShare: any) => pubShare.index == share.index)[0];
       if (invalidIndexes.includes(share.index))
-        await expect(combiner.validatePartialDecryptor(ciphertext, publicShare, share)).rejects.toThrow(
+        await expect(combiner.verifyPartialDecryptor(ciphertext, publicShare, share)).rejects.toThrow(
           'Invalid partial decryptor'
         );
       else expect(
-        await combiner.validatePartialDecryptor(ciphertext, publicShare, share)
+        await combiner.verifyPartialDecryptor(ciphertext, publicShare, share)
       ).toBe(true)
     }
   });
