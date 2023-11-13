@@ -1,7 +1,7 @@
 import { utils } from '../src';
 import { createHash } from 'node:crypto';
 import { Algorithms, Encodings } from '../src/enums';
-import { Algorithm, Encoding } from '../src/common';
+import { Algorithm, Encoding } from '../src/types';
 import { cartesian } from './helpers';
 
 const __algorithms  = [...Object.values(Algorithms), undefined];
@@ -15,7 +15,7 @@ describe('hash digest', () => {
     const hasher = createHash(algorithm || Algorithms.DEFAULT).update(buffer);
     const expected = encoding ?
       hasher.digest(encoding == Encodings.HEX ? Encodings.HEX : Encodings.BASE64) :
-      new Uint8Array(hasher.digest());
+      Uint8Array.from(hasher.digest());
     expect(digest).toEqual(expected);
   });
 });

@@ -6,7 +6,7 @@ import { KeyDistribution } from '../src/key';
 import { Ciphertext } from '../src/elgamal/core';
 import { partialPermutations } from './helpers';
 import { Combiner } from '../src/core';
-import { Label } from '../src/common';
+import { Label } from '../src/types';
 
 const core = require('../src/core');
 

@@ -1,6 +1,6 @@
 import { Point, Group } from '../src/backend/abstract';
 import { Systems, Algorithms } from '../src/enums';
-import { Algorithm } from '../src/common';
+import { Algorithm } from '../src/types';
 import { Permutation, PowerSet } from "js-combinatorics";
 
 /** Powerset of the provided collection **/

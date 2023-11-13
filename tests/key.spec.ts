@@ -1,6 +1,6 @@
 import { Algorithms, Systems } from '../src/enums';
 import { Messages } from '../src/key/enums';
-import { Algorithm } from '../src/common';
+import { Algorithm } from '../src/types';
 const { backend, key, PrivateKey, PublicKey } = require('../src')
 
 const __labels = Object.values(Systems);

@@ -1,7 +1,7 @@
 import { PrivateKey, PrivateShare, KeyDistribution } from './private';
 import { PublicKey, PublicShare } from './public';
 
-import { Label } from '../common';
+import { Label } from '../types';
 import { assertLabel } from '../utils/checkers';
 import { Point } from '../backend/abstract';
 const backend = require('../backend');

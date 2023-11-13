@@ -1,6 +1,7 @@
 import { Point, Group } from '../backend/abstract';
 import { Polynomial, Lagrange, verifyFeldmannCommitments, verifyPedersenCommitments } from '../polynomials';
-import { Algorithm, BaseShare, BaseDistribution } from '../common';
+import { BaseShare, BaseDistribution } from '../common';
+import { Algorithm } from '../types';
 import { Algorithms } from '../enums';
 import { mod, modInv } from '../utils';
 

@@ -1,12 +1,11 @@
 import { Point, Group } from '../backend/abstract';
-import { Label } from '../common';
+import { Label } from '../types';
 import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../key';
-import { PartialDecryptor } from '../common';
+import { BaseShare, PartialDecryptor } from '../common';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
 import { Ciphertext } from '../elgamal/core';
 import { computeLambda } from '../shamir';
-import { BaseShare } from '../common';
 
 const shamir = require('../shamir');
 const elgamal = require('../elgamal');

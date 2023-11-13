@@ -1,7 +1,7 @@
 // TODO: browser
 import { createHash } from 'node:crypto';
 import { Algorithms } from '../enums';
-import { Algorithm, Encoding } from '../common';
+import { Algorithm, Encoding } from '../types';
 import { assertAlgorithm, assertEncoding } from './checkers';
 
 
@@ -17,5 +17,5 @@ export default async function(
   assertAlgorithm(algorithm);
   if (encoding) assertEncoding(encoding);
   const hasher = createHash(algorithm).update(buffer);
-  return encoding ? hasher.digest(encoding) : new Uint8Array(hasher.digest());
+  return encoding ? hasher.digest(encoding) : Uint8Array.from(hasher.digest());
 }

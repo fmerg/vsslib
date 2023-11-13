@@ -1,6 +1,5 @@
-import { Label } from '../common';
+import { Label, Algorithm } from '../types';
 import { Algorithms } from '../enums';
-import { Algorithm } from '../common';
 import { Group, Point } from '../backend/abstract';
 import { SigmaProof } from '../sigma';
 

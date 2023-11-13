@@ -234,7 +234,7 @@ describe('bytes validation', () => {
     const b = await ctx.randomBytes();
     const isValid = await ctx.validateBytes(b);
     expect(isValid).toBe(true);
-    const c = new Uint8Array([...b, 0]);
+    const c = Uint8Array.from([...b, 0]);
     await expect(ctx.validateBytes(c)).rejects.toThrow(
       Messages.INVALID_BYTELENGTH
     );

@@ -1,4 +1,4 @@
-import { Label } from '../common';
+import { Label } from '../types';
 import { Algorithms } from '../enums';
 import { leInt2Buff, leBuff2Int, mod } from '../utils';
 

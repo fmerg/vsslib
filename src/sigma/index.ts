@@ -1,6 +1,5 @@
-import { Label } from '../common';
+import { Label, Algorithm } from '../types';
 import { Algorithms } from '../enums';
-import { Algorithm } from '../common';
 import { Group, Point } from '../backend/abstract';
 import { leInt2Buff, leBuff2Int, mod } from '../utils';
 
@@ -40,12 +39,12 @@ export async function fiatShamir<P extends Point>(
   opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<bigint> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? (opts.nonce || new Uint8Array()) : new Uint8Array([]);
+  const nonce = opts ? (opts.nonce || Uint8Array.from([])) : Uint8Array.from([]);
   const { modBytes, ordBytes, genBytes, leBuff2Scalar } = ctx;
   const configBuff = [...modBytes, ...ordBytes, ...genBytes];
   const pointsBuff = points.reduce((acc: number[], p: P) => [...acc, ...p.toBytes()], []);
   const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
-  const bytes = new Uint8Array([...configBuff, ...pointsBuff, ...scalarsBuff, ...nonce]);
+  const bytes = Uint8Array.from([...configBuff, ...pointsBuff, ...scalarsBuff, ...nonce]);
   const digest = await utils.hash(bytes, { algorithm });
   return leBuff2Scalar(digest);
 }
@@ -99,7 +98,7 @@ export async function verifyLinearRelation<P extends Point>(
   proof: SigmaProof<P>,
   opts?: { nonce?: Uint8Array },
 ): Promise<boolean> {
-  const nonce = opts ? (opts.nonce || new Uint8Array([])) : new Uint8Array([]);
+  const nonce = opts ? (opts.nonce || Uint8Array.from([])) : Uint8Array.from([]);
   const { neutral, operate, combine } = ctx;
   const { us, vs } = relation;
   const { commitments, response, algorithm } = proof;

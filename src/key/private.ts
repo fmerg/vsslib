@@ -4,8 +4,8 @@ import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
 import { ScalarShare } from '../shamir';
-import { BaseDistribution, PartialDecryptor } from '../common';
-import { Label, BaseShare } from '../common';
+import { BaseShare, BaseDistribution, PartialDecryptor } from '../common';
+import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
 

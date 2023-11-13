@@ -1,6 +1,6 @@
 import { Group, Point } from '../backend/abstract';
 import { Ciphertext } from '../elgamal/core';
-import { Label } from '../common';
+import { Label } from '../types';
 import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../common';

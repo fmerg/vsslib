@@ -1,6 +1,6 @@
 import { Point, Group } from '../../src/backend/abstract';
 import { Algorithms } from '../../src/enums';
-import { Algorithm } from '../../src/common';
+import { Algorithm } from '../../src/types';
 import { leInt2Buff, leBuff2Int } from '../../src/utils';
 import { LinearRelation, DlogPair, DDHTuple } from '../../src/sigma';
 
@@ -18,13 +18,13 @@ export async function computeFiatShamir<P extends Point>(
   opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<bigint> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? (opts.nonce || new Uint8Array()) : new Uint8Array([]);
+  const nonce = opts ? (opts.nonce || Uint8Array.from([])) : Uint8Array.from([]);
   const { modulus, order, generator } = ctx;
   const fixedBuff = [...leInt2Buff(modulus), ...leInt2Buff(order), ...generator.toBytes()];
   const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
   const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
   const digest = await utils.hash(
-    new Uint8Array([...fixedBuff, ...pointsBuff, ...scalarsBuff, ...nonce]),
+    Uint8Array.from([...fixedBuff, ...pointsBuff, ...scalarsBuff, ...nonce]),
     { algorithm }
   );
   return (leBuff2Int(digest)) % order;

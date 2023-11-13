@@ -23,7 +23,7 @@ describe('little-endian roundtrip', () => {
     [[1, 2, 3], 197121],
     [[1, 2, 3, 255], 4278387201],
   ])('%s, %s', (arr, num) => {
-    const buffer = new Uint8Array(arr);
+    const buffer = Uint8Array.from(arr);
     const number = utils.leBuff2Int(buffer);
     expect(number).toBe(BigInt(num));
     const buffBack = utils.leInt2Buff(number);

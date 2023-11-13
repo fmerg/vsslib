@@ -74,9 +74,11 @@ const plaintext = await combiner.decrypt(ciphertext, shares);
 
 ## Modules
 
+- [`vsslib.aes`](./src/aes)
 - [`vsslib.backend`](./src/backend)
 - [`vsslib.core`](./src/core)
 - [`vsslib.elgamal`](./src/elgamal)
+- [`vsslib.kem`](./src/kem)
 - [`vsslib.key`](./src/key)
 - [`vsslib.polynomials`](./src/polynomials)
 - [`vsslib.shamir`](./src/shamir)
