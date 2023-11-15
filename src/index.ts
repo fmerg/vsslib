@@ -4,6 +4,7 @@ const aes = require('./aes');
 const backend = require('./backend');
 const core = require('./core');
 const elgamal = require('./elgamal');
+const ies = require('./ies');
 const kem = require('./kem');
 const key = require('./key');
 const polynomials = require('./polynomials');
@@ -20,6 +21,7 @@ export {
   backend,
   core,
   elgamal,
+  ies,
   kem,
   key,
   polynomials,
