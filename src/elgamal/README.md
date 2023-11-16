@@ -1,11 +1,11 @@
-## `vsslib.elgamal`
+# `vsslib.elgamal`
 
 ```js
 const { elgamal, backend } = require('vsslib');
 
 const ctx = backend.initGroup('ed25519');
 
-const { secret, point: pub } = await ctx.generateKeypair();
+const { secret, pub } = await ctx.generateKeypair();
 ```
 
 ## Encryption and decryption

@@ -5,7 +5,7 @@ import { Polynomial } from '../src/polynomials';
 import { Messages } from '../src/key/enums';
 import { partialPermutations } from './helpers';
 import { PartialDecryptor } from '../src/common';
-import { Ciphertext } from '../src/elgamal';
+import { ElGamalCiphertext } from '../src/elgamal';
 
 
 export function selectShare<P extends Point>(index: number, shares: PublicShare<P>[]): PublicShare<P> {
@@ -27,7 +27,7 @@ describe('Key distribution', () => {
   let publicKey: PublicKey<Point>;
   let privateShares: PrivateShare<Point>[];
   let publicShares: PublicShare<Point>[];
-  let ciphertext: Ciphertext<Point>;
+  let ciphertext: ElGamalCiphertext<Point>;
   let partialDecryptors: PartialDecryptor<Point>[];
 
   beforeAll(async () => {

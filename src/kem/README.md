@@ -5,7 +5,7 @@ const { kem, backend } = require('vsslib');
 
 const ctx = backend.initGroup('ed25519');
 
-const { secret, point: pub } = await ctx.generateKeypair();
+const { secret, pub } = await ctx.generateKeypair();
 ```
 
 ```js

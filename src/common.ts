@@ -3,6 +3,17 @@ import { SigmaProof } from './sigma';
 import { Polynomial } from './polynomials';
 
 
+export abstract class Ciphertext<A, P extends Point> {
+  alpha: A;
+  beta: P;
+
+  constructor(alpha: A, beta: P) {
+    this.alpha = alpha;
+    this.beta = beta;
+  }
+}
+
+
 export interface BaseShare<T> {
   value: T;
   index: number;

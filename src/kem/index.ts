@@ -1,17 +1,20 @@
 import { Point, Group } from '../backend/abstract';
 import { Algorithms, AesModes } from '../enums';
 import { Algorithm, AesMode } from '../types';
+import { Ciphertext } from '../common';
 
 const aes = require('../aes');
 const utils = require('../utils');
 
 
-export type KemCiphertext<P extends Point> = {
+type A = {
   ciphered: Uint8Array,
-  beta: P,
   iv: Uint8Array,
-  mode: AesMode,
   tag?: Uint8Array,
+  mode: AesMode,
+};
+
+export class KemCiphertext<P extends Point> extends Ciphertext<A, P> {
 }
 
 
@@ -21,14 +24,14 @@ export async function encrypt<P extends Point>(
   pub: P,
   opts?: { mode?: AesMode }
 ): Promise<{ ciphertext: KemCiphertext<P>, decryptor: P, randomness: bigint }> {
-  const mode = opts ? (opts.mode || AesModes.DEFAULT) : AesModes.DEFAULT;
   const { generator, randomScalar, operate } = ctx;
   const randomness = await randomScalar();
   const beta = await operate(randomness, generator);
   const decryptor = await operate(randomness, pub);
-  const encapsKey = await utils.hash(decryptor.toBytes(), { algorithm: Algorithms.SHA256 });
-  const { ciphered, iv, tag } = aes.encrypt(encapsKey, message, opts);
-  const ciphertext = { ciphered, beta, iv, mode, tag };
+  const key = await utils.hash(decryptor.toBytes(), { algorithm: Algorithms.SHA256 });
+  const { ciphered, iv, tag } = aes.encrypt(key, message, opts);
+  const mode = opts ? (opts.mode || AesModes.DEFAULT) : AesModes.DEFAULT;
+  const ciphertext = { alpha: { ciphered, iv, tag, mode }, beta };
   return { ciphertext, decryptor, randomness };
 }
 
@@ -38,14 +41,14 @@ export async function decrypt<P extends Point>(
   ciphertext: KemCiphertext<P>,
   secret: bigint,
 ): Promise<Uint8Array> {
-  const { ciphered, beta, iv, mode, tag } = ciphertext;
+  const { alpha: { ciphered, iv, tag, mode }, beta } = ciphertext;
   const decryptor = await ctx.operate(secret, beta);
-  const encapsKey = await utils.hash(decryptor.toBytes(), { algorithm: Algorithms.SHA256 });
-  let deciphered;
+  const key = await utils.hash(decryptor.toBytes(), { algorithm: Algorithms.SHA256 });
+  let plaintext;
   try {
-    deciphered = aes.decrypt(encapsKey, ciphered, iv, { mode, tag });
+    plaintext = aes.decrypt(key, ciphered, iv, { mode, tag });
   } catch (err: any) {
     throw new Error('Could not decrypt: ' + err.message);
   }
-  return deciphered;
+  return plaintext;
 }

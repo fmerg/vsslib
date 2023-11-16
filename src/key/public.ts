@@ -1,5 +1,5 @@
 import { Group, Point } from '../backend/abstract';
-import { Ciphertext } from '../elgamal';
+import { ElGamalCiphertext } from '../elgamal';
 import { Label } from '../types';
 import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
@@ -60,13 +60,13 @@ export class PublicKey<P extends Point> {
   }
 
   async encrypt(message: P): Promise<{
-    ciphertext: Ciphertext<P>, randomness: bigint, decryptor: P
+    ciphertext: ElGamalCiphertext<P>, randomness: bigint, decryptor: P
   }> {
     return elgamal.encrypt(this.ctx, message, this.point);
   }
 
   async proveEncryption(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     randomness: bigint,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
@@ -75,7 +75,7 @@ export class PublicKey<P extends Point> {
   }
 
   async verifyDecryptor(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     decryptor: P,
     proof: SigmaProof<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
@@ -131,7 +131,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   }
 
   async verifyPartialDecryptor(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     partialDecryptor: PartialDecryptor<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean },
   ): Promise<boolean> {

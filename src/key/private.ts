@@ -1,5 +1,5 @@
 import { Group, Point } from '../backend/abstract';
-import { Ciphertext } from '../elgamal';
+import { ElGamalCiphertext } from '../elgamal';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
@@ -80,12 +80,12 @@ export class PrivateKey<P extends Point> {
     return sigma.proveDlog(ctx, scalar, { u: ctx.generator, v: pub }, opts);
   }
 
-  async decrypt(ciphertext: Ciphertext<P>): Promise<P> {
+  async decrypt(ciphertext: ElGamalCiphertext<P>): Promise<P> {
     return elgamal.decrypt(this.ctx, ciphertext, { secret: this.scalar });
   }
 
   async verifyEncryption(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     proof: SigmaProof<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<boolean> {
@@ -96,7 +96,7 @@ export class PrivateKey<P extends Point> {
   }
 
   async proveDecryptor(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     decryptor: P,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
@@ -106,7 +106,7 @@ export class PrivateKey<P extends Point> {
   }
 
   async generateDecryptor(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     opts?: { noProof?: boolean, algorithm?: Algorithm },
   ): Promise<{ decryptor: P, proof?: SigmaProof<P> }> {
     const { ctx, scalar: secret } = this;
@@ -178,7 +178,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   }
 
   async generatePartialDecryptor(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<PartialDecryptor<P>> {
     const { ctx, index } = this;

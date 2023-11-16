@@ -47,6 +47,6 @@ export abstract class Group<P extends Point> {
   abstract invert: (point: P) => Promise<P>;
   abstract unpack: (bytes: Uint8Array) => P;
   abstract unhexify: (hexnum: string) => P;
-  abstract generateKeypair: (secret?: bigint) => Promise<{ secret: bigint, point: Point }>;
+  abstract generateKeypair: (secret?: bigint) => Promise<{ secret: bigint, pub: Point }>;
 }
 

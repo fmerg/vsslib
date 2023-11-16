@@ -134,10 +134,11 @@ export class EcGroup extends Group<EcPoint> {
     return new EcPoint(this._curve.ExtendedPoint.fromHex(hexnum));
   }
 
-  generateKeypair = async (secret?: bigint): Promise<{ secret: bigint, point: EcPoint }> => {
-    secret = secret || await this.randomScalar();
-    const point = await this.operate(secret, this.generator);
-    return { secret, point };
+  generateKeypair = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {
+    const { randomScalar, operate, generator } = this;
+    secret = secret || await randomScalar();
+    const pub = await operate(secret, generator);
+    return { secret, pub };
   }
 }
 

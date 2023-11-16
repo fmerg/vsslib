@@ -4,7 +4,7 @@ import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../ke
 import { BaseShare, PartialDecryptor } from '../common';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
-import { Ciphertext } from '../elgamal';
+import { ElGamalCiphertext } from '../elgamal';
 import { computeLambda } from '../shamir';
 
 const shamir = require('../shamir');
@@ -61,7 +61,7 @@ export class Combiner<P extends Point> {
   }
 
   async verifyPartialDecryptor(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     publicShare: PublicShare<P>,
     share: PartialDecryptor<P>,
     opts?: { nonce?: Uint8Array },
@@ -72,7 +72,7 @@ export class Combiner<P extends Point> {
 
   // TODO: Include indexed nonces option?
   async verifyPartialDecryptors(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     publicShares: PublicShare<P>[],
     shares: PartialDecryptor<P>[],
     opts?: { raiseOnInvalid?: boolean, threshold?: number, skipThreshold?: boolean },
@@ -118,7 +118,7 @@ export class Combiner<P extends Point> {
   }
 
   async decrypt(
-    ciphertext: Ciphertext<P>,
+    ciphertext: ElGamalCiphertext<P>,
     shares: PartialDecryptor<P>[],
     opts?: { threshold?: number, skipThreshold?: boolean, publicShares?: PublicShare<P>[] },
   ): Promise<P> {

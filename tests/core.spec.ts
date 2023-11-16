@@ -3,7 +3,7 @@ import { key, backend } from '../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../src/key';
 import { PartialDecryptor } from '../src/common';
 import { KeyDistribution } from '../src/key';
-import { Ciphertext } from '../src/elgamal';
+import { ElGamalCiphertext } from '../src/elgamal';
 import { partialPermutations } from './helpers';
 import { Combiner } from '../src/core';
 import { Label } from '../src/types';
