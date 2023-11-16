@@ -39,9 +39,9 @@ export abstract class Group<P extends Point> {
   abstract randomBytes: () => Promise<Uint8Array>;
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
-  abstract validateBytes: (bytes: Uint8Array) => Promise<boolean>;
-  abstract validateScalar: (scalar: bigint) => Promise<boolean>;
-  abstract validatePoint: (point: P) => Promise<boolean>;
+  abstract validateBytes: (bytes: Uint8Array, opts?: { raiseOnInvalid: boolean }) => Promise<boolean>;
+  abstract validateScalar: (scalar: bigint, opts?: { raiseOnInvalid: boolean }) => Promise<boolean>;
+  abstract validatePoint: (point: P, opts?: { raiseOnInvalid: boolean }) => Promise<boolean>;
   abstract operate: (scalar: bigint, point: P) => Promise<P>;
   abstract combine: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;
