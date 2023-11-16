@@ -4,7 +4,7 @@ import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../ke
 import { BaseShare, PartialDecryptor } from '../common';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
-import { Ciphertext } from '../elgamal/core';
+import { Ciphertext } from '../elgamal';
 import { computeLambda } from '../shamir';
 
 const shamir = require('../shamir');
@@ -66,10 +66,7 @@ export class Combiner<P extends Point> {
     share: PartialDecryptor<P>,
     opts?: { nonce?: Uint8Array },
   ): Promise<boolean> {
-    const { value: decryptor, proof } = share;
-    const { point: pub } = publicShare;
-    const verified = await elgamal.verifyDecryptor(this.ctx, ciphertext, pub, decryptor, proof, opts);
-    if (!verified) throw new Error('Invalid partial decryptor');
+    const verified = await publicShare.verifyPartialDecryptor(ciphertext, share, opts);
     return verified;
   }
 
@@ -90,13 +87,15 @@ export class Combiner<P extends Point> {
     let indexes = [];
     const { ctx } = this;
     const raiseOnInvalid = opts ? (opts.raiseOnInvalid || false) : false;
-    for (const { value: decryptor, index, proof } of shares) {
-      const { point: pub } = selectPublicShare(index, publicShares);
-      const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
-      if (raiseOnInvalid && !verified)
-        throw new Error('Invalid partial decryptor detected');
+    for (const partialDecryptor of shares) {
+      const publicShare = selectPublicShare(partialDecryptor.index, publicShares);
+      const verified = await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor, {
+        raiseOnInvalid: false,
+      });
+      if (!verified && raiseOnInvalid)
+        throw new Error('Invalid partial decryptor');
       flag &&= verified;
-      if(!verified) indexes.push(index);
+      if(!verified) indexes.push(partialDecryptor.index);
     }
     return { flag, indexes };
   }
@@ -129,7 +128,7 @@ export class Combiner<P extends Point> {
       const { flag, indexes } = await this.verifyPartialDecryptors(
         ciphertext, publicShares, shares
       );
-      if (!flag) throw new Error('Invalid partial decryptor detected');
+      if (!flag) throw new Error('Invalid partial decryptor');
     }
     const decryptor = await this.reconstructDecryptor(shares, opts);
     return elgamal.decrypt(this.ctx, ciphertext, { decryptor });

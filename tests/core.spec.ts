@@ -3,7 +3,7 @@ import { key, backend } from '../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../src/key';
 import { PartialDecryptor } from '../src/common';
 import { KeyDistribution } from '../src/key';
-import { Ciphertext } from '../src/elgamal/core';
+import { Ciphertext } from '../src/elgamal';
 import { partialPermutations } from './helpers';
 import { Combiner } from '../src/core';
 import { Label } from '../src/types';
@@ -140,7 +140,7 @@ describe('Partial decryptors validation', () => {
       combiner.verifyPartialDecryptors(ciphertext, publicShares, invalidDecryptors, {
         raiseOnInvalid: true
       })
-    ).rejects.toThrow('Invalid partial decryptor detected');
+    ).rejects.toThrow('Invalid partial decryptor');
   });
   test('Failure - less than threshold', async () => {
     const { combiner, publicShares, ciphertext, partialDecryptors } = setup

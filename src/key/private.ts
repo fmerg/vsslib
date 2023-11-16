@@ -1,5 +1,5 @@
 import { Group, Point } from '../backend/abstract';
-import { Ciphertext } from '../elgamal/core';
+import { Ciphertext } from '../elgamal';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
@@ -89,7 +89,8 @@ export class PrivateKey<P extends Point> {
     proof: SigmaProof<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<boolean> {
-    const verified = await elgamal.verifyEncryption(this.ctx, ciphertext, proof, opts);
+    const { ctx } = this;
+    const verified = await sigma.verifyDlog(ctx, { u: ctx.generator, v: ciphertext.beta }, proof, opts);
     if (!verified) throw new Error(Messages.INVALID_ENCRYPTION_PROOF);
     return verified;
   }
@@ -99,8 +100,9 @@ export class PrivateKey<P extends Point> {
     decryptor: P,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
-    const { ctx, scalar } = this;
-    return elgamal.proveDecryptor(ctx, ciphertext, scalar, decryptor, opts);
+    const { ctx, scalar: secret } = this;
+    const pub = await ctx.operate(secret, ctx.generator);
+    return sigma.proveDDH(ctx, secret, { u: ciphertext.beta, v: pub, w: decryptor }, opts);
   }
 
   async generateDecryptor(
@@ -108,10 +110,10 @@ export class PrivateKey<P extends Point> {
     opts?: { noProof?: boolean, algorithm?: Algorithm },
   ): Promise<{ decryptor: P, proof?: SigmaProof<P> }> {
     const { ctx, scalar: secret } = this;
-    const decryptor = await elgamal.generateDecryptor(ctx, secret, ciphertext);
+    const decryptor = await ctx.operate(secret, ciphertext.beta);
     const noProof = opts ? opts.noProof : false;
     if (noProof) return { decryptor };
-    const proof = await elgamal.proveDecryptor(ctx, ciphertext, secret, decryptor, opts);
+    const proof = await this.proveDecryptor(ciphertext, decryptor, opts);
     return { decryptor, proof };
   }
 
@@ -179,9 +181,9 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     ciphertext: Ciphertext<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<PartialDecryptor<P>> {
-    const { ctx, scalar: value, index } = this;
-    const decryptor = await elgamal.generateDecryptor(ctx, value, ciphertext);
-    const proof = await elgamal.proveDecryptor(ctx, ciphertext, value, decryptor, opts);
+    const { ctx, index } = this;
+    const { decryptor } = await this.generateDecryptor(ciphertext, { noProof: true });
+    const proof = await this.proveDecryptor(ciphertext, decryptor, opts);
     return { value: decryptor, index, proof}
   }
 };

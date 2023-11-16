@@ -2,8 +2,10 @@ import { Algorithms, Systems } from '../src/enums';
 import { Messages } from '../src/key/enums';
 import { Algorithm } from '../src/types';
 const { backend, key, PrivateKey, PublicKey } = require('../src')
+import { cartesian } from './helpers';
 
 const __labels = Object.values(Systems);
+const __algorithms  = [...Object.values(Algorithms), undefined];
 
 
 describe('Key generation', () => {
@@ -153,11 +155,12 @@ describe('Elgamal encryption and decryption', () => {
 
 
 describe('Elgamal encryption proof - success without nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, randomness } = await publicKey.encrypt(message);
-    const proof = await publicKey.proveEncryption(ciphertext, randomness);
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
+    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const verified = await privateKey.verifyEncryption(ciphertext, proof);
     expect(verified).toBe(true);
   });
@@ -165,12 +168,13 @@ describe('Elgamal encryption proof - success without nonce', () => {
 
 
 describe('Elgamal encryption proof - success with nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, randomness } = await publicKey.encrypt(message);
     const nonce = await publicKey.ctx.randomBytes();
-    const proof = await publicKey.proveEncryption(ciphertext, randomness, { nonce });
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
+    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const verified = await privateKey.verifyEncryption(ciphertext, proof, { nonce });
     expect(verified).toBe(true);
   });
@@ -178,11 +182,11 @@ describe('Elgamal encryption proof - success with nonce', () => {
 
 
 describe('Elgamal encryption proof - failure if forged proof', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, randomness } = await publicKey.encrypt(message);
-    const proof = await publicKey.proveEncryption(ciphertext, randomness);
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     // Tamper commitments
     proof.commitments[0] = await publicKey.ctx.randomPoint();
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
@@ -193,11 +197,11 @@ describe('Elgamal encryption proof - failure if forged proof', () => {
 
 
 describe('Elgamal encryption proof - failure if wrong algorithm', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, randomness } = await publicKey.encrypt(message);
-    const proof = await publicKey.proveEncryption(ciphertext, randomness);
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     // Tamper algorithm
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
@@ -210,12 +214,12 @@ describe('Elgamal encryption proof - failure if wrong algorithm', () => {
 
 
 describe('Elgamal encryption proof - failure if missing nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, randomness } = await publicKey.encrypt(message);
     const nonce = await publicKey.ctx.randomBytes();
-    const proof = await publicKey.proveEncryption(ciphertext, randomness, { nonce });
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       Messages.INVALID_ENCRYPTION_PROOF
     );
@@ -224,12 +228,12 @@ describe('Elgamal encryption proof - failure if missing nonce', () => {
 
 
 describe('Elgamal encryption proof - failure if forged nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, randomness } = await publicKey.encrypt(message);
     const nonce = await publicKey.ctx.randomBytes();
-    const proof = await publicKey.proveEncryption(ciphertext, randomness, { nonce });
+    const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     await expect(
       privateKey.verifyEncryption(ciphertext, proof, { nonce: await privateKey.ctx.randomBytes() })
     ).rejects.toThrow(
@@ -264,12 +268,13 @@ describe('Decryptor proof - success without nonce', () => {
 
 
 describe('Decryptor proof - success with nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, decryptor } = await publicKey.encrypt(message);
     const nonce = await publicKey.ctx.randomBytes();
-    const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
+    const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
+    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce });
     expect(verified).toBe(true);
   });
@@ -292,12 +297,11 @@ describe('Decryptor proof - failure if forged proof', () => {
 
 
 describe('Decryptor proof - failure if wrong algorithm', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, decryptor } = await publicKey.encrypt(message);
-    const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
-    // Tamper algorithm
+    const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
       Algorithms.SHA256;
@@ -322,7 +326,7 @@ describe('Decryptor proof - failure if missing nonce', () => {
 });
 
 
-describe('Decryptor proof - failure if wrong nonce', () => {
+describe('Decryptor proof - failure if forged nonce', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey } = await key.generate(label);
     const message = await privateKey.ctx.randomPoint();

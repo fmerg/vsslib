@@ -5,7 +5,7 @@ import { Polynomial } from '../src/polynomials';
 import { Messages } from '../src/key/enums';
 import { partialPermutations } from './helpers';
 import { PartialDecryptor } from '../src/common';
-import { Ciphertext } from '../src/elgamal/core';
+import { Ciphertext } from '../src/elgamal';
 
 
 export function selectShare<P extends Point>(index: number, shares: PublicShare<P>[]): PublicShare<P> {

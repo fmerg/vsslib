@@ -1,5 +1,5 @@
 import { Group, Point } from '../backend/abstract';
-import { Ciphertext } from '../elgamal/core';
+import { Ciphertext } from '../elgamal';
 import { Label } from '../types';
 import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
@@ -70,18 +70,22 @@ export class PublicKey<P extends Point> {
     randomness: bigint,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
-    return elgamal.proveEncryption(this.ctx, ciphertext, randomness, opts);
+    const { ctx } = this;
+    return sigma.proveDlog(ctx, randomness, { u: ctx.generator, v: ciphertext.beta }, opts);
   }
 
   async verifyDecryptor(
     ciphertext: Ciphertext<P>,
     decryptor: P,
     proof: SigmaProof<P>,
-    opts?: { nonce?: Uint8Array }
+    opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
   ): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof, opts);
-    if (!verified) throw new Error(Messages.INVALID_DECRYPTOR_PROOF);
+    const verified = await sigma.verifyDDH(ctx, { u: ciphertext.beta, v: pub, w: decryptor }, proof, opts);
+    const raiseOnInvalid = opts ?
+      (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
+      true;
+    if (!verified && raiseOnInvalid) throw new Error(Messages.INVALID_DECRYPTOR_PROOF);
     return verified;
   }
 
@@ -129,12 +133,16 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   async verifyPartialDecryptor(
     ciphertext: Ciphertext<P>,
     partialDecryptor: PartialDecryptor<P>,
-    opts?: { nonce?: Uint8Array },
+    opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean },
   ): Promise<boolean> {
-    const { ctx, point: pub, index } = this;
+    const { ctx, index } = this;
     const { value: decryptor, proof } = partialDecryptor;
-    const verified = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof, opts);
-    if (!verified) throw new Error(Messages.INVALID_PARTIAL_DECRYPTOR);
-    return true;
+    const nonce = opts ? opts.nonce : undefined;
+    const verified = await this.verifyDecryptor(ciphertext, decryptor, proof, { nonce, raiseOnInvalid: false });
+    const raiseOnInvalid = opts ?
+      (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
+      true;
+    if (!verified && raiseOnInvalid) throw new Error(Messages.INVALID_PARTIAL_DECRYPTOR);
+    return verified;
   }
 };

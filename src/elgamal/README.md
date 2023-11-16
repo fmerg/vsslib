@@ -11,6 +11,8 @@ const { secret, point: pub } = await ctx.generateKeypair();
 ## Encryption and decryption
 
 ```js
+const message = await ctx.randomPoint();
+
 const { ciphertext, randomness, decryptor } = await elgamal.encrypt(ctx, message, pub);
 ```
 
@@ -31,26 +33,3 @@ const plaintext = await elgamal.decrypt(ctx, ciphertext, { decryptor });
 ```js
 const plaintext = await elgamal.decrypt(ctx, ciphertext, { pub, randomness });
 ```
-
-## Proof of encryption
-
-```js
-const proof = await elgamal.proveEncryption(ctx, ciphertext, randomness, { algorithm: 'sha256' });
-
-const valid = await elgamal.verifyEncryption(ctx, ciphertext, proof);
-```
-
-## Decryptor generation
-
-```js
-const decryptor = await elgamal.generateDecryptor(ctz, ciphertext, secret, ciphertext);
-```
-
-## Proof of decryptor
-
-```js
-const proof = await elgamal.proveDecryptor(ctx, ciphertext, secret, decryptor, { algorithm: 'sha256' });
-
-const valid = await elgamal.verifyDecryptor(ctx, ciphertext, pub, decryptor, proof);
-```
-
