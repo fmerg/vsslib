@@ -1,13 +1,13 @@
 import { Group, Point } from '../backend/abstract';
-import { ElGamalCiphertext } from '../elgamal';
 import { Label } from '../types';
 import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../common';
 
+import { elgamal } from '../asymmetric';
+import { ElGamalCiphertext } from '../asymmetric/elgamal';
 const backend = require('../backend');
 const sigma = require('../sigma');
-const elgamal = require('../elgamal');
 const shamir = require('../shamir');
 
 
@@ -59,10 +59,8 @@ export class PublicKey<P extends Point> {
     return verified;
   }
 
-  async encrypt(message: P): Promise<{
-    ciphertext: ElGamalCiphertext<P>, randomness: bigint, decryptor: P
-  }> {
-    return elgamal.encrypt(this.ctx, message, this.point);
+  async encrypt(message: P): Promise<{ ciphertext: ElGamalCiphertext<P>, randomness: bigint, decryptor: P }> {
+    return elgamal(this.ctx).encrypt(message, this.point);
   }
 
   async proveEncryption(

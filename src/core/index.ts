@@ -4,11 +4,11 @@ import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../ke
 import { BaseShare, PartialDecryptor } from '../common';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
-import { ElGamalCiphertext } from '../elgamal';
 import { computeLambda } from '../shamir';
+import { elgamal } from '../asymmetric';
+import { ElGamalCiphertext } from '../asymmetric/elgamal';
 
 const shamir = require('../shamir');
-const elgamal = require('../elgamal');
 const backend = require('../backend');
 
 
@@ -131,7 +131,7 @@ export class Combiner<P extends Point> {
       if (!flag) throw new Error('Invalid partial decryptor');
     }
     const decryptor = await this.reconstructDecryptor(shares, opts);
-    return elgamal.decryptWithDecryptor(this.ctx, ciphertext, decryptor);
+    return elgamal(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
   }
 }
 

@@ -1,5 +1,4 @@
 import { Group, Point } from '../backend/abstract';
-import { ElGamalCiphertext } from '../elgamal';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
@@ -11,7 +10,9 @@ import { leInt2Buff } from '../utils';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
-const elgamal = require('../elgamal');
+// const elgamal = require('../elgamal');
+import { elgamal } from '../asymmetric';
+import { ElGamalCiphertext } from '../asymmetric/elgamal';
 const shamir = require('../shamir');
 
 
@@ -81,7 +82,7 @@ export class PrivateKey<P extends Point> {
   }
 
   async decrypt(ciphertext: ElGamalCiphertext<P>): Promise<P> {
-    return elgamal.decrypt(this.ctx, ciphertext, this.scalar);
+    return elgamal(this.ctx).decrypt(ciphertext, this.scalar);
   }
 
   async verifyEncryption(

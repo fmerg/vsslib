@@ -1,11 +1,8 @@
-import { elgamal, backend, utils } from '../src';
-import { Systems, Algorithms } from '../src/enums';
-import { Algorithm } from '../src/types';
+import { elgamal, backend } from '../src';
+import { Systems } from '../src/enums';
 import { cartesian } from './helpers';
 
-
 const __labels      = Object.values(Systems);
-const __algorithms  = [...Object.values(Algorithms), undefined];
 
 
 describe('Decryption - success', () => {
@@ -13,8 +10,8 @@ describe('Decryption - success', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = await ctx.randomPoint();
-    const { ciphertext } = await elgamal.encrypt(ctx, message, pub);
-    const plaintext = await elgamal.decrypt(ctx, ciphertext, secret);
+    const { ciphertext } = await elgamal(ctx).encrypt(message, pub);
+    const plaintext = await elgamal(ctx).decrypt(ciphertext, secret);
     expect(await plaintext.isEqual(message)).toBe(true);
   });
 });
@@ -25,9 +22,9 @@ describe('Decryption - failure if forged secret', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = await ctx.randomPoint();
-    const { ciphertext } = await elgamal.encrypt(ctx, message, pub);
+    const { ciphertext } = await elgamal(ctx).encrypt(message, pub);
     const forgedSecret = await ctx.randomScalar();
-    const plaintext = await elgamal.decrypt(ctx, ciphertext, forgedSecret);
+    const plaintext = await elgamal(ctx).decrypt(ciphertext, forgedSecret);
     expect(await plaintext.isEqual(message)).toBe(false);
   });
 });
@@ -38,8 +35,8 @@ describe('Decryption with decryptor - success', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = await ctx.randomPoint();
-    const { ciphertext, decryptor } = await elgamal.encrypt(ctx, message, pub);
-    const plaintext = await elgamal.decryptWithDecryptor(ctx, ciphertext, decryptor);
+    const { ciphertext, decryptor } = await elgamal(ctx).encrypt(message, pub);
+    const plaintext = await elgamal(ctx).decryptWithDecryptor(ciphertext, decryptor);
     expect(await plaintext.isEqual(message)).toBe(true);
   });
 });
@@ -50,9 +47,9 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = await ctx.randomPoint();
-    const { ciphertext, decryptor } = await elgamal.encrypt(ctx, message, pub);
+    const { ciphertext, decryptor } = await elgamal(ctx).encrypt(message, pub);
     const forgedDecryptor = await ctx.randomPoint();
-    const plaintext = await elgamal.decryptWithDecryptor(ctx, ciphertext, forgedDecryptor);
+    const plaintext = await elgamal(ctx).decryptWithDecryptor(ciphertext, forgedDecryptor);
     expect(await plaintext.isEqual(message)).toBe(false);
   });
 });
@@ -63,8 +60,8 @@ describe('Decryption with randomness - success', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = await ctx.randomPoint();
-    const { ciphertext, randomness } = await elgamal.encrypt(ctx, message, pub);
-    const plaintext = await elgamal.decryptWithRandomness(ctx, ciphertext, pub, randomness);
+    const { ciphertext, randomness } = await elgamal(ctx).encrypt(message, pub);
+    const plaintext = await elgamal(ctx).decryptWithRandomness(ciphertext, pub, randomness);
     expect(await plaintext.isEqual(message)).toBe(true);
   });
 });
@@ -75,9 +72,9 @@ describe('Decryption with randomness - failure if forged randomness', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = await ctx.randomPoint();
-    const { ciphertext, randomness } = await elgamal.encrypt(ctx, message, pub);
+    const { ciphertext, randomness } = await elgamal(ctx).encrypt(message, pub);
     const forgedRandomnes = await ctx.randomScalar();
-    const plaintext = await elgamal.decryptWithRandomness(ctx, ciphertext, pub, forgedRandomnes);
+    const plaintext = await elgamal(ctx).decryptWithRandomness(ciphertext, pub, forgedRandomnes);
     expect(await plaintext.isEqual(message)).toBe(false);
   });
 });

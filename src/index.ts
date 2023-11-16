@@ -1,11 +1,9 @@
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './key';
+import { elgamal, kem, ies } from './asymmetric';
 
 const aes = require('./aes');
 const backend = require('./backend');
 const core = require('./core');
-const elgamal = require('./elgamal');
-const ies = require('./ies');
-const kem = require('./kem');
 const key = require('./key');
 const polynomials = require('./polynomials');
 const shamir = require('./shamir');
