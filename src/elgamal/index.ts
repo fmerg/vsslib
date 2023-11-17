@@ -11,24 +11,6 @@ export class ElGamalCiphertext<P extends Point> extends Ciphertext<P, P> {
 }
 
 
-export type DecryptionOptions<P>= {
-  secret: bigint,
-  decryptor?: never,
-  randomness?: never,
-  pub?: never,
-} | {
-  secret?: never,
-  decryptor: P,
-  randomness?: never,
-  pub?: never,
-} | {
-  secret?: never,
-  decryptor?: never,
-  randomness: bigint,
-  pub: P,
-}
-
-
 export async function encrypt<P extends Point>(
   ctx: Group<P>,
   message: P,
@@ -46,15 +28,34 @@ export async function encrypt<P extends Point>(
 export async function decrypt<P extends Point>(
   ctx: Group<P>,
   ciphertext: ElGamalCiphertext<P>,
-  opts: DecryptionOptions<P>
+  secret: bigint,
 ): Promise<P> {
   const { alpha, beta } = ciphertext;
   const { operate, invert, combine } = ctx;
-  let { secret, decryptor, randomness, pub } = opts;
-  decryptor = decryptor || (
-    secret ? await operate(secret, beta) : await operate(randomness!, pub!)
-  )
+  const decryptor = await operate(secret, beta);
   const dInv = await invert(decryptor);
   const plaintext = await combine(alpha, dInv);
+  return plaintext;
+}
+
+export async function decryptWithDecryptor<P extends Point>(
+  ctx: Group<P>,
+  ciphertext: ElGamalCiphertext<P>,
+  decryptor: P,
+): Promise<P> {
+  const decryptorInverse = await ctx.invert(decryptor);
+  const plaintext = await ctx.combine(ciphertext.alpha, decryptorInverse);
+  return plaintext;
+}
+
+export async function decryptWithRandomness<P extends Point>(
+  ctx: Group<P>,
+  ciphertext: ElGamalCiphertext<P>,
+  pub: P,
+  randomness: bigint,
+): Promise<P> {
+  const decryptor = await ctx.operate(randomness, pub);
+  const decryptorInverse = await ctx.invert(decryptor);
+  const plaintext = await ctx.combine(ciphertext.alpha, decryptorInverse);
   return plaintext;
 }

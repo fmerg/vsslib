@@ -131,7 +131,7 @@ export class Combiner<P extends Point> {
       if (!flag) throw new Error('Invalid partial decryptor');
     }
     const decryptor = await this.reconstructDecryptor(shares, opts);
-    return elgamal.decrypt(this.ctx, ciphertext, { decryptor });
+    return elgamal.decryptWithDecryptor(this.ctx, ciphertext, decryptor);
   }
 }
 

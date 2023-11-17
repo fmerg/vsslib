@@ -81,7 +81,7 @@ export class PrivateKey<P extends Point> {
   }
 
   async decrypt(ciphertext: ElGamalCiphertext<P>): Promise<P> {
-    return elgamal.decrypt(this.ctx, ciphertext, { secret: this.scalar });
+    return elgamal.decrypt(this.ctx, ciphertext, this.scalar);
   }
 
   async verifyEncryption(

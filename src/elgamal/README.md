@@ -4,11 +4,11 @@
 const { elgamal, backend } = require('vsslib');
 
 const ctx = backend.initGroup('ed25519');
-
-const { secret, pub } = await ctx.generateKeypair();
 ```
 
-## Encryption and decryption
+```js
+const { secret, pub } = await ctx.generateKeypair();
+```
 
 ```js
 const message = await ctx.randomPoint();
@@ -16,20 +16,14 @@ const message = await ctx.randomPoint();
 const { ciphertext, randomness, decryptor } = await elgamal.encrypt(ctx, message, pub);
 ```
 
-### Decryption with secret key
-
 ```js
-const plaintext = await elgamal.decrypt(ctx, ciphertext, { secret });
+const plaintext = await elgamal.decrypt(ctx, ciphertext, secret);
 ```
 
-### Decryption with decryptor
-
 ```js
-const plaintext = await elgamal.decrypt(ctx, ciphertext, { decryptor });
+const plaintext = await elgamal.decryptWithDecryptor(ctx, ciphertext, decryptor);
 ```
 
-### Decryption with randomness
-
 ```js
-const plaintext = await elgamal.decrypt(ctx, ciphertext, { pub, randomness });
+const plaintext = await elgamal.decryptWithRandomness(ctx, ciphertext, pub, randomness);
 ```
