@@ -15,39 +15,23 @@ const { privateKey, publicKey } = await key.generate('ed25519');
 ```js
 import { core } from 'vsslib';
 
-const combiner = await initCombiner({ label: 'ed25519', threshold: 3 })
+const combiner = await core.initCombiner({ label: 'ed25519', threshold: 3 })
 ```
 
 ### Key distribution
 
 ```js
-const distribution = privateKey.distribute({ nrShares: 5, threshold: 3 });
+const distribution = privateKey.distribute(5, 3);
 
-const { threshold, privateShares, publicShares, polynomial, commitments } = distribution;
-
-const publicShares = distribution.getPublicShares();
-```
-
-```js
-const privateShare = privateShares[0];
-
-await privateShare.verify(commitments);
-```
-
-### Key reconstruction
-
-```js
-const { privateKey, publicKey } = await combiner.reconstructKey(shares);
-```
-
-```js
-const publicKey = await combiner.reconstructPublic(shares);
+const publicShares = await distribution.getPublicShares();
 ```
 
 ### Threshold decryption
 
 ```js
-const { ciphertext } = await publicKey.encrypt(message);
+const message = await publicKey.ctx.randomPoint();
+
+const { ciphertext } = await publicKey.elgamalEncrypt(message);
 ```
 
 ```js
@@ -59,17 +43,11 @@ await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
 ```
 
 ```js
-const { flag, indexes } = await combiner.verifyPartialDecryptors(
-  ciphertext, publicShares, partialDecryptors
-);
+const { flag, indexes } = await combiner.verifyPartialDecryptors(ciphertext, publicShares, partialDecryptors);
 ```
 
 ```js
-const decryptor = await combiner.reconstructDecryptor(shares);
-```
-
-```js
-const plaintext = await combiner.decrypt(ciphertext, shares);
+const plaintext = await combiner.elgamalDecrypt(ciphertext, partialDecryptors);
 ```
 
 ## Modules

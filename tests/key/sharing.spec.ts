@@ -1,11 +1,11 @@
-import { Point } from '../src/backend/abstract'
-import { key, backend } from '../src';
-import { PrivateKey, PublicKey, PrivateShare, PublicShare, KeyDistribution } from '../src/key';
-import { Polynomial } from '../src/polynomials';
-import { Messages } from '../src/key/enums';
-import { partialPermutations } from './helpers';
-import { PartialDecryptor } from '../src/common';
-import { ElGamalCiphertext } from '../src/asymmetric/elgamal';
+import { Point } from '../../src/backend/abstract'
+import { key, backend } from '../../src';
+import { PrivateKey, PublicKey, PrivateShare, PublicShare, KeyDistribution } from '../../src/key';
+import { Polynomial } from '../../src/polynomials';
+import { Messages } from '../../src/key/enums';
+import { PartialDecryptor } from '../../src/common';
+import { ElGamalCiphertext } from '../../src/asymmetric/elgamal';
+import { partialPermutations } from '../helpers';
 
 
 export function selectShare<P extends Point>(index: number, shares: PublicShare<P>[]): PublicShare<P> {
@@ -39,7 +39,7 @@ describe('Key distribution', () => {
     privateShares = await distribution.getSecretShares();
     publicShares = await distribution.getPublicShares();
     const message = await ctx.randomPoint();
-    const encryptionOutput = await publicKey.encrypt(message);
+    const encryptionOutput = await publicKey.elgamalEncrypt(message);
     ciphertext = encryptionOutput.ciphertext;
     partialDecryptors = [];
     for (const privateShare of privateShares) {

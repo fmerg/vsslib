@@ -10,9 +10,11 @@ import { leInt2Buff } from '../utils';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
-// const elgamal = require('../elgamal');
-import { elgamal } from '../asymmetric';
+import { AesMode, Algorithm } from '../types';
+import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
 import { ElGamalCiphertext } from '../asymmetric/elgamal';
+import { KemCiphertext } from '../asymmetric/kem';
+import { IesCiphertext } from '../asymmetric/ies';
 const shamir = require('../shamir');
 
 
@@ -81,12 +83,20 @@ export class PrivateKey<P extends Point> {
     return sigma.proveDlog(ctx, scalar, { u: ctx.generator, v: pub }, opts);
   }
 
-  async decrypt(ciphertext: ElGamalCiphertext<P>): Promise<P> {
+  async elgamalDecrypt(ciphertext: ElGamalCiphertext<P>): Promise<P> {
     return elgamal(this.ctx).decrypt(ciphertext, this.scalar);
   }
 
-  async verifyEncryption(
-    ciphertext: ElGamalCiphertext<P>,
+  async kemDecrypt(ciphertext: KemCiphertext<P>): Promise<Uint8Array> {
+    return kem(this.ctx).decrypt(ciphertext, this.scalar);
+  }
+
+  async iesDecrypt(ciphertext: IesCiphertext<P>): Promise<Uint8Array> {
+    return ies(this.ctx).decrypt(ciphertext, this.scalar);
+  }
+
+  async verifyEncryption<A>(
+    ciphertext: Ciphertext<A, P>,
     proof: SigmaProof<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<boolean> {
@@ -96,8 +106,8 @@ export class PrivateKey<P extends Point> {
     return verified;
   }
 
-  async proveDecryptor(
-    ciphertext: ElGamalCiphertext<P>,
+  async proveDecryptor<A>(
+    ciphertext: Ciphertext<A, P>,
     decryptor: P,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
@@ -106,8 +116,8 @@ export class PrivateKey<P extends Point> {
     return sigma.proveDDH(ctx, secret, { u: ciphertext.beta, v: pub, w: decryptor }, opts);
   }
 
-  async generateDecryptor(
-    ciphertext: ElGamalCiphertext<P>,
+  async generateDecryptor<A>(
+    ciphertext: Ciphertext<A, P>,
     opts?: { noProof?: boolean, algorithm?: Algorithm },
   ): Promise<{ decryptor: P, proof?: SigmaProof<P> }> {
     const { ctx, scalar: secret } = this;
@@ -178,8 +188,8 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     return verified;
   }
 
-  async generatePartialDecryptor(
-    ciphertext: ElGamalCiphertext<P>,
+  async generatePartialDecryptor<A>(
+    ciphertext: Ciphertext<A, P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<PartialDecryptor<P>> {
     const { ctx, index } = this;

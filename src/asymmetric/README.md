@@ -34,7 +34,7 @@ const plaintext = await elgamal(ctx).decryptWithDecryptor(ciphertext, decryptor)
 const plaintext = await elgamal(ctx).decryptWithRandomness(ciphertext, pub, randomness);
 ```
 
-## DHKEM-hybrid Encryption (Key Encapsulation Mechanism)
+## (DH)KEM-Encryption (Key Encapsulation Mechanism)
 
 ```js
 import { kem } from 'vsslib';
@@ -59,7 +59,7 @@ const plaintext = await kem(ctx).decryptWithRandomness(ciphertext, pub, randomne
 ```
 
 
-## (DH/EC)IES-hybrid Encryption (Integrated Encryption Scheme)
+## (DH/EC)IES-Encryption (Integrated Encryption Scheme)
 
 ```js
 import { ies } from 'vsslib';

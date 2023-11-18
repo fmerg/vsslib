@@ -5,8 +5,11 @@ import { BaseShare, PartialDecryptor } from '../common';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
 import { computeLambda } from '../shamir';
-import { elgamal } from '../asymmetric';
+
+import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
 import { ElGamalCiphertext } from '../asymmetric/elgamal';
+import { KemCiphertext } from '../asymmetric/kem';
+import { IesCiphertext } from '../asymmetric/ies';
 
 const shamir = require('../shamir');
 const backend = require('../backend');
@@ -60,8 +63,8 @@ export class Combiner<P extends Point> {
     return new PublicKey(this.ctx, point);
   }
 
-  async verifyPartialDecryptor(
-    ciphertext: ElGamalCiphertext<P>,
+  async verifyPartialDecryptor<A>(
+    ciphertext: Ciphertext<A, P>,
     publicShare: PublicShare<P>,
     share: PartialDecryptor<P>,
     opts?: { nonce?: Uint8Array },
@@ -71,8 +74,8 @@ export class Combiner<P extends Point> {
   }
 
   // TODO: Include indexed nonces option?
-  async verifyPartialDecryptors(
-    ciphertext: ElGamalCiphertext<P>,
+  async verifyPartialDecryptors<A>(
+    ciphertext: Ciphertext<A, P>,
     publicShares: PublicShare<P>[],
     shares: PartialDecryptor<P>[],
     opts?: { raiseOnInvalid?: boolean, threshold?: number, skipThreshold?: boolean },
@@ -132,6 +135,37 @@ export class Combiner<P extends Point> {
     }
     const decryptor = await this.reconstructDecryptor(shares, opts);
     return elgamal(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
+  }
+
+  async elgamalDecrypt(
+    ciphertext: ElGamalCiphertext<P>,
+    shares: PartialDecryptor<P>[],
+    opts?: { threshold?: number, skipThreshold?: boolean },
+  ): Promise<P> {
+    const decryptor = await this.reconstructDecryptor(shares, opts);
+    return elgamal(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
+  }
+
+  async kemDecrypt(
+    ciphertext: KemCiphertext<P>,
+    shares: PartialDecryptor<P>[],
+    opts?: { threshold?: number, skipThreshold?: boolean },
+  ): Promise<Uint8Array> {
+    // TODO: Handle decryption error
+    const decryptor = await this.reconstructDecryptor(shares, opts);
+    // TODO: Handle decryption error
+    return kem(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
+  }
+
+  async iesDecrypt(
+    ciphertext: IesCiphertext<P>,
+    shares: PartialDecryptor<P>[],
+    opts?: { threshold?: number, skipThreshold?: boolean },
+  ): Promise<Uint8Array> {
+    // TODO: Handle decryption error
+    const decryptor = await this.reconstructDecryptor(shares, opts);
+    // TODO: Handle decryption error
+    return ies(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
   }
 }
 
