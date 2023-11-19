@@ -86,26 +86,32 @@ export class EcGroup extends Group<EcPoint> {
     return new EcPoint(this._base.multiply(scalar));
   }
 
-  validateBytes = async (bytes: Uint8Array): Promise<boolean> => {
-    if (bytes.length > this.curve.CURVE.Fp.BYTES)
+  validateBytes = async (bytes: Uint8Array, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
+    const flag = bytes.length <= this.curve.CURVE.Fp.BYTES;
+    if (!flag && (opts ? opts.raiseOnInvalid : true))
       throw new Error(Messages.INVALID_BYTELENGTH);
-    return true;
+    return flag;
   }
 
-  validateScalar = async (scalar: bigint): Promise<boolean> => {
-    if (!(0 < scalar && scalar < this.order))
+  validateScalar = async (scalar: bigint, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
+    const flag = 0 < scalar && scalar < this.order;
+    if (!flag && (opts ? opts.raiseOnInvalid : true))
       throw new Error(Messages.INVALID_SCALAR)
-    return true;
+    return flag;
   }
 
-  validatePoint = async (point: EcPoint): Promise<boolean> => {
-    if (await point.wrapped.equals(this._zero)) return true;
+  validatePoint = async (point: EcPoint, opts?: { raiseOnInvalid: boolean}): Promise<boolean> => {
+    let flag = true;
+    if (await point.wrapped.equals(this._zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: any) {
-      if (err.message.startsWith('bad point: '))
-        throw new Error(Messages.POINT_NOT_IN_SUBGROUP);
+      if (err.message.startsWith('bad point: ')) {
+        flag = false;
+        if (opts ? opts.raiseOnInvalid : true)
+          throw new Error(Messages.POINT_NOT_IN_SUBGROUP);
+      }
       else throw err;
     }
-    return true;
+    return flag;
   }
 
   operate = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {
@@ -128,10 +134,11 @@ export class EcGroup extends Group<EcPoint> {
     return new EcPoint(this._curve.ExtendedPoint.fromHex(hexnum));
   }
 
-  generateKeypair = async (secret?: bigint): Promise<{ secret: bigint, point: EcPoint }> => {
-    secret = secret || await this.randomScalar();
-    const point = await this.operate(secret, this.generator);
-    return { secret, point };
+  generateKeypair = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {
+    const { randomScalar, operate, generator } = this;
+    secret = secret || await randomScalar();
+    const pub = await operate(secret, generator);
+    return { secret, pub };
   }
 }
 

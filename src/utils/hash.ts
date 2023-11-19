@@ -17,5 +17,5 @@ export default async function(
   assertAlgorithm(algorithm);
   if (encoding) assertEncoding(encoding);
   const hasher = createHash(algorithm).update(buffer);
-  return encoding ? hasher.digest(encoding) : new Uint8Array(hasher.digest());
+  return encoding ? hasher.digest(encoding) : Uint8Array.from(hasher.digest());
 }

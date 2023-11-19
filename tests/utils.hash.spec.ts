@@ -15,7 +15,7 @@ describe('hash digest', () => {
     const hasher = createHash(algorithm || Algorithms.DEFAULT).update(buffer);
     const expected = encoding ?
       hasher.digest(encoding == Encodings.HEX ? Encodings.HEX : Encodings.BASE64) :
-      new Uint8Array(hasher.digest());
+      Uint8Array.from(hasher.digest());
     expect(digest).toEqual(expected);
   });
 });

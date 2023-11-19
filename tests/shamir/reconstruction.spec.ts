@@ -1,5 +1,5 @@
 import { shamir, backend } from '../../src';
-import { SecretShare, PointShare } from '../../src/shamir';
+import { ScalarShare, PointShare } from '../../src/shamir';
 import { Point } from '../../src/backend/abstract';
 import { partialPermutations } from '../helpers';
 
@@ -12,7 +12,7 @@ describe('Reconstruction from shares', () => {
 
   let secret: bigint;
   let pub: Point;
-  let secretShares: SecretShare<Point>[];
+  let secretShares: ScalarShare<Point>[];
   let publicShares: PointShare<Point>[];
 
   beforeAll(async () => {

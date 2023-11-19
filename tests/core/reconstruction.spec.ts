@@ -1,0 +1,84 @@
+import { Point } from '../../src/backend/abstract'
+import { key, backend } from '../../src';
+import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
+import { KeyDistribution } from '../../src/key';
+import { Combiner } from '../../src/core';
+import { Label } from '../../src/types';
+import { partialPermutations } from '../helpers';
+
+const core = require('../../src/core');
+
+
+const runSetup = async (opts: {
+  label: Label,
+  nrShares: number,
+  threshold: number,
+  invalidIndexes?: number[],
+}) => {
+  const { label, nrShares, threshold } = opts;
+  const { privateKey, publicKey } = await key.generate(label);
+  const distribution = await privateKey.distribute(nrShares, threshold);
+  const privateShares = await distribution.getSecretShares();
+  const publicShares = await distribution.getPublicShares();
+  const message = await publicKey.ctx.randomPoint();
+  const combiner = core.initCombiner({ label, threshold });
+  return {
+    privateKey,
+    publicKey,
+    privateShares,
+    publicShares,
+    message,
+    combiner,
+  }
+}
+
+
+describe('Key reconstruction', () => {
+  const nrShares = 5;
+  const threshold = 3;
+  const label = 'ed25519' as Label;
+  let setup: any;
+
+  beforeAll(async () => {
+    setup = await runSetup({ label, nrShares, threshold });
+  });
+
+  test('Private reconstruction - skip threshold check', async () => {
+    const { privateKey, combiner, privateShares } = setup;
+    partialPermutations(privateShares).forEach(async (qualifiedSet) => {
+      const { privateKey: privateReconstructed } = await combiner.reconstructKey(
+        qualifiedSet, { skipThreshold: true }
+      );
+      expect(await privateReconstructed.isEqual(privateKey)).toBe(qualifiedSet.length >= threshold);
+    });
+  });
+  test('Private reconstruction - with threshold check', async () => {
+    const { privateKey, combiner, privateShares } = setup;
+    partialPermutations(privateShares, 0, threshold - 1).forEach(async (qualifiedSet) => {
+      await expect(combiner.reconstructKey(qualifiedSet)).rejects.toThrow('Nr shares less than threshold');
+    });
+    partialPermutations(privateShares, threshold, nrShares).forEach(async (qualifiedSet) => {
+      const { privateKey: privateReconstructed } = await combiner.reconstructKey(qualifiedSet);
+      expect(await privateReconstructed.isEqual(privateKey)).toBe(true);
+    });
+  });
+  test('Public reconstruction - skip threshold check', async () => {
+    const { publicKey, combiner, publicShares } = setup;
+    partialPermutations(publicShares).forEach(async (qualifiedSet) => {
+      const publicReconstructed = await combiner.reconstructPublic(
+        qualifiedSet, { skipThreshold: true }
+      );
+      expect(await publicReconstructed.isEqual(publicKey)).toBe(qualifiedSet.length >= threshold);
+    });
+  });
+  test('Public reconstruction - with threshold check', async () => {
+    const { publicKey, combiner, publicShares } = setup;
+    partialPermutations(publicShares, 0, threshold - 1).forEach(async (qualifiedSet) => {
+      await expect(combiner.reconstructPublic(qualifiedSet)).rejects.toThrow('Nr shares less than threshold');
+    });
+    partialPermutations(publicShares, threshold, nrShares).forEach(async (qualifiedSet) => {
+      const publicReconstructed = await combiner.reconstructPublic(qualifiedSet);
+      expect(await publicReconstructed.isEqual(publicKey)).toBe(true);
+    });
+  });
+});

@@ -234,7 +234,7 @@ describe('bytes validation', () => {
     const b = await ctx.randomBytes();
     const isValid = await ctx.validateBytes(b);
     expect(isValid).toBe(true);
-    const c = new Uint8Array([...b, 0]);
+    const c = Uint8Array.from([...b, 0]);
     await expect(ctx.validateBytes(c)).rejects.toThrow(
       Messages.INVALID_BYTELENGTH
     );
@@ -245,8 +245,8 @@ describe('bytes validation', () => {
 describe('Keypair generation - no given secret', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
-    const { secret, point } = await ctx.generateKeypair();
-    expect(await point.isEqual(await ctx.operate(secret, ctx.generator))).toBe(true);
+    const { secret, pub } = await ctx.generateKeypair();
+    expect(await pub.isEqual(await ctx.operate(secret, ctx.generator))).toBe(true);
   })
 });
 
@@ -254,8 +254,8 @@ describe('Keypair generation - given secret', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const scalar = await ctx.randomScalar();
-    const { secret, point } = await ctx.generateKeypair(scalar);
+    const { secret, pub } = await ctx.generateKeypair(scalar);
     expect(secret).toEqual(scalar);
-    expect(await point.isEqual(await ctx.operate(scalar, ctx.generator))).toBe(true);
+    expect(await pub.isEqual(await ctx.operate(scalar, ctx.generator))).toBe(true);
   })
 });

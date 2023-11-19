@@ -33,7 +33,17 @@ export enum Algorithms {
   SHA3_512  = 'sha3-512',
 }
 
+export enum AesModes {
+  DEFAULT     = 'aes-256-cbc',
+  AES_256_CBC = 'aes-256-cbc',
+  AES_256_CFB = 'aes-256-cfb',
+  AES_256_OFB = 'aes-256-ofb',
+  AES_256_CTR = 'aes-256-ctr',
+  AES_256_GCM = 'aes-256-gcm',
+}
+
 export enum Encodings {
   HEX       = 'hex',
   BASE64    = 'base64',
 }
+

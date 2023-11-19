@@ -25,6 +25,9 @@
     "test-polynomials:reload": "jest tests/polynomials --watch --maxWorkers=1 --verbose",
     "test-shamir:reload": "jest tests/shamir --watch --maxWorkers=1 --verbose",
     "test-core:reload": "jest tests/core --watch --maxWorkers=1 --verbose",
+    "test-kem:reload": "jest tests/kem --watch --maxWorkers=1 --verbose",
+    "test-aes:reload": "jest tests/aes --watch --maxWorkers=1 --verbose",
+    "test-ies:reload": "jest tests/ies --watch --maxWorkers=1 --verbose",
     "build": "rm -rf ./build && tsc",
     "docs": "typedoc --out docs src/*.ts"
   },

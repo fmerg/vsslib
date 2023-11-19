@@ -1,7 +1,4 @@
-import { Modular, Elliptic, Algorithms, Encodings } from './enums';
-import { Point } from './backend/abstract';
-import { SigmaProof } from './sigma';
-
+import { Modular, Elliptic, Algorithms, AesModes, Encodings } from './enums';
 
 export type Label =
   | Modular.BITS_2048
@@ -20,29 +17,13 @@ export type Algorithm =
   | Algorithms.SHA3_384
   | Algorithms.SHA3_512;
 
+export type AesMode =
+  | AesModes.AES_256_CBC
+  | AesModes.AES_256_CFB
+  | AesModes.AES_256_OFB
+  | AesModes.AES_256_CTR
+  | AesModes.AES_256_GCM;
+
 export type Encoding =
   | Encodings.HEX
   | Encodings.BASE64;
-
-
-export abstract class Share<T> {
-  value: T;
-  index: number;
-
-  constructor(value: T, index: number) {
-    this.value = value;
-    this.index = index;
-  }
-}
-
-export class PartialDecryptor<P extends Point> implements Share<P> {
-  value: P;
-  index: number;
-  proof: SigmaProof<P>;
-
-  constructor(value: P, index: number, proof: SigmaProof<P>) {
-    this.value = value;
-    this.index = index;
-    this.proof = proof;
-  }
-};
