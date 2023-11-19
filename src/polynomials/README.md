@@ -44,7 +44,7 @@ const r = p.mult(q);
 ```
 
 ```js
-const areEqual = p.isEqual(q);
+const areEqual = p.equals(q);
 ```
 
 

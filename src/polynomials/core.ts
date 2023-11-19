@@ -75,7 +75,7 @@ export async function verifyFeldmannCommitments<P extends Point>(
     const curr = await operate(mod(BigInt(i ** j), order), c);
     rhs = await combine(rhs, curr);
   }
-  return await lhs.isEqual(rhs);
+  return await lhs.equals(rhs);
 }
 
 
@@ -94,5 +94,5 @@ export async function verifyPedersenCommitments<P extends Point>(
   for (const [j, c] of commitments.entries()) {
     rhs = await combine(rhs, await operate(BigInt(i ** j), c));
   }
-  return await lhs.isEqual(rhs);
+  return await lhs.equals(rhs);
 }

@@ -46,11 +46,11 @@ export class PublicKey<P extends Point> {
     return PublicKey.fromPoint(ctx, ctx.unhexify(value));
   }
 
-  async isEqual<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
+  async equals<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
     return (
-      (await this.ctx.isEqual(other.ctx)) &&
+      (await this.ctx.equals(other.ctx)) &&
       // TODO: Constant time bytes comparison
-      (await this.point.isEqual(other.point))
+      (await this.point.equals(other.point))
     );
   }
 

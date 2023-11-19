@@ -39,7 +39,7 @@ describe('Interpolation - fixed points', () => {
     for (const points of collections) {
       const poly1 = await Lagrange.interpolate(ctx, points);
       const poly2 = interpolate(points, { order });
-      expect(poly2.isEqual(poly1)).toBe(true);
+      expect(poly2.equals(poly1)).toBe(true);
       for (const [x, y] of points) {
         expect(poly1.evaluate(x)).toEqual(BigInt(y) % order);
       }
@@ -61,7 +61,7 @@ describe('Interpolation - random points', () => {
     }
     const poly1 = await Lagrange.interpolate(ctx, points);
     const poly2 = interpolate(points, { order });
-    expect(poly2.isEqual(poly1)).toBe(true);
+    expect(poly2.equals(poly1)).toBe(true);
     for (const [x, y] of points) {
       expect(poly1.evaluate(x)).toEqual(y % order);
       expect(poly2.evaluate(x)).toEqual(y % order);

@@ -121,7 +121,7 @@ export async function verifyLinearRelation<P extends Point>(
     for (const [j, s] of response.entries()) {
       lhs = await combine(lhs, await operate(s, us[i][j]));
     }
-    flag &&= await lhs.isEqual(rhs);
+    flag &&= await lhs.equals(rhs);
   }
   return flag;
 }

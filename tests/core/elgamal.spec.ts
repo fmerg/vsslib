@@ -142,7 +142,7 @@ describe('Decryptor reconstruction', () => {
     const { combiner, ciphertext, decryptor: expectedDecryptor, partialDecryptors } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
       const decryptor = await combiner.reconstructDecryptor(qualifiedSet, { skipThreshold: true });
-      expect(await decryptor.isEqual(expectedDecryptor)).toBe(qualifiedSet.length >= threshold);
+      expect(await decryptor.equals(expectedDecryptor)).toBe(qualifiedSet.length >= threshold);
     });
   });
   test('With threshold check', async () => {
@@ -152,7 +152,7 @@ describe('Decryptor reconstruction', () => {
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
       const decryptor = await combiner.reconstructDecryptor(qualifiedSet);
-      expect(await decryptor.isEqual(expectedDecryptor)).toBe(true);
+      expect(await decryptor.equals(expectedDecryptor)).toBe(true);
     });
   });
 });
@@ -173,8 +173,8 @@ describe('Threshold decryption', () => {
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
       const plaintext1 = await combiner.elgamalDecrypt(ciphertext, qualifiedSet, { skipThreshold: true });
       const plaintext2 = await privateKey.elgamalDecrypt(ciphertext);
-      expect(await plaintext1.isEqual(message)).toBe(qualifiedSet.length >= threshold);
-      expect(await plaintext1.isEqual(plaintext2)).toBe(qualifiedSet.length >= threshold);
+      expect(await plaintext1.equals(message)).toBe(qualifiedSet.length >= threshold);
+      expect(await plaintext1.equals(plaintext2)).toBe(qualifiedSet.length >= threshold);
     });
   });
   test('With threshold check', async () => {
@@ -184,7 +184,7 @@ describe('Threshold decryption', () => {
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
       const plaintext = await combiner.elgamalDecrypt(ciphertext, qualifiedSet);
-      expect(await plaintext.isEqual(message)).toBe(true);
+      expect(await plaintext.equals(message)).toBe(true);
     });
   });
 });

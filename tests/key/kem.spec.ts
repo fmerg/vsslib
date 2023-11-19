@@ -114,7 +114,7 @@ describe('Decryptor generation', () => {
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor: expectedDecryptor } = await publicKey.kemEncrypt(message);
     const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { noProof: false });
-    expect(await decryptor.isEqual(expectedDecryptor)).toBe(true);
+    expect(await decryptor.equals(expectedDecryptor)).toBe(true);
     expect(await publicKey.verifyDecryptor(ciphertext, decryptor, proof)).toBe(true);
   });
 });

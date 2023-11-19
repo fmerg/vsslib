@@ -71,7 +71,7 @@ describe('Sharing without predefined shares', () => {
     for (let index = 1; index < nrShares; index++) {
       const { value: secret } = selectShare(index, secretShares);
       const { value: pub } = selectShare(index, publicShares);
-      expect(await (pub as Point).isEqual(await operate(secret, generator))).toBe(true);
+      expect(await (pub as Point).equals(await operate(secret, generator))).toBe(true);
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
@@ -108,7 +108,7 @@ describe('Sharing with predefined shares', () => {
       for (let index = 1; index < nrShares; index++) {
         const { value: secret } = selectShare(index, secretShares);
         const { value: pub } = selectShare(index, publicShares);
-        expect(await (pub as Point).isEqual(await operate(secret, generator))).toBe(true);
+        expect(await (pub as Point).equals(await operate(secret, generator))).toBe(true);
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);

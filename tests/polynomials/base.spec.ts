@@ -77,11 +77,11 @@ describe('Equal polynomials', () => {
     const poly4 = new BasePolynomial(coeffs.concat([0]), order);
     const poly5 = poly1.clone();
 
-    expect(poly1.isEqual(poly1)).toBe(true);
-    expect(poly2.isEqual(poly1)).toBe(true);
-    expect(poly3.isEqual(poly1)).toBe(true);
-    expect(poly4.isEqual(poly1)).toBe(true);
-    expect(poly5.isEqual(poly1)).toBe(true);
+    expect(poly1.equals(poly1)).toBe(true);
+    expect(poly2.equals(poly1)).toBe(true);
+    expect(poly3.equals(poly1)).toBe(true);
+    expect(poly4.equals(poly1)).toBe(true);
+    expect(poly5.equals(poly1)).toBe(true);
   });
 });
 
@@ -98,10 +98,10 @@ describe('Non-equal polynomials', () => {
       order
     );
     const poly5 = poly4.clone();
-    expect(poly3.isEqual(poly1)).toBe(false);
-    expect(poly2.isEqual(poly1)).toBe(false);
-    expect(poly4.isEqual(poly1)).toBe(false);
-    expect(poly5.isEqual(poly1)).toBe(false);
+    expect(poly3.equals(poly1)).toBe(false);
+    expect(poly2.equals(poly1)).toBe(false);
+    expect(poly4.equals(poly1)).toBe(false);
+    expect(poly5.equals(poly1)).toBe(false);
   });
 });
 
@@ -152,8 +152,8 @@ describe('Addition', () => {
     const poly1 = new BasePolynomial(coeffs1, order);
     const poly2 = new BasePolynomial(coeffs2.map((num: number) => num + order), order);
     const poly3 = new BasePolynomial(coeffs3, order);
-    expect(poly3.isEqual(poly1.add(poly2))).toBe(true);
-    expect(poly3.isEqual(poly2.add(poly1))).toBe(true);
+    expect(poly3.equals(poly1.add(poly2))).toBe(true);
+    expect(poly3.equals(poly2.add(poly1))).toBe(true);
   });
 });
 
@@ -175,8 +175,8 @@ describe('Multiplication', () => {
     const poly1 = new BasePolynomial(coeffs1, order);
     const poly2 = new BasePolynomial(coeffs2.map((num: number) => num + order), order);
     const poly3 = new BasePolynomial(coeffs3, order);
-    expect(poly3.isEqual(poly1.mult(poly2))).toBe(true);
-    expect(poly3.isEqual(poly2.mult(poly1))).toBe(true);
+    expect(poly3.equals(poly1.mult(poly2))).toBe(true);
+    expect(poly3.equals(poly2.mult(poly1))).toBe(true);
   });
 });
 
@@ -200,10 +200,10 @@ describe('Scalar multiplication', () => {
     const poly2 = poly1.multScalar(scalar);
 
     const poly3 = new BasePolynomial(coeffs.map((c: number) => scalar * c), order);
-    expect(poly2.isEqual(poly3)).toBe(true);
+    expect(poly2.equals(poly3)).toBe(true);
 
     const poly4 = new BasePolynomial([scalar], order);
-    expect(poly2.isEqual(poly1.mult(poly4))).toBe(true);
+    expect(poly2.equals(poly1.mult(poly4))).toBe(true);
   });
 });
 

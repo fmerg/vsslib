@@ -38,7 +38,7 @@ export class BasePolynomial {
     return flag;
   }
 
-  isEqual = (other: BasePolynomial): boolean => {
+  equals = (other: BasePolynomial): boolean => {
     let flag = true;
     flag &&= this.hasEqualCoeffs(other);
     flag &&= this.order === other.order;

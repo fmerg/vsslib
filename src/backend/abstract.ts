@@ -5,7 +5,7 @@ import { leInt2Buff, leBuff2Int, mod } from '../utils';
 const utils = require('../utils');
 
 export interface Point {
-  isEqual: (other: Point) => Promise<boolean>;
+  equals: (other: Point) => Promise<boolean>;
   toBytes: () => Uint8Array;
   toHex: () => string;
 }
@@ -35,7 +35,7 @@ export abstract class Group<P extends Point> {
     return mod(leBuff2Int(bytes), this.order);
   }
 
-  abstract isEqual<Q extends Point>(other: Group<Q>): Promise<boolean>;
+  abstract equals<Q extends Point>(other: Group<Q>): Promise<boolean>;
   abstract randomBytes: () => Promise<Uint8Array>;
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;

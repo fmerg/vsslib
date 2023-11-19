@@ -142,7 +142,7 @@ describe('Decryptor reconstruction', () => {
     const { combiner, ciphertext, decryptor: expectedDecryptor, partialDecryptors } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
       const decryptor = await combiner.reconstructDecryptor(qualifiedSet, { skipThreshold: true });
-      expect(await decryptor.isEqual(expectedDecryptor)).toBe(qualifiedSet.length >= threshold);
+      expect(await decryptor.equals(expectedDecryptor)).toBe(qualifiedSet.length >= threshold);
     });
   });
   test('With threshold check', async () => {
@@ -152,7 +152,7 @@ describe('Decryptor reconstruction', () => {
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
       const decryptor = await combiner.reconstructDecryptor(qualifiedSet);
-      expect(await decryptor.isEqual(expectedDecryptor)).toBe(true);
+      expect(await decryptor.equals(expectedDecryptor)).toBe(true);
     });
   });
 });

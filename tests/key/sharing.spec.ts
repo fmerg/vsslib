@@ -98,14 +98,14 @@ describe('Key distribution', () => {
   test('Private key reconstruction', async () => {
     partialPermutations(privateShares, 1).forEach(async (qualifiedSet) => {
       const reconstructed = await PrivateKey.fromShares(qualifiedSet);
-      expect(await reconstructed.isEqual(privateKey)).toBe(qualifiedSet.length >= threshold);
+      expect(await reconstructed.equals(privateKey)).toBe(qualifiedSet.length >= threshold);
     });
   });
 
   test('Public key reconstruction', async () => {
     partialPermutations(publicShares, 1).forEach(async (qualifiedSet) => {
       const reconstructed = await PublicKey.fromShares(qualifiedSet);
-      expect(await reconstructed.isEqual(publicKey)).toBe(qualifiedSet.length >= threshold);
+      expect(await reconstructed.equals(publicKey)).toBe(qualifiedSet.length >= threshold);
     });
   });
 

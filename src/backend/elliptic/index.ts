@@ -30,7 +30,7 @@ class EcPoint implements Point {
     return this._wrapped;
   }
 
-  async isEqual<Q extends Point>(other: Q): Promise<boolean> {
+  async equals<Q extends Point>(other: Q): Promise<boolean> {
     return (other instanceof EcPoint) && (this._wrapped.equals(other.wrapped));
   }
 
@@ -66,7 +66,7 @@ export class EcGroup extends Group<EcPoint> {
     return this._curve;
   }
 
-  async isEqual<Q extends Point>(other: Group<Q>): Promise<boolean> {
+  async equals<Q extends Point>(other: Group<Q>): Promise<boolean> {
     return (other instanceof EcGroup) && (this._curve == other.curve);
   }
 

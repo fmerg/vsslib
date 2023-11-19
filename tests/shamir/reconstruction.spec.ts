@@ -33,7 +33,7 @@ describe('Reconstruction from shares', () => {
   test('Public point reconstruction', async () => {
     partialPermutations(publicShares).forEach(async (qualifiedSet) => {
       let reconstructed = await shamir.reconstructPublic(ctx, qualifiedSet);
-      expect(await reconstructed.isEqual(pub)).toBe(qualifiedSet.length >= threshold);
+      expect(await reconstructed.equals(pub)).toBe(qualifiedSet.length >= threshold);
     });
   });
 })

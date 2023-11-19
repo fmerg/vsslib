@@ -14,7 +14,7 @@ describe('Elgamal encryption and decryption', () => {
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext } = await publicKey.elgamalEncrypt(message);
     const plaintext = await privateKey.elgamalDecrypt(ciphertext);
-    expect(await plaintext.isEqual(message)).toBe(true);
+    expect(await plaintext.equals(message)).toBe(true);
   });
 });
 
@@ -112,7 +112,7 @@ describe('Decryptor generation', () => {
     const message = await privateKey.ctx.randomPoint();
     const { ciphertext, decryptor: expectedDecryptor } = await publicKey.elgamalEncrypt(message);
     const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { noProof: false });
-    expect(await decryptor.isEqual(expectedDecryptor)).toBe(true);
+    expect(await decryptor.equals(expectedDecryptor)).toBe(true);
     expect(await publicKey.verifyDecryptor(ciphertext, decryptor, proof)).toBe(true);
   });
 });

@@ -57,9 +57,9 @@ export class PrivateKey<P extends Point> {
     return PrivateKey.fromBytes(ctx, bytes);
   }
 
-  async isEqual<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
+  async equals<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
     return (
-      (await this.ctx.isEqual(other.ctx)) &&
+      (await this.ctx.equals(other.ctx)) &&
       // TODO: Constant time bytes comparison
       (this.scalar == other.scalar)
     );

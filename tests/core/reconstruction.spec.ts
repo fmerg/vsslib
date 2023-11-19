@@ -49,7 +49,7 @@ describe('Key reconstruction', () => {
       const { privateKey: privateReconstructed } = await combiner.reconstructKey(
         qualifiedSet, { skipThreshold: true }
       );
-      expect(await privateReconstructed.isEqual(privateKey)).toBe(qualifiedSet.length >= threshold);
+      expect(await privateReconstructed.equals(privateKey)).toBe(qualifiedSet.length >= threshold);
     });
   });
   test('Private reconstruction - with threshold check', async () => {
@@ -59,7 +59,7 @@ describe('Key reconstruction', () => {
     });
     partialPermutations(privateShares, threshold, nrShares).forEach(async (qualifiedSet) => {
       const { privateKey: privateReconstructed } = await combiner.reconstructKey(qualifiedSet);
-      expect(await privateReconstructed.isEqual(privateKey)).toBe(true);
+      expect(await privateReconstructed.equals(privateKey)).toBe(true);
     });
   });
   test('Public reconstruction - skip threshold check', async () => {
@@ -68,7 +68,7 @@ describe('Key reconstruction', () => {
       const publicReconstructed = await combiner.reconstructPublic(
         qualifiedSet, { skipThreshold: true }
       );
-      expect(await publicReconstructed.isEqual(publicKey)).toBe(qualifiedSet.length >= threshold);
+      expect(await publicReconstructed.equals(publicKey)).toBe(qualifiedSet.length >= threshold);
     });
   });
   test('Public reconstruction - with threshold check', async () => {
@@ -78,7 +78,7 @@ describe('Key reconstruction', () => {
     });
     partialPermutations(publicShares, threshold, nrShares).forEach(async (qualifiedSet) => {
       const publicReconstructed = await combiner.reconstructPublic(qualifiedSet);
-      expect(await publicReconstructed.isEqual(publicKey)).toBe(true);
+      expect(await publicReconstructed.equals(publicKey)).toBe(true);
     });
   });
 });

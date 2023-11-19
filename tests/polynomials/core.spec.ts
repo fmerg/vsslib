@@ -21,7 +21,7 @@ describe('Random polynomial generation', () => {
     const ctx = backend.initGroup('ed25519');
     const degree = 7;
     const polynomial = await Polynomial.random(ctx, degree);
-    expect(await polynomial.ctx.isEqual(ctx)).toBe(true);
+    expect(await polynomial.ctx.equals(ctx)).toBe(true);
     expect(polynomial.degree).toEqual(degree);
     expect(polynomial.coeffs.length).toEqual(degree + 1);
   });
@@ -46,8 +46,8 @@ describe('Algebraic operations with random poynomials', () => {
         poly2.coeffs.slice(poly1.degree + 1)
       ),
     );
-    expect(poly3.isEqual(poly1.add(poly2))).toBe(true);
-    expect(poly3.isEqual(poly2.add(poly1))).toBe(true);
+    expect(poly3.equals(poly1.add(poly2))).toBe(true);
+    expect(poly3.equals(poly2.add(poly1))).toBe(true);
   });
 
   it.each(cartesian([degree_pairs, __labels]))('Multiplication with degrees %s over %s', async (
@@ -64,8 +64,8 @@ describe('Algebraic operations with random poynomials', () => {
       }
     }
     const poly3 = new Polynomial(ctx, newCoeffs);
-    expect(poly3.isEqual(poly1.mult(poly2))).toBe(true);
-    expect(poly3.isEqual(poly2.mult(poly1))).toBe(true);
+    expect(poly3.equals(poly1.mult(poly2))).toBe(true);
+    expect(poly3.equals(poly2.mult(poly1))).toBe(true);
   });
 });
 
