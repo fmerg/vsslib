@@ -106,11 +106,13 @@ Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `x_j` such
 that `v_i = Π_{j} u_ij ^ x_j` as follows:
 
 ```js
-const proof = await sigma.proveLinearRelation(ctx, [x1, x2, ...], { us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] }, { algorithm: 'sha256' });
+import { linear } from 'vsslib/sigma';
+
+const proof = await linear(ctx, 'sha256').prove([x1, x2, ...], { us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] });
 ```
 
 Verify the proof as follows:
 
 ```js
-const valid = await sigma.verifyLinearRelation(ctx, { us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] });
+const valid = await linear(ctx).verify({ us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] }, proof);
 ```
