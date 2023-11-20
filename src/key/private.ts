@@ -10,7 +10,7 @@ import { leInt2Buff } from '../utils';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
-import { dlog } from '../sigma';
+import { dlog, ddh } from '../sigma';
 import { AesMode, Algorithm } from '../types';
 import { Algorithms } from '../enums';
 import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
@@ -119,7 +119,10 @@ export class PrivateKey<P extends Point> {
   ): Promise<SigmaProof<P>> {
     const { ctx, scalar: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
-    return sigma.proveDDH(ctx, secret, { u: ciphertext.beta, v: pub, w: decryptor }, opts);
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const nonce = opts ? (opts.nonce) : undefined;
+    const proof = await ddh(ctx, algorithm).prove(secret, { u: ciphertext.beta, v: pub, w: decryptor }, nonce);
+    return proof;
   }
 
   async generateDecryptor<A>(

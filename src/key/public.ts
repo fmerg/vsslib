@@ -9,7 +9,7 @@ import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
 import { ElGamalCiphertext } from '../asymmetric/elgamal';
 import { KemCiphertext } from '../asymmetric/kem';
 import { IesCiphertext } from '../asymmetric/ies';
-import { dlog } from '../sigma';
+import { dlog, ddh } from '../sigma';
 const backend = require('../backend');
 const sigma = require('../sigma');
 const shamir = require('../shamir');
@@ -101,7 +101,8 @@ export class PublicKey<P extends Point> {
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
   ): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const verified = await sigma.verifyDDH(ctx, { u: ciphertext.beta, v: pub, w: decryptor }, proof, opts);
+    const nonce = opts ? (opts.nonce) : undefined;
+    const verified = await ddh(ctx).verify({ u: ciphertext.beta, v: pub, w: decryptor }, proof, nonce);
     const raiseOnInvalid = opts ?
       (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
       true;

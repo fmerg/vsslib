@@ -41,13 +41,13 @@ Genearate a SHA256-based NIZK proof-of-knowledge of the secret scalar
 `z` as follows:
 
 ```js
-const proof = await sigma.proveDDH(ctx, z, { u, v, w }, { algorithm: 'sha256' });
+const proof = await ddh(ctx, 'sha256').prove(z, { u, v, w });
 ```
 
 Verify the proof against the `(u, v, w)` DDH-tuple as follows:
 
 ```js
-const valid = await sigma.verifyDDH(ctx, { u, v, w }, proof);
+const valid = await ddh(ctx).verify(z, { u, v, w }, proof);
 ```
 
 Note that `(u, v, w)` being a DDH-tuple as above is equivalent to
