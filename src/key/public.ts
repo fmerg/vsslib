@@ -4,10 +4,12 @@ import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../common';
 import { AesMode, Algorithm } from '../types';
+import { Algorithms } from '../enums';
 import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
 import { ElGamalCiphertext } from '../asymmetric/elgamal';
 import { KemCiphertext } from '../asymmetric/kem';
 import { IesCiphertext } from '../asymmetric/ies';
+import { dlog } from '../sigma';
 const backend = require('../backend');
 const sigma = require('../sigma');
 const shamir = require('../shamir');
@@ -56,7 +58,8 @@ export class PublicKey<P extends Point> {
 
   async verifyIdentity(proof: SigmaProof<P>, opts?: { nonce?: Uint8Array }): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const verified = await sigma.verifyDlog(ctx, { u: ctx.generator, v: pub }, proof, opts);
+    const nonce = opts ? (opts.nonce) : undefined;
+    const verified = await dlog(ctx).verify({ u: ctx.generator, v: pub }, proof, nonce);
     if (!verified) throw new Error(Messages.INVALID_IDENTITY_PROOF);
     return verified;
   }
@@ -85,7 +88,10 @@ export class PublicKey<P extends Point> {
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
     const { ctx } = this;
-    return sigma.proveDlog(ctx, randomness, { u: ctx.generator, v: ciphertext.beta }, opts);
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const nonce = opts ? (opts.nonce) : undefined;
+    const proof = dlog(ctx, algorithm).prove(randomness, { u: ctx.generator, v: ciphertext.beta }, nonce);
+    return proof;
   }
 
   async verifyDecryptor<A>(

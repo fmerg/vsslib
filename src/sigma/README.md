@@ -18,14 +18,16 @@ Generate a SHA256-based NIZK proof-of-knowledge of a secret scalar `x` such
 that `v = u ^ x` as follows:
 
 ```js
-const proof = await sigma.proveDlog(ctx, x, { u, v }, { algorithm: 'sha256' });
+import { dlog } from 'vsslib/sigma';
+
+const proof = await dlog(ctx, 'sha256').prove(x, { u, v });
 ```
 
 Verify the proof against the `(u, v)` pair as follows:
 
 
 ```js
-const valid = await sigma.verifyDlog(ctx, { u, v }, proof);
+const valid = await dlog(ctx).verify({ u, v }, proof);
 ```
 
 ## DDH proof (Chaum-Pedersen protocol)
