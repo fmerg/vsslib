@@ -18,6 +18,8 @@
     "test-nizk:reload": "jest tests/elgamal.nizk --watch --maxWorkers=1 --verbose",
     "test-sigma:reload": "jest tests/sigma --watch --maxWorkers=1 --verbose",
     "test-linear:reload": "jest tests/sigma/linear --watch --maxWorkers=1 --verbose",
+    "test-andDlog:reload": "jest tests/sigma/andDlog --watch --maxWorkers=1 --verbose",
+    "test-eqDlog:reload": "jest tests/sigma/eqDlog --watch --maxWorkers=1 --verbose",
     "test-dlog:reload": "jest tests/sigma/dlog --watch --maxWorkers=1 --verbose",
     "test-ddh:reload": "jest tests/sigma/ddh --watch --maxWorkers=1 --verbose",
     "test-encryption:reload": "jest tests/elgamal.encryption --watch --maxWorkers=1 --verbose",

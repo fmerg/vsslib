@@ -76,14 +76,16 @@ Generate a SHA256-based NIZK proof-of-knowledge of a uniform secret scalar `x` s
 that `v_i = u_i ^ x` as follows:
 
 ```js
-const proof = await sigma.proveEqDlog(ctx, x, [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], { algorithm: 'sha256' });
+import { eqDlog } from 'vsslib/sigma';
+
+const proof = await eqDlog(ctx, 'sha256').prove(x, [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...]);
 ```
 
 Verify the proof against the `(u_i, v_i)` pairs as follows:
 
 
 ```js
-const valid = await sigma.verifyEqDlog(ctx, [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
+const valid = await eqDlog(ctx).verify([{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
 ```
 
 ## Dlog conjunction 
