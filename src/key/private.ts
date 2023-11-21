@@ -7,7 +7,8 @@ import { BaseShare, BaseDistribution, PartialDecryptor } from '../common';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
-
+import schnorr from '../schnorr';
+import { SchnorrSignature } from '../schnorr';
 const backend = require('../backend');
 const sigma = require('../sigma');
 import { dlog, ddh } from '../sigma';
@@ -79,12 +80,20 @@ export class PrivateKey<P extends Point> {
     return ctx.operate(scalar, pub.point);
   }
 
-  async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<SigmaProof<P>> {
-    const { ctx, scalar } = this;
-    const pub = await ctx.operate(scalar, ctx.generator);
+  async sign(message: Uint8Array, opts?: { nonce?: Uint8Array, algorithm?: Algorithm }): Promise<SchnorrSignature<P>> {
+    const { ctx, scalar: secret } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-    const nonce = opts ? (opts.nonce) : undefined;
-    const proof = dlog(ctx, algorithm).prove(scalar, { u: ctx.generator, v: pub }, nonce);
+    const nonce = opts ? (opts.nonce || undefined) : undefined;
+    const signature = await schnorr(ctx, algorithm).signBytes(secret, message, nonce);
+    return signature;
+  }
+
+  async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<SigmaProof<P>> {
+    const { ctx, scalar: secret } = this;
+    const pub = await ctx.operate(secret, ctx.generator);
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const nonce = opts ? (opts.nonce || undefined) : undefined;
+    const proof = dlog(ctx, algorithm).prove(secret, { u: ctx.generator, v: pub }, nonce);
     return proof;
   }
 

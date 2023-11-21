@@ -57,6 +57,19 @@ describe('Signature verification - failure if forged key', () => {
 });
 
 
+describe('Signature verification - failure if forged signature', () => {
+  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+    const ctx = backend.initGroup(label);
+    const { secret, pub } = await ctx.generateKeypair();
+    const message = Uint8Array.from(Buffer.from('destroy earth'));
+    const signature = await schnorr(ctx, algorithm).signBytes(secret, message);
+    signature.commitments[0] = await ctx.randomPoint();
+    const verified = await schnorr(ctx).verifyBytes(pub, message, signature);
+    expect(verified).toBe(false);
+  });
+});
+
+
 describe('Signature verification - failure if forged nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);

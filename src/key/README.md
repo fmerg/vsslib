@@ -113,6 +113,18 @@ await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
 const { decryptor } = await privateKey.generateDecryptor(ciphertext, { noProof: true });
 ```
 
+## Schnorr signature
+
+```js
+const message = Uint8Array.from(Buffer.from('destroy earth'));
+
+const signature = await privateKey.sign(message, { algorithm: 'sha256' });
+```
+
+```js
+await publicKey.verifySignature(message, signature);
+```
+
 ## Verifiable identity (Schnorr identification scheme)
 
 ```js

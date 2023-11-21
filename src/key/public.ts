@@ -10,6 +10,8 @@ import { ElGamalCiphertext } from '../asymmetric/elgamal';
 import { KemCiphertext } from '../asymmetric/kem';
 import { IesCiphertext } from '../asymmetric/ies';
 import { dlog, ddh } from '../sigma';
+import schnorr from '../schnorr';
+import { SchnorrSignature } from '../schnorr';
 const backend = require('../backend');
 const sigma = require('../sigma');
 const shamir = require('../shamir');
@@ -54,6 +56,13 @@ export class PublicKey<P extends Point> {
       // TODO: Constant time bytes comparison
       (await this.point.equals(other.point))
     );
+  }
+
+  async verifySignature(message: Uint8Array, signature: SchnorrSignature<P>, nonce?: Uint8Array): Promise<boolean> {
+    const { ctx, point: pub } = this;
+    const verified = await schnorr(ctx).verifyBytes(pub, message, signature, nonce);
+    if (!verified) throw new Error('Invalid signature');
+    return verified;
   }
 
   async verifyIdentity(proof: SigmaProof<P>, opts?: { nonce?: Uint8Array }): Promise<boolean> {
