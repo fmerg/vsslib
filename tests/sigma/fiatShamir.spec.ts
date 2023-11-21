@@ -1,7 +1,8 @@
-import { sigma, backend } from '../../src';
+import { backend } from '../../src';
 import { Systems, Algorithms } from '../../src/enums';
 import { Algorithm } from '../../src/types';
 import { cartesian } from '../helpers';
+import { fiatShamir } from '../../src/sigma';
 import { computeFiatShamir } from './helpers';
 
 const __labels      = Object.values(Systems);
@@ -15,9 +16,9 @@ describe('Fiat-Shamir - without nonce', () => {
     const { randomPoint, randomScalar } = ctx;
     const points = [await randomPoint(), await randomPoint(), await randomPoint()];
     const scalars = [await randomScalar(), await randomScalar()];
-    const scalar1 = await sigma.fiatShamir(ctx, points, scalars, { algorithm });
+    const res1 = await fiatShamir(ctx, algorithm).computeChallence(points, scalars);
     const res2 = await computeFiatShamir(ctx, points, scalars, { algorithm });
-    expect(scalar1).toEqual(res2);
+    expect(res1).toEqual(res2);
   });
 });
 
@@ -29,10 +30,10 @@ describe('Fiat-Shamir - with nonce', () => {
     const points = [await randomPoint(), await randomPoint(), await randomPoint()];
     const scalars = [await randomScalar(), await randomScalar()];
     const nonce = await randomBytes();
-    const res1 = await sigma.fiatShamir(ctx, points, scalars, { algorithm, nonce });
+    const res1 = await fiatShamir(ctx, algorithm).computeChallence(points, scalars, nonce);
     const res2 = await computeFiatShamir(ctx, points, scalars, { algorithm, nonce });
-    const res3 = await sigma.fiatShamir(ctx, points, scalars);
-    const res4 = await sigma.fiatShamir(ctx, points, scalars, { algorithm, nonce: await randomBytes() });
+    const res3 = await fiatShamir(ctx, algorithm).computeChallence(points, scalars);
+    const res4 = await fiatShamir(ctx, algorithm).computeChallence(points, scalars, await randomBytes());
     expect(res1).toEqual(res2);
     expect(res1).not.toEqual(res3);
     expect(res1).not.toEqual(res4);

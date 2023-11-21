@@ -10,7 +10,9 @@ import { leInt2Buff } from '../utils';
 
 const backend = require('../backend');
 const sigma = require('../sigma');
+import { dlog, ddh } from '../sigma';
 import { AesMode, Algorithm } from '../types';
+import { Algorithms } from '../enums';
 import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
 import { ElGamalCiphertext } from '../asymmetric/elgamal';
 import { KemCiphertext } from '../asymmetric/kem';
@@ -80,7 +82,10 @@ export class PrivateKey<P extends Point> {
   async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<SigmaProof<P>> {
     const { ctx, scalar } = this;
     const pub = await ctx.operate(scalar, ctx.generator);
-    return sigma.proveDlog(ctx, scalar, { u: ctx.generator, v: pub }, opts);
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const nonce = opts ? (opts.nonce) : undefined;
+    const proof = dlog(ctx, algorithm).prove(scalar, { u: ctx.generator, v: pub }, nonce);
+    return proof;
   }
 
   async elgamalDecrypt(ciphertext: ElGamalCiphertext<P>): Promise<P> {
@@ -101,7 +106,8 @@ export class PrivateKey<P extends Point> {
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<boolean> {
     const { ctx } = this;
-    const verified = await sigma.verifyDlog(ctx, { u: ctx.generator, v: ciphertext.beta }, proof, opts);
+    const nonce = opts ? opts.nonce : undefined;
+    const verified = await dlog(ctx).verify({ u: ctx.generator, v: ciphertext.beta }, proof, nonce);
     if (!verified) throw new Error(Messages.INVALID_ENCRYPTION_PROOF);
     return verified;
   }
@@ -113,7 +119,10 @@ export class PrivateKey<P extends Point> {
   ): Promise<SigmaProof<P>> {
     const { ctx, scalar: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
-    return sigma.proveDDH(ctx, secret, { u: ciphertext.beta, v: pub, w: decryptor }, opts);
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const nonce = opts ? (opts.nonce) : undefined;
+    const proof = await ddh(ctx, algorithm).prove(secret, { u: ciphertext.beta, v: pub, w: decryptor }, nonce);
+    return proof;
   }
 
   async generateDecryptor<A>(
