@@ -5,10 +5,10 @@ import { SigmaProtocol, DlogLinear, SigmaProof } from './base';
 
 export class LinearProtocol<P extends Point> extends SigmaProtocol<P> {
   prove = async (witnesses: bigint[], relation: DlogLinear<P>, nonce?: Uint8Array): Promise<SigmaProof<P>> => {
-    return this.proveLinearDlog(witnesses, relation, nonce);
+    return this.proveLinearDlog(witnesses, relation, [], nonce);
   }
   verify = async (relation: DlogLinear<P>, proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> => {
-    return this.verifyLinearDlog(relation, proof, nonce);
+    return this.verifyLinearDlog(relation, proof, [], nonce);
   }
 }
 
