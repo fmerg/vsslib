@@ -22,6 +22,7 @@
     "test-eqDlog:reload": "jest tests/sigma/eqDlog --watch --maxWorkers=1 --verbose",
     "test-dlog:reload": "jest tests/sigma/dlog --watch --maxWorkers=1 --verbose",
     "test-ddh:reload": "jest tests/sigma/ddh --watch --maxWorkers=1 --verbose",
+    "test-okamoto:reload": "jest tests/sigma/okamoto --watch --maxWorkers=1 --verbose",
     "test-encryption:reload": "jest tests/elgamal.encryption --watch --maxWorkers=1 --verbose",
     "test-key:reload": "jest tests/key --watch --maxWorkers=1 --verbose",
     "test-utils:reload": "jest tests/utils --watch --maxWorkers=1 --verbose",

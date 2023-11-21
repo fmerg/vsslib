@@ -55,19 +55,22 @@ Note that `(u, v, w)` being a DDH-tuple as above is equivalent to
 so that the Chaum-Pedersen protocol is actually a special case of the multiple
 AND Dlog protocol.
 
-## Pedersen commitment opening (Okamoto protocol)
+
+## Okamoto protocol (proof of Pedersen commitment opening)
 
 Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `s`, `t`
 such that `u = g ^ s * h ^ t` as follows:
 
 ```js
-const proof = await sigma.proveRepresentation(ctx, { s, t }, { h, u }, { algorithm: 'sha256'});
+import { okamoto } from 'vsslib/sigma';
+
+const proof = await okamoto(ctx, 'sha256').prove({ s, t }, { h, u });
 ```
 
-Verify the proof againsr the `(h, u)` pair of points as follows:
+Verify the proof against the `(h, u)` pair of points as follows:
 
 ```js
-const verified = await sigma.verifyRepresentation(ctx, { h, u }, proof);
+const verified = await okamoto(ctx).verify({ h, u }, proof);
 ```
 
 ## Dlog equality 
