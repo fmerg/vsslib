@@ -15,16 +15,19 @@ export async function computeFiatShamir<P extends Point>(
   ctx: Group<P>,
   points: Point[],
   scalars: bigint[],
-  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
+  extras: Uint8Array[],
+  nonce?: Uint8Array,
+  algorithm?: Algorithm,
 ): Promise<bigint> {
-  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? (opts.nonce || Uint8Array.from([])) : Uint8Array.from([]);
+  algorithm = algorithm || Algorithms.DEFAULT;
+  nonce = nonce || Uint8Array.from([]);
   const { modulus, order, generator } = ctx;
   const fixedBuff = [...leInt2Buff(modulus), ...leInt2Buff(order), ...generator.toBytes()];
   const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
   const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
+  const extrasBuff = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
   const digest = await utils.hash(
-    Uint8Array.from([...fixedBuff, ...pointsBuff, ...scalarsBuff, ...nonce]),
+    Uint8Array.from([...fixedBuff, ...pointsBuff, ...scalarsBuff, ...extrasBuff, ...nonce]),
     { algorithm }
   );
   return (leBuff2Int(digest)) % order;

@@ -11,7 +11,7 @@ const ctx = backend.initGroup('ed25519');
 ```js
 import { fiatShamir } from 'vsslib/sigma';
 
-const challenge = await fiatShamir(ctx, 'sha256').computeChallence(points, scalars, nonce)
+const challenge = await fiatShamir(ctx, 'sha256').computeChallenge(points, scalars, extras, nonce)
 ```
 
 ## Dlog proof (Schnorr protocol)

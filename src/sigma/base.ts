@@ -38,12 +38,13 @@ export abstract class SigmaProtocol<P extends Point> extends FiatShamir<P> {
       }
       commitments[i] = ci;
     }
-    const challenge = await this.computeChallence(
+    const challenge = await this.computeChallenge(
       [
         ...us.reduce((acc, ui) => [...acc, ...ui], []),
         ...vs,
         ...commitments,
       ],
+      [],
       [],
       nonce,
     );
@@ -59,12 +60,13 @@ export abstract class SigmaProtocol<P extends Point> extends FiatShamir<P> {
     const { us, vs } = relation;
     const { commitments, response, algorithm } = proof;
     if (vs.length !== commitments.length) throw new Error('Invalid dimensions');
-    const challenge = await this.computeChallence(
+    const challenge = await this.computeChallenge(
       [
         ...us.reduce((acc, ui) => [...acc, ...ui], []),
         ...vs,
         ...commitments,
       ],
+      [],
       [],
       nonce,
       algorithm,
