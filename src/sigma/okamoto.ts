@@ -7,12 +7,12 @@ export class OkamotoProtocol<P extends Point> extends SigmaProtocol<P> {
     const { s, t } = witnesses;
     const { h, u } = commitment;
     const { generator: g } = this.ctx;
-    return this.proveLinearDlog([s, t], { us: [[g, h]], vs: [u]}, nonce);
+    return this.proveLinearDlog([s, t], { us: [[g, h]], vs: [u]}, [], nonce);
   }
   verify = async (commitment: { h: P, u: P }, proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> => {
     const { h, u } = commitment;
     const { generator: g } = this.ctx;
-    return this.verifyLinearDlog({ us: [[g, h]], vs: [u] }, proof, nonce);
+    return this.verifyLinearDlog({ us: [[g, h]], vs: [u] }, proof, [], nonce);
   }
 }
 

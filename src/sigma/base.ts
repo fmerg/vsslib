@@ -20,7 +20,7 @@ export abstract class SigmaProtocol<P extends Point> extends FiatShamir<P> {
   abstract prove: (witnesses: any, relation: any, nonce?: Uint8Array) => Promise<SigmaProof<P>>;
   abstract verify: (relation: any, proof: SigmaProof<P>, nonce?: Uint8Array) => Promise<boolean>;
 
-  async proveLinearDlog(witnesses: bigint[], relation: DlogLinear<P>, nonce?: Uint8Array): Promise<SigmaProof<P>> {
+  async proveLinearDlog(witnesses: bigint[], relation: DlogLinear<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<SigmaProof<P>> {
     const { ctx: { order, randomScalar, neutral, operate, combine }, algorithm } = this;
     const { us, vs } = relation;
     const m = vs.length;
@@ -38,13 +38,14 @@ export abstract class SigmaProtocol<P extends Point> extends FiatShamir<P> {
       }
       commitments[i] = ci;
     }
-    const challenge = await this.computeChallence(
+    const challenge = await this.computeChallenge(
       [
         ...us.reduce((acc, ui) => [...acc, ...ui], []),
         ...vs,
         ...commitments,
       ],
       [],
+      extras,
       nonce,
     );
     const response = new Array(n);
@@ -54,18 +55,19 @@ export abstract class SigmaProtocol<P extends Point> extends FiatShamir<P> {
     return { commitments, response, algorithm };
   }
 
-  async verifyLinearDlog(relation: DlogLinear<P>, proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> {
+  async verifyLinearDlog(relation: DlogLinear<P>, proof: SigmaProof<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<boolean> {
     const { neutral, operate, combine } = this.ctx;
     const { us, vs } = relation;
     const { commitments, response, algorithm } = proof;
     if (vs.length !== commitments.length) throw new Error('Invalid dimensions');
-    const challenge = await this.computeChallence(
+    const challenge = await this.computeChallenge(
       [
         ...us.reduce((acc, ui) => [...acc, ...ui], []),
         ...vs,
         ...commitments,
       ],
       [],
+      extras,
       nonce,
       algorithm,
     );

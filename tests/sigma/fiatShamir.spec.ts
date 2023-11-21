@@ -13,11 +13,12 @@ const __algorithms  = [...Object.values(Algorithms), undefined];
 describe('Fiat-Shamir - without nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
-    const { randomPoint, randomScalar } = ctx;
-    const points = [await randomPoint(), await randomPoint(), await randomPoint()];
+    const { randomPoint, randomScalar, randomBytes } = ctx;
+    const points  = [await randomPoint(), await randomPoint(), await randomPoint()];
     const scalars = [await randomScalar(), await randomScalar()];
-    const res1 = await fiatShamir(ctx, algorithm).computeChallence(points, scalars);
-    const res2 = await computeFiatShamir(ctx, points, scalars, { algorithm });
+    const extras  = [await randomBytes(), await randomBytes()];
+    const res1 = await fiatShamir(ctx, algorithm).computeChallenge(points, scalars, extras);
+    const res2 = await computeFiatShamir(ctx, points, scalars, extras, undefined, algorithm);
     expect(res1).toEqual(res2);
   });
 });
@@ -27,15 +28,16 @@ describe('Fiat-Shamir - with nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { randomPoint, randomScalar, randomBytes } = ctx;
-    const points = [await randomPoint(), await randomPoint(), await randomPoint()];
+    const points  = [await randomPoint(), await randomPoint(), await randomPoint()];
     const scalars = [await randomScalar(), await randomScalar()];
+    const extras  = [await randomBytes(), await randomBytes()];
     const nonce = await randomBytes();
-    const res1 = await fiatShamir(ctx, algorithm).computeChallence(points, scalars, nonce);
-    const res2 = await computeFiatShamir(ctx, points, scalars, { algorithm, nonce });
-    const res3 = await fiatShamir(ctx, algorithm).computeChallence(points, scalars);
-    const res4 = await fiatShamir(ctx, algorithm).computeChallence(points, scalars, await randomBytes());
-    expect(res1).toEqual(res2);
+    const res1 = await fiatShamir(ctx, algorithm).computeChallenge(points, scalars, extras, nonce);
+    const res2 = await fiatShamir(ctx, algorithm).computeChallenge(points, scalars, extras);
+    const res3 = await fiatShamir(ctx, algorithm).computeChallenge(points, scalars, extras, await randomBytes());
+    const res4 = await computeFiatShamir(ctx, points, scalars, extras, nonce, algorithm);
+    expect(res1).not.toEqual(res2);
     expect(res1).not.toEqual(res3);
-    expect(res1).not.toEqual(res4);
+    expect(res1).toEqual(res4);
   });
 });

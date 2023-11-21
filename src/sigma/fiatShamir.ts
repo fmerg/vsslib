@@ -15,13 +15,20 @@ export class FiatShamir<P extends Point>{
     this.algorithm = algorithm || Algorithms.DEFAULT;
   }
 
-  async computeChallence(points: P[], scalars: bigint[], nonce?: Uint8Array, algorithm?: Algorithm): Promise<bigint> {
+  async computeChallenge(
+    points: P[],
+    scalars: bigint[],
+    extras: Uint8Array[],
+    nonce?: Uint8Array,
+    algorithm?: Algorithm,
+  ): Promise<bigint> {
     const { modBytes, ordBytes, genBytes, leBuff2Scalar } = this.ctx;
     const configBuff = [...modBytes, ...ordBytes, ...genBytes];
     const pointsBuff = points.reduce((acc: number[], p: P) => [...acc, ...p.toBytes()], []);
     const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
+    const extrasBuff = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
     nonce = nonce || Uint8Array.from([]);
-    const bytes = Uint8Array.from([...configBuff, ...pointsBuff, ...scalarsBuff, ...nonce]);
+    const bytes = Uint8Array.from([...configBuff, ...pointsBuff, ...scalarsBuff, ...extrasBuff, ...nonce]);
     algorithm = algorithm || this.algorithm;
     const digest = await utils.hash(bytes, { algorithm });
     return leBuff2Scalar(digest);
