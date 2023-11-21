@@ -1,27 +1,10 @@
 import { Algorithm } from '../types';
 import { Algorithms } from '../enums';
 import { Group, Point } from '../backend/abstract';
-import { leInt2Buff, leBuff2Int, mod } from '../utils';
-const utils = require('../utils');
+import { FiatShamir } from './fiatShamir';
+import { mod } from '../utils';
 
-export async function fiatShamir<P extends Point>(
-  ctx: Group<P>,
-  points: P[],
-  scalars: bigint[],
-  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
-): Promise<bigint> {
-  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? (opts.nonce || Uint8Array.from([])) : Uint8Array.from([]);
-  const { modBytes, ordBytes, genBytes, leBuff2Scalar } = ctx;
-  const configBuff = [...modBytes, ...ordBytes, ...genBytes];
-  const pointsBuff = points.reduce((acc: number[], p: P) => [...acc, ...p.toBytes()], []);
-  const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
-  const bytes = Uint8Array.from([...configBuff, ...pointsBuff, ...scalarsBuff, ...nonce]);
-  const digest = await utils.hash(bytes, { algorithm });
-  return leBuff2Scalar(digest);
-}
-
-export type LinearRelation<P extends Point> = {
+export type DlogLinear<P extends Point> = {
   us: P[][],
   vs: P[],
 }
@@ -32,19 +15,12 @@ export type SigmaProof<P extends Point> = {
   algorithm: Algorithm,
 }
 
-export abstract class BaseSigmaProtocol<P extends Point> {
-  ctx: Group<P>;
-  algorithm: Algorithm;
-
-  constructor(ctx: Group<P>, algorithm?: Algorithm) {
-    this.ctx = ctx;
-    this.algorithm = algorithm || Algorithms.DEFAULT;
-  }
+export abstract class SigmaProtocol<P extends Point> extends FiatShamir<P> {
 
   abstract prove: (witnesses: any, relation: any, nonce?: Uint8Array) => Promise<SigmaProof<P>>;
   abstract verify: (relation: any, proof: SigmaProof<P>, nonce?: Uint8Array) => Promise<boolean>;
 
-  async proveLinear(witnesses: bigint[], relation: LinearRelation<P>, nonce?: Uint8Array): Promise<SigmaProof<P>> {
+  async proveLinearDlog(witnesses: bigint[], relation: DlogLinear<P>, nonce?: Uint8Array): Promise<SigmaProof<P>> {
     const { ctx: { order, randomScalar, neutral, operate, combine }, algorithm } = this;
     const { us, vs } = relation;
     const m = vs.length;
@@ -62,45 +38,41 @@ export abstract class BaseSigmaProtocol<P extends Point> {
       }
       commitments[i] = ci;
     }
-    nonce = nonce || Uint8Array.from([]);
-    const c = await fiatShamir(
-      this.ctx,
+    const challenge = await this.computeChallence(
       [
         ...us.reduce((acc, ui) => [...acc, ...ui], []),
         ...vs,
         ...commitments,
       ],
       [],
-      { nonce, algorithm }
+      nonce,
     );
     const response = new Array(n);
     for (const [j, x] of witnesses.entries()) {
-      response[j] = mod(rs[j] + x * c, order);
+      response[j] = mod(rs[j] + x * challenge, order);
     }
     return { commitments, response, algorithm };
   }
 
-
-  async verifyLinear(relation: LinearRelation<P>, proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> {
+  async verifyLinearDlog(relation: DlogLinear<P>, proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> {
     const { neutral, operate, combine } = this.ctx;
     const { us, vs } = relation;
     const { commitments, response, algorithm } = proof;
     if (vs.length !== commitments.length) throw new Error('Invalid dimensions');
-    nonce = nonce || Uint8Array.from([]);
-    const c = await fiatShamir(
-      this.ctx,
+    const challenge = await this.computeChallence(
       [
         ...us.reduce((acc, ui) => [...acc, ...ui], []),
         ...vs,
         ...commitments,
       ],
       [],
-      { algorithm, nonce },
+      nonce,
+      algorithm,
     );
     let flag = true;
     for (const [i, v] of vs.entries()) {
       if (us[i].length !== response.length) throw new Error('Invalid dimensions');
-      const rhs = await combine(commitments[i], await operate(c, v));
+      const rhs = await combine(commitments[i], await operate(challenge, v));
       let lhs = neutral;
       for (const [j, s] of response.entries()) {
         lhs = await combine(lhs, await operate(s, us[i][j]));

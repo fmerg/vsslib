@@ -1,6 +1,6 @@
 import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
-import { BaseSigmaProtocol, SigmaProof } from './base';
+import { SigmaProtocol, SigmaProof } from './base';
 import { DlogPair } from './dlog';
 
 
@@ -8,7 +8,7 @@ export function fillMatrix<P extends Point>(point: P, m: number, n: number): P[]
   return Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, i) => point));
 }
 
-export class AndDlogProtocol<P extends Point> extends BaseSigmaProtocol<P> {
+export class AndDlogProtocol<P extends Point> extends SigmaProtocol<P> {
   prove = async (witnesses: bigint[], pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<SigmaProof<P>> => {
     const { neutral } = this.ctx;
     const m = pairs.length;
@@ -17,7 +17,7 @@ export class AndDlogProtocol<P extends Point> extends BaseSigmaProtocol<P> {
       us[i][i] = pairs[i].u;
     }
     const vs = pairs.map(({ v }) => v);
-    return this.proveLinear(witnesses, { us, vs }, nonce);
+    return this.proveLinearDlog(witnesses, { us, vs }, nonce);
   }
   verify = async (pairs: DlogPair<P>[], proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> => {
     const { neutral } = this.ctx;
@@ -27,7 +27,7 @@ export class AndDlogProtocol<P extends Point> extends BaseSigmaProtocol<P> {
     for (let i = 0; i < m; i++) {
       us[i][i] = pairs[i].u;
     }
-    return this.verifyLinear({ us, vs }, proof, nonce);
+    return this.verifyLinearDlog({ us, vs }, proof, nonce);
   }
 }
 

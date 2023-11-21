@@ -6,10 +6,12 @@ const { sigma, backend } = require('vsslib');
 const ctx = backend.initGroup('ed25519');
 ```
 
-### Fiat-Shamir heuristic
+## Fiat-Shamir heuristic
 
 ```js
-const scalar = await sigma.fiatShamir(ctx, points, scalars, { algorithm, nonce });
+import { fiatShamir } from 'vsslib/sigma';
+
+const challenge = await fiatShamir(ctx, 'sha256').computeChallence(points, scalars, nonce)
 ```
 
 ## Dlog proof (Schnorr protocol)
@@ -56,24 +58,7 @@ so that the Chaum-Pedersen protocol is actually a special case of the multiple
 AND Dlog protocol.
 
 
-## Okamoto protocol (proof of Pedersen commitment opening)
-
-Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `s`, `t`
-such that `u = g ^ s * h ^ t` as follows:
-
-```js
-import { okamoto } from 'vsslib/sigma';
-
-const proof = await okamoto(ctx, 'sha256').prove({ s, t }, { h, u });
-```
-
-Verify the proof against the `(h, u)` pair of points as follows:
-
-```js
-const verified = await okamoto(ctx).verify({ h, u }, proof);
-```
-
-## Dlog equality 
+## EQ Dlog (Conjunction of Schnorr protocols with uniform logarithm)
 
 Generate a SHA256-based NIZK proof-of-knowledge of a uniform secret scalar `x` such
 that `v_i = u_i ^ x` as follows:
@@ -91,15 +76,15 @@ Verify the proof against the `(u_i, v_i)` pairs as follows:
 const verified = await eqDlog(ctx).verify([{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
 ```
 
-## Dlog conjunction 
+## AND Dlog (Arbitrary conjunction of Schnorr protocols)
 
 Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `x_i` such
 that `v_i = u_i ^ x_i` as follows:
 
 ```js
-import { eqDlog } from 'vsslib/sigma';
+import { andDlog } from 'vsslib/sigma';
 
-const proof = await eqDlog(ctx, algorithm)([x1, x2, ...], [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...]);
+const proof = await andDlog(ctx, algorithm)([x1, x2, ...], [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...]);
 ```
 
 Verify the proof against the `(u_i, v_i)` pairs as follows:
@@ -109,19 +94,36 @@ Verify the proof against the `(u_i, v_i)` pairs as follows:
 const verified = await andDlog(ctx).verify([{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
 ```
 
+## Okamoto protocol (Pedersen commitment opening)
+
+Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `s`, `t`
+such that `u = g ^ s * h ^ t` as follows:
+
+```js
+import { okamoto } from 'vsslib/sigma';
+
+const proof = await okamoto(ctx, 'sha256').prove({ s, t }, { h, u });
+```
+
+Verify the proof against the `(h, u)` pair of points as follows:
+
+```js
+const verified = await okamoto(ctx).verify({ h, u }, proof);
+```
+
 ## Generic linear relation 
 
 Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `x_j` such
 that `v_i = Π_{j} u_ij ^ x_j` as follows:
 
 ```js
-import { linear } from 'vsslib/sigma';
+import { linearDlog } from 'vsslib/sigma';
 
-const proof = await linear(ctx, 'sha256').prove([x1, x2, ...], { us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] });
+const proof = await linearDlog(ctx, 'sha256').prove([x1, x2, ...], { us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] });
 ```
 
 Verify the proof as follows:
 
 ```js
-const verified = await linear(ctx).verify({ us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] }, proof);
+const verified = await linearDlog(ctx).verify({ us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] }, proof);
 ```

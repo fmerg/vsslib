@@ -1,18 +1,18 @@
 import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
-import { BaseSigmaProtocol, SigmaProof } from './base';
+import { SigmaProtocol, SigmaProof } from './base';
 
-export class OkamotoProtocol<P extends Point> extends BaseSigmaProtocol<P> {
+export class OkamotoProtocol<P extends Point> extends SigmaProtocol<P> {
   prove = async (witnesses: { s: bigint, t: bigint }, commitment: { h: P, u: P }, nonce?: Uint8Array): Promise<SigmaProof<P>> => {
     const { s, t } = witnesses;
     const { h, u } = commitment;
     const { generator: g } = this.ctx;
-    return this.proveLinear([s, t], { us: [[g, h]], vs: [u]}, nonce);
+    return this.proveLinearDlog([s, t], { us: [[g, h]], vs: [u]}, nonce);
   }
   verify = async (commitment: { h: P, u: P }, proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> => {
     const { h, u } = commitment;
     const { generator: g } = this.ctx;
-    return this.verifyLinear({ us: [[g, h]], vs: [u] }, proof, nonce);
+    return this.verifyLinearDlog({ us: [[g, h]], vs: [u] }, proof, nonce);
   }
 }
 

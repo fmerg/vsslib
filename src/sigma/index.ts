@@ -1,21 +1,22 @@
-import { Algorithm } from '../types';
-import { Algorithms } from '../enums';
-import { Group, Point } from '../backend/abstract';
-import { leInt2Buff, leBuff2Int, mod } from '../utils';
-import linear from './linear';
+import { SigmaProof, DlogLinear } from './base';
+import { DlogPair } from './dlog';
+import { DDHTuple } from './ddh';
+
+import fiatShamir from './fiatShamir';
+import linearDlog from './linearDlog';
 import andDlog from './andDlog';
 import eqDlog from './eqDlog';
 import dlog from './dlog';
 import ddh from './ddh';
 import okamoto from './okamoto';
 
-import { fiatShamir, BaseSigmaProtocol, LinearRelation, SigmaProof } from './base';
-import { DlogPair } from './dlog';
-import { DDHTuple } from './ddh';
-export { fiatShamir, BaseSigmaProtocol, LinearRelation, SigmaProof,
+export {
+  fiatShamir,
+  SigmaProof,
+  DlogLinear,
   DlogPair,
   DDHTuple,
-  linear,
+  linearDlog,
   andDlog,
   eqDlog,
   dlog,

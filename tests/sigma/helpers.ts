@@ -2,7 +2,7 @@ import { Point, Group } from '../../src/backend/abstract';
 import { Algorithms } from '../../src/enums';
 import { Algorithm } from '../../src/types';
 import { leInt2Buff, leBuff2Int } from '../../src/utils';
-import { LinearRelation, DlogPair, DDHTuple } from '../../src/sigma';
+import { DlogLinear, DlogPair, DDHTuple } from '../../src/sigma';
 
 const utils = require('../../src/utils');
 
@@ -31,11 +31,11 @@ export async function computeFiatShamir<P extends Point>(
 }
 
 
-/** Create generic linear relation with given dimensions */
+/** Create generic linearDlog relation with given dimensions */
 export async function createLinearRelation<P extends Point>(
   ctx: Group<P>,
   opts: { m: number, n: number },
-): Promise<[bigint[], LinearRelation<P>]>{
+): Promise<[bigint[], DlogLinear<P>]>{
   const { randomScalar, randomPoint, neutral, operate, combine } = ctx;
   const { m, n } = opts;
   const witnesses = new Array(n);
