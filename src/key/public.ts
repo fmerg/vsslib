@@ -65,9 +65,8 @@ export class PublicKey<P extends Point> {
     return verified;
   }
 
-  async verifyIdentity(proof: SigmaProof<P>, opts?: { nonce?: Uint8Array }): Promise<boolean> {
+  async verifyIdentity(proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const nonce = opts ? (opts.nonce) : undefined;
     const verified = await dlog(ctx).verify({ u: ctx.generator, v: pub }, proof, nonce);
     if (!verified) throw new Error(Messages.INVALID_IDENTITY_PROOF);
     return verified;
