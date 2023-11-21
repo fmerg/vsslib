@@ -30,6 +30,7 @@
     "test-bitwise:reload": "jest tests/utils.bitwise --watch --maxWorkers=1 --verbose",
     "test-hash:reload": "jest tests/utils.hash --watch --maxWorkers=1 --verbose",
     "test-polynomials:reload": "jest tests/polynomials --watch --maxWorkers=1 --verbose",
+    "test-schnorr:reload": "jest tests/schnorr --watch --maxWorkers=1 --verbose",
     "test-shamir:reload": "jest tests/shamir --watch --maxWorkers=1 --verbose",
     "test-core:reload": "jest tests/core --watch --maxWorkers=1 --verbose",
     "test-kem:reload": "jest tests/kem --watch --maxWorkers=1 --verbose",

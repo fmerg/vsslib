@@ -61,6 +61,7 @@ const plaintext = await combiner.elgamalDecrypt(ciphertext, partialDecryptors);
 - [`vsslib.kem`](./src/asymmetric)
 - [`vsslib.key`](./src/key)
 - [`vsslib.polynomials`](./src/polynomials)
+- [`vsslib.schnorr`](./src/schnorr)
 - [`vsslib.shamir`](./src/shamir)
 - [`vsslib.sigma`](./src/sigma)
 - [`vsslib.utils`](./src/utils)
