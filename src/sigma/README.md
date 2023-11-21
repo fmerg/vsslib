@@ -27,7 +27,7 @@ Verify the proof against the `(u, v)` pair as follows:
 
 
 ```js
-const valid = await dlog(ctx).verify({ u, v }, proof);
+const verified = await dlog(ctx).verify({ u, v }, proof);
 ```
 
 ## DDH proof (Chaum-Pedersen protocol)
@@ -47,7 +47,7 @@ const proof = await ddh(ctx, 'sha256').prove(z, { u, v, w });
 Verify the proof against the `(u, v, w)` DDH-tuple as follows:
 
 ```js
-const valid = await ddh(ctx).verify(z, { u, v, w }, proof);
+const verified = await ddh(ctx).verify(z, { u, v, w }, proof);
 ```
 
 Note that `(u, v, w)` being a DDH-tuple as above is equivalent to
@@ -67,7 +67,7 @@ const proof = await sigma.proveRepresentation(ctx, { s, t }, { h, u }, { algorit
 Verify the proof againsr the `(h, u)` pair of points as follows:
 
 ```js
-const valid = await sigma.verifyRepresentation(ctx, { h, u }, proof);
+const verified = await sigma.verifyRepresentation(ctx, { h, u }, proof);
 ```
 
 ## Dlog equality 
@@ -85,7 +85,7 @@ Verify the proof against the `(u_i, v_i)` pairs as follows:
 
 
 ```js
-const valid = await eqDlog(ctx).verify([{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
+const verified = await eqDlog(ctx).verify([{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
 ```
 
 ## Dlog conjunction 
@@ -94,14 +94,16 @@ Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `x_i` such
 that `v_i = u_i ^ x_i` as follows:
 
 ```js
-const proof = await sigma.proveAndDlog(ctx, [x1, x2, ...], [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], { algorithm: 'sha256' });
+import { eqDlog } from 'vsslib/sigma';
+
+const proof = await eqDlog(ctx, algorithm)([x1, x2, ...], [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...]);
 ```
 
 Verify the proof against the `(u_i, v_i)` pairs as follows:
 
 
 ```js
-const valid = await sigma.verifyAndDlog(ctx, [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
+const verified = await andDlog(ctx).verify([{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...], proof);
 ```
 
 ## Generic linear relation 
@@ -118,5 +120,5 @@ const proof = await linear(ctx, 'sha256').prove([x1, x2, ...], { us: [[u_11, u_1
 Verify the proof as follows:
 
 ```js
-const valid = await linear(ctx).verify({ us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] }, proof);
+const verified = await linear(ctx).verify({ us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] }, proof);
 ```

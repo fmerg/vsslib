@@ -3,6 +3,7 @@ import { Algorithms } from '../enums';
 import { Group, Point } from '../backend/abstract';
 import { leInt2Buff, leBuff2Int, mod } from '../utils';
 import linear from './linear';
+import andDlog from './andDlog';
 import eqDlog from './eqDlog';
 import dlog from './dlog';
 import ddh from './ddh';
@@ -14,51 +15,11 @@ export { fiatShamir, BaseSigmaProtocol, LinearRelation, SigmaProof,
   DlogPair,
   DDHTuple,
   linear,
+  andDlog,
   eqDlog,
   dlog,
   ddh,
 };
-
-
-function fillMatrix<P extends Point>(point: P, m: number, n: number): P[][] {
-  return Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, i) => point));
-}
-
-export async function proveAndDlog<P extends Point>(
-  ctx: Group<P>,
-  witnesses: bigint[],
-  pairs: DlogPair<P>[],
-  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
-): Promise<SigmaProof<P>> {
-  const { neutral } = ctx;
-  const m = pairs.length;
-  const us = fillMatrix(neutral, m, m);
-  for (let i = 0; i < m; i++) {
-    us[i][i] = pairs[i].u;
-  }
-  const vs = pairs.map(({ v }) => v);
-  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? opts.nonce : undefined;
-  return linear(ctx, algorithm).prove(witnesses, { us, vs }, nonce);
-}
-
-
-export async function verifyAndDlog<P extends Point>(
-  ctx: Group<P>,
-  pairs: DlogPair<P>[],
-  proof: SigmaProof<P>,
-  opts?: { nonce?: Uint8Array },
-): Promise<boolean> {
-  const { neutral } = ctx;
-  const m = pairs.length;
-  const us = fillMatrix(neutral, m, m)
-  for (let i = 0; i < m; i++) {
-    us[i][i] = pairs[i].u;
-  }
-  const vs = pairs.map(({ v }) => v);
-  const nonce = opts ? (opts.nonce || undefined) : undefined;
-  return linear(ctx).verify({ us, vs }, proof, nonce);
-}
 
 
 export async function proveRepresentation<P extends Point>(
