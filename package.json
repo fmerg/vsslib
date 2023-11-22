@@ -42,6 +42,11 @@
     "test-schnorr:reload": "jest tests/schnorr --watch --maxWorkers=1 --verbose",
     "test-shamir:reload": "jest tests/shamir --watch --maxWorkers=1 --verbose",
     "test-core:reload": "jest tests/core --watch --maxWorkers=1 --verbose",
+    "test-core-elgamal:reload": "jest tests/core/elgamal --watch --maxWorkers=1 --verbose",
+    "test-core-ies:reload": "jest tests/core/ies --watch --maxWorkers=1 --verbose",
+    "test-core-kem:reload": "jest tests/core/kem --watch --maxWorkers=1 --verbose",
+    "test-core-reconstruction:reload": "jest tests/core/reconstruction --watch --maxWorkers=1 --verbose",
+    "test-core-signature:reload": "jest tests/core/signature --watch --maxWorkers=1 --verbose",
     "build": "rm -rf ./build && tsc",
     "docs": "typedoc --out docs src/*.ts"
   },

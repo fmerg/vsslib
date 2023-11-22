@@ -122,8 +122,7 @@ export function reconstructSecret<P extends Point>(
 ): bigint {
   const { order } = ctx;
   const indexes = qualifiedSet.map(share => share.index);
-  return qualifiedSet.reduce((acc, share) => {
-    const { value, index } = share;
+  return qualifiedSet.reduce((acc, { value, index }) => {
     const lambda = computeLambda(index, indexes, order);
     return mod(acc + value * lambda, order);
   }, __0n);
