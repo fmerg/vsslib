@@ -1,6 +1,12 @@
 import { Point } from '../../src/backend/abstract'
 import { key, backend } from '../../src';
-import { PrivateKey, PublicKey, PrivateShare, PublicShare, KeyDistribution } from '../../src/key';
+import {
+  PrivateKey,
+  PublicKey,
+  PrivateShare,
+  PublicShare,
+  KeySharing,
+} from '../../src/key';
 import { Polynomial } from '../../src/polynomials';
 import { Messages } from '../../src/key/enums';
 import { PartialDecryptor } from '../../src/common';
@@ -15,13 +21,13 @@ export function selectShare<P extends Point>(index: number, shares: PublicShare<
 }
 
 
-describe('Key distribution', () => {
+describe('Key sharing', () => {
   const label = 'ed25519';
   const ctx = backend.initGroup(label);
   const nrShares = 5;
   const threshold = 3;
 
-  let distribution: KeyDistribution<Point>;
+  let sharing: KeySharing<Point>;
   let polynomial: Polynomial<Point>
   let privateKey: PrivateKey<Point>;
   let publicKey: PublicKey<Point>;
@@ -34,10 +40,10 @@ describe('Key distribution', () => {
     const keypair = await key.generate(label);
     privateKey = keypair.privateKey;
     publicKey = keypair.publicKey;
-    distribution = await privateKey.distribute(nrShares, threshold);
-    polynomial = distribution.polynomial;
-    privateShares = await distribution.getSecretShares();
-    publicShares = await distribution.getPublicShares();
+    sharing = await privateKey.distribute(nrShares, threshold);
+    polynomial = sharing.polynomial;
+    privateShares = await sharing.getSecretShares();
+    publicShares = await sharing.getPublicShares();
     const message = await ctx.randomPoint();
     const encryptionOutput = await publicKey.elgamalEncrypt(message);
     ciphertext = encryptionOutput.ciphertext;
@@ -56,7 +62,7 @@ describe('Key distribution', () => {
   });
 
   test('Feldmann VSS scheme - success', async () => {
-    const { commitments } = await distribution.getFeldmannCommitments();
+    const { commitments } = await sharing.getFeldmannCommitments();
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const verified = await share.verify(commitments);
       expect(verified).toBe(true);
@@ -64,7 +70,7 @@ describe('Key distribution', () => {
   });
 
   test('Feldmann VSS scheme - failure', async () => {
-    const { commitments } = await distribution.getFeldmannCommitments();
+    const { commitments } = await sharing.getFeldmannCommitments();
     const forgedCommitmnets = [...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()];
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       await expect(share.verify(forgedCommitmnets)).rejects.toThrow('Invalid share');
@@ -73,7 +79,7 @@ describe('Key distribution', () => {
 
   test('Pedersen VSS scheme - success', async () => {
     const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await distribution.getPedersenCommitments(hPub);
+    const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const binding = bindings[share.index];
       const verified = await share.verify(commitments, { binding, hPub });
@@ -83,7 +89,7 @@ describe('Key distribution', () => {
 
   test('Pedersen VSS scheme - failure', async () => {
     const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await distribution.getPedersenCommitments(hPub);
+    const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const forged = await ctx.randomScalar();
       await expect(share.verify(commitments, { binding: forged, hPub })).rejects.toThrow('Invalid share');

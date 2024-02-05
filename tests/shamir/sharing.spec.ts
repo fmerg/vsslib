@@ -32,19 +32,19 @@ describe('Sharing parameter errors', () => {
   const ctx = backend.initGroup('ed25519');
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir.shareSecret(ctx, secret, 1, 2)).rejects.toThrow(
+    await expect(shamir.distribute(ctx, secret, 1, 2)).rejects.toThrow(
       'Threshold exceeds number of shares'
     );
   });
   test('Threshold is < 1', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir.shareSecret(ctx, secret, 1, 0)).rejects.toThrow(
+    await expect(shamir.distribute(ctx, secret, 1, 0)).rejects.toThrow(
       'Threshold must be >= 1'
     );
   });
   test('Number of predefined shares exceeds threshold', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir.shareSecret(ctx, secret, 3, 2, [
+    await expect(shamir.distribute(ctx, secret, 3, 2, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
@@ -59,12 +59,12 @@ describe('Sharing without predefined shares', () => {
     const label = 'ed25519';
     const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
-    const distribution = await shamir.shareSecret(ctx, secret, n, t);
-    const { nrShares, threshold, polynomial } = distribution;
+    const sharing = await shamir.distribute(ctx, secret, n, t);
+    const { nrShares, threshold, polynomial } = sharing;
     expect(nrShares).toEqual(n);
     expect(threshold).toEqual(t);
-    const secretShares = await distribution.getSecretShares();
-    const publicShares = await distribution.getPublicShares();
+    const secretShares = await sharing.getSecretShares();
+    const publicShares = await sharing.getPublicShares();
     expect(secretShares.length).toEqual(n);
     expect(publicShares.length).toEqual(n);
     const { operate, generator } = ctx;
@@ -75,7 +75,7 @@ describe('Sharing without predefined shares', () => {
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
-    const { commitments } = await distribution.getFeldmannCommitments();
+    const { commitments } = await sharing.getFeldmannCommitments();
     expect(commitments.length).toEqual(t);
   });
 });
@@ -91,12 +91,12 @@ describe('Sharing with predefined shares', () => {
       for (let i = 0; i < nrGivenShares; i++) {
         givenShares.push(await ctx.randomScalar());
       }
-      const distribution = await shamir.shareSecret(ctx, secret, n, t, givenShares);
-      const { nrShares, threshold, polynomial } = distribution;
+      const sharing = await shamir.distribute(ctx, secret, n, t, givenShares);
+      const { nrShares, threshold, polynomial } = sharing;
       expect(nrShares).toEqual(n);
       expect(threshold).toEqual(t);
-      const secretShares = await distribution.getSecretShares();
-      const publicShares = await distribution.getPublicShares();
+      const secretShares = await sharing.getSecretShares();
+      const publicShares = await sharing.getPublicShares();
       expect(secretShares.length).toEqual(n);
       expect(publicShares.length).toEqual(n);
       expect(polynomial.evaluate(0)).toEqual(secret);
@@ -112,7 +112,7 @@ describe('Sharing with predefined shares', () => {
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);
-      const { commitments } = await distribution.getFeldmannCommitments();
+      const { commitments } = await sharing.getFeldmannCommitments();
       expect(commitments.length).toEqual(t);
     }
   });

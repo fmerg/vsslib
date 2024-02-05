@@ -135,26 +135,26 @@ const proof = await privateKey.proveIdentity({ algorithm: 'sha256'});
 await publicKey.verifyIdentity(proof);
 ```
 
-## Verifiable key distribution (Shamir scheme)
+## Verifiable key sharing (Shamir scheme)
 
 ```js
-const distribution = privateKey.distribute(5, 3);
+const sharing = privateKey.distribute(5, 3);
 
-const { nrShares, threshold, polynomial } = distribution;
+const { nrShares, threshold, polynomial } = sharing;
 ```
 
 ```js
-const privateShares = await distribution.getSecretShares();
+const privateShares = await sharing.getSecretShares();
 ```
 
 ```js
-const publicShares = await distribution.getPublicShares();
+const publicShares = await sharing.getPublicShares();
 ```
 
 ### Feldmann verification scheme
 
 ```js
-const { commitments } = await distribution.getFeldmannCommitments();
+const { commitments } = await sharing.getFeldmannCommitments();
 ```
 
 ```js
@@ -168,11 +168,11 @@ const hPub = await ctx.randomPoint();
 ```
 
 ```js
-const { bindings, commitments } = await distribution.getPedersenCommitments(hPub);
+const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
 ```
 
 ```js
-const { bindings, commitments } = await distribution.getPedersenCommitments(hPub);
+const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
 const binding = bindings[share.index];
 ```
 

@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { Polynomial, Lagrange, verifyFeldmannCommitments, verifyPedersenCommitments } from '../polynomials';
-import { BaseShare, BaseDistribution } from '../common';
+import { BaseShare, BaseSharing } from '../common';
 import { Algorithm } from '../types';
 import { Algorithms } from '../enums';
 import { mod, modInv } from '../utils';
@@ -33,7 +33,7 @@ export class PointShare<P extends Point> implements BaseShare<P> {
 };
 
 
-export class ScalarDistribution<P extends Point> extends BaseDistribution<
+export class ScalarSharing<P extends Point> extends BaseSharing<
   bigint,
   P,
   ScalarShare<P>,
@@ -63,13 +63,13 @@ export class ScalarDistribution<P extends Point> extends BaseDistribution<
 };
 
 
-export async function shareSecret<P extends Point>(
+export async function distribute<P extends Point>(
   ctx: Group<P>,
   secret: bigint,
   nrShares: number,
   threshold: number,
   givenShares?: bigint[],
-): Promise<ScalarDistribution<P>> {
+): Promise<ScalarSharing<P>> {
   givenShares = givenShares || [];
   if (threshold > nrShares) throw new Error('Threshold exceeds number of shares');
   if (threshold < 1) throw new Error ('Threshold must be >= 1');
@@ -84,7 +84,7 @@ export async function shareSecret<P extends Point>(
     index++;
   }
   const polynomial = await Lagrange.interpolate(ctx, xys);
-  return new ScalarDistribution<P>(ctx, nrShares, threshold, polynomial);
+  return new ScalarSharing<P>(ctx, nrShares, threshold, polynomial);
 }
 
 

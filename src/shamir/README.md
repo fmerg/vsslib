@@ -13,19 +13,19 @@ const secret = await ctx.randomScalar();
 ## Secret sharing
 
 ```js
-const distribution = await shamir.shareSecret(ctx, secret, 5, 3);
+const sharing = await shamir.distribute(ctx, secret, 5, 3);
 ```
 
 ```js
-const { nrShares, threshold, polynomial } = distribution;
+const { nrShares, threshold, polynomial } = sharing;
 ```
 
 ```js
-const secretShares = await distribution.getSecretShares();
+const secretShares = await sharing.getSecretShares();
 ```
 
 ```js
-const publicShares = await distribution.getPublicShares();
+const publicShares = await sharing.getPublicShares();
 ```
 
 ## Share verification
@@ -33,7 +33,7 @@ const publicShares = await distribution.getPublicShares();
 ### Feldmann VSS scheme
 
 ```js
-const commitments = await distribution.getFeldmannCommitments();
+const commitments = await sharing.getFeldmannCommitments();
 ```
 
 ```js
@@ -47,7 +47,7 @@ const hPub = await ctx.randomPoint();
 ```
 
 ```js
-const { bindings, commitments } = await distribution.getPedersenCommitments(hPub);
+const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
 ```
 
 ```js

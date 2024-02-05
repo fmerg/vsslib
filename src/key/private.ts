@@ -3,7 +3,7 @@ import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
 import { ScalarShare } from '../shamir';
-import { BaseShare, BaseDistribution, PartialDecryptor } from '../common';
+import { BaseShare, BaseSharing, PartialDecryptor } from '../common';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
@@ -146,10 +146,10 @@ export class PrivateKey<P extends Point> {
     return { decryptor, proof };
   }
 
-  async distribute(nrShares: number, threshold: number): Promise<KeyDistribution<P>> {
+  async distribute(nrShares: number, threshold: number): Promise<KeySharing<P>> {
     const { ctx, scalar: secret } = this;
-    const { polynomial } = await shamir.shareSecret(ctx, secret, nrShares, threshold);
-    return new KeyDistribution(ctx, nrShares, threshold, polynomial);
+    const { polynomial } = await shamir.distribute(ctx, secret, nrShares, threshold);
+    return new KeySharing(ctx, nrShares, threshold, polynomial);
   }
 
   static async fromShares<Q extends Point>(qualifiedSet: PrivateShare<Q>[]): Promise<PrivateKey<Q>> {
@@ -217,7 +217,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   }
 };
 
-export class KeyDistribution<P extends Point> extends BaseDistribution<
+export class KeySharing<P extends Point> extends BaseSharing<
   bigint,
   P,
   PrivateShare<P>,

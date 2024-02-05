@@ -2,7 +2,6 @@ import { Point } from '../../src/backend/abstract'
 import { key, backend } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
 import { PartialDecryptor } from '../../src/common';
-import { KeyDistribution } from '../../src/key';
 import { Combiner } from '../../src/core';
 import { Label } from '../../src/types';
 import { partialPermutations } from '../helpers';
@@ -18,9 +17,9 @@ const runSetup = async (opts: {
 }) => {
   const { label, nrShares, threshold } = opts;
   const { privateKey, publicKey } = await key.generate(label);
-  const distribution = await privateKey.distribute(nrShares, threshold);
-  const privateShares = await distribution.getSecretShares();
-  const publicShares = await distribution.getPublicShares();
+  const sharing = await privateKey.distribute(nrShares, threshold);
+  const privateShares = await sharing.getSecretShares();
+  const publicShares = await sharing.getPublicShares();
   const message = await publicKey.ctx.randomPoint();
   const { ciphertext, decryptor } = await publicKey.elgamalEncrypt(message);
   const partialDecryptors = [];

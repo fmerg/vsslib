@@ -18,9 +18,9 @@ describe('Reconstruction from shares', () => {
   beforeAll(async () => {
     secret = await ctx.randomScalar();
     pub = await ctx.operate(secret, ctx.generator);
-    const distribution = await shamir.shareSecret(ctx, secret, nrShares, threshold);
-    secretShares = await distribution.getSecretShares();
-    publicShares = await distribution.getPublicShares();
+    const sharing = await shamir.distribute(ctx, secret, nrShares, threshold);
+    secretShares = await sharing.getSecretShares();
+    publicShares = await sharing.getPublicShares();
   })
 
   test('Secret scalar reconstruction', async () => {

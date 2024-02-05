@@ -9,7 +9,7 @@ export interface BaseShare<T> {
 }
 
 
-export abstract class BaseDistribution<
+export abstract class BaseSharing<
   S,
   P extends Point,
   Q extends BaseShare<S>,
@@ -20,7 +20,9 @@ export abstract class BaseDistribution<
   threshold: number;
   polynomial: Polynomial<P>;
 
-  constructor(ctx: Group<P>, nrShares: number, threshold: number, polynomial: Polynomial<P>) {
+  constructor(
+    ctx: Group<P>, nrShares: number, threshold: number, polynomial: Polynomial<P>
+  ) {
     this.ctx = ctx;
     this.threshold = threshold;
     this.nrShares = nrShares;

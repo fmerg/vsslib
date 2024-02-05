@@ -18,12 +18,12 @@ import { core } from 'vsslib';
 const combiner = await core.initCombiner({ label: 'ed25519', threshold: 3 })
 ```
 
-### Key distribution
+### Key sharing
 
 ```js
-const distribution = privateKey.distribute(5, 3);
+const sharing = privateKey.distribute(5, 3);
 
-const publicShares = await distribution.getPublicShares();
+const publicShares = await sharing.getPublicShares();
 ```
 
 ### Threshold decryption
