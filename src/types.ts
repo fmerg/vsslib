@@ -1,4 +1,11 @@
-import { Modular, Elliptic, Algorithms, AesModes, Encodings } from './enums';
+import {
+  Modular,
+  Elliptic,
+  Algorithms,
+  AesModes,
+  AsymmetricModes,
+  Encodings,
+} from './enums';
 
 export type Label =
   | Modular.BITS_2048
@@ -23,6 +30,11 @@ export type AesMode =
   | AesModes.AES_256_OFB
   | AesModes.AES_256_CTR
   | AesModes.AES_256_GCM;
+
+export type AsymmetricMode =
+  | AsymmetricModes.ELGAMAL
+  | AsymmetricModes.KEM
+  | AsymmetricModes.IES;
 
 export type Encoding =
   | Encodings.HEX

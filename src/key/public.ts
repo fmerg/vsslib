@@ -3,9 +3,9 @@ import { Label } from '../types';
 import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../common';
-import { AesMode, Algorithm } from '../types';
-import { Algorithms } from '../enums';
-import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
+import { AesMode, AsymmetricMode, Algorithm } from '../types';
+import { Algorithms, AsymmetricModes} from '../enums';
+import { Ciphertext } from '../asymmetric';
 import { ElGamalCiphertext } from '../asymmetric/elgamal';
 import { KemCiphertext } from '../asymmetric/kem';
 import { IesCiphertext } from '../asymmetric/ies';
@@ -15,6 +15,7 @@ import { SchnorrSignature } from '../schnorr';
 const backend = require('../backend');
 const sigma = require('../sigma');
 const shamir = require('../shamir');
+const asymmetric = require('../asymmetric');
 
 
 export type SerializedPublicKey = {
@@ -72,22 +73,15 @@ export class PublicKey<P extends Point> {
     return verified;
   }
 
-  async elgamalEncrypt(message: P): Promise<{ ciphertext: ElGamalCiphertext<P>, randomness: bigint, decryptor: P }> {
-    return elgamal(this.ctx).encrypt(message, this.point);
-  }
-
-  async kemEncrypt(
+  async encrypt(
     message: Uint8Array,
-    opts?: { mode?: AesMode },
-  ): Promise<{ ciphertext: KemCiphertext<P>, randomness: bigint, decryptor: P }> {
-    return kem(this.ctx, opts).encrypt(message, this.point);
-  }
-
-  async iesEncrypt(
-    message: Uint8Array,
-    opts?: { mode?: AesMode, algorithm?: Algorithm },
-  ): Promise<{ ciphertext: IesCiphertext<P>, randomness: bigint, decryptor: P }> {
-    return ies(this.ctx, opts).encrypt(message, this.point);
+    opts: { scheme: AsymmetricMode, mode?: AesMode, algorithm?: Algorithm }
+  ): Promise<{
+    ciphertext: ElGamalCiphertext<P> | KemCiphertext<P> | IesCiphertext<P>,
+    randomness: bigint,
+    decryptor: P,
+  }> {
+    return asymmetric[opts.scheme](this.ctx, opts).encrypt(message, this.point);
   }
 
   async proveEncryption<A>(

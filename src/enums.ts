@@ -42,6 +42,13 @@ export enum AesModes {
   AES_256_GCM = 'aes-256-gcm',
 }
 
+export enum AsymmetricModes {
+  DEFAULT   = 'ies',
+  ELGAMAL   = 'elgamal',
+  KEM       = 'kem',
+  IES       = 'ies',
+}
+
 export enum Encodings {
   HEX       = 'hex',
   BASE64    = 'base64',

@@ -9,7 +9,7 @@
 ```js
 import { key } from 'vsslib';
 
-const { privateKey, publicKey } = await key.generate('ed25519');
+const { privateKey, publicKey, ctx } = await key.generate('ed25519');
 ```
 
 ```js
@@ -29,9 +29,9 @@ const publicShares = await sharing.getPublicShares();
 ### Threshold decryption
 
 ```js
-const message = await publicKey.ctx.randomPoint();
-
-const { ciphertext } = await publicKey.elgamalEncrypt(message);
+const { ciphertext } = await publicKey.encrypt(message, {
+  scheme: AsymmetricModes.ELGAMAL,
+});
 ```
 
 ```js

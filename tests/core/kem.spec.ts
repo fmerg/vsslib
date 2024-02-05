@@ -4,6 +4,7 @@ import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key'
 import { PartialDecryptor } from '../../src/common';
 import { Combiner } from '../../src/core';
 import { Label } from '../../src/types';
+import { AsymmetricModes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
 
 const core = require('../../src/core');
@@ -21,7 +22,9 @@ const runSetup = async (opts: {
   const privateShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
   const message = Uint8Array.from(Buffer.from('destroy earth'));
-  const { ciphertext, decryptor } = await publicKey.kemEncrypt(message);
+  const { ciphertext, decryptor } = await publicKey.encrypt(message, {
+    scheme: AsymmetricModes.KEM
+  });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {
     const share = await privateShare.generatePartialDecryptor(ciphertext);
@@ -171,12 +174,12 @@ describe('Threshold decryption', () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
       if (qualifiedSet.length >= threshold) {
-        const plaintext1 = await combiner.kemDecrypt(ciphertext, qualifiedSet, { skipThreshold: true });
-        const plaintext2 = await privateKey.kemDecrypt(ciphertext);
+        const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true });
+        const plaintext2 = await privateKey.decrypt(ciphertext);
         expect(plaintext1).toEqual(message);
         expect(plaintext1).toEqual(plaintext2);
       } else {
-        await expect(combiner.kemDecrypt(ciphertext, qualifiedSet, { skipThreshold: true })).rejects.toThrow(
+        await expect(combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true })).rejects.toThrow(
           'Could not decrypt: AES decryption failure'
         );
       }
@@ -185,10 +188,10 @@ describe('Threshold decryption', () => {
   test('With threshold check', async () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedSet) => {
-      await expect(combiner.kemDecrypt(ciphertext, qualifiedSet)).rejects.toThrow('Nr shares less than threshold');
+      await expect(combiner.decrypt(ciphertext, qualifiedSet)).rejects.toThrow('Nr shares less than threshold');
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
-      const plaintext = await combiner.kemDecrypt(ciphertext, qualifiedSet);
+      const plaintext = await combiner.decrypt(ciphertext, qualifiedSet);
       expect(plaintext).toEqual(message);
     });
   });

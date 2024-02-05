@@ -13,7 +13,7 @@ const backend = require('../backend');
 const sigma = require('../sigma');
 import { dlog, ddh } from '../sigma';
 import { AesMode, Algorithm } from '../types';
-import { Algorithms } from '../enums';
+import { Algorithms, AsymmetricModes } from '../enums';
 import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
 import { ElGamalCiphertext } from '../asymmetric/elgamal';
 import { KemCiphertext } from '../asymmetric/kem';
@@ -97,16 +97,25 @@ export class PrivateKey<P extends Point> {
     return proof;
   }
 
-  async elgamalDecrypt(ciphertext: ElGamalCiphertext<P>): Promise<P> {
-    return elgamal(this.ctx).decrypt(ciphertext, this.scalar);
-  }
-
-  async kemDecrypt(ciphertext: KemCiphertext<P>): Promise<Uint8Array> {
-    return kem(this.ctx).decrypt(ciphertext, this.scalar);
-  }
-
-  async iesDecrypt(ciphertext: IesCiphertext<P>): Promise<Uint8Array> {
-    return ies(this.ctx).decrypt(ciphertext, this.scalar);
+  async decrypt(
+    ciphertext: ElGamalCiphertext<P> | KemCiphertext<P> | IesCiphertext<P>,
+  ): Promise<Uint8Array> {
+    // TODO: Refactor resolution
+    if ('algorithm' in ciphertext.alpha)
+      return ies(this.ctx).decrypt(
+        ciphertext as IesCiphertext<P>,
+        this.scalar
+      );
+    if ('mode' in ciphertext.alpha)
+      return kem(this.ctx).decrypt(
+        ciphertext as KemCiphertext<P>,
+        this.scalar
+      );
+    return elgamal(this.ctx).decrypt(
+      ciphertext as ElGamalCiphertext<P>,
+      this.scalar
+    );
+    throw new Error('TODO');
   }
 
   async verifyEncryption<A>(

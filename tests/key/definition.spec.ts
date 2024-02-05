@@ -12,25 +12,25 @@ describe('Key generation', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { privateKey, publicKey } = await key.generate(label);
-    const private1 = await PrivateKey.fromScalar(ctx, privateKey.scalar);
-    const private2 = await PrivateKey.fromBytes(ctx, privateKey.bytes);
-    expect(await private1.equals(privateKey)).toBe(true);
-    expect(await private2.equals(privateKey)).toBe(true);
-    const public1 = await PublicKey.fromPoint(ctx, publicKey.point);
-    expect(await public1.equals(publicKey)).toBe(true);
+    const priv1 = await PrivateKey.fromScalar(ctx, privateKey.scalar);
+    const priv2 = await PrivateKey.fromBytes(ctx, privateKey.bytes);
+    expect(await priv1.equals(privateKey)).toBe(true);
+    expect(await priv2.equals(privateKey)).toBe(true);
+    const pub1 = await PublicKey.fromPoint(ctx, publicKey.point);
+    expect(await pub1.equals(publicKey)).toBe(true);
   });
 });
 
 
 describe('Key serialization and deserialization', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
 
     // Private counterpart
     const privSerialized = privateKey.serialize();
     expect(privSerialized).toEqual({
       value: Buffer.from(privateKey.bytes).toString('hex'),
-      system: privateKey.ctx.label,
+      system: ctx.label,
     });
     const privateBack = await PrivateKey.deserialize(privSerialized);
     expect(await privateBack.equals(privateKey)).toBe(true);
@@ -39,7 +39,7 @@ describe('Key serialization and deserialization', () => {
     const pubSerialized = publicKey.serialize();
     expect(pubSerialized).toEqual({
       value: Buffer.from(publicKey.bytes).toString('hex'),
-      system: publicKey.ctx.label,
+      system: ctx.label,
     });
     const publicBack = await PublicKey.deserialize(pubSerialized);
     expect(await publicBack.equals(publicKey)).toBe(true);
@@ -49,9 +49,8 @@ describe('Key serialization and deserialization', () => {
 
 describe('Public key extraction', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey } = await key.generate(label);
-    const ctx = privateKey.ctx;
-    expect(await publicKey.ctx.equals(privateKey.ctx)).toBe(true);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
+    expect(await ctx.equals(ctx)).toBe(true);
     expect(await publicKey.point.equals(await ctx.operate(privateKey.scalar, ctx.generator)));
   });
 });
@@ -59,11 +58,11 @@ describe('Public key extraction', () => {
 
 describe('Diffie-Hellman handshake', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey: private1, publicKey: public1 } = await key.generate(label);
-    const { privateKey: private2, publicKey: public2 } = await key.generate(label);
-    const point1 = await private1.diffieHellman(public2);
-    const point2 = await private2.diffieHellman(public1);
-    const expected = await private1.ctx.operate(private1.scalar, public2.point);
+    const { privateKey: priv1, publicKey: pub1, ctx } = await key.generate(label);
+    const { privateKey: priv2, publicKey: pub2 } = await key.generate(label);
+    const point1 = await priv1.diffieHellman(pub2);
+    const point2 = await priv2.diffieHellman(pub1);
+    const expected = await ctx.operate(priv1.scalar, pub2.point);
     expect(await point1.equals(expected)).toBe(true);
     expect(await point2.equals(point1)).toBe(true);
   });
