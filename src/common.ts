@@ -32,17 +32,17 @@ export abstract class BaseSharing<
   abstract getSecretShares: () => Promise<Q[]>;
   abstract getPublicShares: () => Promise<R[]>;
 
-  getFeldmannCommitments = async (): Promise<{ commitments: P[] }> => {
-    return this.polynomial.generateFeldmannCommitments();
+  getFeldmann = async (): Promise<{ commitments: P[] }> => {
+    return this.polynomial.getFeldmann();
   }
 
-  getPedersenCommitments = async (hPub?: P): Promise<{
+  getPedersen = async (hPub?: P): Promise<{
     bindings: bigint[],
     hPub: P,
     commitments: P[],
   }> => {
     const { ctx, nrShares, polynomial } = this;
-    return polynomial.generatePedersenCommitments(nrShares, hPub || await ctx.randomPoint());
+    return polynomial.getPedersen(nrShares, hPub || await ctx.randomPoint());
   }
 }
 

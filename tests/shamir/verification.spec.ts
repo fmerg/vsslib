@@ -19,7 +19,7 @@ describe('Secret share verification', () => {
   })
 
   test('Feldmann VSS scheme - success', async () => {
-    const { commitments } = await sharing.getFeldmannCommitments();
+    const { commitments } = await sharing.getFeldmann();
     secretShares.forEach(async (share: ScalarShare<Point>) => {
       const verified = await shamir.verifySecretShare(ctx, share, commitments);
       expect(verified).toBe(true);
@@ -27,7 +27,7 @@ describe('Secret share verification', () => {
   });
 
   test('Feldmann VSS scheme - failure', async () => {
-    const { commitments } = await sharing.getFeldmannCommitments();
+    const { commitments } = await sharing.getFeldmann();
     const forgedCommitmnets = [...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()];[]
     secretShares.forEach(async (share: ScalarShare<Point>) => {
       const verified = await shamir.verifySecretShare(ctx, share, forgedCommitmnets);
@@ -37,7 +37,7 @@ describe('Secret share verification', () => {
 
   test('Pedersen VSS scheme - success', async () => {
     const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
+    const { bindings, commitments } = await sharing.getPedersen(hPub);
     secretShares.forEach(async (share: ScalarShare<Point>) => {
       const binding = bindings[share.index];
       const verified = await shamir.verifySecretShare(ctx, share, commitments, { binding, hPub });
@@ -47,7 +47,7 @@ describe('Secret share verification', () => {
 
   test('Pedersen VSS scheme - failure', async () => {
     const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
+    const { bindings, commitments } = await sharing.getPedersen(hPub);
     secretShares.forEach(async (share: ScalarShare<Point>) => {
       const forged = await ctx.randomScalar();
       const verified = await shamir.verifySecretShare(ctx, share, commitments, { binding: forged, hPub });

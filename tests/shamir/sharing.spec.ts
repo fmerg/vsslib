@@ -75,7 +75,7 @@ describe('Sharing without predefined shares', () => {
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
-    const { commitments } = await sharing.getFeldmannCommitments();
+    const { commitments } = await sharing.getFeldmann();
     expect(commitments.length).toEqual(t);
   });
 });
@@ -112,7 +112,7 @@ describe('Sharing with predefined shares', () => {
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);
-      const { commitments } = await sharing.getFeldmannCommitments();
+      const { commitments } = await sharing.getFeldmann();
       expect(commitments.length).toEqual(t);
     }
   });

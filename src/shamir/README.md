@@ -33,7 +33,7 @@ const publicShares = await sharing.getPublicShares();
 ### Feldmann VSS scheme
 
 ```js
-const commitments = await sharing.getFeldmannCommitments();
+const commitments = await sharing.getFeldmann();
 ```
 
 ```js
@@ -47,7 +47,7 @@ const hPub = await ctx.randomPoint();
 ```
 
 ```js
-const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
+const { bindings, commitments } = await sharing.getPedersen(hPub);
 ```
 
 ```js

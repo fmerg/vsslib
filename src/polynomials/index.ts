@@ -1,9 +1,9 @@
-import { Polynomial, verifyFeldmannCommitments, verifyPedersenCommitments } from './core';
+import { Polynomial, verifyFeldmann, verifyPedersen } from './core';
 import { Lagrange } from './lagrange';
 
 export {
   Polynomial,
-  verifyFeldmannCommitments,
-  verifyPedersenCommitments,
+  verifyFeldmann,
+  verifyPedersen,
   Lagrange,
 }

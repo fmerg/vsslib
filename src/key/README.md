@@ -154,7 +154,7 @@ const publicShares = await sharing.getPublicShares();
 ### Feldmann verification scheme
 
 ```js
-const { commitments } = await sharing.getFeldmannCommitments();
+const { commitments } = await sharing.getFeldmann();
 ```
 
 ```js
@@ -168,11 +168,11 @@ const hPub = await ctx.randomPoint();
 ```
 
 ```js
-const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
+const { bindings, commitments } = await sharing.getPedersen(hPub);
 ```
 
 ```js
-const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
+const { bindings, commitments } = await sharing.getPedersen(hPub);
 const binding = bindings[share.index];
 ```
 

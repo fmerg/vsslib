@@ -25,7 +25,7 @@ export class Polynomial<P extends Point> extends BasePolynomial {
     return new Polynomial(ctx, coeffs);
   }
 
-  async generateFeldmannCommitments(): Promise<{ commitments: P[] }> {
+  async getFeldmann(): Promise<{ commitments: P[] }> {
     const { coeffs, degree, ctx: { operate, generator }} = this;
     const commitments = new Array(degree + 1);
     for (const [index, coeff] of coeffs.entries()) {
@@ -34,7 +34,7 @@ export class Polynomial<P extends Point> extends BasePolynomial {
     return { commitments };
   }
 
-  async generatePedersenCommitments(nr: number, hPub?: P): Promise<{
+  async getPedersen(nr: number, hPub?: P): Promise<{
     bindings: bigint[],
     hPub: P,
     commitments: P[],
@@ -61,7 +61,7 @@ export class Polynomial<P extends Point> extends BasePolynomial {
 }
 
 
-export async function verifyFeldmannCommitments<P extends Point>(
+export async function verifyFeldmann<P extends Point>(
   ctx: Group<P>,
   secret: bigint,
   index: number,
@@ -79,7 +79,7 @@ export async function verifyFeldmannCommitments<P extends Point>(
 }
 
 
-export async function verifyPedersenCommitments<P extends Point>(
+export async function verifyPedersen<P extends Point>(
   ctx: Group<P>,
   secret: bigint,
   binding: bigint,

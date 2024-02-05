@@ -1,5 +1,5 @@
 import { Point, Group } from '../backend/abstract';
-import { Polynomial, Lagrange, verifyFeldmannCommitments, verifyPedersenCommitments } from '../polynomials';
+import { Polynomial, Lagrange, verifyFeldmann, verifyPedersen } from '../polynomials';
 import { BaseShare, BaseSharing } from '../common';
 import { Algorithm } from '../types';
 import { Algorithms } from '../enums';
@@ -97,9 +97,9 @@ export async function verifySecretShare<P extends Point>(
   const { value: secret, index } = share;
   if (extras) {
     const { binding, hPub } = extras;
-    return verifyPedersenCommitments(ctx, secret, binding, index, hPub, commitments);
+    return verifyPedersen(ctx, secret, binding, index, hPub, commitments);
   }
-  return verifyFeldmannCommitments(ctx, secret, index, commitments);
+  return verifyFeldmann(ctx, secret, index, commitments);
 }
 
 

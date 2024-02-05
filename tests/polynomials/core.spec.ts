@@ -1,6 +1,6 @@
 import { backend } from '../../src';
 import { Systems } from '../../src/enums';
-import { Polynomial, verifyFeldmannCommitments, verifyPedersenCommitments } from '../../src/polynomials';
+import { Polynomial, verifyFeldmann, verifyPedersen } from '../../src/polynomials';
 import { Messages } from '../../src/polynomials/enums';
 import { cartesian } from '../helpers';
 
@@ -75,10 +75,10 @@ describe('Feldmann commitments - success', () => {
   it.each(cartesian([__labels, degrees]))('degree %s over %s', async (label, degree) => {
     const ctx = backend.initGroup(label);
     const polynomial = await Polynomial.random(ctx, degree);
-    const { commitments } = await polynomial.generateFeldmannCommitments();
+    const { commitments } = await polynomial.getFeldmann();
     for (let index = 0; index < polynomial.coeffs.length; index++) {
       const secret = await polynomial.evaluate(index);
-      const isValid = await verifyFeldmannCommitments(
+      const isValid = await verifyFeldmann(
         ctx,
         secret,
         index,
@@ -92,10 +92,10 @@ describe('Feldmann commitments - success', () => {
 test('Feldmann commitments - failure', async () => {
   const ctx = backend.initGroup('ed25519');
   const polynomial = await Polynomial.random(ctx, 3);
-  const { commitments } = await polynomial.generateFeldmannCommitments();
+  const { commitments } = await polynomial.getFeldmann();
   for (let index = 0; index < polynomial.coeffs.length; index++) {
     const secret = await ctx.randomScalar();
-    const isValid = await verifyFeldmannCommitments(
+    const isValid = await verifyFeldmann(
       ctx,
       secret,
       index,
@@ -113,10 +113,10 @@ describe('Pedersen commitments - success', () => {
     const hPub = await ctx.randomPoint();
     const polynomial = await Polynomial.random(ctx, degree);
     const nr = degree + 3;
-    const { commitments, bindings } = await polynomial.generatePedersenCommitments(nr, hPub);
+    const { commitments, bindings } = await polynomial.getPedersen(nr, hPub);
     for (const [index, binding] of bindings.entries()) {
       const secret = await polynomial.evaluate(index);
-      const isValid = await verifyPedersenCommitments(
+      const isValid = await verifyPedersen(
         ctx,
         secret,
         binding,
@@ -135,10 +135,10 @@ test('Pedersen commitments - failure', async () => {
   const hPub = await ctx.randomPoint();
   const polynomial = await Polynomial.random(ctx, 3);
   const nr = polynomial.degree + 3;
-  const { commitments, bindings } = await polynomial.generatePedersenCommitments(nr, hPub);
+  const { commitments, bindings } = await polynomial.getPedersen(nr, hPub);
   for (const [index, binding] of bindings.entries()) {
     const secret = await ctx.randomScalar();
-    const isValid = await verifyPedersenCommitments(
+    const isValid = await verifyPedersen(
       ctx,
       secret,
       binding,

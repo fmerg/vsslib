@@ -51,7 +51,7 @@ const areEqual = p.equals(q);
 ## Feldmann commitments
 
 ```js
-const { commitments } = await polynomial.generateFeldmannCommitments();
+const { commitments } = await polynomial.getFeldmann();
 ```
 
 ```js
@@ -59,9 +59,9 @@ const secret = await polynomial.evaluate(index);
 ```
 
 ```js
-import { verifyFeldmannCommitments } from 'vsslib/polynomials';
+import { verifyFeldmann } from 'vsslib/polynomials';
 
-const verified = await verifyFeldmannCommitments(ctx, secret, index, commitments);
+const verified = await verifyFeldmann(ctx, secret, index, commitments);
 ```
 
 
@@ -71,7 +71,7 @@ const verified = await verifyFeldmannCommitments(ctx, secret, index, commitments
 const hPub = await ctx.randomPoint();
 const nr = 7;
 
-const { commitments, bindings } = await polynomial.generatePedersenCommitments(nr, hPub);
+const { commitments, bindings } = await polynomial.getPedersen(nr, hPub);
 ```
 
 ```js
@@ -81,7 +81,7 @@ const binding = bindings[index];
 ```
 
 ```js
-import { verifyPedersenCommitments } from 'vsslib/polynomials';
+import { verifyPedersen } from 'vsslib/polynomials';
 
-const verified = await verifyPedersenCommitments(ctx, secret, binding, index, hPub, commitments);
+const verified = await verifyPedersen(ctx, secret, binding, index, hPub, commitments);
 ```

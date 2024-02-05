@@ -62,7 +62,7 @@ describe('Key sharing', () => {
   });
 
   test('Feldmann VSS scheme - success', async () => {
-    const { commitments } = await sharing.getFeldmannCommitments();
+    const { commitments } = await sharing.getFeldmann();
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const verified = await share.verify(commitments);
       expect(verified).toBe(true);
@@ -70,7 +70,7 @@ describe('Key sharing', () => {
   });
 
   test('Feldmann VSS scheme - failure', async () => {
-    const { commitments } = await sharing.getFeldmannCommitments();
+    const { commitments } = await sharing.getFeldmann();
     const forgedCommitmnets = [...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()];
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       await expect(share.verify(forgedCommitmnets)).rejects.toThrow('Invalid share');
@@ -79,7 +79,7 @@ describe('Key sharing', () => {
 
   test('Pedersen VSS scheme - success', async () => {
     const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
+    const { bindings, commitments } = await sharing.getPedersen(hPub);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const binding = bindings[share.index];
       const verified = await share.verify(commitments, { binding, hPub });
@@ -89,7 +89,7 @@ describe('Key sharing', () => {
 
   test('Pedersen VSS scheme - failure', async () => {
     const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.getPedersenCommitments(hPub);
+    const { bindings, commitments } = await sharing.getPedersen(hPub);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const forged = await ctx.randomScalar();
       await expect(share.verify(commitments, { binding: forged, hPub })).rejects.toThrow('Invalid share');
