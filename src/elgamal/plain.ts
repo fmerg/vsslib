@@ -2,10 +2,10 @@ import { Group, Point } from '../backend/abstract';
 import { BaseCipher, Ciphertext } from './common';
 
 
-export class ElGamalCiphertext<P extends Point> extends Ciphertext<P, P> {
+export class PlainCiphertext<P extends Point> extends Ciphertext<P, P> {
 }
 
-export class ElGamalCipher<P extends Point> extends BaseCipher<Uint8Array, P, P> {
+export class PlainCipher<P extends Point> extends BaseCipher<Uint8Array, P, P> {
   constructor(ctx: Group<P>) {
     super(ctx);
   }
@@ -25,5 +25,5 @@ export class ElGamalCipher<P extends Point> extends BaseCipher<Uint8Array, P, P>
 }
 
 export default function<P extends Point>(ctx: Group<P>) {
-  return new ElGamalCipher(ctx);
+  return new PlainCipher(ctx);
 }

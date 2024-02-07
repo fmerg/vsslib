@@ -6,13 +6,13 @@ import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
 import { computeLambda } from '../shamir';
 
-import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
-import { AsymmetricMode, AesMode, Algorithm } from '../types';
-import { Algorithms, AsymmetricModes } from '../enums';
+import { Ciphertext, plain, kem, ies } from '../elgamal';
+import { ElgamalScheme, AesMode, Algorithm } from '../types';
+import { Algorithms, ElgamalSchemes } from '../enums';
 
 const shamir = require('../shamir');
 const backend = require('../backend');
-const asymmetric = require('../asymmetric');
+const elgamal = require('../elgamal');
 
 
 export class Combiner<P extends Point> {
@@ -127,8 +127,8 @@ export class Combiner<P extends Point> {
   ): Promise<Uint8Array> {
     // TODO?
     const decryptor = await this.reconstructDecryptor(shares, opts);
-    const scheme = asymmetric.resolveScheme(ciphertext);
-    return asymmetric[scheme](this.ctx).decryptWithDecryptor(ciphertext, decryptor);
+    const scheme = elgamal.resolveScheme(ciphertext);
+    return elgamal[scheme](this.ctx).decryptWithDecryptor(ciphertext, decryptor);
   }
 }
 

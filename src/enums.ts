@@ -42,9 +42,9 @@ export enum AesModes {
   AES_256_GCM = 'aes-256-gcm',
 }
 
-export enum AsymmetricModes {
+export enum ElgamalSchemes {
   DEFAULT   = 'ies',
-  ELGAMAL   = 'elgamal',
+  PLAIN     = 'plain',
   KEM       = 'kem',
   IES       = 'ies',
 }

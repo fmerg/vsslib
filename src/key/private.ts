@@ -12,11 +12,11 @@ import { SchnorrSignature } from '../schnorr';
 const backend = require('../backend');
 const sigma = require('../sigma');
 import { dlog, ddh } from '../sigma';
-import { AsymmetricMode, AesMode, Algorithm } from '../types';
-import { Algorithms, AsymmetricModes } from '../enums';
-import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
+import { ElgamalScheme, AesMode, Algorithm } from '../types';
+import { Algorithms, ElgamalSchemes } from '../enums';
+import { Ciphertext, plain, kem, ies } from '../elgamal';
 const shamir = require('../shamir');
-const asymmetric = require('../asymmetric');
+const elgamal = require('../elgamal');
 
 
 export type SerializedPrivateKey = {
@@ -96,8 +96,8 @@ export class PrivateKey<P extends Point> {
   }
 
   async decrypt<A extends object>(ciphertext: Ciphertext<A, P>): Promise<Uint8Array> {
-    const scheme = asymmetric.resolveScheme(ciphertext);
-    return asymmetric[scheme](this.ctx).decrypt(ciphertext, this.scalar);
+    const scheme = elgamal.resolveScheme(ciphertext);
+    return elgamal[scheme](this.ctx).decrypt(ciphertext, this.scalar);
   }
 
   async verifyEncryption<A>(

@@ -3,18 +3,18 @@ import { Messages } from '../../src/key/enums';
 import { Algorithm } from '../../src/types';
 const { backend, key, PrivateKey, PublicKey } = require('../../src')
 import { cartesian } from '../helpers';
-import { AsymmetricModes} from '../../src/enums';
+import { ElgamalSchemes} from '../../src/enums';
 
 const __labels = Object.values(Systems);
 const __algorithms  = [...Object.values(Algorithms), undefined];
 
 
-describe('Elgamal encryption and decryption', () => {
+describe('plain encryption and decryption', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const plaintext = await privateKey.decrypt(ciphertext);
     expect(plaintext).toEqual(message);
@@ -22,12 +22,12 @@ describe('Elgamal encryption and decryption', () => {
 });
 
 
-describe('Elgamal encryption proof - success without nonce', () => {
+describe('plain encryption proof - success without nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
@@ -37,12 +37,12 @@ describe('Elgamal encryption proof - success without nonce', () => {
 });
 
 
-describe('Elgamal encryption proof - success with nonce', () => {
+describe('plain encryption proof - success with nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const nonce = await publicKey.ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
@@ -53,12 +53,12 @@ describe('Elgamal encryption proof - success with nonce', () => {
 });
 
 
-describe('Elgamal encryption proof - failure if forged proof', () => {
+describe('plain encryption proof - failure if forged proof', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     proof.commitments[0] = await publicKey.ctx.randomPoint();
@@ -69,12 +69,12 @@ describe('Elgamal encryption proof - failure if forged proof', () => {
 });
 
 
-describe('Elgamal encryption proof - failure if wrong algorithm', () => {
+describe('plain encryption proof - failure if wrong algorithm', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -87,12 +87,12 @@ describe('Elgamal encryption proof - failure if wrong algorithm', () => {
 });
 
 
-describe('Elgamal encryption proof - failure if missing nonce', () => {
+describe('plain encryption proof - failure if missing nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const nonce = await publicKey.ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
@@ -103,12 +103,12 @@ describe('Elgamal encryption proof - failure if missing nonce', () => {
 });
 
 
-describe('Elgamal encryption proof - failure if forged nonce', () => {
+describe('plain encryption proof - failure if forged nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const nonce = await publicKey.ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
@@ -126,7 +126,7 @@ describe('Decryptor generation', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor: expectedDecryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { noProof: false });
     expect(await decryptor.equals(expectedDecryptor)).toBe(true);
@@ -140,7 +140,7 @@ describe('Decryptor proof - success without nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
@@ -154,7 +154,7 @@ describe('Decryptor proof - success with nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const nonce = await publicKey.ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
@@ -170,7 +170,7 @@ describe('Decryptor proof - failure if forged proof', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     proof.commitments[0] = await publicKey.ctx.randomPoint();
@@ -186,7 +186,7 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -204,7 +204,7 @@ describe('Decryptor proof - failure if missing nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const nonce = await publicKey.ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
@@ -220,7 +220,7 @@ describe('Decryptor proof - failure if forged nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.ELGAMAL
+      scheme: ElgamalSchemes.PLAIN
     });
     const nonce = await publicKey.ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });

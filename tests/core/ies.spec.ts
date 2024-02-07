@@ -4,7 +4,7 @@ import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key'
 import { PartialDecryptor } from '../../src/common';
 import { Combiner } from '../../src/core';
 import { Label } from '../../src/types';
-import { AsymmetricModes } from '../../src/enums';
+import { ElgamalSchemes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
 
 const core = require('../../src/core');
@@ -23,7 +23,7 @@ const runSetup = async (opts: {
   const publicShares = await sharing.getPublicShares();
   const message = Uint8Array.from(Buffer.from('destroy earth'));
   const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-    scheme: AsymmetricModes.IES
+    scheme: ElgamalSchemes.IES
   });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {

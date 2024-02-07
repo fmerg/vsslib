@@ -3,7 +3,7 @@ import {
   Elliptic,
   Algorithms,
   AesModes,
-  AsymmetricModes,
+  ElgamalSchemes,
   Encodings,
 } from './enums';
 
@@ -31,10 +31,10 @@ export type AesMode =
   | AesModes.AES_256_CTR
   | AesModes.AES_256_GCM;
 
-export type AsymmetricMode =
-  | AsymmetricModes.ELGAMAL
-  | AsymmetricModes.KEM
-  | AsymmetricModes.IES;
+export type ElgamalScheme =
+  | ElgamalSchemes.PLAIN
+  | ElgamalSchemes.KEM
+  | ElgamalSchemes.IES;
 
 export type Encoding =
   | Encodings.HEX

@@ -1,4 +1,4 @@
-# `vsslib.asymmetric`
+# `vsslib.elgamal`
 
 ```js
 import { backend } from 'vsslib';
@@ -10,28 +10,28 @@ const ctx = backend.initGroup('ed25519');
 const { secret, pub } = await ctx.generateKeypair();
 ```
 
-## Plain ElGamal Encryption
+## Plain plain Encryption
 
 ```js
-import { elgamal } from 'vsslib';
+import { plain } from 'vsslib';
 ```
 
 ```js
 const message = await ctx.randomPoint();
 
-const { ciphertext, randomness, decryptor } = await elgamal(ctx).encrypt(message, pub);
+const { ciphertext, randomness, decryptor } = await plain(ctx).encrypt(message, pub);
 ```
 
 ```js
-const plaintext = await elgamal(ctx).decrypt(ciphertext, secret);
+const plaintext = await plain(ctx).decrypt(ciphertext, secret);
 ```
 
 ```js
-const plaintext = await elgamal(ctx).decryptWithDecryptor(ciphertext, decryptor);
+const plaintext = await plain(ctx).decryptWithDecryptor(ciphertext, decryptor);
 ```
 
 ```js
-const plaintext = await elgamal(ctx).decryptWithRandomness(ciphertext, pub, randomness);
+const plaintext = await plain(ctx).decryptWithRandomness(ciphertext, pub, randomness);
 ```
 
 ## (DH)KEM-Encryption (Key Encapsulation Mechanism)

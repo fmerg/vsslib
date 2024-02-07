@@ -41,17 +41,15 @@ const serialized = publicKey.serialize();
 const pubBack = await PublicKey.deserialize(serialized);
 ```
 
-## Asymmetric encryption
+## ElGamal encryption schemes
 
-### Plain ElGamal Encryption
+### Plain Elgamal encryption
 
 ```js
 const message = (await ctx.randomPoint()).toBytes();
 
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
-  scheme: AsymmetricModes.ELGAMAL,
-  mode: AesModes.AES_256_CBC,
-  algorithm: Algorithms.SHA256
+  scheme: 'plain'
 });
 ```
 
@@ -65,8 +63,8 @@ const plaintext = await privateKey.decrypt(ciphertext);
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
-  scheme: AsymmetricModes.KEM,
-  mode: AesModes.AES_256_CBC,
+  scheme: 'kem',
+  mode: 'aes-256-cbc'
 });
 ```
 
@@ -80,9 +78,9 @@ const plaintext = await privateKey.decrypt(ciphertext);
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
-  scheme: AsymmetricModes.IES,
-  mode: AesModes.AES_256_CBC,
-  algorithm: Algorithms.SHA256
+  scheme: 'ies',
+  mode: 'aes-256-cbc'
+  algorithm: 'sha256'
 });
 ```
 

@@ -50,21 +50,21 @@ await combiner.verifyPartialDecryptors(ciphertext, publicShares, partialDecrypto
 
 ## Threshold decryption modes
 
-### Plain ElGamal Decryption
+### Plain plain Decryption
 
 ```js
 const { ctx } = publicKey;
 const message = (await ctx.randomPoint()).toBytes();
 
-const { ciphertext } = await publicKey.elgamalEncrypt(message);
+const { ciphertext } = await publicKey.plainEncrypt(message);
 ```
 
 ```js
-const plaintext = await combiner.elgamalDecrypt(ciphertext, partialDecryptors);
+const plaintext = await combiner.plainDecrypt(ciphertext, partialDecryptors);
 ```
 
 ```js
-const plaintext = await combiner.elgamalDecrypt(ciphertext, partialDecryptors, { skipThreshold: true });
+const plaintext = await combiner.plainDecrypt(ciphertext, partialDecryptors, { skipThreshold: true });
 ```
 
 ### (DH)KEM-Decryption (Key Encapsulation Mechanism)
@@ -73,7 +73,7 @@ const plaintext = await combiner.elgamalDecrypt(ciphertext, partialDecryptors, {
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
-  scheme: AsymmetricModes.KEM,
+  scheme: ElgamalSchemes.KEM,
   mode: AesModes.AES_256_CBC,
 });
 ```
@@ -92,7 +92,7 @@ const plaintext = await combiner.decrypt(ciphertext, partialDecryptors, { skipTh
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
-  scheme: AsymmetricModes.IES,
+  scheme: ElgamalSchemes.IES,
   mode: AesModes.AES_256_CBC,
   algorithm: Algorithms.SHA256
 });

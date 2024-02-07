@@ -1,7 +1,7 @@
 import { Algorithms, Systems, AesModes } from '../../src/enums';
 import { Messages } from '../../src/key/enums';
 import { Algorithm } from '../../src/types';
-import { AsymmetricModes} from '../../src/enums';
+import { ElgamalSchemes} from '../../src/enums';
 const { backend, key, PrivateKey, PublicKey } = require('../../src')
 import { cartesian } from '../helpers';
 
@@ -17,7 +17,7 @@ describe('IES hybrid encryption and decryption', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES, mode, algorithm
+      scheme: ElgamalSchemes.IES, mode, algorithm
     });
     expect(ciphertext.alpha.mode).toBe(mode == undefined ? AesModes.DEFAULT : mode);
     expect(ciphertext.alpha.algorithm).toBe(algorithm == undefined ? Algorithms.DEFAULT : algorithm);
@@ -32,7 +32,7 @@ describe('IES hybrid encryption proof - success without nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES
+      scheme: ElgamalSchemes.IES
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
@@ -47,7 +47,7 @@ describe('IES hybrid encryption proof - success with nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES, algorithm
+      scheme: ElgamalSchemes.IES, algorithm
     });
     const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
@@ -63,7 +63,7 @@ describe('IES hybrid encryption proof - failure if forged proof', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES, algorithm
+      scheme: ElgamalSchemes.IES, algorithm
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     proof.commitments[0] = await ctx.randomPoint();
@@ -79,7 +79,7 @@ describe('IES hybrid encryption proof - failure if wrong algorithm', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES, algorithm
+      scheme: ElgamalSchemes.IES, algorithm
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -97,7 +97,7 @@ describe('IES hybrid encryption proof - failure if missing nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES, algorithm
+      scheme: ElgamalSchemes.IES, algorithm
     });
     const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
@@ -113,7 +113,7 @@ describe('IES hybrid encryption proof - failure if forged nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES, algorithm
+      scheme: ElgamalSchemes.IES, algorithm
     });
     const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
@@ -131,7 +131,7 @@ describe('Decryptor generation', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor: expectedDecryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES
+      scheme: ElgamalSchemes.IES
     });
     const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { noProof: false });
     expect(await decryptor.equals(expectedDecryptor)).toBe(true);
@@ -145,7 +145,7 @@ describe('Decryptor proof - success without nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES
+      scheme: ElgamalSchemes.IES
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
@@ -159,7 +159,7 @@ describe('Decryptor proof - success with nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES
+      scheme: ElgamalSchemes.IES
     });
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
@@ -175,7 +175,7 @@ describe('Decryptor proof - failure if forged proof', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES
+      scheme: ElgamalSchemes.IES
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     proof.commitments[0] = await ctx.randomPoint();
@@ -191,7 +191,7 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES
+      scheme: ElgamalSchemes.IES
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -209,7 +209,7 @@ describe('Decryptor proof - failure if missing nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES
+      scheme: ElgamalSchemes.IES
     });
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
@@ -225,7 +225,7 @@ describe('Decryptor proof - failure if forged nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-      scheme: AsymmetricModes.IES
+      scheme: ElgamalSchemes.IES
     });
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });

@@ -1,4 +1,4 @@
-import { shamir, elgamal, backend } from '../../src';
+import { shamir, plain, backend } from '../../src';
 import { BaseShare } from '../../src/common';
 import { Point } from '../../src/backend/abstract';
 

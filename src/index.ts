@@ -1,5 +1,5 @@
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './key';
-import { elgamal, kem, ies } from './asymmetric';
+import { plain, kem, ies } from './elgamal';
 import schnorr from './schnorr';
 
 const aes = require('./aes');
@@ -19,7 +19,7 @@ export {
   aes,
   backend,
   core,
-  elgamal,
+  plain,
   ies,
   kem,
   key,

@@ -4,7 +4,7 @@ import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key'
 import { PartialDecryptor } from '../../src/common';
 import { Combiner } from '../../src/core';
 import { Label } from '../../src/types';
-import { AsymmetricModes } from '../../src/enums';
+import { ElgamalSchemes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
 
 const core = require('../../src/core');
@@ -24,7 +24,7 @@ const runSetup = async (opts: {
   const point = await publicKey.ctx.randomPoint();
   const message = point.toBytes()
   const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-    scheme: AsymmetricModes.ELGAMAL
+    scheme: ElgamalSchemes.PLAIN
   });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {
