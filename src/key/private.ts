@@ -12,13 +12,11 @@ import { SchnorrSignature } from '../schnorr';
 const backend = require('../backend');
 const sigma = require('../sigma');
 import { dlog, ddh } from '../sigma';
-import { AesMode, Algorithm } from '../types';
+import { AsymmetricMode, AesMode, Algorithm } from '../types';
 import { Algorithms, AsymmetricModes } from '../enums';
 import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
-import { ElGamalCiphertext } from '../asymmetric/elgamal';
-import { KemCiphertext } from '../asymmetric/kem';
-import { IesCiphertext } from '../asymmetric/ies';
 const shamir = require('../shamir');
+const asymmetric = require('../asymmetric');
 
 
 export type SerializedPrivateKey = {
@@ -97,25 +95,9 @@ export class PrivateKey<P extends Point> {
     return proof;
   }
 
-  async decrypt(
-    ciphertext: ElGamalCiphertext<P> | KemCiphertext<P> | IesCiphertext<P>,
-  ): Promise<Uint8Array> {
-    // TODO: Refactor resolution
-    if ('algorithm' in ciphertext.alpha)
-      return ies(this.ctx).decrypt(
-        ciphertext as IesCiphertext<P>,
-        this.scalar
-      );
-    if ('mode' in ciphertext.alpha)
-      return kem(this.ctx).decrypt(
-        ciphertext as KemCiphertext<P>,
-        this.scalar
-      );
-    return elgamal(this.ctx).decrypt(
-      ciphertext as ElGamalCiphertext<P>,
-      this.scalar
-    );
-    throw new Error('TODO');
+  async decrypt<A extends object>(ciphertext: Ciphertext<A, P>): Promise<Uint8Array> {
+    const scheme = asymmetric.resolveScheme(ciphertext);
+    return asymmetric[scheme](this.ctx).decrypt(ciphertext, this.scalar);
   }
 
   async verifyEncryption<A>(

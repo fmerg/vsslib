@@ -7,12 +7,12 @@ import { leInt2Buff } from '../utils';
 import { computeLambda } from '../shamir';
 
 import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
-import { ElGamalCiphertext } from '../asymmetric/elgamal';
-import { KemCiphertext } from '../asymmetric/kem';
-import { IesCiphertext } from '../asymmetric/ies';
+import { AsymmetricMode, AesMode, Algorithm } from '../types';
+import { Algorithms, AsymmetricModes } from '../enums';
 
 const shamir = require('../shamir');
 const backend = require('../backend');
+const asymmetric = require('../asymmetric');
 
 
 export class Combiner<P extends Point> {
@@ -120,29 +120,15 @@ export class Combiner<P extends Point> {
     return acc;
   }
 
-  async decrypt(
-    ciphertext: ElGamalCiphertext<P> | KemCiphertext<P> | IesCiphertext<P>,
+  async decrypt<A extends object>(
+    ciphertext: Ciphertext<A, P>,
     shares: PartialDecryptor<P>[],
     opts?: { threshold?: number, skipThreshold?: boolean },
   ): Promise<Uint8Array> {
     // TODO?
     const decryptor = await this.reconstructDecryptor(shares, opts);
-    // TODO: Refactor resolution
-    if ('algorithm' in ciphertext.alpha)
-      return ies(this.ctx).decryptWithDecryptor(
-        ciphertext as IesCiphertext<P>,
-        decryptor,
-      );
-    if ('mode' in ciphertext.alpha)
-      return kem(this.ctx).decryptWithDecryptor(
-        ciphertext as KemCiphertext<P>,
-        decryptor,
-      );
-    return elgamal(this.ctx).decryptWithDecryptor(
-      ciphertext as ElGamalCiphertext<P>,
-      decryptor,
-    );
-    throw new Error('TODO');
+    const scheme = asymmetric.resolveScheme(ciphertext);
+    return asymmetric[scheme](this.ctx).decryptWithDecryptor(ciphertext, decryptor);
   }
 }
 

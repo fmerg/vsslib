@@ -6,9 +6,6 @@ import { PartialDecryptor } from '../common';
 import { AesMode, AsymmetricMode, Algorithm } from '../types';
 import { Algorithms, AsymmetricModes} from '../enums';
 import { Ciphertext } from '../asymmetric';
-import { ElGamalCiphertext } from '../asymmetric/elgamal';
-import { KemCiphertext } from '../asymmetric/kem';
-import { IesCiphertext } from '../asymmetric/ies';
 import { dlog, ddh } from '../sigma';
 import schnorr from '../schnorr';
 import { SchnorrSignature } from '../schnorr';
@@ -73,11 +70,11 @@ export class PublicKey<P extends Point> {
     return verified;
   }
 
-  async encrypt(
+  async encrypt<A>(
     message: Uint8Array,
     opts: { scheme: AsymmetricMode, mode?: AesMode, algorithm?: Algorithm }
   ): Promise<{
-    ciphertext: ElGamalCiphertext<P> | KemCiphertext<P> | IesCiphertext<P>,
+    ciphertext: Ciphertext<A, P>,
     randomness: bigint,
     decryptor: P,
   }> {
