@@ -11,8 +11,12 @@ export class PlainCipher<P extends Point> extends BaseCipher<Uint8Array, P, P> {
   }
 
   encapsulate = async (pub: P, randomness: bigint, message: Uint8Array): Promise<{ alpha: P, decryptor: P }> => {
-    // TODO: Handle invalid point error
-    const messagePoint = this.ctx.unpack(message)
+    let messagePoint;
+    try {
+      messagePoint = this.ctx.unpack(message);
+    } catch (err: any) {
+      throw new Error('Invalid point encoding: ' + err.message);
+    }
     const decryptor = await this.ctx.operate(randomness, pub);
     const alpha = await this.ctx.combine(decryptor, messagePoint);
     return { alpha, decryptor };

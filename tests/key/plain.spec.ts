@@ -22,6 +22,17 @@ describe('plain encryption and decryption', () => {
 });
 
 
+describe('plain encryption - invalid point encoding', () => {
+  it.each(__labels)('over %s/%s', async (label) => {
+    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const message = new Uint8Array([0, 1, 666, 999]);
+    expect(publicKey.encrypt(message, { scheme: ElgamalSchemes.PLAIN })).rejects.toThrow(
+      'Invalid point encoding'
+    );
+  });
+});
+
+
 describe('plain encryption proof - success without nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
