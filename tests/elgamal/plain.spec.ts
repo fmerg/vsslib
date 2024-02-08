@@ -1,6 +1,6 @@
-import { plain, backend } from '../src';
-import { Systems } from '../src/enums';
-import { cartesian } from './helpers';
+import { plain, backend } from '../../src';
+import { Systems } from '../../src/enums';
+import { cartesian } from '../helpers';
 
 const __labels = Object.values(Systems);
 
