@@ -1,11 +1,11 @@
 import { Point } from '../../src/backend/abstract'
 import { key, backend } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
-import { Combiner } from '../../src/core';
+import { Combiner } from '../../src/tds';
 import { Label } from '../../src/types';
 import { partialPermutations } from '../helpers';
 
-const core = require('../../src/core');
+const tds = require('../../src/tds');
 
 
 const runSetup = async (opts: {
@@ -20,7 +20,7 @@ const runSetup = async (opts: {
   const privateShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
   const message = await publicKey.ctx.randomPoint();
-  const combiner = core.initCombiner({ label, threshold });
+  const combiner = tds.initCombiner({ label, threshold });
   return {
     privateKey,
     publicKey,

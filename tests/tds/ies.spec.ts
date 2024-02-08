@@ -1,13 +1,13 @@
 import { Point } from '../../src/backend/abstract'
 import { key, backend } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
-import { PartialDecryptor } from '../../src/common';
-import { Combiner } from '../../src/core';
+import { PartialDecryptor } from '../../src/tds';
+import { Combiner } from '../../src/tds';
 import { Label } from '../../src/types';
 import { ElgamalSchemes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
 
-const core = require('../../src/core');
+const tds = require('../../src/tds');
 
 
 const runSetup = async (opts: {
@@ -23,7 +23,7 @@ const runSetup = async (opts: {
   const publicShares = await sharing.getPublicShares();
   const message = Uint8Array.from(Buffer.from('destroy earth'));
   const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-    scheme: ElgamalSchemes.KEM
+    scheme: ElgamalSchemes.IES
   });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {
@@ -41,7 +41,7 @@ const runSetup = async (opts: {
       });
     }
   }
-  const combiner = core.initCombiner({ label, threshold });
+  const combiner = tds.initCombiner({ label, threshold });
   return {
     privateKey,
     publicKey,
@@ -180,7 +180,7 @@ describe('Threshold decryption', () => {
         expect(plaintext1).toEqual(plaintext2);
       } else {
         await expect(combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true })).rejects.toThrow(
-          'Could not decrypt: AES decryption failure'
+          'Could not decrypt: Invalid MAC'
         );
       }
     });

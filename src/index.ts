@@ -4,7 +4,7 @@ import schnorr from './schnorr';
 
 const aes = require('./aes');
 const backend = require('./backend');
-const core = require('./core');
+const tds = require('./tds');
 const key = require('./key');
 const polynomials = require('./polynomials');
 const shamir = require('./shamir');
@@ -18,7 +18,7 @@ export {
   PublicShare,
   aes,
   backend,
-  core,
+  tds,
   plain,
   ies,
   kem,

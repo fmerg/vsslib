@@ -3,7 +3,8 @@ import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
 import { Polynomial } from '../polynomials';
 import { ScalarShare } from '../shamir';
-import { BaseShare, BaseSharing, PartialDecryptor } from '../common';
+import { PartialDecryptor } from '../tds';
+import { BaseShare, BaseSharing } from '../vss';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
@@ -15,8 +16,8 @@ import { dlog, ddh } from '../sigma';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { Algorithms, ElgamalSchemes } from '../enums';
 import { Ciphertext, plain, kem, ies } from '../elgamal';
-const shamir = require('../shamir');
 const elgamal = require('../elgamal');
+import shamir from '../shamir';
 
 
 export type SerializedPrivateKey = {
@@ -139,7 +140,7 @@ export class PrivateKey<P extends Point> {
 
   async distribute(nrShares: number, threshold: number): Promise<KeySharing<P>> {
     const { ctx, scalar: secret } = this;
-    const { polynomial } = await shamir.distribute(ctx, secret, nrShares, threshold);
+    const { polynomial } = await shamir(ctx).distribute(secret, nrShares, threshold);
     return new KeySharing(ctx, nrShares, threshold, polynomial);
   }
 
@@ -150,7 +151,7 @@ export class PrivateKey<P extends Point> {
         value, index
       };
     });
-    const secret = await shamir.reconstructSecret(ctx, secretShares);
+    const secret = await shamir(ctx).reconstructSecret(secretShares);
     return new PrivateKey(ctx, leInt2Buff(secret));
   }
 }
@@ -189,10 +190,18 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     return new PublicShare(ctx, point, index);
   }
 
-  async verify(commitments: P[], extras?: { binding: bigint, hPub: P }): Promise<boolean> {
+  async verifyFeldmann(commitments: P[]): Promise<boolean> {
     const { ctx, value, index } = this;
     const secretShare = new ScalarShare(value, index);
-    const verified = await shamir.verifySecretShare(ctx, secretShare, commitments, extras);
+    const verified = await shamir(ctx).verifyFeldmann(secretShare, commitments);
+    if (!verified) throw new Error('Invalid share');
+    return verified;
+  }
+
+  async verifyPedersen(binding: bigint, pub: P, commitments: P[]): Promise<boolean> {
+    const { ctx, value, index } = this;
+    const secretShare = new ScalarShare(value, index);
+    const verified = await shamir(ctx).verifyPedersen(secretShare, binding, pub, commitments);
     if (!verified) throw new Error('Invalid share');
     return verified;
   }

@@ -21,7 +21,7 @@ while [[ $# -gt 0 ]]
 do
     arg="$1"
     case $arg in
-        elgamal|key|core|shamir)
+        elgamal|key|tds|shamir)
             MODULE="-$arg"
             shift
             ;;

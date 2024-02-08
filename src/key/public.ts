@@ -2,7 +2,7 @@ import { Group, Point } from '../backend/abstract';
 import { Label } from '../types';
 import { SigmaProof } from '../sigma';
 import { Messages } from './enums';
-import { PartialDecryptor } from '../common';
+import { PartialDecryptor } from '../tds';
 import { AesMode, ElgamalScheme, Algorithm } from '../types';
 import { Algorithms, ElgamalSchemes} from '../enums';
 import { Ciphertext } from '../elgamal';
@@ -11,8 +11,8 @@ import schnorr from '../schnorr';
 import { SchnorrSignature } from '../schnorr';
 const backend = require('../backend');
 const sigma = require('../sigma');
-const shamir = require('../shamir');
 const elgamal = require('../elgamal');
+import shamir from '../shamir';
 
 
 export type SerializedPublicKey = {
@@ -116,7 +116,7 @@ export class PublicKey<P extends Point> {
         value, index
       };
     });
-    const point = await shamir.reconstructPublic(ctx, pointShares);
+    const point = await shamir(ctx).reconstructPublic(pointShares);
     return new PublicKey(ctx, point);
   }
 }

@@ -1,18 +1,32 @@
 import { Point, Group } from '../backend/abstract';
 import { Label } from '../types';
 import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../key';
-import { BaseShare, PartialDecryptor } from '../common';
+import { BaseShare } from '../vss';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
-import { computeLambda } from '../shamir';
+import { SigmaProof } from '../sigma';
 
 import { Ciphertext, plain, kem, ies } from '../elgamal';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { Algorithms, ElgamalSchemes } from '../enums';
 
-const shamir = require('../shamir');
+import shamir from '../shamir';
 const backend = require('../backend');
 const elgamal = require('../elgamal');
+
+
+
+export class PartialDecryptor<P extends Point> implements BaseShare<P> {
+  value: P;
+  index: number;
+  proof: SigmaProof<P>;
+
+  constructor(value: P, index: number, proof: SigmaProof<P>) {
+    this.value = value;
+    this.index = index;
+    this.proof = proof;
+  }
+};
 
 
 export class Combiner<P extends Point> {
@@ -44,7 +58,7 @@ export class Combiner<P extends Point> {
         value, index
       };
     });
-    const secret = await shamir.reconstructSecret(this.ctx, secretShares);
+    const secret = await shamir(this.ctx).reconstructSecret(secretShares);
     const privateKey = new PrivateKey(this.ctx, leInt2Buff(secret));
     const publicKey = await privateKey.publicKey();
     return { privateKey, publicKey };
@@ -59,7 +73,7 @@ export class Combiner<P extends Point> {
         value, index
       };
     });
-    const point = await shamir.reconstructPublic(this.ctx, pointShares);
+    const point = await shamir(this.ctx).reconstructPublic(pointShares);
     return new PublicKey(this.ctx, point);
   }
 
@@ -113,7 +127,7 @@ export class Combiner<P extends Point> {
     let acc = neutral;
     for (const share of shares) {
       const { value, index } = share;
-      const lambda = computeLambda(index, qualifiedIndexes, order);
+      const lambda = shamir(this.ctx).computeLambda(index, qualifiedIndexes);
       const curr = await operate(lambda, value);
       acc = await combine(acc, curr);
     }

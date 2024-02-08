@@ -1,13 +1,13 @@
 import { Point } from '../../src/backend/abstract'
 import { key, backend } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
-import { PartialDecryptor } from '../../src/common';
-import { Combiner } from '../../src/core';
+import { PartialDecryptor } from '../../src/tds';
+import { Combiner } from '../../src/tds';
 import { Label } from '../../src/types';
 import { ElgamalSchemes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
 
-const core = require('../../src/core');
+const tds = require('../../src/tds');
 
 
 const runSetup = async (opts: {
@@ -21,9 +21,10 @@ const runSetup = async (opts: {
   const sharing = await privateKey.distribute(nrShares, threshold);
   const privateShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
-  const message = Uint8Array.from(Buffer.from('destroy earth'));
+  const point = await publicKey.ctx.randomPoint();
+  const message = point.toBytes()
   const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-    scheme: ElgamalSchemes.IES
+    scheme: ElgamalSchemes.PLAIN
   });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {
@@ -41,7 +42,7 @@ const runSetup = async (opts: {
       });
     }
   }
-  const combiner = core.initCombiner({ label, threshold });
+  const combiner = tds.initCombiner({ label, threshold });
   return {
     privateKey,
     publicKey,
@@ -173,15 +174,14 @@ describe('Threshold decryption', () => {
   test('Skip threshold check', async () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
+      const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true });
+      const plaintext2 = await privateKey.decrypt(ciphertext);
       if (qualifiedSet.length >= threshold) {
-        const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true });
-        const plaintext2 = await privateKey.decrypt(ciphertext);
         expect(plaintext1).toEqual(message);
         expect(plaintext1).toEqual(plaintext2);
       } else {
-        await expect(combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true })).rejects.toThrow(
-          'Could not decrypt: Invalid MAC'
-        );
+        expect(plaintext1).not.toEqual(message);
+        expect(plaintext1).not.toEqual(plaintext2);
       }
     });
   });

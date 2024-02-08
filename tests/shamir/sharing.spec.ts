@@ -1,6 +1,7 @@
-import { shamir, plain, backend } from '../../src';
-import { BaseShare } from '../../src/common';
+import { backend } from '../../src';
+import { BaseShare } from '../../src/vss';
 import { Point } from '../../src/backend/abstract';
+import shamir from '../../src/shamir'
 
 
 const thresholdParams = [
@@ -32,19 +33,19 @@ describe('Sharing parameter errors', () => {
   const ctx = backend.initGroup('ed25519');
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir.distribute(ctx, secret, 1, 2)).rejects.toThrow(
+    await expect(shamir(ctx).distribute(secret, 1, 2)).rejects.toThrow(
       'Threshold exceeds number of shares'
     );
   });
   test('Threshold is < 1', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir.distribute(ctx, secret, 1, 0)).rejects.toThrow(
+    await expect(shamir(ctx).distribute(secret, 1, 0)).rejects.toThrow(
       'Threshold must be >= 1'
     );
   });
   test('Number of predefined shares exceeds threshold', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir.distribute(ctx, secret, 3, 2, [
+    await expect(shamir(ctx).distribute(secret, 3, 2, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
@@ -59,7 +60,7 @@ describe('Sharing without predefined shares', () => {
     const label = 'ed25519';
     const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
-    const sharing = await shamir.distribute(ctx, secret, n, t);
+    const sharing = await shamir(ctx).distribute(secret, n, t);
     const { nrShares, threshold, polynomial } = sharing;
     expect(nrShares).toEqual(n);
     expect(threshold).toEqual(t);
@@ -91,7 +92,7 @@ describe('Sharing with predefined shares', () => {
       for (let i = 0; i < nrGivenShares; i++) {
         givenShares.push(await ctx.randomScalar());
       }
-      const sharing = await shamir.distribute(ctx, secret, n, t, givenShares);
+      const sharing = await shamir(ctx).distribute(secret, n, t, givenShares);
       const { nrShares, threshold, polynomial } = sharing;
       expect(nrShares).toEqual(n);
       expect(threshold).toEqual(t);

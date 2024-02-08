@@ -167,7 +167,7 @@ const { commitments } = await sharing.getFeldmann();
 ```
 
 ```js
-await privateShare.verify(commitments);
+await privateShare.verifyFeldmann(commitments);
 ```
 
 ### Pedersen verification scheme
@@ -186,7 +186,7 @@ const binding = bindings[share.index];
 ```
 
 ```js
-const verified = await share.verify(commitments, { binding, hpub });
+const verified = await share.verifyPedersen(binding, hPub, commitments);
 ```
 
 ### Key reconstruction

@@ -1,9 +1,9 @@
-# `vsslib.core`
+# `vsslib.tds`
 
 ```js
-const core = require('vsslib/core');
+const tds = require('vsslib/tds');
 
-const combiner = core.initCombiner({ label: 'ed25519', threshold: 3 })
+const combiner = tds.initCombiner({ label: 'ed25519', threshold: 3 })
 ```
 
 ## Key reconstruction

@@ -9,7 +9,7 @@ import {
 } from '../../src/key';
 import { Polynomial } from '../../src/polynomials';
 import { Messages } from '../../src/key/enums';
-import { PartialDecryptor } from '../../src/common';
+import { PartialDecryptor } from '../../src/tds';
 import { PlainCiphertext } from '../../src/elgamal/plain';
 import { ElgamalSchemes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
@@ -67,7 +67,7 @@ describe('Key sharing', () => {
   test('Feldmann VSS scheme - success', async () => {
     const { commitments } = await sharing.getFeldmann();
     privateShares.forEach(async (share: PrivateShare<Point>) => {
-      const verified = await share.verify(commitments);
+      const verified = await share.verifyFeldmann(commitments);
       expect(verified).toBe(true);
     });
   });
@@ -76,7 +76,7 @@ describe('Key sharing', () => {
     const { commitments } = await sharing.getFeldmann();
     const forgedCommitmnets = [...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()];
     privateShares.forEach(async (share: PrivateShare<Point>) => {
-      await expect(share.verify(forgedCommitmnets)).rejects.toThrow('Invalid share');
+      await expect(share.verifyFeldmann(forgedCommitmnets)).rejects.toThrow('Invalid share');
     });
   });
 
@@ -85,7 +85,7 @@ describe('Key sharing', () => {
     const { bindings, commitments } = await sharing.getPedersen(hPub);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const binding = bindings[share.index];
-      const verified = await share.verify(commitments, { binding, hPub });
+      const verified = await share.verifyPedersen(binding, hPub, commitments);
       expect(verified).toBe(true);
     });
   });
@@ -94,8 +94,8 @@ describe('Key sharing', () => {
     const hPub = await ctx.randomPoint();
     const { bindings, commitments } = await sharing.getPedersen(hPub);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
-      const forged = await ctx.randomScalar();
-      await expect(share.verify(commitments, { binding: forged, hPub })).rejects.toThrow('Invalid share');
+      const forgedBinding = await ctx.randomScalar();
+      await expect(share.verifyPedersen(forgedBinding, hPub, commitments)).rejects.toThrow('Invalid share');
     });
   });
 

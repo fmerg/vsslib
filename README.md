@@ -13,9 +13,9 @@ const { privateKey, publicKey, ctx } = await key.generate('ed25519');
 ```
 
 ```js
-import { core } from 'vsslib';
+import { tds } from 'vsslib';
 
-const combiner = await core.initCombiner({ label: 'ed25519', threshold: 3 })
+const combiner = await tds.initCombiner({ label: 'ed25519', threshold: 3 })
 ```
 
 ### Key sharing
@@ -48,12 +48,52 @@ const { flag, indexes } = await combiner.verifyPartialDecryptors(ciphertext, pub
 const plaintext = await combiner.plainDecrypt(ciphertext, partialDecryptors);
 ```
 
+### Verification
+
+## Feldmann commitments
+
+```js
+const { commitments } = await polynomial.getFeldmann();
+```
+
+```js
+const secret = await polynomial.evaluate(index);
+```
+
+```js
+import { verifyFeldmann } from 'vsslib/polynomials';
+
+const verified = await verifyFeldmann(ctx, secret, index, commitments);
+```
+
+
+## Pedersen commitments
+
+```js
+const hPub = await ctx.randomPoint();
+const nr = 7;
+
+const { commitments, bindings } = await polynomial.getPedersen(nr, hPub);
+```
+
+```js
+const secret = await polynomial.evaluate(index);
+
+const binding = bindings[index];
+```
+
+```js
+import { verifyPedersen } from 'vsslib/vss';
+
+const verified = await verifyPedersen(ctx, secret, binding, index, hPub, commitments);
+```
+
 ## Modules
 
 - [`vsslib.aes`](./src/aes)
 - [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.backend`](./src/backend)
-- [`vsslib.core`](./src/core)
+- [`vsslib.tds`](./src/tds)
 - [`vsslib.plain`](./src/elgamal)
 - [`vsslib.ies`](./src/elgamal)
 - [`vsslib.kem`](./src/elgamal)
