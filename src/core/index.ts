@@ -6,13 +6,13 @@ import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
 import { computeLambda } from '../shamir';
 
-import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
-import { ElGamalCiphertext } from '../asymmetric/elgamal';
-import { KemCiphertext } from '../asymmetric/kem';
-import { IesCiphertext } from '../asymmetric/ies';
+import { Ciphertext, plain, kem, ies } from '../elgamal';
+import { ElgamalScheme, AesMode, Algorithm } from '../types';
+import { Algorithms, ElgamalSchemes } from '../enums';
 
 const shamir = require('../shamir');
 const backend = require('../backend');
+const elgamal = require('../elgamal');
 
 
 export class Combiner<P extends Point> {
@@ -120,52 +120,15 @@ export class Combiner<P extends Point> {
     return acc;
   }
 
-  async decrypt(
-    ciphertext: ElGamalCiphertext<P>,
-    shares: PartialDecryptor<P>[],
-    opts?: { threshold?: number, skipThreshold?: boolean, publicShares?: PublicShare<P>[] },
-  ): Promise<P> {
-    this.validateNrShares(shares, opts);
-    const publicShares = opts ? opts.publicShares : undefined;
-    if (publicShares) {
-      const { flag, indexes } = await this.verifyPartialDecryptors(
-        ciphertext, publicShares, shares
-      );
-      if (!flag) throw new Error('Invalid partial decryptor');
-    }
-    const decryptor = await this.reconstructDecryptor(shares, opts);
-    return elgamal(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
-  }
-
-  async elgamalDecrypt(
-    ciphertext: ElGamalCiphertext<P>,
-    shares: PartialDecryptor<P>[],
-    opts?: { threshold?: number, skipThreshold?: boolean },
-  ): Promise<P> {
-    const decryptor = await this.reconstructDecryptor(shares, opts);
-    return elgamal(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
-  }
-
-  async kemDecrypt(
-    ciphertext: KemCiphertext<P>,
+  async decrypt<A extends object>(
+    ciphertext: Ciphertext<A, P>,
     shares: PartialDecryptor<P>[],
     opts?: { threshold?: number, skipThreshold?: boolean },
   ): Promise<Uint8Array> {
-    // TODO: Handle decryption error
+    // TODO?
     const decryptor = await this.reconstructDecryptor(shares, opts);
-    // TODO: Handle decryption error
-    return kem(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
-  }
-
-  async iesDecrypt(
-    ciphertext: IesCiphertext<P>,
-    shares: PartialDecryptor<P>[],
-    opts?: { threshold?: number, skipThreshold?: boolean },
-  ): Promise<Uint8Array> {
-    // TODO: Handle decryption error
-    const decryptor = await this.reconstructDecryptor(shares, opts);
-    // TODO: Handle decryption error
-    return ies(this.ctx).decryptWithDecryptor(ciphertext, decryptor);
+    const scheme = elgamal.resolveScheme(ciphertext);
+    return elgamal[scheme](this.ctx).decryptWithDecryptor(ciphertext, decryptor);
   }
 }
 

@@ -10,7 +10,8 @@ import {
 import { Polynomial } from '../../src/polynomials';
 import { Messages } from '../../src/key/enums';
 import { PartialDecryptor } from '../../src/common';
-import { ElGamalCiphertext } from '../../src/asymmetric/elgamal';
+import { PlainCiphertext } from '../../src/elgamal/plain';
+import { ElgamalSchemes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
 
 
@@ -33,7 +34,7 @@ describe('Key sharing', () => {
   let publicKey: PublicKey<Point>;
   let privateShares: PrivateShare<Point>[];
   let publicShares: PublicShare<Point>[];
-  let ciphertext: ElGamalCiphertext<Point>;
+  let ciphertext: PlainCiphertext<Point>;
   let partialDecryptors: PartialDecryptor<Point>[];
 
   beforeAll(async () => {
@@ -44,9 +45,11 @@ describe('Key sharing', () => {
     polynomial = sharing.polynomial;
     privateShares = await sharing.getSecretShares();
     publicShares = await sharing.getPublicShares();
-    const message = await ctx.randomPoint();
-    const encryptionOutput = await publicKey.elgamalEncrypt(message);
-    ciphertext = encryptionOutput.ciphertext;
+    const message = (await ctx.randomPoint()).toBytes();
+    const encryptionOutput = await publicKey.encrypt(message, {
+      scheme: ElgamalSchemes.PLAIN
+    });
+    ciphertext = encryptionOutput.ciphertext as PlainCiphertext<Point>;
     partialDecryptors = [];
     for (const privateShare of privateShares) {
       const share = await privateShare.generatePartialDecryptor(ciphertext);

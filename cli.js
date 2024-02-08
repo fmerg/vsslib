@@ -4,7 +4,7 @@ const {
   PrivateKey,
   PublicKey,
   key,
-  elgamal,
+  plain,
 } = require('./dist');
 
 const enums = require('./dist/enums')

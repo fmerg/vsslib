@@ -10,7 +10,7 @@ const __algorithms  = [...Object.values(Algorithms), undefined];
 
 describe('Schnorr signature scheme - success without nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
     expect(signature.algorithm).toBe(algorithm || Algorithms.DEFAULT);
@@ -22,9 +22,9 @@ describe('Schnorr signature scheme - success without nonce', () => {
 
 describe('Schnorr signature scheme - success with nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await privateKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const signature = await privateKey.sign(message, { nonce, algorithm });
     expect(signature.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const verified = await publicKey.verifySignature(message, signature, nonce);
@@ -35,7 +35,7 @@ describe('Schnorr signature scheme - success with nonce', () => {
 
 describe('Schnorr signature scheme - failure if forged message', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
     const forgedMessage = Uint8Array.from(Buffer.from('don\' t destroy earth'));
@@ -48,10 +48,10 @@ describe('Schnorr signature scheme - failure if forged message', () => {
 
 describe('Schnorr signature scheme - failure if forged signature', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
-    signature.commitments[0] = await privateKey.ctx.randomPoint();
+    signature.commitments[0] = await ctx.randomPoint();
     await expect(publicKey.verifySignature(message, signature)).rejects.toThrow(
       'Invalid signature'
     );
@@ -61,7 +61,7 @@ describe('Schnorr signature scheme - failure if forged signature', () => {
 
 describe('Schnorr signature scheme - failure if wrong algorithm', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
     signature.algorithm = (signature.algorithm == Algorithms.SHA256) ?
@@ -76,9 +76,9 @@ describe('Schnorr signature scheme - failure if wrong algorithm', () => {
 
 describe('Schnorr signature scheme - failure if missing nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await privateKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const signature = await privateKey.sign(message, { nonce, algorithm });
     await expect(publicKey.verifySignature(message, signature)).rejects.toThrow(
       'Invalid signature'
@@ -89,11 +89,11 @@ describe('Schnorr signature scheme - failure if missing nonce', () => {
 
 describe('Schnorr signature scheme - failure if forged nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await privateKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const signature = await privateKey.sign(message, { nonce, algorithm });
-    const forgedNonce = await privateKey.ctx.randomBytes();
+    const forgedNonce = await ctx.randomBytes();
     await expect(publicKey.verifySignature(message, signature, forgedNonce)).rejects.toThrow(
       'Invalid signature'
     );

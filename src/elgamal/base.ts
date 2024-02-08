@@ -12,7 +12,7 @@ export abstract class Ciphertext<A, P extends Point> {
   }
 }
 
-export abstract class Cipher<M, A, P extends Point> {
+export abstract class BaseCipher<M, A, P extends Point> {
   ctx: Group<P>;
   mode: AesMode;
   algorithm: Algorithm;

@@ -12,13 +12,11 @@ import { SchnorrSignature } from '../schnorr';
 const backend = require('../backend');
 const sigma = require('../sigma');
 import { dlog, ddh } from '../sigma';
-import { AesMode, Algorithm } from '../types';
-import { Algorithms } from '../enums';
-import { Ciphertext, elgamal, kem, ies } from '../asymmetric';
-import { ElGamalCiphertext } from '../asymmetric/elgamal';
-import { KemCiphertext } from '../asymmetric/kem';
-import { IesCiphertext } from '../asymmetric/ies';
+import { ElgamalScheme, AesMode, Algorithm } from '../types';
+import { Algorithms, ElgamalSchemes } from '../enums';
+import { Ciphertext, plain, kem, ies } from '../elgamal';
 const shamir = require('../shamir');
+const elgamal = require('../elgamal');
 
 
 export type SerializedPrivateKey = {
@@ -97,16 +95,9 @@ export class PrivateKey<P extends Point> {
     return proof;
   }
 
-  async elgamalDecrypt(ciphertext: ElGamalCiphertext<P>): Promise<P> {
-    return elgamal(this.ctx).decrypt(ciphertext, this.scalar);
-  }
-
-  async kemDecrypt(ciphertext: KemCiphertext<P>): Promise<Uint8Array> {
-    return kem(this.ctx).decrypt(ciphertext, this.scalar);
-  }
-
-  async iesDecrypt(ciphertext: IesCiphertext<P>): Promise<Uint8Array> {
-    return ies(this.ctx).decrypt(ciphertext, this.scalar);
+  async decrypt<A extends object>(ciphertext: Ciphertext<A, P>): Promise<Uint8Array> {
+    const scheme = elgamal.resolveScheme(ciphertext);
+    return elgamal[scheme](this.ctx).decrypt(ciphertext, this.scalar);
   }
 
   async verifyEncryption<A>(

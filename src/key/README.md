@@ -9,7 +9,7 @@ const { key, PrivateKey, PublicKey } = require('vsslib/key');
 ### Key generation
 
 ```js
-const { privateKey, publicKey } = await key.generate('ed25519');
+const { privateKey, publicKey, ctx } = await key.generate('ed25519');
 ```
 
 ```js
@@ -41,18 +41,20 @@ const serialized = publicKey.serialize();
 const pubBack = await PublicKey.deserialize(serialized);
 ```
 
-## Asymmetric encryption
+## ElGamal encryption schemes
 
-### Plain ElGamal Encryption
+### Plain Elgamal encryption
 
 ```js
-const message = await ctx.randomPoint();
+const message = (await ctx.randomPoint()).toBytes();
 
-const { ciphertext, randomness, decryptor } = await publicKey.elgamalEncrypt(message);
+const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
+  scheme: 'plain'
+});
 ```
 
 ```js
-const plaintext = await privateKey.elgamalDecrypt(ciphertext);
+const plaintext = await privateKey.decrypt(ciphertext);
 ```
 
 ### (DH)KEM-Encryption (Key Encapsulation Mechanism)
@@ -60,11 +62,14 @@ const plaintext = await privateKey.elgamalDecrypt(ciphertext);
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphertext, randomness, decryptor } = await publicKey.kemEncrypt(message, { mode: 'aes-256-cbc' });
+const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
+  scheme: 'kem',
+  mode: 'aes-256-cbc'
+});
 ```
 
 ```js
-const plaintext = await privateKey.kemDecrypt(ciphertext);
+const plaintext = await privateKey.decrypt(ciphertext);
 ```
 
 ### (DH/EC)IES-Encryption (Integrated Encryption Scheme)
@@ -72,11 +77,15 @@ const plaintext = await privateKey.kemDecrypt(ciphertext);
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphertext, randomness, decryptor } = await publicKey.iesEncrypt(message, { mode, algorithm });
+const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
+  scheme: 'ies',
+  mode: 'aes-256-cbc'
+  algorithm: 'sha256'
+});
 ```
 
 ```js
-const plaintext = await privateKey.iesDecrypt(ciphertext);
+const plaintext = await privateKey.decrypt(ciphertext);
 ```
 
 ### Verifiable encryption (Schnorr scheme)

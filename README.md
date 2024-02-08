@@ -9,7 +9,7 @@
 ```js
 import { key } from 'vsslib';
 
-const { privateKey, publicKey } = await key.generate('ed25519');
+const { privateKey, publicKey, ctx } = await key.generate('ed25519');
 ```
 
 ```js
@@ -29,9 +29,7 @@ const publicShares = await sharing.getPublicShares();
 ### Threshold decryption
 
 ```js
-const message = await publicKey.ctx.randomPoint();
-
-const { ciphertext } = await publicKey.elgamalEncrypt(message);
+const { ciphertext } = await publicKey.encrypt(message, { scheme: 'ies' });
 ```
 
 ```js
@@ -47,18 +45,18 @@ const { flag, indexes } = await combiner.verifyPartialDecryptors(ciphertext, pub
 ```
 
 ```js
-const plaintext = await combiner.elgamalDecrypt(ciphertext, partialDecryptors);
+const plaintext = await combiner.plainDecrypt(ciphertext, partialDecryptors);
 ```
 
 ## Modules
 
 - [`vsslib.aes`](./src/aes)
-- [`vsslib.asymmetric`](./src/asymmetric)
+- [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.backend`](./src/backend)
 - [`vsslib.core`](./src/core)
-- [`vsslib.elgamal`](./src/asymmetric)
-- [`vsslib.ies`](./src/asymmetric)
-- [`vsslib.kem`](./src/asymmetric)
+- [`vsslib.plain`](./src/elgamal)
+- [`vsslib.ies`](./src/elgamal)
+- [`vsslib.kem`](./src/elgamal)
 - [`vsslib.key`](./src/key)
 - [`vsslib.polynomials`](./src/polynomials)
 - [`vsslib.schnorr`](./src/schnorr)

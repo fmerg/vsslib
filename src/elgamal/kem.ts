@@ -1,7 +1,7 @@
 import { Point, Group } from '../backend/abstract';
 import { Algorithms, AesModes } from '../enums';
 import { Algorithm, AesMode } from '../types';
-import { Cipher, Ciphertext } from './common';
+import { BaseCipher, Ciphertext } from './base';
 
 
 const aes = require('../aes');
@@ -19,7 +19,7 @@ export class KemCiphertext<P extends Point> extends Ciphertext<A, P> {
 }
 
 
-export class KemCipher<P extends Point> extends Cipher<Uint8Array, A, P> {
+export class KemCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {
   constructor(ctx: Group<P>, opts?: { mode?: AesMode }) {
     super(ctx, opts);
   }
