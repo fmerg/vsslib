@@ -1,7 +1,7 @@
 import { Point, Group } from '../backend/abstract';
 import { Algorithms, AesModes } from '../enums';
 import { Algorithm, AesMode } from '../types';
-import { BaseCipher, Ciphertext } from './common';
+import { BaseCipher, Ciphertext } from './base';
 
 const crypto = require('node:crypto');
 const aes = require('../aes');

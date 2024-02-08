@@ -1,4 +1,4 @@
-import { Ciphertext } from './common';
+import { Ciphertext } from './base';
 import { ElgamalScheme } from '../types';
 import { ElgamalSchemes } from '../enums';
 import { Point } from '../backend/abstract';

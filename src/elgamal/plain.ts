@@ -1,5 +1,5 @@
 import { Group, Point } from '../backend/abstract';
-import { BaseCipher, Ciphertext } from './common';
+import { BaseCipher, Ciphertext } from './base';
 
 
 export class PlainCiphertext<P extends Point> extends Ciphertext<P, P> {
