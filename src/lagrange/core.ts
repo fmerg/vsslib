@@ -1,4 +1,4 @@
-import { Polynomial } from './core';
+import { Polynomial } from './base';
 import { Point, Group } from '../backend/abstract';
 import { Messages } from './enums';
 import { mod, modInv, Messages as utilMessages } from '../utils';
@@ -56,10 +56,6 @@ export class Lagrange<P extends Point> extends Polynomial<P> {
     this.xs = xs;
     this.ys = ys;
     this.ws = ws;
-  }
-
-  static async interpolate<Q extends Point>(ctx: Group<Q>, points: XYTuple[]): Promise<Lagrange<Q>> {
-    return new Lagrange(ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)]));
   }
 
   evaluate = (value: bigint | number): bigint => {

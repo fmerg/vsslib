@@ -61,7 +61,7 @@ const secret = await polynomial.evaluate(index);
 ```
 
 ```js
-import { verifyFeldmann } from 'vsslib/polynomials';
+import { verifyFeldmann } from 'vsslib/vss';
 
 const verified = await verifyFeldmann(ctx, secret, index, commitments);
 ```
@@ -98,7 +98,7 @@ const verified = await verifyPedersen(ctx, secret, binding, index, hPub, commitm
 - [`vsslib.ies`](./src/elgamal)
 - [`vsslib.kem`](./src/elgamal)
 - [`vsslib.key`](./src/key)
-- [`vsslib.polynomials`](./src/polynomials)
+- [`vsslib.lagrange`](./src/lagrange)
 - [`vsslib.schnorr`](./src/schnorr)
 - [`vsslib.shamir`](./src/shamir)
 - [`vsslib.sigma`](./src/sigma)

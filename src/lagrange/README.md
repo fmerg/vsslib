@@ -1,9 +1,9 @@
-# `vsslib.polynomials`
+# `vsslib.lagrange`
 
 ## Construction
 
 ```js
-import { Polynomial } from 'vsslib/polynomials';
+import { Polynomial } from 'vsslib/lagrange';
 import { backend } from 'vsslib';
 
 const ctx = backend.initGroup('ed25519');
@@ -20,9 +20,9 @@ const polynomial = await Polynomial.random(ctx, degree=5);
 ### Lagrange interpolation
 
 ```js
-import { Lagrange } from 'vsslib/polynomials';
+import { lagrange } from 'vsslib';
 
-const polynomial = await Lagrange.interpolate(ctx, [[0, 1], [2, 3], [4, 5]]);
+const polynomial = await lagrange.interpolate(ctx, [[0, 1], [2, 3], [4, 5]]);
 ```
 
 ### Basic operations

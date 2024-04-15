@@ -1,7 +1,6 @@
 import { Group, Point } from '../backend/abstract';
 import { SigmaProof } from '../sigma';
 import { PublicKey, PublicShare } from './public';
-import { Polynomial } from '../polynomials';
 import { ScalarShare } from '../shamir';
 import { PartialDecryptor } from '../tds';
 import { BaseShare, BaseSharing } from '../vss';

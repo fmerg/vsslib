@@ -1,9 +1,10 @@
 import { backend } from '../../src'
 import { Systems } from '../../src/enums';
-import { Messages } from '../../src/polynomials/enums';
-import { Lagrange } from '../../src/polynomials';
+import { Messages } from '../../src/lagrange/enums';
 import { cartesian } from '../helpers';
 import { interpolate } from './helpers';
+// const lagrange = require('../../src/lagrange');
+import { lagrange } from '../../src';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -14,7 +15,7 @@ describe('Interpolation - errors', () => {
   test('Non-distinct x\'s', async () => {
     const ctx = backend.initGroup('ed25519')
     const points: [number, number][] = [[1, 2], [1, 3]];
-    await expect(Lagrange.interpolate(ctx, points)).rejects.toThrow(
+    await expect(lagrange.interpolate(ctx, points)).rejects.toThrow(
       Messages.INTERPOLATION_NON_DISTINCT_XS
     );
   });
@@ -37,7 +38,7 @@ describe('Interpolation - fixed points', () => {
     const ctx = backend.initGroup(label);
     const { order } = ctx;
     for (const points of collections) {
-      const poly1 = await Lagrange.interpolate(ctx, points);
+      const poly1 = await lagrange.interpolate(ctx, points);
       const poly2 = interpolate(points, { order });
       expect(poly2.equals(poly1)).toBe(true);
       for (const [x, y] of points) {
@@ -59,7 +60,7 @@ describe('Interpolation - random points', () => {
       const y = await randomScalar();
       points[i] = [x, y];
     }
-    const poly1 = await Lagrange.interpolate(ctx, points);
+    const poly1 = await lagrange.interpolate(ctx, points);
     const poly2 = interpolate(points, { order });
     expect(poly2.equals(poly1)).toBe(true);
     for (const [x, y] of points) {

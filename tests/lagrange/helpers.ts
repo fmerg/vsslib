@@ -1,5 +1,5 @@
-import { BasePolynomial } from '../../src/polynomials/base';
-import { XYTuple } from '../../src/polynomials/lagrange'
+import { BasePolynomial } from '../../src/lagrange/base';
+import { XYTuple } from '../../src/lagrange/core'
 import { modInv } from '../../src/utils';
 
 const __0n = BigInt(0);

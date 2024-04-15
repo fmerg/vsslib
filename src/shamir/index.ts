@@ -1,11 +1,9 @@
 import { Point, Group } from '../backend/abstract';
-import { Polynomial, Lagrange } from '../polynomials';
 import { BaseShare, BaseSharing, verifyFeldmann, verifyPedersen } from '../vss';
 import { Algorithm } from '../types';
 import { Algorithms } from '../enums';
 import { mod, modInv } from '../utils';
-
-const polynomials = require('../polynomials');
+const lagrange = require('../lagrange');
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -89,7 +87,7 @@ export class ShamirDealer<P extends Point> {
       xys[index] = [x, y];
       index++;
     }
-    const polynomial = await Lagrange.interpolate(this.ctx, xys);
+    const polynomial = await lagrange.interpolate(this.ctx, xys);
     return new ScalarSharing<P>(this.ctx, nrShares, threshold, polynomial);
   }
 

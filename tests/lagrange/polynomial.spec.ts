@@ -1,7 +1,7 @@
 import { backend } from '../../src';
 import { Systems } from '../../src/enums';
-import { Polynomial } from '../../src/polynomials';
-import { Messages } from '../../src/polynomials/enums';
+import { Polynomial } from '../../src/lagrange';
+import { Messages } from '../../src/lagrange/enums';
 import { cartesian } from '../helpers';
 
 

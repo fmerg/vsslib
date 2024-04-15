@@ -6,7 +6,7 @@ const aes = require('./aes');
 const backend = require('./backend');
 const tds = require('./tds');
 const key = require('./key');
-const polynomials = require('./polynomials');
+const lagrange = require('./lagrange');
 const shamir = require('./shamir');
 const sigma = require('./sigma');
 const utils = require('./utils');
@@ -23,7 +23,7 @@ export {
   ies,
   kem,
   key,
-  polynomials,
+  lagrange,
   schnorr,
   shamir,
   sigma,

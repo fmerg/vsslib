@@ -1,7 +1,7 @@
-import { polynomials, backend } from '../../src';
+import { lagrange, backend } from '../../src';
 import { Systems } from '../../src/enums';
-import { BasePolynomial } from '../../src/polynomials/base';
-import { Messages } from '../../src/polynomials/enums';
+import { BasePolynomial } from '../../src/lagrange/base';
+import { Messages } from '../../src/lagrange/enums';
 import { cartesian, trimZeroes } from '../helpers';
 
 const __0n = BigInt(0);
