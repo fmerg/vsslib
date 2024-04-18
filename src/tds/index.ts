@@ -146,9 +146,7 @@ export class Combiner<P extends Point> {
   }
 }
 
-export function initCombiner(opts: { label: Label, threshold: number }): Combiner<Point> {
-  const { label, threshold } = opts;
-  assertLabel(label);
-  const group = backend.initGroup(label);
-  return new Combiner(group, threshold);
+
+export default function<P extends Point>(ctx: Group<P>, threshold: number): Combiner<P> {
+  return new Combiner(ctx, threshold);
 }

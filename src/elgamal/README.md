@@ -10,7 +10,7 @@ const ctx = backend.initGroup('ed25519');
 const { secret, pub } = await ctx.generateKeypair();
 ```
 
-## Plain plain Encryption
+## Plain Elgamal Encryption
 
 ```js
 import { plain } from 'vsslib';

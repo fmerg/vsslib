@@ -4,8 +4,7 @@ import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key'
 import { Combiner } from '../../src/tds';
 import { Label } from '../../src/types';
 import { partialPermutations } from '../helpers';
-
-const tds = require('../../src/tds');
+import tds from '../../src/tds';
 
 
 const runSetup = async (opts: {
@@ -20,7 +19,8 @@ const runSetup = async (opts: {
   const privateShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
   const message = await publicKey.ctx.randomPoint();
-  const combiner = tds.initCombiner({ label, threshold });
+  const ctx = backend.initGroup(label);
+  const combiner = tds(ctx, threshold);
   return {
     privateKey,
     publicKey,

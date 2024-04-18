@@ -1,9 +1,10 @@
 # `vsslib.tds`
 
 ```js
-const tds = require('vsslib/tds');
+import tds from 'vsslib/tds';
 
-const combiner = tds.initCombiner({ label: 'ed25519', threshold: 3 })
+const ctx = backend.initGroup(label);
+const combiner = tds(ctx, threshold);
 ```
 
 ## Key reconstruction
@@ -50,7 +51,7 @@ await combiner.verifyPartialDecryptors(ciphertext, publicShares, partialDecrypto
 
 ## Threshold decryption modes
 
-### Plain plain Decryption
+### Plain Elgamal Decryption
 
 ```js
 const { ctx } = publicKey;

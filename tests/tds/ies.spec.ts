@@ -2,12 +2,10 @@ import { Point } from '../../src/backend/abstract'
 import { key, backend } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
 import { PartialDecryptor } from '../../src/tds';
-import { Combiner } from '../../src/tds';
 import { Label } from '../../src/types';
 import { ElgamalSchemes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
-
-const tds = require('../../src/tds');
+import tds from '../../src/tds';
 
 
 const runSetup = async (opts: {
@@ -41,7 +39,8 @@ const runSetup = async (opts: {
       });
     }
   }
-  const combiner = tds.initCombiner({ label, threshold });
+  const ctx = backend.initGroup(label);
+  const combiner = tds(ctx, threshold);
   return {
     privateKey,
     publicKey,

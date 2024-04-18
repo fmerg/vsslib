@@ -13,9 +13,10 @@ const { privateKey, publicKey, ctx } = await key.generate('ed25519');
 ```
 
 ```js
-import { tds } from 'vsslib';
+import tds from 'vsslib/tds';
 
-const combiner = await tds.initCombiner({ label: 'ed25519', threshold: 3 })
+const ctx = backend.initGroup(label);
+const combiner = tds(ctx, threshold);
 ```
 
 ### Key sharing
