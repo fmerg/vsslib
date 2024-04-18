@@ -1,5 +1,5 @@
 import { Group, Point } from '../backend/abstract';
-import { Polynomial } from '../lagrange';
+import { Polynomial } from '../core/lagrange';
 import { mod, modInv, Messages as utilMessages } from '../utils';
 
 

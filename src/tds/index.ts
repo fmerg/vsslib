@@ -4,15 +4,15 @@ import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../ke
 import { BaseShare } from '../vss';
 import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
-import { SigmaProof } from '../sigma';
+import { SigmaProof } from '../core/sigma';
 
-import { Ciphertext, plain, kem, ies } from '../elgamal';
+import { Ciphertext, plain, kem, ies } from '../core/elgamal';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { Algorithms, ElgamalSchemes } from '../enums';
 
-import shamir from '../shamir';
+import shamir from '../core/shamir';
 const backend = require('../backend');
-const elgamal = require('../elgamal');
+const elgamal = require('../core/elgamal');
 
 
 

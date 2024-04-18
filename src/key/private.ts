@@ -1,22 +1,22 @@
 import { Group, Point } from '../backend/abstract';
-import { SigmaProof } from '../sigma';
+import { SigmaProof } from '../core/sigma';
 import { PublicKey, PublicShare } from './public';
-import { ScalarShare } from '../shamir';
+import { ScalarShare } from '../core/shamir';
 import { PartialDecryptor } from '../tds';
 import { BaseShare, BaseSharing } from '../vss';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
-import schnorr from '../schnorr';
-import { SchnorrSignature } from '../schnorr';
+import schnorr from '../core/schnorr';
+import { SchnorrSignature } from '../core/schnorr';
 const backend = require('../backend');
-const sigma = require('../sigma');
-import { dlog, ddh } from '../sigma';
+const sigma = require('../core/sigma');
+import { dlog, ddh } from '../core/sigma';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { Algorithms, ElgamalSchemes } from '../enums';
-import { Ciphertext, plain, kem, ies } from '../elgamal';
-const elgamal = require('../elgamal');
-import shamir from '../shamir';
+import { Ciphertext, plain, kem, ies } from '../core/elgamal';
+const elgamal = require('../core/elgamal');
+import shamir from '../core/shamir';
 
 
 export type SerializedPrivateKey = {

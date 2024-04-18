@@ -1,14 +1,14 @@
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './key';
-import { plain, kem, ies } from './elgamal';
-import schnorr from './schnorr';
+import { plain, kem, ies } from './core';
+import schnorr from './core/schnorr';
 
-const aes = require('./aes');
+const { aes, elgamal } = require('./core');
 const backend = require('./backend');
 const tds = require('./tds');
 const key = require('./key');
-const lagrange = require('./lagrange');
-const shamir = require('./shamir');
-const sigma = require('./sigma');
+const lagrange = require('./core/lagrange');
+const shamir = require('./core/shamir');
+const sigma = require('./core/sigma');
 const utils = require('./utils');
 
 export {

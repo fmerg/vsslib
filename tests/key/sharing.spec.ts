@@ -7,10 +7,10 @@ import {
   PublicShare,
   KeySharing,
 } from '../../src/key';
-import { Polynomial } from '../../src/lagrange';
+import { Polynomial } from '../../src/core/lagrange';
 import { Messages } from '../../src/key/enums';
 import { PartialDecryptor } from '../../src/tds';
-import { PlainCiphertext } from '../../src/elgamal/plain';
+import { PlainCiphertext } from '../../src/core/elgamal/plain';
 import { ElgamalSchemes } from '../../src/enums';
 import { partialPermutations } from '../helpers';
 

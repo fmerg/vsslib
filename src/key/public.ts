@@ -1,18 +1,18 @@
 import { Group, Point } from '../backend/abstract';
 import { Label } from '../types';
-import { SigmaProof } from '../sigma';
+import { SigmaProof } from '../core/sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../tds';
 import { AesMode, ElgamalScheme, Algorithm } from '../types';
 import { Algorithms, ElgamalSchemes} from '../enums';
-import { Ciphertext } from '../elgamal';
-import { dlog, ddh } from '../sigma';
-import schnorr from '../schnorr';
-import { SchnorrSignature } from '../schnorr';
+import { Ciphertext } from '../core/elgamal';
+import { dlog, ddh } from '../core/sigma';
+import schnorr from '../core/schnorr';
+import { SchnorrSignature } from '../core/schnorr';
 const backend = require('../backend');
-const sigma = require('../sigma');
-const elgamal = require('../elgamal');
-import shamir from '../shamir';
+const sigma = require('../core/sigma');
+const elgamal = require('../core/elgamal');
+import shamir from '../core/shamir';
 
 
 export type SerializedPublicKey = {
