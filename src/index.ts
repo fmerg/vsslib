@@ -1,6 +1,6 @@
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './key';
 import { plain, kem, ies } from './core';
-import schnorr from './core/schnorr';
+import signer from './core/signer';
 
 const { aes, elgamal, hash } = require('./core');
 const backend = require('./backend');
@@ -27,7 +27,7 @@ export {
   kem,
   key,
   lagrange,
-  schnorr,
+  signer,
   shamir,
   sigma,
   utils,

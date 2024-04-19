@@ -42,7 +42,7 @@
     "test-hash:reload": "jest tests/core/hash --watch --maxWorkers=1 --verbose",
     "test-hmac:reload": "jest tests/core/hmac --watch --maxWorkers=1 --verbose",
     "test-lagrange:reload": "jest tests/core/lagrange --watch --maxWorkers=1 --verbose",
-    "test-schnorr:reload": "jest tests/core/schnorr --watch --maxWorkers=1 --verbose",
+    "test-schnorr:reload": "jest tests/core/signer/schnorr --watch --maxWorkers=1 --verbose",
     "test-shamir:reload": "jest tests/core/shamir --watch --maxWorkers=1 --verbose",
     "test-tds:reload": "jest tests/tds --watch --maxWorkers=1 --verbose",
     "build": "rm -rf ./build && tsc",

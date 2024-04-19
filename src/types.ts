@@ -4,6 +4,7 @@ import {
   Algorithms,
   AesModes,
   ElgamalSchemes,
+  SignatureSchemes,
   Encodings,
 } from './enums';
 
@@ -35,6 +36,9 @@ export type ElgamalScheme =
   | ElgamalSchemes.PLAIN
   | ElgamalSchemes.KEM
   | ElgamalSchemes.IES;
+
+export type SignatureScheme =
+  | SignatureSchemes.SCHNORR;
 
 export type Encoding =
   | Encodings.HEX

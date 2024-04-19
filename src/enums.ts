@@ -49,6 +49,10 @@ export enum ElgamalSchemes {
   IES       = 'ies',
 }
 
+export enum SignatureSchemes {
+  SCHNORR   = 'schnorr',
+}
+
 export enum Encodings {
   HEX       = 'hex',
   BASE64    = 'base64',

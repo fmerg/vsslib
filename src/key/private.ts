@@ -7,13 +7,13 @@ import { BaseShare, BaseSharing } from '../vss';
 import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
-import schnorr from '../core/schnorr';
-import { SchnorrSignature } from '../core/schnorr';
+import signer from '../core/signer';
+import { Signature } from '../core/signer/base';
 const backend = require('../backend');
 const sigma = require('../core/sigma');
 import { dlog, ddh } from '../core/sigma';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
-import { Algorithms, ElgamalSchemes } from '../enums';
+import { Algorithms, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Ciphertext, plain, kem, ies } from '../core/elgamal';
 const elgamal = require('../core/elgamal');
 import shamir from '../core/shamir';
@@ -78,11 +78,16 @@ export class PrivateKey<P extends Point> {
     return ctx.operate(scalar, pub.point);
   }
 
-  async sign(message: Uint8Array, opts?: { nonce?: Uint8Array, algorithm?: Algorithm }): Promise<SchnorrSignature<P>> {
+  async sign(
+    message: Uint8Array,
+    opts?: { nonce?: Uint8Array, algorithm?: Algorithm }
+  ): Promise<Signature<P>> {
     const { ctx, scalar: secret } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
-    const signature = await schnorr(ctx, algorithm).signBytes(secret, message, nonce);
+    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
+      secret, message, nonce
+    );
     return signature;
   }
 

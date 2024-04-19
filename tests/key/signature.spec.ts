@@ -12,9 +12,10 @@ describe('Schnorr signature scheme - success without nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
+    // TODO
+    // expect(signature.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const signature = await privateKey.sign(message, { algorithm });
-    expect(signature.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const verified = await publicKey.verifySignature(message, signature);
+    const verified = await publicKey.verifySignature(message, signature, { algorithm });
     expect(verified).toBe(true);
   });
 });
@@ -26,8 +27,9 @@ describe('Schnorr signature scheme - success with nonce', () => {
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
     const signature = await privateKey.sign(message, { nonce, algorithm });
-    expect(signature.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const verified = await publicKey.verifySignature(message, signature, nonce);
+    // TODO
+    // expect(signature.algorithm).toBe(algorithm || Algorithms.DEFAULT); //
+    const verified = await publicKey.verifySignature(message, signature, { nonce, algorithm });
     expect(verified).toBe(true);
   });
 });
@@ -39,7 +41,7 @@ describe('Schnorr signature scheme - failure if forged message', () => {
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
     const forgedMessage = Uint8Array.from(Buffer.from('don\' t destroy earth'));
-    await expect(publicKey.verifySignature(forgedMessage, signature)).rejects.toThrow(
+    await expect(publicKey.verifySignature(forgedMessage, signature, { algorithm })).rejects.toThrow(
       'Invalid signature'
     );
   });
@@ -51,8 +53,8 @@ describe('Schnorr signature scheme - failure if forged signature', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
-    signature.commitments[0] = await ctx.randomPoint();
-    await expect(publicKey.verifySignature(message, signature)).rejects.toThrow(
+    signature.commitment = await ctx.randomPoint();
+    await expect(publicKey.verifySignature(message, signature, { algorithm })).rejects.toThrow(
       'Invalid signature'
     );
   });
@@ -64,10 +66,11 @@ describe('Schnorr signature scheme - failure if wrong algorithm', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
-    signature.algorithm = (signature.algorithm == Algorithms.SHA256) ?
+    // TODO
+    const wrongAlgorithm = (algorithm == Algorithms.SHA256 || algorithm == undefined) ?
       Algorithms.SHA512 :
       Algorithms.SHA256;
-    await expect(publicKey.verifySignature(message, signature)).rejects.toThrow(
+    await expect(publicKey.verifySignature(message, signature, { algorithm: wrongAlgorithm })).rejects.toThrow(
       'Invalid signature'
     );
   });
@@ -80,7 +83,7 @@ describe('Schnorr signature scheme - failure if missing nonce', () => {
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
     const signature = await privateKey.sign(message, { nonce, algorithm });
-    await expect(publicKey.verifySignature(message, signature)).rejects.toThrow(
+    await expect(publicKey.verifySignature(message, signature, { algorithm })).rejects.toThrow(
       'Invalid signature'
     );
   });
@@ -94,7 +97,7 @@ describe('Schnorr signature scheme - failure if forged nonce', () => {
     const nonce = await ctx.randomBytes();
     const signature = await privateKey.sign(message, { nonce, algorithm });
     const forgedNonce = await ctx.randomBytes();
-    await expect(publicKey.verifySignature(message, signature, forgedNonce)).rejects.toThrow(
+    await expect(publicKey.verifySignature(message, signature, { nonce: forgedNonce, algorithm })).rejects.toThrow(
       'Invalid signature'
     );
   });

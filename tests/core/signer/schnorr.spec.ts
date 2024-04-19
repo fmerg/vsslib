@@ -1,6 +1,7 @@
-import { schnorr, backend } from '../../src';
-import { Systems, Algorithms } from '../../src/enums';
-import { cartesian } from '../helpers';
+import { backend } from '../../../src';
+import { Systems, Algorithms, SignatureSchemes } from '../../../src/enums';
+import { cartesian } from '../../helpers';
+import signer from '../../../src/core/signer';
 
 const __labels      = Object.values(Systems);
 const __algorithms  = [Algorithms.SHA256, Algorithms.SHA512, undefined];
@@ -11,8 +12,12 @@ describe('Signature verification - success without nonce', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const signature = await schnorr(ctx, algorithm).signBytes(secret, message);
-    const verified = await schnorr(ctx).verifyBytes(pub, message, signature);
+    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
+      secret, message
+    );
+    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
+      pub, message, signature
+    );
     expect(verified).toBe(true);
   });
 });
@@ -24,8 +29,12 @@ describe('Signature verification - success with nonce', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
-    const signature = await schnorr(ctx, algorithm).signBytes(secret, message, nonce);
-    const verified = await schnorr(ctx).verifyBytes(pub, message, signature, nonce);
+    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
+      secret, message, nonce
+    );
+    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
+      pub, message, signature, nonce
+    );
     expect(verified).toBe(true);
   });
 });
@@ -36,9 +45,13 @@ describe('Signature verification - failure if forged message', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const signature = await schnorr(ctx, algorithm).signBytes(secret, message);
+    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
+      secret, message
+    );
     const forgedMessage = Uint8Array.from(Buffer.from('don\' t destroy earth'));
-    const verified = await schnorr(ctx).verifyBytes(pub, forgedMessage, signature);
+    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
+      pub, forgedMessage, signature
+    );
     expect(verified).toBe(false);
   });
 });
@@ -50,8 +63,12 @@ describe('Signature verification - failure if forged key', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const forgedSecret = await ctx.randomScalar();
-    const signature = await schnorr(ctx, algorithm).signBytes(forgedSecret, message);
-    const verified = await schnorr(ctx).verifyBytes(pub, message, signature);
+    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
+      forgedSecret, message
+    );
+    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
+      pub, message, signature
+    );
     expect(verified).toBe(false);
   });
 });
@@ -62,9 +79,13 @@ describe('Signature verification - failure if forged signature', () => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const signature = await schnorr(ctx, algorithm).signBytes(secret, message);
-    signature.commitments[0] = await ctx.randomPoint();
-    const verified = await schnorr(ctx).verifyBytes(pub, message, signature);
+    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
+      secret, message
+    );
+    signature.commitment = await ctx.randomPoint();
+    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
+      pub, message, signature
+    );
     expect(verified).toBe(false);
   });
 });
@@ -76,9 +97,13 @@ describe('Signature verification - failure if forged nonce', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
-    const signature = await schnorr(ctx, algorithm).signBytes(secret, message, nonce);
+    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
+      secret, message, nonce
+    );
     const forgedNonce = await ctx.randomBytes();
-    const verified = await schnorr(ctx).verifyBytes(pub, message, signature, forgedNonce);
+    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
+      pub, message, signature, forgedNonce
+    );
     expect(verified).toBe(false);
   });
 });
@@ -90,8 +115,12 @@ describe('Signature verification - failure if missing nonce', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
-    const signature = await schnorr(ctx, algorithm).signBytes(secret, message, nonce);
-    const verified = await schnorr(ctx).verifyBytes(pub, message, signature);
+    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
+      secret, message, nonce
+    );
+    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
+      pub, message, signature
+    );
     expect(verified).toBe(false);
   });
 });

@@ -4,11 +4,12 @@ import { SigmaProof } from '../core/sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../tds';
 import { AesMode, ElgamalScheme, Algorithm } from '../types';
-import { Algorithms, ElgamalSchemes} from '../enums';
+import { Algorithms, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Ciphertext } from '../core/elgamal';
 import { dlog, ddh } from '../core/sigma';
-import schnorr from '../core/schnorr';
-import { SchnorrSignature } from '../core/schnorr';
+import signer from '../core/signer';
+import { Signature } from '../core/signer/base';
+import { SchnorrSignature } from '../core/signer/schnorr';
 const backend = require('../backend');
 const sigma = require('../core/sigma');
 const elgamal = require('../core/elgamal');
@@ -56,9 +57,17 @@ export class PublicKey<P extends Point> {
     );
   }
 
-  async verifySignature(message: Uint8Array, signature: SchnorrSignature<P>, nonce?: Uint8Array): Promise<boolean> {
+  async verifySignature(
+    message: Uint8Array,
+    signature: Signature<P>,
+    opts: { nonce?: Uint8Array, algorithm?: Algorithm },
+  ): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const verified = await schnorr(ctx).verifyBytes(pub, message, signature, nonce);
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const nonce = opts ? (opts.nonce || undefined) : undefined;
+    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
+      pub, message, signature as SchnorrSignature<P>, nonce
+    );
     if (!verified) throw new Error('Invalid signature');
     return verified;
   }
