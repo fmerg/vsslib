@@ -5,7 +5,7 @@ import { BaseCipher, Ciphertext } from './base';
 
 
 const aes = require('../aes');
-const utils = require('../../utils');
+import hash from '../hash';
 
 
 type A = {
@@ -27,14 +27,14 @@ export class KemCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {
   encapsulate = async (pub: P, randomness: bigint, message: Uint8Array): Promise<{ alpha: A, decryptor: P }> => {
     const { ctx, mode } = this;
     const decryptor = await ctx.operate(randomness, pub);
-    const keyAes = await utils.hash(decryptor.toBytes(), { algorithm: Algorithms.SHA256 });
-    const { ciphered, iv, tag } = aes.encrypt(keyAes, message, { mode });
+    const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
+    const { ciphered, iv, tag } = aes.encrypt(key, message, { mode });
     return { alpha: { ciphered, iv, tag, mode }, decryptor };
   }
 
   decapsulate = async (alpha: A, decryptor: P): Promise<Uint8Array> => {
     const { ciphered, iv, tag, mode } = alpha;
-    const key = await utils.hash(decryptor.toBytes(), { algorithm: Algorithms.SHA256 });
+    const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
     return aes.decrypt(key, ciphered, iv, { mode, tag });
   }
 }

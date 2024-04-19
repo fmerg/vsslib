@@ -5,7 +5,7 @@ import { BaseCipher, Ciphertext } from './base';
 
 const crypto = require('node:crypto');
 const aes = require('../aes');
-const utils = require('../../utils');
+import hash from '../hash';
 
 type A = {
   ciphered: Uint8Array,
@@ -27,7 +27,7 @@ export class IesCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {
   encapsulate = async (pub: P, randomness: bigint, message: Uint8Array): Promise<{ alpha: A, decryptor: P }> => {
     const { ctx: { generator, randomScalar, operate}, mode, algorithm } = this;
     const decryptor = await operate(randomness, pub);
-    const key = await utils.hash(decryptor.toBytes(), { algorithm: Algorithms.SHA512 });
+    const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
     const keyMac = key.slice(32, 64);
     const { ciphered, iv, tag } = aes.encrypt(keyAes, message, { mode });
@@ -37,7 +37,7 @@ export class IesCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {
 
   decapsulate = async (alpha: A, decryptor: P): Promise<Uint8Array> => {
     const { ciphered, iv, mac, tag, mode, algorithm } = alpha;
-    const key = await utils.hash(decryptor.toBytes(), { algorithm: Algorithms.SHA512 });
+    const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
     const keyMac = key.slice(32, 64);
     const targetMac = Uint8Array.from(crypto.createHmac(algorithm, keyMac).update(ciphered).digest());

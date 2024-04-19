@@ -2,8 +2,7 @@ import { Algorithm } from '../../types';
 import { Algorithms } from '../../enums';
 import { Group, Point } from '../../backend/abstract';
 import { leInt2Buff, leBuff2Int } from '../../utils';
-
-const utils = require('../../utils');
+import hash from '../hash';
 
 
 export class FiatShamir<P extends Point>{
@@ -30,7 +29,7 @@ export class FiatShamir<P extends Point>{
     nonce = nonce || Uint8Array.from([]);
     const bytes = Uint8Array.from([...configBuff, ...pointsBuff, ...scalarsBuff, ...extrasBuff, ...nonce]);
     algorithm = algorithm || this.algorithm;
-    const digest = await utils.hash(bytes, { algorithm });
+    const digest = await hash(algorithm).digest(bytes) as Uint8Array; // TODO
     return leBuff2Scalar(digest);
   }
 }

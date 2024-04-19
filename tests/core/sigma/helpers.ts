@@ -3,8 +3,8 @@ import { Algorithms } from '../../../src/enums';
 import { Algorithm } from '../../../src/types';
 import { leInt2Buff, leBuff2Int } from '../../../src/utils';
 import { DlogLinear, DlogPair, DDHTuple } from '../../../src/core/sigma';
+import hash from '../../../src/core/hash';
 
-const utils = require('../../../src/utils');
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -26,10 +26,9 @@ export async function computeFiatShamir<P extends Point>(
   const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
   const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
   const extrasBuff = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
-  const digest = await utils.hash(
+  const digest = await hash(algorithm).digest(
     Uint8Array.from([...fixedBuff, ...pointsBuff, ...scalarsBuff, ...extrasBuff, ...nonce]),
-    { algorithm }
-  );
+  ) as Uint8Array;
   return (leBuff2Int(digest)) % order;
 }
 

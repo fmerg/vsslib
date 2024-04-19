@@ -2,8 +2,9 @@ import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './key';
 import { plain, kem, ies } from './core';
 import schnorr from './core/schnorr';
 
-const { aes, elgamal } = require('./core');
+const { aes, elgamal, hash } = require('./core');
 const backend = require('./backend');
+const core = require('./core');
 const tds = require('./tds');
 const key = require('./key');
 const lagrange = require('./core/lagrange');
@@ -20,6 +21,8 @@ export {
   backend,
   tds,
   plain,
+  core,
+  hash,
   ies,
   kem,
   key,
