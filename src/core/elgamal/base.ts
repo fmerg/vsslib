@@ -13,13 +13,9 @@ export abstract class Ciphertext<A, P extends Point> {
 
 export abstract class BaseCipher<M, A, P extends Point> {
   ctx: Group<P>;
-  mode: AesMode;
-  algorithm: Algorithm;
 
-  constructor(ctx: Group<P>, opts?: { mode?: AesMode, algorithm?: Algorithm }) {
+  constructor(ctx: Group<P>) {
     this.ctx = ctx;
-    this.mode = opts ? (opts.mode || AesModes.DEFAULT) : AesModes.DEFAULT;
-    this.algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   }
 
   abstract encapsulate: (pub: P, randomness: bigint, message: M) => Promise<{ alpha: A, decryptor: P }>;

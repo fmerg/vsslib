@@ -13,12 +13,16 @@ const sigma = require('../core/sigma');
 import { dlog, ddh } from '../core/sigma';
 import {
   Algorithms, Algorithm,
+  AesModes, AesMode,
   ElgamalSchemes, ElgamalScheme,
   SignatureSchemes,
   Label,
 } from '../schemes';
-import { Ciphertext, plain, kem, ies } from '../core/elgamal';
 const elgamal = require('../core/elgamal');
+import { ElgamalCiphertext } from '../core/elgamal';
+import { PlainCiphertext } from '../core/elgamal/plain';
+import { KemCiphertext } from '../core/elgamal/kem';
+import { IesCiphertext } from '../core/elgamal/ies';
 import shamir from '../core/shamir';
 
 
@@ -103,25 +107,45 @@ export class PrivateKey<P extends Point> {
     return proof;
   }
 
-  async decrypt<A extends object>(ciphertext: Ciphertext<A, P>): Promise<Uint8Array> {
-    const scheme = elgamal.resolveScheme(ciphertext);
-    return elgamal[scheme](this.ctx).decrypt(ciphertext, this.scalar);
+  async decrypt(
+    ciphertext: ElgamalCiphertext<P>,
+    opts: { scheme: ElgamalScheme, mode?: AesMode, algorithm?: Algorithm }
+  ): Promise<Uint8Array> {
+    let { scheme, mode, algorithm } = opts;
+    switch (scheme) {
+      case ElgamalSchemes.IES:
+        mode = mode || AesModes.DEFAULT;
+        algorithm = algorithm || Algorithms.DEFAULT;
+        return elgamal[ElgamalSchemes.IES](this.ctx, mode, algorithm).decrypt(
+          ciphertext, this.scalar,
+        );
+      case ElgamalSchemes.KEM:
+        mode = mode || AesModes.DEFAULT;
+        return elgamal[ElgamalSchemes.KEM](this.ctx, mode).decrypt(
+          ciphertext, this.scalar,
+        );
+      case ElgamalSchemes.PLAIN:
+        return elgamal[ElgamalSchemes.PLAIN](this.ctx).decrypt(
+          ciphertext, this.scalar
+        );
+    }
   }
 
-  async verifyEncryption<A>(
-    ciphertext: Ciphertext<A, P>,
+  async verifyEncryption(
+    ciphertext: ElgamalCiphertext<P>,
     proof: SigmaProof<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<boolean> {
     const { ctx } = this;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? opts.nonce : undefined;
-    const verified = await dlog(ctx).verify({ u: ctx.generator, v: ciphertext.beta }, proof, nonce);
+    const verified = await dlog(ctx, algorithm).verify({ u: ctx.generator, v: ciphertext.beta }, proof, nonce);
     if (!verified) throw new Error(Messages.INVALID_ENCRYPTION_PROOF);
     return verified;
   }
 
-  async proveDecryptor<A>(
-    ciphertext: Ciphertext<A, P>,
+  async proveDecryptor(
+    ciphertext: ElgamalCiphertext<P>,
     decryptor: P,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
@@ -133,8 +157,8 @@ export class PrivateKey<P extends Point> {
     return proof;
   }
 
-  async generateDecryptor<A>(
-    ciphertext: Ciphertext<A, P>,
+  async generateDecryptor(
+    ciphertext: ElgamalCiphertext<P>,
     opts?: { noProof?: boolean, algorithm?: Algorithm },
   ): Promise<{ decryptor: P, proof?: SigmaProof<P> }> {
     const { ctx, scalar: secret } = this;
@@ -213,8 +237,8 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     return verified;
   }
 
-  async generatePartialDecryptor<A>(
-    ciphertext: Ciphertext<A, P>,
+  async generatePartialDecryptor(
+    ciphertext: ElgamalCiphertext<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<PartialDecryptor<P>> {
     const { ctx, index } = this;

@@ -173,12 +173,19 @@ describe('Threshold decryption', () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
       if (qualifiedSet.length >= threshold) {
-        const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true });
-        const plaintext2 = await privateKey.decrypt(ciphertext);
+        const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, {
+          scheme: ElgamalSchemes.KEM,
+          skipThreshold: true,
+        });
+        const plaintext2 = await privateKey.decrypt(ciphertext, {
+          scheme: ElgamalSchemes.KEM,
+        });
         expect(plaintext1).toEqual(message);
         expect(plaintext1).toEqual(plaintext2);
       } else {
-        await expect(combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true })).rejects.toThrow(
+        await expect(
+          combiner.decrypt(ciphertext, qualifiedSet, { scheme: ElgamalSchemes.KEM, skipThreshold: true })
+        ).rejects.toThrow(
           'Could not decrypt: AES decryption failure'
         );
       }
@@ -187,10 +194,12 @@ describe('Threshold decryption', () => {
   test('With threshold check', async () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedSet) => {
-      await expect(combiner.decrypt(ciphertext, qualifiedSet)).rejects.toThrow('Nr shares less than threshold');
+      await expect(
+        combiner.decrypt(ciphertext, qualifiedSet, { scheme: ElgamalSchemes.KEM })
+      ).rejects.toThrow('Nr shares less than threshold');
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
-      const plaintext = await combiner.decrypt(ciphertext, qualifiedSet);
+      const plaintext = await combiner.decrypt(ciphertext, qualifiedSet, { scheme: ElgamalSchemes.KEM });
       expect(plaintext).toEqual(message);
     });
   });

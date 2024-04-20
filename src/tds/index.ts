@@ -4,8 +4,16 @@ import { BaseShare } from '../vss';
 import { leInt2Buff } from '../utils';
 import { SigmaProof } from '../core/sigma';
 
-import { Ciphertext, plain, kem, ies } from '../core/elgamal';
-import { ElgamalScheme, AesMode, Algorithm, Label, Algorithms, ElgamalSchemes} from '../schemes';
+import { ElgamalCiphertext } from '../core/elgamal';
+import {
+  ElgamalScheme,
+  ElgamalSchemes,
+  AesMode,
+  AesModes,
+  Algorithm,
+  Algorithms,
+  Label,
+} from '../schemes';
 
 import shamir from '../core/shamir';
 const backend = require('../backend');
@@ -74,8 +82,8 @@ export class Combiner<P extends Point> {
     return new PublicKey(this.ctx, point);
   }
 
-  async verifyPartialDecryptor<A>(
-    ciphertext: Ciphertext<A, P>,
+  async verifyPartialDecryptor(
+    ciphertext: ElgamalCiphertext<P>,
     publicShare: PublicShare<P>,
     share: PartialDecryptor<P>,
     opts?: { nonce?: Uint8Array },
@@ -85,8 +93,8 @@ export class Combiner<P extends Point> {
   }
 
   // TODO: Include indexed nonces option?
-  async verifyPartialDecryptors<A>(
-    ciphertext: Ciphertext<A, P>,
+  async verifyPartialDecryptors(
+    ciphertext: ElgamalCiphertext<P>,
     publicShares: PublicShare<P>[],
     shares: PartialDecryptor<P>[],
     opts?: { raiseOnInvalid?: boolean, threshold?: number, skipThreshold?: boolean },
@@ -131,15 +139,37 @@ export class Combiner<P extends Point> {
     return acc;
   }
 
-  async decrypt<A extends object>(
-    ciphertext: Ciphertext<A, P>,
+  async decrypt(
+    ciphertext: ElgamalCiphertext<P>,
     shares: PartialDecryptor<P>[],
-    opts?: { threshold?: number, skipThreshold?: boolean },
+    opts: {
+      scheme: ElgamalScheme,
+      mode?: AesMode,
+      algorithm?: Algorithm,
+      threshold?: number,
+      skipThreshold?: boolean,
+    },
   ): Promise<Uint8Array> {
-    // TODO?
-    const decryptor = await this.reconstructDecryptor(shares, opts);
-    const scheme = elgamal.resolveScheme(ciphertext);
-    return elgamal[scheme](this.ctx).decryptWithDecryptor(ciphertext, decryptor);
+    let { scheme, mode, algorithm, threshold, skipThreshold } = opts;
+    // TODO: Include public schares option for validation
+    const decryptor = await this.reconstructDecryptor(shares, { threshold, skipThreshold });
+    switch (scheme) {
+      case ElgamalSchemes.IES:
+        mode = mode || AesModes.DEFAULT;
+        algorithm = algorithm || Algorithms.DEFAULT;
+        return elgamal[ElgamalSchemes.IES](this.ctx, mode, algorithm).decryptWithDecryptor(
+          ciphertext, decryptor,
+        );
+      case ElgamalSchemes.KEM:
+        mode = mode || AesModes.DEFAULT;
+        return elgamal[ElgamalSchemes.KEM](this.ctx, mode).decryptWithDecryptor(
+          ciphertext, decryptor,
+        );
+      case ElgamalSchemes.PLAIN:
+        return elgamal[ElgamalSchemes.PLAIN](this.ctx).decryptWithDecryptor(
+          ciphertext, decryptor
+        );
+    }
   }
 }
 

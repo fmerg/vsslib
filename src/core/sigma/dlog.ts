@@ -16,6 +16,6 @@ export class DlogProtocol<P extends Point> extends SigmaProtocol<P> {
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm?: Algorithm): DlogProtocol<P> {
+export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm): DlogProtocol<P> {
   return new DlogProtocol(ctx, algorithm);
 }

@@ -1,4 +1,4 @@
-import { Algorithms, Algorithm } from '../../../src/schemes';
+import { Algorithm } from '../../../src/schemes';
 import { Point, Group } from '../../../src/backend/abstract';
 import { leInt2Buff, leBuff2Int } from '../../../src/utils';
 import { DlogLinear, DlogPair, DDHTuple } from '../../../src/core/sigma';
@@ -12,13 +12,12 @@ const __1n = BigInt(1);
 /** Reproduce externally the Fiat-Shamir computation */
 export async function computeFiatShamir<P extends Point>(
   ctx: Group<P>,
+  algorithm: Algorithm,
   points: Point[],
   scalars: bigint[],
   extras: Uint8Array[],
   nonce?: Uint8Array,
-  algorithm?: Algorithm,
 ): Promise<bigint> {
-  algorithm = algorithm || Algorithms.DEFAULT;
   nonce = nonce || Uint8Array.from([]);
   const { modulus, order, generator } = ctx;
   const fixedBuff = [...leInt2Buff(modulus), ...leInt2Buff(order), ...generator.toBytes()];

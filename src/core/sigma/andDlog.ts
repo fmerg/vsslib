@@ -31,6 +31,6 @@ export class AndDlogProtocol<P extends Point> extends SigmaProtocol<P> {
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm?: Algorithm): AndDlogProtocol<P> {
+export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm): AndDlogProtocol<P> {
   return new AndDlogProtocol(ctx, algorithm);
 }

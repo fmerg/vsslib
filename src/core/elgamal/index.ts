@@ -1,21 +1,45 @@
-import { ElgamalSchemes, ElgamalScheme } from '../../schemes';
-import { Ciphertext } from './base';
-import { Point } from '../../backend/abstract';
+import {
+  ElgamalSchemes, ElgamalScheme,
+  AesMode, AesModes,
+  Algorithms, Algorithm,
+} from '../../schemes';
+import { Ciphertext, BaseCipher } from './base';
+import { Point, Group } from '../../backend/abstract';
+import { PlainCiphertext } from '../elgamal/plain';
+import { KemCiphertext } from '../elgamal/kem';
+import { IesCiphertext } from '../elgamal/ies';
 import plain from './plain';
 import kem from './kem';
 import ies from './ies';
 
 
-function resolveScheme<A extends object>(ciphertext: Ciphertext<A, Point>): ElgamalScheme {
-  if ('algorithm' in ciphertext.alpha) return ElgamalSchemes.IES;
-  if ('mode' in ciphertext.alpha) return ElgamalSchemes.KEM;
-  return ElgamalSchemes.PLAIN;
-};
-
 export {
   Ciphertext,
-  resolveScheme,
   plain,
   kem,
   ies,
 };
+
+export type ElgamalCiphertext<P extends Point> =
+  PlainCiphertext<P> |
+  KemCiphertext<P> |
+  IesCiphertext<P>;
+
+export default function<P extends Point>(
+  ctx: Group<P>,
+  scheme: ElgamalScheme,
+  mode?: AesMode,
+  algorithm?: Algorithm,
+) {
+  switch (scheme) {
+    case ElgamalSchemes.PLAIN:
+      return plain(ctx);
+    case ElgamalSchemes.KEM:
+      if (!mode) throw new Error('AES mode required for KEM encryption')
+      return kem(ctx, mode);
+    case ElgamalSchemes.IES:
+      if (!mode) throw new Error('AES mode required for IES encryption')
+      if (!algorithm) throw new Error('Hash algorithm required for IES encryption')
+      return ies(ctx, mode, algorithm);
+  }
+}

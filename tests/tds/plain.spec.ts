@@ -173,8 +173,13 @@ describe('Threshold decryption', () => {
   test('Skip threshold check', async () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
-      const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, { skipThreshold: true });
-      const plaintext2 = await privateKey.decrypt(ciphertext);
+      const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, {
+        scheme: ElgamalSchemes.PLAIN,
+        skipThreshold: true
+      });
+      const plaintext2 = await privateKey.decrypt(ciphertext, {
+        scheme: ElgamalSchemes.PLAIN
+      });
       if (qualifiedSet.length >= threshold) {
         expect(plaintext1).toEqual(message);
         expect(plaintext1).toEqual(plaintext2);
@@ -187,10 +192,12 @@ describe('Threshold decryption', () => {
   test('With threshold check', async () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedSet) => {
-      await expect(combiner.decrypt(ciphertext, qualifiedSet)).rejects.toThrow('Nr shares less than threshold');
+      await expect(
+        combiner.decrypt(ciphertext, qualifiedSet, { scheme: ElgamalSchemes.PLAIN })
+      ).rejects.toThrow('Nr shares less than threshold');
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
-      const plaintext = await combiner.decrypt(ciphertext, qualifiedSet);
+      const plaintext = await combiner.decrypt(ciphertext, qualifiedSet, { scheme: ElgamalSchemes.PLAIN });
       expect(plaintext).toEqual(message);
     });
   });

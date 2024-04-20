@@ -16,6 +16,6 @@ export class OkamotoProtocol<P extends Point> extends SigmaProtocol<P> {
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm?: Algorithm): OkamotoProtocol<P> {
+export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm): OkamotoProtocol<P> {
   return new OkamotoProtocol(ctx, algorithm);
 }

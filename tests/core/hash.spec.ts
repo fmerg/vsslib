@@ -3,7 +3,7 @@ import { Algorithms, Encodings } from '../../src/schemes';
 import hash from '../../src/core/hash';
 import { cartesian } from '../helpers';
 
-const __algorithms  = [...Object.values(Algorithms), undefined];
+const __algorithms  = [...Object.values(Algorithms)];
 const __encodings   = [...Object.values(Encodings), undefined];
 
 

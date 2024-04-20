@@ -12,6 +12,6 @@ export class LinearProtocol<P extends Point> extends SigmaProtocol<P> {
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm?: Algorithm): LinearProtocol<P> {
+export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm): LinearProtocol<P> {
   return new LinearProtocol(ctx, algorithm);
 }

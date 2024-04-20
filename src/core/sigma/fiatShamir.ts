@@ -1,4 +1,4 @@
-import { Algorithms, Algorithm } from '../../schemes';
+import { Algorithm } from '../../schemes';
 import { Group, Point } from '../../backend/abstract';
 import { leInt2Buff, leBuff2Int } from '../../utils';
 import hash from '../hash';
@@ -8,9 +8,9 @@ export class FiatShamir<P extends Point>{
   ctx: Group<P>;
   algorithm: Algorithm;
 
-  constructor(ctx: Group<P>, algorithm?: Algorithm) {
+  constructor(ctx: Group<P>, algorithm: Algorithm) {
     this.ctx = ctx;
-    this.algorithm = algorithm || Algorithms.DEFAULT;
+    this.algorithm = algorithm;
   }
 
   async computeChallenge(
@@ -33,6 +33,6 @@ export class FiatShamir<P extends Point>{
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm?: Algorithm): FiatShamir<P> {
+export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm): FiatShamir<P> {
   return new FiatShamir(ctx, algorithm);
 }

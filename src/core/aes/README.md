@@ -1,7 +1,7 @@
 # `vsslib.aes`
 
 ```js
-import { aes } from 'vsslib';
+import aes from 'vsslib/core/aes';
 ```
 
 ```js
@@ -15,11 +15,11 @@ const key = crypto.randomBytes(32);
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphered, iv } = aes.encrypt(key, message, { mode: 'aes-256-cbc'});
+const { ciphered, iv } = aes('aes-256-cbc').encrypt(key, message);
 ```
 
 ```js
-const deciphered = aes.decrypt(key, ciphered, iv, { mode: 'aes-256-cbc'});
+const deciphered = aes('aes-256-cbc').decrypt(key, ciphered, iv);
 ```
 
 ### AES-256-GCM
@@ -27,9 +27,9 @@ const deciphered = aes.decrypt(key, ciphered, iv, { mode: 'aes-256-cbc'});
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphered, iv, tag } = aes.encrypt(key, message, { mode: 'aes-256-gcm'});
+const { ciphered, iv, tag } = aes('aes-256-gcm').encrypt(key, message);
 ```
 
 ```js
-const deciphered = aes.decrypt(key, ciphered, iv, { mode: 'aes-256-gcm', tag });
+const deciphered = aes('aes-256-gcm').decrypt(key, ciphered, iv, tag);
 ```

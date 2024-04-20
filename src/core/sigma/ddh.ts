@@ -19,6 +19,6 @@ export class DDHProtocol<P extends Point> extends SigmaProtocol<P> {
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm?: Algorithm): DDHProtocol<P> {
+export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm): DDHProtocol<P> {
   return new DDHProtocol(ctx, algorithm);
 }

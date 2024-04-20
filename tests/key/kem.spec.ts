@@ -12,11 +12,9 @@ describe('KEM hybrid encryption and decryption', () => {
   it.each(cartesian([__labels, __modes]))('over %s/%s', async (label, mode) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext } = await publicKey.encrypt(message, {
-      scheme: ElgamalSchemes.KEM, mode
-    });
-    expect(ciphertext.alpha.mode).toBe(mode == undefined ? AesModes.DEFAULT : mode);
-    const plaintext = await privateKey.decrypt(ciphertext);
+    const opts = { scheme: ElgamalSchemes.KEM, mode };
+    const { ciphertext } = await publicKey.encrypt(message, opts)
+    const plaintext = await privateKey.decrypt(ciphertext, opts);
     expect(plaintext).toEqual(message);
   });
 });
@@ -27,7 +25,7 @@ describe('KEM hybrid encryption proof - success without nonce', () => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
-      scheme: ElgamalSchemes.KEM, algorithm
+      scheme: ElgamalSchemes.KEM
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);

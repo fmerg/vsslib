@@ -11,10 +11,9 @@ describe('plain encryption and decryption', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
-    const { ciphertext } = await publicKey.encrypt(message, {
-      scheme: ElgamalSchemes.PLAIN
-    });
-    const plaintext = await privateKey.decrypt(ciphertext);
+    const opts = { scheme: ElgamalSchemes.PLAIN };
+    const { ciphertext } = await publicKey.encrypt(message, opts);
+    const plaintext = await privateKey.decrypt(ciphertext, opts);
     expect(plaintext).toEqual(message);
   });
 });
@@ -53,7 +52,7 @@ describe('plain encryption proof - success with nonce', () => {
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await publicKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const verified = await privateKey.verifyEncryption(ciphertext, proof, { nonce });
@@ -70,7 +69,7 @@ describe('plain encryption proof - failure if forged proof', () => {
       scheme: ElgamalSchemes.PLAIN
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    proof.commitments[0] = await publicKey.ctx.randomPoint();
+    proof.commitments[0] = await ctx.randomPoint();
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       Messages.INVALID_ENCRYPTION_PROOF
     );
@@ -103,7 +102,7 @@ describe('plain encryption proof - failure if missing nonce', () => {
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await publicKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       Messages.INVALID_ENCRYPTION_PROOF
@@ -119,7 +118,7 @@ describe('plain encryption proof - failure if forged nonce', () => {
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await publicKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     await expect(
       privateKey.verifyEncryption(ciphertext, proof, { nonce: await ctx.randomBytes() })
@@ -165,7 +164,7 @@ describe('Decryptor proof - success with nonce', () => {
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await publicKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce });
@@ -182,7 +181,7 @@ describe('Decryptor proof - failure if forged proof', () => {
       scheme: ElgamalSchemes.PLAIN
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
-    proof.commitments[0] = await publicKey.ctx.randomPoint();
+    proof.commitments[0] = await ctx.randomPoint();
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       Messages.INVALID_DECRYPTOR_PROOF
     );
@@ -215,7 +214,7 @@ describe('Decryptor proof - failure if missing nonce', () => {
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await publicKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       Messages.INVALID_DECRYPTOR_PROOF
@@ -231,10 +230,10 @@ describe('Decryptor proof - failure if forged nonce', () => {
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await publicKey.ctx.randomBytes();
+    const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
     await expect(
-      publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce: await publicKey.ctx.randomBytes() })
+      publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce: await ctx.randomBytes() })
     ).rejects.toThrow(
       Messages.INVALID_DECRYPTOR_PROOF
     );

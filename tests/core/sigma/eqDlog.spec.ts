@@ -5,7 +5,7 @@ import { createEqDlogPairs } from './helpers';
 import { eqDlog } from '../../../src/core/sigma';
 
 const __labels      = Object.values(Systems);
-const __algorithms  = [...Object.values(Algorithms), undefined];
+const __algorithms  = [...Object.values(Algorithms)];
 
 
 describe('Success - without nonce', () => {
@@ -14,7 +14,7 @@ describe('Success - without nonce', () => {
     const [x, pairs] = await createEqDlogPairs(ctx, 3);
     const proof = await eqDlog(ctx, algorithm).prove(x, pairs);
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const valid = await eqDlog(ctx).verify(pairs, proof);
+    const valid = await eqDlog(ctx, algorithm).verify(pairs, proof);
     expect(valid).toBe(true);
   });
 });
@@ -25,8 +25,8 @@ describe('Success - with nonce', () => {
     const ctx = backend.initGroup(label);
     const [x, pairs] = await createEqDlogPairs(ctx, 3);
     const nonce = await ctx.randomBytes();
-    const proof = await eqDlog(ctx).prove(x, pairs, nonce);
-    const valid = await eqDlog(ctx).verify(pairs, proof, nonce);
+    const proof = await eqDlog(ctx, Algorithms.SHA256).prove(x, pairs, nonce);
+    const valid = await eqDlog(ctx, Algorithms.SHA256).verify(pairs, proof, nonce);
     expect(valid).toBe(true);
   });
 });
@@ -36,9 +36,9 @@ describe('Failure - forged proof', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const [x, pairs] = await createEqDlogPairs(ctx, 3);
-    const proof = await eqDlog(ctx).prove(x, pairs);
+    const proof = await eqDlog(ctx, Algorithms.SHA256).prove(x, pairs);
     pairs[2].v = await ctx.randomPoint();
-    const valid = await eqDlog(ctx).verify(pairs, proof);
+    const valid = await eqDlog(ctx, Algorithms.SHA256).verify(pairs, proof);
     expect(valid).toBe(false);
   });
 });
@@ -52,7 +52,7 @@ describe('Failure - wrong algorithm', () => {
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
       Algorithms.SHA512 :
       Algorithms.SHA256;
-    const valid = await eqDlog(ctx).verify(pairs, proof);
+    const valid = await eqDlog(ctx, algorithm).verify(pairs, proof);
     expect(valid).toBe(false);
   });
 });
@@ -63,8 +63,8 @@ describe('Failure - missing nonce', () => {
     const ctx = backend.initGroup(label);
     const [x, pairs] = await createEqDlogPairs(ctx, 3);
     const nonce = await ctx.randomBytes();
-    const proof = await eqDlog(ctx).prove(x, pairs, nonce);
-    const valid = await eqDlog(ctx).verify(pairs, proof);
+    const proof = await eqDlog(ctx, Algorithms.SHA256).prove(x, pairs, nonce);
+    const valid = await eqDlog(ctx, Algorithms.SHA256).verify(pairs, proof);
     expect(valid).toBe(false);
   });
 });
@@ -75,8 +75,8 @@ describe('Failure - forged nonce', () => {
     const ctx = backend.initGroup(label);
     const [x, pairs] = await createEqDlogPairs(ctx, 3);
     const nonce = await ctx.randomBytes();
-    const proof = await eqDlog(ctx).prove(x, pairs, nonce);
-    const valid = await eqDlog(ctx).verify(pairs, proof, await ctx.randomBytes());
+    const proof = await eqDlog(ctx, Algorithms.SHA256).prove(x, pairs, nonce);
+    const valid = await eqDlog(ctx, Algorithms.SHA256).verify(pairs, proof, await ctx.randomBytes());
     expect(valid).toBe(false);
   });
 });

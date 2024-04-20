@@ -32,6 +32,6 @@ export class EqDlogProtocol<P extends Point> extends SigmaProtocol<P> {
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm?: Algorithm): EqDlogProtocol<P> {
+export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm): EqDlogProtocol<P> {
   return new EqDlogProtocol(ctx, algorithm);
 }

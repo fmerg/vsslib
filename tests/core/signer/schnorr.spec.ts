@@ -4,7 +4,7 @@ import { cartesian } from '../../helpers';
 import signer from '../../../src/core/signer';
 
 const __labels      = Object.values(Systems);
-const __algorithms  = [Algorithms.SHA256, Algorithms.SHA512, undefined];
+const __algorithms  = [Algorithms.SHA256, Algorithms.SHA512];
 
 
 describe('Signature verification - success without nonce', () => {

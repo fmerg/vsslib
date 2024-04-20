@@ -43,8 +43,12 @@
     "test-hmac:reload": "jest tests/core/hmac --watch --maxWorkers=1 --verbose",
     "test-lagrange:reload": "jest tests/core/lagrange --watch --maxWorkers=1 --verbose",
     "test-schnorr:reload": "jest tests/core/signer/schnorr --watch --maxWorkers=1 --verbose",
+    "test-signer:reload": "jest tests/core/signer --watch --maxWorkers=1 --verbose",
     "test-shamir:reload": "jest tests/core/shamir --watch --maxWorkers=1 --verbose",
     "test-tds:reload": "jest tests/tds --watch --maxWorkers=1 --verbose",
+    "test-tds-plain:reload": "jest tests/tds/plain --watch --maxWorkers=1 --verbose",
+    "test-tds-ies:reload": "jest tests/tds/ies --watch --maxWorkers=1 --verbose",
+    "test-tds-kem:reload": "jest tests/tds/kem --watch --maxWorkers=1 --verbose",
     "build": "rm -rf ./build && tsc",
     "docs": "typedoc --out docs src/*.ts"
   },

@@ -3,20 +3,20 @@ import { SigmaProof } from '../core/sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../tds';
 import {
-  Algorithms, Algorithm,
   ElgamalSchemes, ElgamalScheme,
+  AesMode, AesModes,
+  Algorithms, Algorithm,
   SignatureSchemes,
   Label,
-  AesMode,
 } from '../schemes';
-import { Ciphertext } from '../core/elgamal';
 import { dlog, ddh } from '../core/sigma';
 import signer from '../core/signer';
 import { Signature } from '../core/signer/base';
 import { SchnorrSignature } from '../core/signer/schnorr';
 const backend = require('../backend');
 const sigma = require('../core/sigma');
-const elgamal = require('../core/elgamal');
+import elgamal from '../core/elgamal';
+import { ElgamalCiphertext } from '../core/elgamal';
 import shamir from '../core/shamir';
 
 
@@ -78,24 +78,27 @@ export class PublicKey<P extends Point> {
 
   async verifyIdentity(proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> {
     const { ctx, point: pub } = this;
-    const verified = await dlog(ctx).verify({ u: ctx.generator, v: pub }, proof, nonce);
+    const verified = await dlog(ctx, Algorithms.DEFAULT).verify({ u: ctx.generator, v: pub }, proof, nonce);
     if (!verified) throw new Error(Messages.INVALID_IDENTITY_PROOF);
     return verified;
   }
 
-  async encrypt<A>(
+  async encrypt(
     message: Uint8Array,
     opts: { scheme: ElgamalScheme, mode?: AesMode, algorithm?: Algorithm }
   ): Promise<{
-    ciphertext: Ciphertext<A, P>,
+    ciphertext: ElgamalCiphertext<P>,
     randomness: bigint,
     decryptor: P,
   }> {
-    return elgamal[opts.scheme](this.ctx, opts).encrypt(message, this.point);
+    let { scheme, mode, algorithm } = opts;
+    mode = mode || AesModes.DEFAULT;
+    algorithm = algorithm || Algorithms.DEFAULT;
+    return elgamal(this.ctx, scheme, mode, algorithm).encrypt(message, this.point);
   }
 
-  async proveEncryption<A>(
-    ciphertext: Ciphertext<A, P>,
+  async proveEncryption(
+    ciphertext: ElgamalCiphertext<P>,
     randomness: bigint,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
@@ -106,15 +109,15 @@ export class PublicKey<P extends Point> {
     return proof;
   }
 
-  async verifyDecryptor<A>(
-    ciphertext: Ciphertext<A, P>,
+  async verifyDecryptor(
+    ciphertext: ElgamalCiphertext<P>,
     decryptor: P,
     proof: SigmaProof<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
   ): Promise<boolean> {
     const { ctx, point: pub } = this;
     const nonce = opts ? (opts.nonce) : undefined;
-    const verified = await ddh(ctx).verify({ u: ciphertext.beta, v: pub, w: decryptor }, proof, nonce);
+    const verified = await ddh(ctx, Algorithms.DEFAULT).verify({ u: ciphertext.beta, v: pub, w: decryptor }, proof, nonce);
     const raiseOnInvalid = opts ?
       (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
       true;
@@ -164,7 +167,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   }
 
   async verifyPartialDecryptor<A>(
-    ciphertext: Ciphertext<A, P>,
+    ciphertext: ElgamalCiphertext<P>,
     partialDecryptor: PartialDecryptor<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean },
   ): Promise<boolean> {
