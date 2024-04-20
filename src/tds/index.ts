@@ -1,7 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../key';
 import { BaseShare } from '../vss';
-import { assertLabel } from '../utils/checkers';
 import { leInt2Buff } from '../utils';
 import { SigmaProof } from '../core/sigma';
 
