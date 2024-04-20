@@ -1,6 +1,5 @@
+import { Algorithm, SignatureSchemes, SignatureScheme } from '../../schemes';
 import { Point, Group } from '../../backend/abstract';
-import { SignatureSchemes } from '../../enums';
-import { Algorithm, SignatureScheme } from '../../types';
 import { Signer } from './base';
 import { SchnorrSigner } from './schnorr';
 

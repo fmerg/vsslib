@@ -1,5 +1,5 @@
+import { Systems, Algorithms, SignatureSchemes } from '../../../src/schemes';
 import { backend } from '../../../src';
-import { Systems, Algorithms, SignatureSchemes } from '../../../src/enums';
 import { cartesian } from '../../helpers';
 import signer from '../../../src/core/signer';
 

@@ -1,7 +1,5 @@
-import { Algorithms, Systems, AesModes } from '../../src/enums';
+import { Algorithms, Algorithm, Systems, AesModes, ElgamalSchemes } from '../../src/schemes';
 import { Messages } from '../../src/key/enums';
-import { Algorithm } from '../../src/types';
-import { ElgamalSchemes } from '../../src/enums';
 const { backend, key, PrivateKey, PublicKey } = require('../../src')
 import { cartesian } from '../helpers';
 

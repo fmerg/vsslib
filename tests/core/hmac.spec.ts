@@ -1,8 +1,8 @@
-import hmac from '../../src/core/hmac';
-import { Algorithms, Encodings } from '../../src/enums';
 import { createHmac } from 'node:crypto';
-import { cartesian } from '../helpers';
 const crypto = require('crypto');
+import hmac from '../../src/core/hmac';
+import { Algorithms, Encodings } from '../../src/schemes';
+import { cartesian } from '../helpers';
 
 const __algorithms  = [...Object.values(Algorithms)];
 const __encodings   = [...Object.values(Encodings), undefined];

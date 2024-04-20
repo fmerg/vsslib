@@ -4,7 +4,6 @@ import { PublicKey, PublicShare } from './public';
 import { ScalarShare } from '../core/shamir';
 import { PartialDecryptor } from '../tds';
 import { BaseShare, BaseSharing } from '../vss';
-import { Label } from '../types';
 import { Messages } from './enums';
 import { leInt2Buff } from '../utils';
 import signer from '../core/signer';
@@ -12,8 +11,12 @@ import { Signature } from '../core/signer/base';
 const backend = require('../backend');
 const sigma = require('../core/sigma');
 import { dlog, ddh } from '../core/sigma';
-import { ElgamalScheme, AesMode, Algorithm } from '../types';
-import { Algorithms, ElgamalSchemes, SignatureSchemes } from '../enums';
+import {
+  Algorithms, Algorithm,
+  ElgamalSchemes, ElgamalScheme,
+  SignatureSchemes,
+  Label,
+} from '../schemes';
 import { Ciphertext, plain, kem, ies } from '../core/elgamal';
 const elgamal = require('../core/elgamal');
 import shamir from '../core/shamir';

@@ -2,7 +2,7 @@ import { Group } from '../backend/abstract';
 import { PrivateKey, PrivateShare, KeySharing } from './private';
 import { PublicKey, PublicShare } from './public';
 
-import { Label } from '../types';
+import { Label } from '../schemes';
 import { assertLabel } from '../utils/checkers';
 import { Point } from '../backend/abstract';
 const backend = require('../backend');

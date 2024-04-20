@@ -1,5 +1,5 @@
+import { Systems } from '../../../src/schemes';
 import { lagrange, backend } from '../../../src';
-import { Systems } from '../../../src/enums';
 import { BasePolynomial } from '../../../src/core/lagrange/base';
 import { Messages } from '../../../src/core/lagrange/enums';
 import { cartesian, trimZeroes } from '../../helpers';

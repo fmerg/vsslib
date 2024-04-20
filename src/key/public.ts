@@ -1,10 +1,14 @@
 import { Group, Point } from '../backend/abstract';
-import { Label } from '../types';
 import { SigmaProof } from '../core/sigma';
 import { Messages } from './enums';
 import { PartialDecryptor } from '../tds';
-import { AesMode, ElgamalScheme, Algorithm } from '../types';
-import { Algorithms, ElgamalSchemes, SignatureSchemes } from '../enums';
+import {
+  Algorithms, Algorithm,
+  ElgamalSchemes, ElgamalScheme,
+  SignatureSchemes,
+  Label,
+  AesMode,
+} from '../schemes';
 import { Ciphertext } from '../core/elgamal';
 import { dlog, ddh } from '../core/sigma';
 import signer from '../core/signer';

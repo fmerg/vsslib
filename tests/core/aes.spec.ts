@@ -1,6 +1,5 @@
+import { AesModes, AesMode, } from '../../src/schemes';
 import { aes } from '../../src/core';
-import { AesModes } from '../../src/enums';
-import { AesMode } from '../../src/types';
 
 
 const crypto = require('crypto');

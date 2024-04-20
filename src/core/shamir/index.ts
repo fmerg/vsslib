@@ -1,7 +1,6 @@
 import { Point, Group } from '../../backend/abstract';
 import { BaseShare, BaseSharing, verifyFeldmann, verifyPedersen } from '../../vss';
-import { Algorithm } from '../../types';
-import { Algorithms } from '../../enums';
+import { Algorithms, Algorithm } from '../../schemes';
 import { mod, modInv } from '../../utils';
 const lagrange = require('../lagrange');
 

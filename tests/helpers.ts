@@ -1,7 +1,5 @@
-import { Point, Group } from '../src/backend/abstract';
-import { Systems, Algorithms } from '../src/enums';
-import { Algorithm } from '../src/types';
 import { Permutation, PowerSet } from "js-combinatorics";
+import { Point, Group } from '../src/backend/abstract';
 
 /** Powerset of the provided collection **/
 export const powerSet = (array: any[]): any[] => [...PowerSet.of(array)];

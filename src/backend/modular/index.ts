@@ -1,6 +1,5 @@
-import { Label } from '../../types';
+import { Modular, Label } from '../../schemes';
 import { Group, Point } from '../abstract';
-import { Modular } from '../../enums';
 
 
 export default function(label: Label): any {

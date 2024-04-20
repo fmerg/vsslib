@@ -1,4 +1,4 @@
-import { Algorithm } from '../../types';
+import { Algorithm } from '../../schemes';
 import { Group, Point } from '../../backend/abstract';
 import { SigmaProtocol, SigmaProof } from './base';
 import { DlogPair } from './dlog';

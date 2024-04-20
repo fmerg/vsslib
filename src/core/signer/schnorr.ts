@@ -1,7 +1,5 @@
-// TODO: Consider consulting
-// https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
-import { Algorithm } from '../../types';
-import { Algorithms } from '../../enums';
+// TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
+import { Algorithms, Algorithm} from '../../schemes';
 import { Point, Group } from '../../backend/abstract';
 import { DlogProtocol } from '../../core/sigma/dlog';
 import { SigmaProof } from '../../core/sigma/base';

@@ -1,12 +1,12 @@
-const enums = require('../enums');
+const schemes = require('../schemes');
 
-const __cryptos    = Object.values(enums.Systems);
-const __algorithms = Object.values(enums.Algorithms);
-const __encodings  = Object.values(enums.Encodings);
+const __labels     = Object.values(schemes.Systems);
+const __algorithms = Object.values(schemes.Algorithms);
+const __encodings  = Object.values(schemes.Encodings);
 
 
 export const assertLabel = (label: string | number) => {
-  if (!__cryptos.includes(label)) {
+  if (!__labels.includes(label)) {
     throw new Error(`Unsupported crypto: ${label}`);
   }
 }

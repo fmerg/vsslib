@@ -1,5 +1,4 @@
-import { Label } from '../types';
-import { Algorithms } from '../enums';
+import { Label } from '../schemes';
 import { leInt2Buff, leBuff2Int, mod } from '../utils';
 
 const utils = require('../utils');

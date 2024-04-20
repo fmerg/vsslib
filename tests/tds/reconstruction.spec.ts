@@ -1,8 +1,8 @@
+import { Label } from '../../src/schemes';
 import { Point } from '../../src/backend/abstract'
 import { key, backend } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
 import { Combiner } from '../../src/tds';
-import { Label } from '../../src/types';
 import { partialPermutations } from '../helpers';
 import tds from '../../src/tds';
 

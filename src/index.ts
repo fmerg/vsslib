@@ -8,6 +8,7 @@ const core = require('./core');
 const tds = require('./tds');
 const key = require('./key');
 const lagrange = require('./core/lagrange');
+const schemes = require('./schemes');
 const shamir = require('./core/shamir');
 const sigma = require('./core/sigma');
 const utils = require('./utils');
@@ -27,6 +28,7 @@ export {
   kem,
   key,
   lagrange,
+  schemes,
   signer,
   shamir,
   sigma,

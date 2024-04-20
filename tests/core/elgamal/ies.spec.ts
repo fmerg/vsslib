@@ -1,5 +1,5 @@
+import { Systems, Algorithms, AesModes } from '../../../src/schemes';
 import { ies, backend } from '../../../src';
-import { Systems, Algorithms, AesModes } from '../../../src/enums';
 import { cartesian } from '../../helpers';
 
 

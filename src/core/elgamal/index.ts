@@ -1,6 +1,5 @@
+import { ElgamalSchemes, ElgamalScheme } from '../../schemes';
 import { Ciphertext } from './base';
-import { ElgamalScheme } from '../../types';
-import { ElgamalSchemes } from '../../enums';
 import { Point } from '../../backend/abstract';
 import plain from './plain';
 import kem from './kem';

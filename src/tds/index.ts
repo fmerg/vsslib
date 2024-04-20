@@ -1,5 +1,4 @@
 import { Point, Group } from '../backend/abstract';
-import { Label } from '../types';
 import { PrivateKey, PublicKey, KeyPair, PrivateShare, PublicShare } from '../key';
 import { BaseShare } from '../vss';
 import { assertLabel } from '../utils/checkers';
@@ -7,8 +6,7 @@ import { leInt2Buff } from '../utils';
 import { SigmaProof } from '../core/sigma';
 
 import { Ciphertext, plain, kem, ies } from '../core/elgamal';
-import { ElgamalScheme, AesMode, Algorithm } from '../types';
-import { Algorithms, ElgamalSchemes } from '../enums';
+import { ElgamalScheme, AesMode, Algorithm, Label, Algorithms, ElgamalSchemes} from '../schemes';
 
 import shamir from '../core/shamir';
 const backend = require('../backend');

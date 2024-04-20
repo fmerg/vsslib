@@ -1,5 +1,5 @@
+import { Systems } from '../../../src/schemes';
 import { backend } from '../../../src'
-import { Systems } from '../../../src/enums';
 import { Messages } from '../../../src/core/lagrange/enums';
 import { cartesian } from '../../helpers';
 import { interpolate } from './helpers';

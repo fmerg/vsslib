@@ -1,4 +1,4 @@
-import { Algorithm } from '../../types';
+import { Algorithm } from '../../schemes';
 import { Point, Group } from '../../backend/abstract';
 
 export interface Signature<P> {}

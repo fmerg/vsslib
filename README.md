@@ -100,6 +100,7 @@ const verified = await verifyPedersen(ctx, secret, binding, index, hPub, commitm
 - [`vsslib.kem`](./src/elgamal)
 - [`vsslib.key`](./src/key)
 - [`vsslib.lagrange`](./src/lagrange)
+- [`vsslib.schemes`](./src/schemes)
 - [`vsslib.schnorr`](./src/schnorr)
 - [`vsslib.shamir`](./src/shamir)
 - [`vsslib.sigma`](./src/sigma)

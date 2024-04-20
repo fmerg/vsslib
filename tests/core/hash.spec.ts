@@ -1,6 +1,6 @@
-import hash from '../../src/core/hash';
-import { Algorithms, Encodings } from '../../src/enums';
 import { createHash } from 'node:crypto';
+import { Algorithms, Encodings } from '../../src/schemes';
+import hash from '../../src/core/hash';
 import { cartesian } from '../helpers';
 
 const __algorithms  = [...Object.values(Algorithms), undefined];

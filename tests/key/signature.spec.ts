@@ -1,6 +1,5 @@
-import { Algorithms, Systems } from '../../src/enums';
+import { Algorithms, Algorithm, Systems } from '../../src/schemes';
 import { Messages } from '../../src/key/enums';
-import { Algorithm } from '../../src/types';
 const { backend, key, PrivateKey, PublicKey } = require('../../src')
 import { cartesian } from '../helpers';
 

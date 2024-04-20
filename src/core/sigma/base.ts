@@ -1,5 +1,4 @@
-import { Algorithm } from '../../types';
-import { Algorithms } from '../../enums';
+import { Algorithms, Algorithm } from '../../schemes';
 import { Group, Point } from '../../backend/abstract';
 import { FiatShamir } from './fiatShamir';
 import { mod } from '../../utils';

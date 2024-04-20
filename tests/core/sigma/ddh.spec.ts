@@ -1,6 +1,5 @@
+import { Systems, Algorithms, Algorithm } from '../../../src/schemes';
 import { sigma, backend } from '../../../src';
-import { Systems, Algorithms } from '../../../src/enums';
-import { Algorithm } from '../../../src/types';
 import { cartesian } from '../../helpers';
 import { createDDHTuple } from './helpers';
 import { ddh } from '../../../src/core/sigma';

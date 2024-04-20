@@ -1,9 +1,7 @@
-import { Algorithms, Systems } from '../../src/enums';
+import { Algorithms, Algorithm, Systems, ElgamalSchemes } from '../../src/schemes';
 import { Messages } from '../../src/key/enums';
-import { Algorithm } from '../../src/types';
 const { backend, key, PrivateKey, PublicKey } = require('../../src')
 import { cartesian } from '../helpers';
-import { ElgamalSchemes} from '../../src/enums';
 
 const __labels = Object.values(Systems);
 const __algorithms  = [...Object.values(Algorithms), undefined];

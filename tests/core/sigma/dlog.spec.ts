@@ -1,6 +1,5 @@
+import { Systems, Algorithms, Algorithm } from '../../../src/schemes';
 import { backend } from '../../../src';
-import { Systems, Algorithms } from '../../../src/enums';
-import { Algorithm } from '../../../src/types';
 import { cartesian } from '../../helpers';
 import { createDlogPair } from './helpers';
 import { dlog } from '../../../src/core/sigma';

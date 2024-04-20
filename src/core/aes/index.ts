@@ -1,8 +1,6 @@
-import { AesModes } from '../../enums';
-import { AesMode } from '../../types';
-
-
-const crypto = require('crypto');
+// TODO: browser
+const crypto = require('node:crypto');
+import { AesModes, AesMode } from '../../schemes';
 
 export function encrypt(
   key: Uint8Array,
