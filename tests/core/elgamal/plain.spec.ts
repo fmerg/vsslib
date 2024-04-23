@@ -1,8 +1,9 @@
 import { Systems } from '../../../src/schemes';
 import { plain, backend } from '../../../src';
 import { cartesian } from '../../helpers';
+import { resolveBackends } from '../../environ';
 
-const __labels = Object.values(Systems);
+const __labels = resolveBackends();
 
 
 describe('Decryption - success', () => {

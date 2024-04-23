@@ -3,6 +3,9 @@ import { BaseShare } from '../../../src/vss';
 import { Point } from '../../../src/backend/abstract';
 import shamir from '../../../src/core/shamir';
 
+import { resolveBackend } from '../../environ';
+
+const __label = resolveBackend();
 
 const thresholdParams = [
   [1, 1],
@@ -29,8 +32,8 @@ function selectShare<T>(index: number, shares: BaseShare<T>[]): BaseShare<T> {
 }
 
 
-describe('Sharing parameter errors', () => {
-  const ctx = backend.initGroup('ed25519');
+describe(`Sharing parameter errors over ${__label}`, () => {
+  const ctx = backend.initGroup(__label);
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
     await expect(shamir(ctx).distribute(secret, 1, 2)).rejects.toThrow(
@@ -55,10 +58,9 @@ describe('Sharing parameter errors', () => {
 })
 
 
-describe('Sharing without predefined shares', () => {
+describe(`Sharing without predefined shares over ${__label}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
-    const label = 'ed25519';
-    const ctx = backend.initGroup(label);
+    const ctx = backend.initGroup(__label);
     const secret = await ctx.randomScalar();
     const sharing = await shamir(ctx).distribute(secret, n, t);
     const { nrShares, threshold, polynomial } = sharing;
@@ -82,10 +84,9 @@ describe('Sharing without predefined shares', () => {
 });
 
 
-describe('Sharing with predefined shares', () => {
+describe(`Sharing with predefined shares over ${__label}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
-    const label = 'ed25519';
-    const ctx = backend.initGroup(label);
+    const ctx = backend.initGroup(__label);
     const secret = await ctx.randomScalar();
     for (let nrGivenShares = 1; nrGivenShares < t; nrGivenShares++) {
       const givenShares = [];

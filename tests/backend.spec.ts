@@ -2,8 +2,9 @@ import { Systems } from '../src/schemes';
 import { backend } from '../src';
 import { Point } from '../src/backend/abstract';
 import { Messages } from '../src/backend/enums';
+import { resolveBackends } from './environ';
 
-const __labels = Object.values(Systems);
+const __labels = resolveBackends();
 const __0n     = BigInt(0)
 const __1n     = BigInt(1)
 

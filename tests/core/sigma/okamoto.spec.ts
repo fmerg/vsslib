@@ -3,9 +3,10 @@ import { sigma, backend } from '../../../src';
 import { cartesian } from '../../helpers';
 import { okamoto } from '../../../src/core/sigma';
 import { createRepresentation } from './helpers';
+import { resolveBackends, resolveAlgorithms } from '../../environ';
 
-const __labels      = Object.values(Systems);
-const __algorithms  = [...Object.values(Algorithms)];
+const __labels      = resolveBackends();
+const __algorithms  = resolveAlgorithms();
 
 
 describe('Success - without nonce', () => {

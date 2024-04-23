@@ -4,10 +4,12 @@ import { Messages } from '../../../src/core/lagrange/enums';
 import { cartesian } from '../../helpers';
 import { interpolate } from './helpers';
 import { lagrange } from '../../../src';
+import { resolveBackends } from '../../environ';
+
+const __labels      = resolveBackends();
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
-const __labels = Object.values(Systems);
 
 
 describe('Interpolation - errors', () => {

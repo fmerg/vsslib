@@ -3,9 +3,10 @@ import { sigma, backend } from '../../../src';
 import { cartesian } from '../../helpers';
 import { createDDHTuple } from './helpers';
 import { ddh } from '../../../src/core/sigma';
+import { resolveBackends, resolveAlgorithms } from '../../environ';
 
-const __labels      = Object.values(Systems);
-const __algorithms  = [...Object.values(Algorithms)];
+const __labels      = resolveBackends();
+const __algorithms  = resolveAlgorithms();
 
 
 

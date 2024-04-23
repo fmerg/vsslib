@@ -4,6 +4,7 @@ import { key, backend } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
 import { Combiner } from '../../src/tds';
 import { partialPermutations } from '../helpers';
+import { resolveBackend } from '../environ';
 import tds from '../../src/tds';
 
 
@@ -32,14 +33,16 @@ const runSetup = async (opts: {
 }
 
 
-describe('Key reconstruction', () => {
+const __label = resolveBackend();
+
+
+describe(`Key reconstruction over ${__label}`, () => {
   const nrShares = 5;
   const threshold = 3;
-  const label = 'ed25519' as Label;
   let setup: any;
 
   beforeAll(async () => {
-    setup = await runSetup({ label, nrShares, threshold });
+    setup = await runSetup({ label: __label, nrShares, threshold });
   });
 
   test('Private reconstruction - skip threshold check', async () => {

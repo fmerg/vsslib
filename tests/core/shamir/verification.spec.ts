@@ -4,10 +4,13 @@ import { ScalarShare, PointShare, ScalarSharing } from '../../../src/core/shamir
 import shamir from '../../../src/core/shamir';
 import { Point } from '../../../src/backend/abstract';
 
+import { resolveBackend } from '../../environ';
 
-describe('Secret share verification', () => {
-  const label = 'ed25519';
-  const ctx = backend.initGroup(label);
+const __label = resolveBackend();
+
+
+describe(`Secret share verification over ${__label}`, () => {
+  const ctx = backend.initGroup(__label);
   const nrShares = 5;
   const threshold = 3;
 

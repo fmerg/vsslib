@@ -1,6 +1,6 @@
-import { utils } from '../src';
-import { Messages } from '../src/utils/enums';
-import { cartesian } from './helpers';
+import { utils } from '../../src';
+import { Messages } from '../../src/utils/enums';
+import { cartesian } from '../helpers';
 
 
 describe('errors', () => {

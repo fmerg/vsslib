@@ -1,10 +1,11 @@
-import { AesModes, AesMode, } from '../../src/schemes';
-// import { aes } from '../../src/core';
+const crypto = require('crypto');
+
+import { AesModes } from '../../src/schemes';
 import aes from '../../src/core/aes';
 
+import { resolveAesModes } from '../environ';
 
-const crypto = require('crypto');
-const __aesModes  = [...Object.values(AesModes)];
+const __aesModes  = resolveAesModes();
 
 
 describe('Encryption and decryption - success', () => {

@@ -1,10 +1,13 @@
 import { createHash } from 'node:crypto';
+
 import { Algorithms, Encodings } from '../../src/schemes';
 import hash from '../../src/core/hash';
-import { cartesian } from '../helpers';
 
-const __algorithms  = [...Object.values(Algorithms)];
-const __encodings   = [...Object.values(Encodings), undefined];
+import { cartesian } from '../helpers';
+import { resolveAlgorithms, resolveEncodings } from '../environ';
+
+const __algorithms  = resolveAlgorithms()
+const __encodings   = [...resolveEncodings(), undefined];
 
 
 describe('hash digest', () => {

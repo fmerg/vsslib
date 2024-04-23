@@ -5,6 +5,7 @@ import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key'
 import { PartialDecryptor } from '../../src/tds';
 import { Combiner } from '../../src/tds';
 import { partialPermutations } from '../helpers';
+import { resolveBackend } from '../environ';
 import tds from '../../src/tds';
 
 
@@ -57,14 +58,15 @@ const runSetup = async (opts: {
 }
 
 
-describe('Partial decryptors validation', () => {
+const __label = resolveBackend();
+
+describe(`Partial decryptors validation over ${__label}`, () => {
   const nrShares = 5;
   const threshold = 3;
-  const label = 'ed25519' as Label;
   let setup: any;
 
   beforeAll(async () => {
-    setup = await runSetup({ label, nrShares, threshold, invalidIndexes: [2, 3] });
+    setup = await runSetup({ label: __label, nrShares, threshold, invalidIndexes: [2, 3] });
   });
 
   test('Success', async () => {
@@ -129,14 +131,13 @@ describe('Partial decryptors validation', () => {
 });
 
 
-describe('Decryptor reconstruction', () => {
+describe(`Decryptor reconstruction over ${__label}`, () => {
   const nrShares = 3;
   const threshold = 2;
-  const label = 'ed25519' as Label;
   let setup: any;
 
   beforeAll(async () => {
-    setup = await runSetup({ label, nrShares, threshold });
+    setup = await runSetup({ label: __label, nrShares, threshold });
   });
 
   test('Skip threshold check', async () => {
@@ -159,14 +160,13 @@ describe('Decryptor reconstruction', () => {
 });
 
 
-describe('Threshold decryption', () => {
+describe(`Threshold decryption over ${__label}`, () => {
   const nrShares = 3;
   const threshold = 2;
-  const label = 'ed25519' as Label;
   let setup: any;
 
   beforeAll(async () => {
-    setup = await runSetup({ label, nrShares, threshold });
+    setup = await runSetup({ label: __label, nrShares, threshold });
   });
 
   test('Skip threshold check', async () => {

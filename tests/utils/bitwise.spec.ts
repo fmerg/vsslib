@@ -1,4 +1,4 @@
-import { utils } from '../src';
+import { utils } from '../../src';
 
 
 describe('bits & bytes length', () => {

@@ -2,9 +2,9 @@ import { Algorithms, Algorithm, Systems } from '../../src/schemes';
 import { Messages } from '../../src/key/enums';
 const { backend, key, PrivateKey, PublicKey } = require('../../src')
 import { cartesian } from '../helpers';
+import { resolveBackends } from '../environ';
 
-const __labels = Object.values(Systems);
-const __algorithms  = [...Object.values(Algorithms), undefined];
+const __labels = resolveBackends();
 
 
 describe('Key generation', () => {

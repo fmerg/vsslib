@@ -2,9 +2,10 @@ import { Algorithms, Algorithm, Systems, ElgamalSchemes } from '../../src/scheme
 import { Messages } from '../../src/key/enums';
 const { backend, key, PrivateKey, PublicKey } = require('../../src')
 import { cartesian } from '../helpers';
+import { resolveBackends, resolveAlgorithms } from '../environ';
 
-const __labels = Object.values(Systems);
-const __algorithms  = [...Object.values(Algorithms), undefined];
+const __labels      = resolveBackends();
+const __algorithms  = [...resolveAlgorithms(), undefined];
 
 
 describe('plain encryption and decryption', () => {

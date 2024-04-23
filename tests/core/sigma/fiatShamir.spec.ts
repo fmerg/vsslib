@@ -3,9 +3,10 @@ import { backend } from '../../../src';
 import { cartesian } from '../../helpers';
 import { fiatShamir } from '../../../src/core/sigma';
 import { computeFiatShamir } from './helpers';
+import { resolveBackends, resolveAlgorithms } from '../../environ';
 
-const __labels      = Object.values(Systems);
-const __algorithms  = [...Object.values(Algorithms)];
+const __labels      = resolveBackends();
+const __algorithms  = resolveAlgorithms();
 
 
 

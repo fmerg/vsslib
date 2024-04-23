@@ -1,12 +1,13 @@
 import { Systems, Algorithms, AesModes } from '../../../src/schemes';
 import { kem, backend } from '../../../src';
 import { cartesian } from '../../helpers';
+import { resolveBackends, resolveAesModes } from '../../environ';
 
 
 const crypto = require('crypto');
 
-const __labels      = Object.values(Systems);
-const __aesModes  = [...Object.values(AesModes)];
+const __labels    = resolveBackends();
+const __aesModes  = resolveAesModes();
 
 
 describe('Decryption - success', () => {

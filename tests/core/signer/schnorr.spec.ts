@@ -3,8 +3,10 @@ import { backend } from '../../../src';
 import { cartesian } from '../../helpers';
 import signer from '../../../src/core/signer';
 
-const __labels      = Object.values(Systems);
-const __algorithms  = [Algorithms.SHA256, Algorithms.SHA512];
+import { resolveAlgorithms, resolveBackends } from '../../environ';
+
+const __labels      = resolveBackends();
+const __algorithms  = resolveAlgorithms();
 
 
 describe('Signature verification - success without nonce', () => {

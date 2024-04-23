@@ -13,6 +13,7 @@ import { PartialDecryptor } from '../../src/tds';
 import { PlainCiphertext } from '../../src/core/elgamal/plain';
 import { ElgamalSchemes } from '../../src/schemes';
 import { partialPermutations } from '../helpers';
+import { resolveBackend } from '../environ';
 
 
 export function selectShare<P extends Point>(index: number, shares: PublicShare<P>[]): PublicShare<P> {
@@ -21,10 +22,11 @@ export function selectShare<P extends Point>(index: number, shares: PublicShare<
   return selected;
 }
 
+const __label = resolveBackend();
 
-describe('Key sharing', () => {
-  const label = 'ed25519';
-  const ctx = backend.initGroup(label);
+
+describe(`Key sharing over ${__label}`, () => {
+  const ctx = backend.initGroup(__label);
   const nrShares = 5;
   const threshold = 3;
 
@@ -38,7 +40,7 @@ describe('Key sharing', () => {
   let partialDecryptors: PartialDecryptor<Point>[];
 
   beforeAll(async () => {
-    const keypair = await key.generate(label);
+    const keypair = await key.generate(__label);
     privateKey = keypair.privateKey;
     publicKey = keypair.publicKey;
     sharing = await privateKey.distribute(nrShares, threshold);

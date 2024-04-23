@@ -3,9 +3,10 @@ import { backend } from '../../../src';
 import { cartesian } from '../../helpers';
 import { createDlogPair } from './helpers';
 import { dlog } from '../../../src/core/sigma';
+import { resolveBackends, resolveAlgorithms } from '../../environ';
 
-const __labels      = Object.values(Systems);
-const __algorithms  = [...Object.values(Algorithms)];
+const __labels      = resolveBackends();
+const __algorithms  = resolveAlgorithms();
 
 
 
