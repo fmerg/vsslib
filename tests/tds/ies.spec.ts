@@ -1,71 +1,30 @@
-import { ElgamalSchemes, Label } from '../../src/schemes';
+import { ElgamalSchemes, ElgamalScheme, Label } from '../../src/schemes';
 import { Point } from '../../src/backend/abstract'
 import { key, backend } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
 import { PartialDecryptor } from '../../src/tds';
 import { partialPermutations } from '../helpers';
+import { createThresholdDecryptionSetup } from './helpers';
 import { resolveBackend } from '../environ';
 import tds from '../../src/tds';
 
 
-const runSetup = async (opts: {
-  label: Label,
-  nrShares: number,
-  threshold: number,
-  invalidIndexes?: number[],
-}) => {
-  const { label, nrShares, threshold } = opts;
-  const { privateKey, publicKey } = await key.generate(label);
-  const sharing = await privateKey.distribute(nrShares, threshold);
-  const privateShares = await sharing.getSecretShares();
-  const publicShares = await sharing.getPublicShares();
-  const message = Uint8Array.from(Buffer.from('destroy earth'));
-  const { ciphertext, decryptor } = await publicKey.encrypt(message, {
-    scheme: ElgamalSchemes.IES
-  });
-  const partialDecryptors = [];
-  for (const privateShare of privateShares) {
-    const share = await privateShare.generatePartialDecryptor(ciphertext);
-    partialDecryptors.push(share);
-  }
-  const invalidDecryptors = [];
-  const invalidIndexes = opts.invalidIndexes || [];
-  if (invalidIndexes) {
-    for (const share of partialDecryptors) {
-      invalidDecryptors.push(!(invalidIndexes.includes(share.index)) ? share : {
-        value: await privateKey.ctx.randomPoint(),
-        index: share.index,
-        proof: share.proof,
-      });
-    }
-  }
-  const ctx = backend.initGroup(label);
-  const combiner = tds(ctx, threshold);
-  return {
-    privateKey,
-    publicKey,
-    privateShares,
-    publicShares,
-    message,
-    ciphertext,
-    decryptor,
-    partialDecryptors,
-    invalidDecryptors,
-    invalidIndexes,
-    combiner,
-  }
-}
+const label = resolveBackend();
+const scheme = ElgamalSchemes.IES;
 
-
-const __label = resolveBackend();
-
-describe(`Partial decryptors validation over ${__label}`, () => {
+describe(`Partial decryptors validation over ${label}`, () => {
   const nrShares = 5;
   const threshold = 3;
   let setup: any;
 
   beforeAll(async () => {
-    setup = await runSetup({ label: __label, nrShares, threshold, invalidIndexes: [2, 3] });
+    setup = await createThresholdDecryptionSetup({
+      scheme,
+      label,
+      nrShares,
+      threshold,
+      invalidIndexes: [2, 3]
+    });
   });
 
   test('Success', async () => {
@@ -130,13 +89,18 @@ describe(`Partial decryptors validation over ${__label}`, () => {
 });
 
 
-describe(`Decryptor reconstruction over ${__label}`, () => {
+describe(`Decryptor reconstruction over ${label}`, () => {
   const nrShares = 3;
   const threshold = 2;
   let setup: any;
 
   beforeAll(async () => {
-    setup = await runSetup({ label: __label, nrShares, threshold });
+    setup = await createThresholdDecryptionSetup({
+      scheme,
+      label,
+      nrShares,
+      threshold
+    });
   });
 
   test('Skip threshold check', async () => {
@@ -159,13 +123,18 @@ describe(`Decryptor reconstruction over ${__label}`, () => {
 });
 
 
-describe(`Threshold decryption over ${__label}`, () => {
+describe(`Threshold decryption over ${label}`, () => {
   const nrShares = 3;
   const threshold = 2;
   let setup: any;
 
   beforeAll(async () => {
-    setup = await runSetup({ label: __label, nrShares, threshold });
+    setup = await createThresholdDecryptionSetup({
+      scheme,
+      label,
+      nrShares,
+      threshold,
+    });
   });
 
   test('Skip threshold check', async () => {
@@ -173,17 +142,17 @@ describe(`Threshold decryption over ${__label}`, () => {
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
       if (qualifiedSet.length >= threshold) {
         const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, {
-          scheme: ElgamalSchemes.IES,
+          scheme,
           skipThreshold: true
         });
         const plaintext2 = await privateKey.decrypt(ciphertext, {
-          scheme: ElgamalSchemes.IES,
+          scheme,
         });
         expect(plaintext1).toEqual(message);
         expect(plaintext1).toEqual(plaintext2);
       } else {
         await expect(
-          combiner.decrypt(ciphertext, qualifiedSet, { scheme: ElgamalSchemes.IES, skipThreshold: true })
+          combiner.decrypt(ciphertext, qualifiedSet, { scheme, skipThreshold: true })
         ).rejects.toThrow(
           'Could not decrypt: Invalid MAC'
         );
@@ -194,12 +163,12 @@ describe(`Threshold decryption over ${__label}`, () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedSet) => {
       await expect(
-        combiner.decrypt(ciphertext, qualifiedSet, { scheme: ElgamalSchemes.IES })
+        combiner.decrypt(ciphertext, qualifiedSet, { scheme })
       ).rejects.toThrow('Nr shares less than threshold');
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
       const plaintext = await combiner.decrypt(ciphertext, qualifiedSet, {
-        scheme: ElgamalSchemes.IES
+        scheme
       });
       expect(plaintext).toEqual(message);
     });

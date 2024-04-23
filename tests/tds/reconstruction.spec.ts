@@ -5,44 +5,24 @@ import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key'
 import { Combiner } from '../../src/tds';
 import { partialPermutations } from '../helpers';
 import { resolveBackend } from '../environ';
+import { createKeyDistributionSetup } from './helpers';
 import tds from '../../src/tds';
 
 
-const runSetup = async (opts: {
-  label: Label,
-  nrShares: number,
-  threshold: number,
-  invalidIndexes?: number[],
-}) => {
-  const { label, nrShares, threshold } = opts;
-  const { privateKey, publicKey } = await key.generate(label);
-  const sharing = await privateKey.distribute(nrShares, threshold);
-  const privateShares = await sharing.getSecretShares();
-  const publicShares = await sharing.getPublicShares();
-  const message = await publicKey.ctx.randomPoint();
-  const ctx = backend.initGroup(label);
-  const combiner = tds(ctx, threshold);
-  return {
-    privateKey,
-    publicKey,
-    privateShares,
-    publicShares,
-    message,
-    combiner,
-  }
-}
+const label = resolveBackend();
 
 
-const __label = resolveBackend();
-
-
-describe(`Key reconstruction over ${__label}`, () => {
+describe(`Key reconstruction over ${label}`, () => {
   const nrShares = 5;
   const threshold = 3;
   let setup: any;
 
   beforeAll(async () => {
-    setup = await runSetup({ label: __label, nrShares, threshold });
+    setup = await createKeyDistributionSetup({
+      label,
+      nrShares,
+      threshold,
+    });
   });
 
   test('Private reconstruction - skip threshold check', async () => {
