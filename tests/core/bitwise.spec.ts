@@ -1,4 +1,4 @@
-import { utils } from '../../src';
+import { bitLen, byteLen, leBuff2Int, leInt2Buff } from '../../src/core/bitwise';
 
 
 describe('bits & bytes length', () => {
@@ -9,8 +9,8 @@ describe('bits & bytes length', () => {
     [197121, 3, 18],
     [4278387201, 4, 32],
   ])('%s, bytes: %s, bits: %s', (num, nrBytes, nrBits) => {
-    expect(utils.byteLen(num)).toBe(nrBytes);
-    expect(utils.bitLen(num)).toBe(nrBits);
+    expect(byteLen(BigInt(num))).toBe(nrBytes);
+    expect(bitLen(BigInt(num))).toBe(nrBits);
   });
 });
 
@@ -24,9 +24,9 @@ describe('little-endian roundtrip', () => {
     [[1, 2, 3, 255], 4278387201],
   ])('%s, %s', (arr, num) => {
     const buffer = Uint8Array.from(arr);
-    const number = utils.leBuff2Int(buffer);
+    const number = leBuff2Int(buffer);
     expect(number).toBe(BigInt(num));
-    const buffBack = utils.leInt2Buff(number);
+    const buffBack = leInt2Buff(number);
     expect(buffBack).toEqual(buffer);
   });
 });

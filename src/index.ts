@@ -11,7 +11,6 @@ const lagrange = require('./lagrange');
 const schemes = require('./schemes');
 const shamir = require('./shamir');
 const sigma = require('./core/sigma');
-const utils = require('./utils');
 
 export {
   PrivateKey,
@@ -32,5 +31,4 @@ export {
   signer,
   shamir,
   sigma,
-  utils,
 }

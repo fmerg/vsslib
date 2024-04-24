@@ -1,6 +1,6 @@
 import { Algorithm } from '../../schemes';
 import { Group, Point } from '../../backend/abstract';
-import { leInt2Buff, leBuff2Int } from '../../utils';
+import { leInt2Buff, leBuff2Int } from '../../core/bitwise';
 import hash from '../hash';
 
 

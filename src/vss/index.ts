@@ -1,6 +1,7 @@
 import { Group, Point } from '../backend/abstract';
 import { Polynomial } from '../lagrange';
-import { mod, modInv, Messages as utilMessages } from '../utils';
+import { mod, modInv } from '../core/arith';
+import { Messages as utilMessages } from '../core/enums';
 
 
 export interface BaseShare<T> {

@@ -1,7 +1,7 @@
 import { Algorithms, Algorithm } from '../../schemes';
 import { Group, Point } from '../../backend/abstract';
+import { mod } from '../../core/arith';
 import { FiatShamir } from './fiatShamir';
-import { mod } from '../../utils';
 
 export type DlogLinear<P extends Point> = {
   us: P[][],

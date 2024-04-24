@@ -1,7 +1,6 @@
 import { Label } from '../schemes';
-import { leInt2Buff, leBuff2Int, mod } from '../utils';
-
-const utils = require('../utils');
+import { mod } from '../core/arith';
+import { leInt2Buff, leBuff2Int } from '../core/bitwise';
 
 export interface Point {
   equals: (other: Point) => Promise<boolean>;

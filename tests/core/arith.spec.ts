@@ -1,17 +1,20 @@
-import { utils } from '../../src';
-import { Messages } from '../../src/utils/enums';
-import { cartesian } from '../helpers';
+import { mod, gcd, modInv } from '../../src/core/arith'
+import { Messages } from '../../src/core/enums';
+
+const __0n = BigInt(0);
+const __1n = BigInt(1);
+const __2n = BigInt(2);
 
 
 describe('errors', () => {
   test('mod - Modulus <= 2', async () => {
-    expect(() => utils.mod(1, 0)).toThrow(Messages.MODULUS_MUST_BE_GT_TWO);
-    expect(() => utils.mod(1, 1)).toThrow(Messages.MODULUS_MUST_BE_GT_TWO);
+    expect(() => mod(__1n, __0n)).toThrow(Messages.MODULUS_MUST_BE_GT_TWO);
+    expect(() => mod(__1n, __1n)).toThrow(Messages.MODULUS_MUST_BE_GT_TWO);
   });
   test('gcd - Non-positive inputs', async () => {
-    expect(() => utils.gcd(0, 1)).toThrow(Messages.NON_POSITIVE_INPUTS);
-    expect(() => utils.gcd(1, 0)).toThrow(Messages.NON_POSITIVE_INPUTS);
-    expect(() => utils.gcd(0, 0)).toThrow(Messages.NON_POSITIVE_INPUTS);
+    expect(() => gcd(__0n, __1n)).toThrow(Messages.NON_POSITIVE_INPUTS);
+    expect(() => gcd(__1n, __0n)).toThrow(Messages.NON_POSITIVE_INPUTS);
+    expect(() => gcd(__0n, __0n)).toThrow(Messages.NON_POSITIVE_INPUTS);
   });
 });
 
@@ -42,7 +45,7 @@ describe('mod', () => {
     [-6, 3, 0],
   ];
   it.each(fixtures)('%s, %s, %s', async (x, q, r) => {
-    expect(utils.mod(BigInt(x), BigInt(q))).toBe(BigInt(r));
+    expect(mod(BigInt(x), BigInt(q))).toBe(BigInt(r));
   })
 });
 
@@ -69,7 +72,7 @@ describe('greatest common divisor', () => {
     [32, 56, 2, -1, 8],
   ];
   it.each(fixtures)('%s, %s, %s, %s, %s', async (a, b, x, y, g) => {
-    expect(utils.gcd(BigInt(a), BigInt(b))).toEqual({
+    expect(gcd(BigInt(a), BigInt(b))).toEqual({
       x: BigInt(x),
       y: BigInt(y),
       g: BigInt(g),
@@ -122,7 +125,7 @@ describe('mod inverse', () => {
     [-6, 7, 1],
   ];
   it.each(fixtures)('%s, %s, %s', async (x, q, r) => {
-    expect(utils.modInv(BigInt(x), BigInt(q))).toBe(BigInt(r));
+    expect(modInv(BigInt(x), BigInt(q))).toBe(BigInt(r));
   })
 });
 
@@ -161,7 +164,7 @@ describe('Inverse not exists', () => {
     [-7, 7],
   ];
   it.each(fixtures)('%s, %s', async (x, q) => {
-    expect(() => utils.modInv(BigInt(x), BigInt(q))).toThrow(
+    expect(() => modInv(BigInt(x), BigInt(q))).toThrow(
       Messages.INVERSE_NOT_EXISTS
     );
   })

@@ -1,7 +1,7 @@
 import { Point, Group } from '../backend/abstract';
 import { BaseShare, BaseSharing, verifyFeldmann, verifyPedersen } from '../vss';
 import { Algorithms, Algorithm } from '../schemes';
-import { mod, modInv } from '../utils';
+import { mod, modInv } from '../core/arith';
 const lagrange = require('../lagrange');
 
 const __0n = BigInt(0);

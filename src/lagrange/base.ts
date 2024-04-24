@@ -1,4 +1,4 @@
-import { mod } from '../utils';
+import { mod } from '../core/arith';
 import { Point, Group } from '../backend/abstract';
 import { Messages } from './enums';
 

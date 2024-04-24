@@ -1,5 +1,6 @@
 import { Point, Group } from '../backend/abstract';
-import { mod, modInv, Messages as utilMessages } from '../utils';
+import { mod, modInv } from '../core/arith';
+import { Messages as utilMessages } from '../core/enums';
 import { Polynomial } from './base';
 import { Messages } from './enums';
 

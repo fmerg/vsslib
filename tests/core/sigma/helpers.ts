@@ -1,6 +1,6 @@
 import { Algorithm } from '../../../src/schemes';
 import { Point, Group } from '../../../src/backend/abstract';
-import { leInt2Buff, leBuff2Int } from '../../../src/utils';
+import { leInt2Buff, leBuff2Int } from '../../../src/core/bitwise';
 import { DlogLinear, DlogPair, DDHTuple } from '../../../src/core/sigma';
 import hash from '../../../src/core/hash';
 

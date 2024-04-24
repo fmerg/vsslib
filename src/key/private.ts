@@ -5,7 +5,7 @@ import { ScalarShare } from '../shamir';
 import { PartialDecryptor } from '../tds';
 import { BaseShare, BaseSharing } from '../vss';
 import { Messages } from './enums';
-import { leInt2Buff } from '../utils';
+import { leInt2Buff } from '../core/bitwise';
 import signer from '../core/signer';
 import { Signature } from '../core/signer/base';
 const backend = require('../backend');

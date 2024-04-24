@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]
 do
     arg="$1"
     case $arg in
-        hash|hmac|aes|elgamal|key|tds|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|fiatShamir|linearDlog|okamoto|sigma|core|lagrange|key|backend|utils)
+        hash|hmac|aes|elgamal|key|tds|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|fiatShamir|linearDlog|okamoto|sigma|core|lagrange|key|backend|arith|bitwise)
             MODULE="$arg"
             shift
             ;;
