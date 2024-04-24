@@ -1,10 +1,10 @@
-import { Systems } from '../../../src/schemes';
-import { backend } from '../../../src'
-import { Messages } from '../../../src/core/lagrange/enums';
-import { cartesian } from '../../helpers';
+import { Systems } from '../../src/schemes';
+import { backend } from '../../src'
+import { Messages } from '../../src/lagrange/enums';
+import { cartesian } from '../helpers';
+import { lagrange } from '../../src';
+import { resolveBackends } from '../environ';
 import { interpolate } from './helpers';
-import { lagrange } from '../../../src';
-import { resolveBackends } from '../../environ';
 
 const __labels      = resolveBackends();
 

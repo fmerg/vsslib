@@ -1,7 +1,7 @@
+import { Point, Group } from '../backend/abstract';
+import { mod, modInv, Messages as utilMessages } from '../utils';
 import { Polynomial } from './base';
-import { Point, Group } from '../../backend/abstract';
 import { Messages } from './enums';
-import { mod, modInv, Messages as utilMessages } from '../../utils';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);

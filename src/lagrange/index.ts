@@ -1,6 +1,6 @@
+import { Point, Group } from '../backend/abstract';
 import { Polynomial } from './base';
 import { Lagrange, XYTuple } from './core';
-import { Point, Group } from '../../backend/abstract';
 
 export {
   Polynomial,

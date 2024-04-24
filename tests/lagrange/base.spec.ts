@@ -1,8 +1,8 @@
-import { Systems } from '../../../src/schemes';
-import { lagrange, backend } from '../../../src';
-import { BasePolynomial } from '../../../src/core/lagrange/base';
-import { Messages } from '../../../src/core/lagrange/enums';
-import { cartesian, trimZeroes } from '../../helpers';
+import { Systems } from '../../src/schemes';
+import { lagrange, backend } from '../../src';
+import { BasePolynomial } from '../../src/lagrange/base';
+import { Messages } from '../../src/lagrange/enums';
+import { cartesian, trimZeroes } from '../helpers';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);

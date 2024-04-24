@@ -1,6 +1,6 @@
-import { mod } from '../../utils';
+import { mod } from '../utils';
+import { Point, Group } from '../backend/abstract';
 import { Messages } from './enums';
-import { Point, Group } from '../../backend/abstract';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
