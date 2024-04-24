@@ -54,7 +54,7 @@ const plaintext = await combiner.plainDecrypt(ciphertext, partialDecryptors);
 ## Feldmann commitments
 
 ```js
-const { commitments } = await polynomial.getFeldmann();
+const { commitments } = await polynomial.proveFeldmann();
 ```
 
 ```js
@@ -74,7 +74,7 @@ const verified = await verifyFeldmann(ctx, secret, index, commitments);
 const hPub = await ctx.randomPoint();
 const nr = 7;
 
-const { commitments, bindings } = await polynomial.getPedersen(nr, hPub);
+const { commitments, bindings } = await polynomial.provePedersen(nr, hPub);
 ```
 
 ```js

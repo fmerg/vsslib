@@ -11,7 +11,6 @@ type A = {
   ciphered: Uint8Array,
   iv: Uint8Array,
   tag?: Uint8Array,
-  // mode: AesMode,
 };
 
 export class KemCiphertext<P extends Point> extends Ciphertext<A, P> {

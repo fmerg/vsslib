@@ -1,7 +1,6 @@
-import { Group, Point } from '../backend/abstract';
-import { Polynomial } from '../lagrange';
-import { mod, modInv } from '../core/arith';
-import { Messages as utilMessages } from '../core/enums';
+import { Group, Point } from './backend/abstract';
+import { Polynomial } from './lagrange';
+import { mod } from './core/arith';
 
 
 export interface BaseShare<T> {
@@ -10,12 +9,7 @@ export interface BaseShare<T> {
 }
 
 
-export abstract class BaseSharing<
-  S,
-  P extends Point,
-  Q extends BaseShare<S>,
-  R extends BaseShare<P>
-> {
+export abstract class BaseSharing<S, P extends Point, Q extends BaseShare<S>, R extends BaseShare<P>> {
   ctx: Group<P>;
   nrShares: number;
   threshold: number;
@@ -33,7 +27,7 @@ export abstract class BaseSharing<
   abstract getSecretShares: () => Promise<Q[]>;
   abstract getPublicShares: () => Promise<R[]>;
 
-  getFeldmann = async (): Promise<{ commitments: P[] }> => {
+  proveFeldmann = async (): Promise<{ commitments: P[] }> => {
     const { coeffs, degree, ctx: { operate, generator }} = this.polynomial;
     const commitments = new Array(degree + 1);
     for (const [index, coeff] of coeffs.entries()) {
@@ -42,12 +36,13 @@ export abstract class BaseSharing<
     return { commitments };
   }
 
-  getPedersen = async (hPub?: P): Promise<{
+  provePedersen = async (hPub?: P): Promise<{
     bindings: bigint[],
     hPub: P,
     commitments: P[],
   }> => {
-    const { coeffs, degree, ctx: { generator: g, combine, operate }} = this.polynomial;
+    const  {generator: g, combine, operate } = this.ctx;
+    const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await Polynomial.random(this.ctx, degree);
     const commitments = new Array(degree + 1);
     const bindings = new Array(degree + 1);

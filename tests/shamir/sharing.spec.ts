@@ -1,5 +1,5 @@
 import { backend } from '../../src';
-import { BaseShare } from '../../src/vss';
+import { BaseShare } from '../../src/base';
 import { Point } from '../../src/backend/abstract';
 import shamir from '../../src/shamir';
 
@@ -78,7 +78,7 @@ describe(`Sharing without predefined shares over ${__label}`, () => {
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
-    const { commitments } = await sharing.getFeldmann();
+    const { commitments } = await sharing.proveFeldmann();
     expect(commitments.length).toEqual(t);
   });
 });
@@ -114,7 +114,7 @@ describe(`Sharing with predefined shares over ${__label}`, () => {
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);
-      const { commitments } = await sharing.getFeldmann();
+      const { commitments } = await sharing.proveFeldmann();
       expect(commitments.length).toEqual(t);
     }
   });

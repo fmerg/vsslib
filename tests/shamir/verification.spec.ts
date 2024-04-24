@@ -1,5 +1,5 @@
 import { backend } from '../../src';
-import { verifyFeldmann, verifyPedersen } from '../../src/vss';
+import { verifyFeldmann, verifyPedersen } from '../../src/base';
 import { ScalarShare, PointShare, ScalarSharing } from '../../src/shamir';
 import shamir from '../../src/shamir';
 import { Point } from '../../src/backend/abstract';
@@ -24,7 +24,7 @@ describe(`Secret share verification over ${__label}`, () => {
   })
 
   test('Feldmann VSS scheme - success', async () => {
-    const { commitments } = await sharing.getFeldmann();
+    const { commitments } = await sharing.proveFeldmann();
     secretShares.forEach(async (share: ScalarShare<Point>) => {
       const { value: secret, index } = share;
       const verified = await shamir(ctx).verifyFeldmann(share, commitments);
@@ -33,7 +33,7 @@ describe(`Secret share verification over ${__label}`, () => {
   });
 
   test('Feldmann VSS scheme - failure', async () => {
-    const { commitments } = await sharing.getFeldmann();
+    const { commitments } = await sharing.proveFeldmann();
     const forgedCommitmnets = [...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()];
     secretShares.forEach(async (share: ScalarShare<Point>) => {
       const verified = await shamir(ctx).verifyFeldmann(share, forgedCommitmnets);
@@ -43,7 +43,7 @@ describe(`Secret share verification over ${__label}`, () => {
 
   test('Pedersen VSS scheme - success', async () => {
     const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.getPedersen(hPub);
+    const { bindings, commitments } = await sharing.provePedersen(hPub);
     secretShares.forEach(async (share: ScalarShare<Point>) => {
       const binding = bindings[share.index];
       const verified = await shamir(ctx).verifyPedersen(share, binding, hPub, commitments);
@@ -53,7 +53,7 @@ describe(`Secret share verification over ${__label}`, () => {
 
   test('Pedersen VSS scheme - failure', async () => {
     const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.getPedersen(hPub);
+    const { bindings, commitments } = await sharing.provePedersen(hPub);
     secretShares.forEach(async (share: ScalarShare<Point>) => {
       const forgedBinding = await ctx.randomScalar();
       const verified = await shamir(ctx).verifyPedersen(share, forgedBinding, hPub, commitments);

@@ -3,7 +3,7 @@ import { SigmaProof } from '../core/sigma';
 import { PublicKey, PublicShare } from './public';
 import { ScalarShare } from '../shamir';
 import { PartialDecryptor } from '../tds';
-import { BaseShare, BaseSharing } from '../vss';
+import { BaseShare, BaseSharing } from '../base';
 import { Messages } from './enums';
 import { leInt2Buff } from '../core/bitwise';
 import signer from '../core/signer';
