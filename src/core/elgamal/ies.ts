@@ -30,17 +30,17 @@ export class IesCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {
   encapsulate = async (pub: P, randomness: bigint, message: Uint8Array): Promise<{ alpha: A, decryptor: P }> => {
     const { ctx: { generator, randomScalar, operate } } = this;
     const decryptor = await operate(randomness, pub);
-    const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes()) as Uint8Array;
+    const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
     const keyMac = key.slice(32, 64);
     const { ciphered, iv, tag } = aes(this.mode).encrypt(keyAes, message);
-    const mac = await hmac(this.algorithm, keyMac).digest(ciphered) as Uint8Array;
+    const mac = await hmac(this.algorithm, keyMac).digest(ciphered);
     return { alpha: { ciphered, iv, mac, tag }, decryptor };
   }
 
   decapsulate = async (alpha: A, decryptor: P): Promise<Uint8Array> => {
     const { ciphered, iv, mac, tag } = alpha;
-    const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes()) as Uint8Array;
+    const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
     const keyMac = key.slice(32, 64);
     const targetMac = await hmac(this.algorithm, keyMac).digest(ciphered);

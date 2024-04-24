@@ -134,11 +134,11 @@ describe('Decryptor generation', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
-    const { ciphertext, decryptor: expectedDecryptor } = await publicKey.encrypt(message, {
+    const { ciphertext, decryptor: targetDecryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
     const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { noProof: false });
-    expect(await decryptor.equals(expectedDecryptor)).toBe(true);
+    expect(await decryptor.equals(targetDecryptor)).toBe(true);
     expect(await publicKey.verifyDecryptor(ciphertext, decryptor, proof)).toBe(true);
   });
 });

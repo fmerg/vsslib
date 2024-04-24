@@ -105,20 +105,20 @@ describe(`Decryptor reconstruction over ${label}`, () => {
   });
 
   test('Skip threshold check', async () => {
-    const { combiner, ciphertext, decryptor: expectedDecryptor, partialDecryptors } = setup;
+    const { combiner, ciphertext, decryptor: targetDecryptor, partialDecryptors } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
       const decryptor = await combiner.reconstructDecryptor(qualifiedSet, { skipThreshold: true });
-      expect(await decryptor.equals(expectedDecryptor)).toBe(qualifiedSet.length >= threshold);
+      expect(await decryptor.equals(targetDecryptor)).toBe(qualifiedSet.length >= threshold);
     });
   });
   test('With threshold check', async () => {
-    const { combiner, ciphertext, decryptor: expectedDecryptor, partialDecryptors } = setup;
+    const { combiner, ciphertext, decryptor: targetDecryptor, partialDecryptors } = setup;
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedSet) => {
       await expect(combiner.reconstructDecryptor(qualifiedSet)).rejects.toThrow('Nr shares less than threshold');
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
       const decryptor = await combiner.reconstructDecryptor(qualifiedSet);
-      expect(await decryptor.equals(expectedDecryptor)).toBe(true);
+      expect(await decryptor.equals(targetDecryptor)).toBe(true);
     });
   });
 });

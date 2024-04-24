@@ -1,23 +1,19 @@
 import { createHash } from 'node:crypto';
 
-import { Algorithms, Encodings } from '../../src/schemes';
 import hash from '../../src/core/hash';
 
 import { cartesian } from '../helpers';
-import { resolveAlgorithms, resolveEncodings } from '../environ';
+import { resolveAlgorithms } from '../environ';
 
 const __algorithms  = resolveAlgorithms()
-const __encodings   = [...resolveEncodings(), undefined];
 
 
 describe('hash digest', () => {
   const buffer = Buffer.from('sample-text');
-  it.each(cartesian([__algorithms, __encodings]))('%s, %s', async (algorithm, encoding) => {
-    const digest = await hash(algorithm).digest(buffer, encoding);
-    const hasher = createHash(algorithm || Algorithms.DEFAULT).update(buffer);
-    const expected = encoding ?
-      hasher.digest(encoding == Encodings.HEX ? Encodings.HEX : Encodings.BASE64) :
-      Uint8Array.from(hasher.digest());
+  it.each(__algorithms)('%s', async (algorithm) => {
+    const digest = await hash(algorithm).digest(buffer);
+    const hasher = createHash(algorithm).update(buffer);
+    const expected = Uint8Array.from(hasher.digest());
     expect(digest).toEqual(expected);
   });
 });

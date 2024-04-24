@@ -1,18 +1,20 @@
 // TODO: browser
-import { createHmac, Hmac as _Hmac } from 'node:crypto';
-import { Algorithms, Algorithm, Encoding } from '../schemes';
+import { createHmac as _createHmac } from 'node:crypto';
+
+import { Algorithm } from '../schemes';
 
 
 export class Hmac {
-  _hmac: _Hmac;
+  algorithm: Algorithm;
+  key: Uint8Array;
 
   constructor(algorithm: Algorithm, key: Uint8Array) {
-    this._hmac = createHmac(algorithm, key);
+    this.algorithm = algorithm;
+    this.key = key;
   }
 
-  async digest(buffer: Uint8Array, encoding?: Encoding): Promise<string | Uint8Array> {
-    const hasher = this._hmac.update(buffer);
-    return encoding ? hasher.digest(encoding) : Uint8Array.from(hasher.digest());
+  async digest(buffer: Uint8Array): Promise<Uint8Array> {
+    return new Uint8Array(_createHmac(this.algorithm, this.key).update(buffer).digest());
   }
 }
 

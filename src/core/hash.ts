@@ -1,18 +1,18 @@
 // TODO: browser
-import { createHash, Hash as _Hash } from 'node:crypto';
-import { Algorithms, Algorithm, Encoding } from '../schemes';
+import { createHash as _createHash } from 'node:crypto';
+
+import { Algorithm } from '../schemes';
 
 
 export class Hash {
-  _hash: _Hash;
+  algorithm: Algorithm;
 
   constructor(algorithm: Algorithm) {
-    this._hash = createHash(algorithm);
+    this.algorithm = algorithm;
   }
 
-  async digest(buffer: Uint8Array, encoding?: Encoding): Promise<string | Uint8Array> {
-    const hasher = this._hash.update(buffer);
-    return encoding ? hasher.digest(encoding) : Uint8Array.from(hasher.digest());
+  async digest(buffer: Uint8Array): Promise<Uint8Array> {
+    return new Uint8Array(_createHash(this.algorithm).update(buffer).digest());
   }
 }
 

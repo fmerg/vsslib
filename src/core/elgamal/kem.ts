@@ -28,14 +28,14 @@ export class KemCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {
 
   encapsulate = async (pub: P, randomness: bigint, message: Uint8Array): Promise<{ alpha: A, decryptor: P }> => {
     const decryptor = await this.ctx.operate(randomness, pub);
-    const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes()) as Uint8Array;
+    const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
     const { ciphered, iv, tag } = aes(this.mode).encrypt(key, message);
     return { alpha: { ciphered, iv, tag }, decryptor };
   }
 
   decapsulate = async (alpha: A, decryptor: P): Promise<Uint8Array> => {
     const { ciphered, iv, tag } = alpha;
-    const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes()) as Uint8Array;
+    const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
     return aes(this.mode).decrypt(key, ciphered, iv, tag);
   }
 }
