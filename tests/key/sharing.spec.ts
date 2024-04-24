@@ -63,7 +63,7 @@ describe(`Key sharing over ${__label}`, () => {
     expect(privateShares.length).toEqual(nrShares);
     expect(publicShares.length).toEqual(nrShares);
     expect(polynomial.degree).toEqual(threshold - 1);
-    expect(polynomial.evaluate(0)).toEqual(privateKey.scalar);
+    expect(polynomial.evaluate(0)).toEqual(privateKey.secret);
   });
 
   test('Feldmann VSS scheme - success', async () => {
@@ -107,16 +107,16 @@ describe(`Key sharing over ${__label}`, () => {
   })
 
   test('Private key reconstruction', async () => {
-    partialPermutations(privateShares, 1).forEach(async (qualifiedSet) => {
-      const reconstructed = await PrivateKey.fromShares(qualifiedSet);
-      expect(await reconstructed.equals(privateKey)).toBe(qualifiedSet.length >= threshold);
+    partialPermutations(privateShares, 1).forEach(async (qulifiedShares) => {
+      const reconstructed = await PrivateKey.fromShares(qulifiedShares);
+      expect(await reconstructed.equals(privateKey)).toBe(qulifiedShares.length >= threshold);
     });
   });
 
   test('Public key reconstruction', async () => {
-    partialPermutations(publicShares, 1).forEach(async (qualifiedSet) => {
-      const reconstructed = await PublicKey.fromShares(qualifiedSet);
-      expect(await reconstructed.equals(publicKey)).toBe(qualifiedSet.length >= threshold);
+    partialPermutations(publicShares, 1).forEach(async (qulifiedShares) => {
+      const reconstructed = await PublicKey.fromShares(qulifiedShares);
+      expect(await reconstructed.equals(publicKey)).toBe(qulifiedShares.length >= threshold);
     });
   });
 

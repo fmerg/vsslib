@@ -59,7 +59,7 @@ export class Combiner<P extends Point> {
     opts?: { threshold?: number, skipThreshold?: boolean }
   ): Promise<KeyPair<P>> {
     this.validateNrShares(shares, opts);
-    const secretShares = shares.map(({ scalar: value, index }) => { return {
+    const secretShares = shares.map(({ secret: value, index }) => { return {
         value, index
       };
     });
@@ -74,11 +74,11 @@ export class Combiner<P extends Point> {
     opts?: { threshold?: number, skipThreshold?: boolean }
   ): Promise<PublicKey<P>> {
     this.validateNrShares(shares, opts);
-    const pointShares = shares.map(({ point: value, index }) => { return {
+    const PubShares = shares.map(({ pub: value, index }) => { return {
         value, index
       };
     });
-    const point = await shamir(this.ctx).reconstructPublic(pointShares);
+    const point = await shamir(this.ctx).reconstructPublic(PubShares);
     return new PublicKey(this.ctx, point);
   }
 

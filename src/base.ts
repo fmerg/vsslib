@@ -41,7 +41,7 @@ export abstract class BaseSharing<S, P extends Point, Q extends BaseShare<S>, R 
     hPub: P,
     commitments: P[],
   }> => {
-    const  {generator: g, combine, operate } = this.ctx;
+    const { generator: g, combine, operate } = this.ctx;
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await Polynomial.random(this.ctx, degree);
     const commitments = new Array(degree + 1);

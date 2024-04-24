@@ -1,7 +1,7 @@
 import { Group, Point } from '../backend/abstract';
 import { SigmaProof } from '../core/sigma';
 import { PublicKey, PublicShare } from './public';
-import { ScalarShare } from '../shamir';
+import { SecretShare } from '../shamir';
 import { PartialDecryptor } from '../tds';
 import { BaseShare, BaseSharing } from '../base';
 import { Messages } from './enums';
@@ -35,12 +35,12 @@ export type SerializedPrivateKey = {
 export class PrivateKey<P extends Point> {
   ctx: Group<P>;
   bytes: Uint8Array;
-  scalar: bigint;
+  secret: bigint;
 
   constructor(ctx: Group<P>, bytes: Uint8Array) {
     this.ctx = ctx;
     this.bytes = bytes;
-    this.scalar = ctx.leBuff2Scalar(bytes);
+    this.secret = ctx.leBuff2Scalar(bytes);
   }
 
   static async fromBytes(ctx: Group<Point>, bytes: Uint8Array): Promise<PrivateKey<Point>> {
@@ -48,9 +48,9 @@ export class PrivateKey<P extends Point> {
     return new PrivateKey(ctx, bytes);
   }
 
-  static async fromScalar(ctx: Group<Point>, scalar: bigint): Promise<PrivateKey<Point>> {
-    await ctx.validateScalar(scalar);
-    return new PrivateKey(ctx, leInt2Buff(scalar));
+  static async fromScalar(ctx: Group<Point>, secret: bigint): Promise<PrivateKey<Point>> {
+    await ctx.validateScalar(secret);
+    return new PrivateKey(ctx, leInt2Buff(secret));
   }
 
   serialize = (): SerializedPrivateKey => {
@@ -69,27 +69,27 @@ export class PrivateKey<P extends Point> {
     return (
       (await this.ctx.equals(other.ctx)) &&
       // TODO: Constant time bytes comparison
-      (this.scalar == other.scalar)
+      (this.secret == other.secret)
     );
   }
 
   async publicKey(): Promise<PublicKey<P>> {
-    const { ctx, scalar } = this;
-    const point = await ctx.operate(scalar, ctx.generator);
-    return new PublicKey(ctx, point);
+    const { ctx, secret } = this;
+    const pub = await ctx.operate(secret, ctx.generator);
+    return new PublicKey(ctx, pub);
   }
 
-  async diffieHellman(pub: PublicKey<P>): Promise<P> {
-    const { ctx, scalar } = this;
-    await ctx.validatePoint(pub.point);
-    return ctx.operate(scalar, pub.point);
+  async diffieHellman(publicKey: PublicKey<P>): Promise<P> {
+    const { ctx, secret } = this;
+    await ctx.validatePoint(publicKey.pub);
+    return ctx.operate(secret, publicKey.pub);
   }
 
   async sign(
     message: Uint8Array,
     opts?: { nonce?: Uint8Array, algorithm?: Algorithm }
   ): Promise<Signature<P>> {
-    const { ctx, scalar: secret } = this;
+    const { ctx, secret: secret } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
     const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
@@ -99,7 +99,7 @@ export class PrivateKey<P extends Point> {
   }
 
   async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<SigmaProof<P>> {
-    const { ctx, scalar: secret } = this;
+    const { ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
@@ -117,16 +117,16 @@ export class PrivateKey<P extends Point> {
         mode = mode || AesModes.DEFAULT;
         algorithm = algorithm || Algorithms.DEFAULT;
         return elgamal[ElgamalSchemes.IES](this.ctx, mode, algorithm).decrypt(
-          ciphertext, this.scalar,
+          ciphertext, this.secret,
         );
       case ElgamalSchemes.KEM:
         mode = mode || AesModes.DEFAULT;
         return elgamal[ElgamalSchemes.KEM](this.ctx, mode).decrypt(
-          ciphertext, this.scalar,
+          ciphertext, this.secret,
         );
       case ElgamalSchemes.PLAIN:
         return elgamal[ElgamalSchemes.PLAIN](this.ctx).decrypt(
-          ciphertext, this.scalar
+          ciphertext, this.secret
         );
     }
   }
@@ -149,7 +149,7 @@ export class PrivateKey<P extends Point> {
     decryptor: P,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
   ): Promise<SigmaProof<P>> {
-    const { ctx, scalar: secret } = this;
+    const { ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
@@ -161,7 +161,7 @@ export class PrivateKey<P extends Point> {
     ciphertext: ElgamalCiphertext<P>,
     opts?: { noProof?: boolean, algorithm?: Algorithm },
   ): Promise<{ decryptor: P, proof?: SigmaProof<P> }> {
-    const { ctx, scalar: secret } = this;
+    const { ctx, secret: secret } = this;
     const decryptor = await ctx.operate(secret, ciphertext.beta);
     const noProof = opts ? opts.noProof : false;
     if (noProof) return { decryptor };
@@ -170,15 +170,15 @@ export class PrivateKey<P extends Point> {
   }
 
   async distribute(nrShares: number, threshold: number): Promise<KeySharing<P>> {
-    const { ctx, scalar: secret } = this;
-    const { polynomial } = await shamir(ctx).distribute(secret, nrShares, threshold);
+    const { ctx, secret: secret } = this;
+    const { polynomial } = await shamir(ctx).shareSecret(nrShares, threshold, secret);
     return new KeySharing(ctx, nrShares, threshold, polynomial);
   }
 
-  static async fromShares<Q extends Point>(qualifiedSet: PrivateShare<Q>[]): Promise<PrivateKey<Q>> {
-    if (qualifiedSet.length < 1) throw new Error(Messages.AT_LEAST_ONE_SHARE_NEEDED);
-    const ctx = qualifiedSet[0].ctx;
-    const secretShares = qualifiedSet.map(({ scalar: value, index }) => { return {
+  static async fromShares<Q extends Point>(qulifiedShares: PrivateShare<Q>[]): Promise<PrivateKey<Q>> {
+    if (qulifiedShares.length < 1) throw new Error(Messages.AT_LEAST_ONE_SHARE_NEEDED);
+    const ctx = qulifiedShares[0].ctx;
+    const secretShares = qulifiedShares.map(({ secret: value, index }) => { return {
         value, index
       };
     });
@@ -196,9 +196,9 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   value: bigint;
   index: number;
 
-  constructor(ctx: Group<P>, scalar: bigint, index: number) {
-    super(ctx, leInt2Buff(scalar));
-    this.value = this.scalar;
+  constructor(ctx: Group<P>, secret: bigint, index: number) {
+    super(ctx, leInt2Buff(secret));
+    this.value = this.secret;
     this.index = index;
   }
 
@@ -217,13 +217,13 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
 
   async publicShare(): Promise<PublicShare<P>> {
     const { ctx, index } = this;
-    const point = await ctx.operate(this.scalar, ctx.generator);
-    return new PublicShare(ctx, point, index);
+    const pub = await ctx.operate(this.secret, ctx.generator);
+    return new PublicShare(ctx, pub, index);
   }
 
   async verifyFeldmann(commitments: P[]): Promise<boolean> {
     const { ctx, value, index } = this;
-    const secretShare = new ScalarShare(value, index);
+    const secretShare = new SecretShare(value, index);
     const verified = await shamir(ctx).verifyFeldmann(secretShare, commitments);
     if (!verified) throw new Error('Invalid share');
     return verified;
@@ -231,7 +231,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
 
   async verifyPedersen(binding: bigint, pub: P, commitments: P[]): Promise<boolean> {
     const { ctx, value, index } = this;
-    const secretShare = new ScalarShare(value, index);
+    const secretShare = new SecretShare(value, index);
     const verified = await shamir(ctx).verifyPedersen(secretShare, binding, pub, commitments);
     if (!verified) throw new Error('Invalid share');
     return verified;

@@ -29,22 +29,22 @@ export type SerializedPublicKey = {
 export class PublicKey<P extends Point> {
   ctx: Group<P>;
   bytes: Uint8Array;
-  point: P;
+  pub: P;
 
-  constructor(ctx: Group<P>, point: P) {
+  constructor(ctx: Group<P>, pub: P) {
     this.ctx = ctx;
-    this.bytes = point.toBytes();
-    this.point = point;
+    this.bytes = pub.toBytes();
+    this.pub = pub;
   }
 
-  static async fromPoint(ctx: Group<Point>, point: Point): Promise<PublicKey<Point>> {
-    await ctx.validatePoint(point);
-    return new PublicKey(ctx, point);
+  static async fromPoint(ctx: Group<Point>, pub: Point): Promise<PublicKey<Point>> {
+    await ctx.validatePoint(pub);
+    return new PublicKey(ctx, pub);
   }
 
   serialize = (): SerializedPublicKey => {
-    const { ctx, point } = this;
-    return { value: point.toHex(), system: ctx.label };
+    const { ctx, pub } = this;
+    return { value: pub.toHex(), system: ctx.label };
   }
 
   static async deserialize(serialized: SerializedPublicKey): Promise<PublicKey<Point>> {
@@ -57,7 +57,7 @@ export class PublicKey<P extends Point> {
     return (
       (await this.ctx.equals(other.ctx)) &&
       // TODO: Constant time bytes comparison
-      (await this.point.equals(other.point))
+      (await this.pub.equals(other.pub))
     );
   }
 
@@ -66,7 +66,7 @@ export class PublicKey<P extends Point> {
     signature: Signature<P>,
     opts: { nonce?: Uint8Array, algorithm?: Algorithm },
   ): Promise<boolean> {
-    const { ctx, point: pub } = this;
+    const { ctx, pub } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
     const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
@@ -77,7 +77,7 @@ export class PublicKey<P extends Point> {
   }
 
   async verifyIdentity(proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> {
-    const { ctx, point: pub } = this;
+    const { ctx, pub } = this;
     const verified = await dlog(ctx, Algorithms.DEFAULT).verify({ u: ctx.generator, v: pub }, proof, nonce);
     if (!verified) throw new Error(Messages.INVALID_IDENTITY_PROOF);
     return verified;
@@ -94,7 +94,7 @@ export class PublicKey<P extends Point> {
     let { scheme, mode, algorithm } = opts;
     mode = mode || AesModes.DEFAULT;
     algorithm = algorithm || Algorithms.DEFAULT;
-    return elgamal(this.ctx, scheme, mode, algorithm).encrypt(message, this.point);
+    return elgamal(this.ctx, scheme, mode, algorithm).encrypt(message, this.pub);
   }
 
   async proveEncryption(
@@ -115,7 +115,7 @@ export class PublicKey<P extends Point> {
     proof: SigmaProof<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
   ): Promise<boolean> {
-    const { ctx, point: pub } = this;
+    const { ctx, pub } = this;
     const nonce = opts ? (opts.nonce) : undefined;
     const verified = await ddh(ctx, Algorithms.DEFAULT).verify({ u: ciphertext.beta, v: pub, w: decryptor }, proof, nonce);
     const raiseOnInvalid = opts ?
@@ -125,15 +125,15 @@ export class PublicKey<P extends Point> {
     return verified;
   }
 
-  static async fromShares<Q extends Point>(qualifiedSet: PublicShare<Q>[]): Promise<PublicKey<Q>> {
-    if (qualifiedSet.length < 1) throw new Error(Messages.AT_LEAST_ONE_SHARE_NEEDED);
-    const ctx = qualifiedSet[0].ctx;
-    const pointShares = qualifiedSet.map(({ point: value, index }) => { return {
+  static async fromShares<Q extends Point>(qulifiedShares: PublicShare<Q>[]): Promise<PublicKey<Q>> {
+    if (qulifiedShares.length < 1) throw new Error(Messages.AT_LEAST_ONE_SHARE_NEEDED);
+    const ctx = qulifiedShares[0].ctx;
+    const PubShares = qulifiedShares.map(({ pub: value, index }) => { return {
         value, index
       };
     });
-    const point = await shamir(ctx).reconstructPublic(pointShares);
-    return new PublicKey(ctx, point);
+    const pub = await shamir(ctx).reconstructPublic(PubShares);
+    return new PublicKey(ctx, pub);
   }
 }
 
@@ -147,23 +147,23 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   value: P;
   index: number;
 
-  constructor(ctx: Group<P>, point: P, index: number) {
-    super(ctx, point);
-    this.value = point;
+  constructor(ctx: Group<P>, pub: P, index: number) {
+    super(ctx, pub);
+    this.value = pub;
     this.index = index;
   }
 
   serialize = (): SerializedPublicShare => {
-    const { ctx, point, index } = this;
-    return { value: point.toHex(), system: ctx.label, index };
+    const { ctx, pub, index } = this;
+    return { value: pub.toHex(), system: ctx.label, index };
   }
 
   static async deserialize(serialized: SerializedPublicShare): Promise<PublicKey<Point>> {
     const { value, system: label, index } = serialized;
     const ctx = backend.initGroup(label);
-    const point = ctx.unhexify(value);
-    await ctx.validatePoint(point);
-    return new PublicShare(ctx, point, index);
+    const pub = ctx.unhexify(value);
+    await ctx.validatePoint(pub);
+    return new PublicShare(ctx, pub, index);
   }
 
   async verifyPartialDecryptor<A>(

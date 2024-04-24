@@ -11,11 +11,11 @@ describe('Key generation', () => {
   it.each(__labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { privateKey, publicKey } = await key.generate(label);
-    const priv1 = await PrivateKey.fromScalar(ctx, privateKey.scalar);
+    const priv1 = await PrivateKey.fromScalar(ctx, privateKey.secret);
     const priv2 = await PrivateKey.fromBytes(ctx, privateKey.bytes);
     expect(await priv1.equals(privateKey)).toBe(true);
     expect(await priv2.equals(privateKey)).toBe(true);
-    const pub1 = await PublicKey.fromPoint(ctx, publicKey.point);
+    const pub1 = await PublicKey.fromPoint(ctx, publicKey.pub);
     expect(await pub1.equals(publicKey)).toBe(true);
   });
 });
@@ -50,7 +50,7 @@ describe('Public key extraction', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await key.generate(label);
     expect(await ctx.equals(ctx)).toBe(true);
-    expect(await publicKey.point.equals(await ctx.operate(privateKey.scalar, ctx.generator)));
+    expect(await publicKey.pub.equals(await ctx.operate(privateKey.secret, ctx.generator)));
   });
 });
 
@@ -61,7 +61,7 @@ describe('Diffie-Hellman handshake', () => {
     const { privateKey: priv2, publicKey: pub2 } = await key.generate(label);
     const point1 = await priv1.diffieHellman(pub2);
     const point2 = await priv2.diffieHellman(pub1);
-    const expected = await ctx.operate(priv1.scalar, pub2.point);
+    const expected = await ctx.operate(priv1.secret, pub2.pub);
     expect(await point1.equals(expected)).toBe(true);
     expect(await point2.equals(point1)).toBe(true);
   });

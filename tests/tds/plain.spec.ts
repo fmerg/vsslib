@@ -106,18 +106,18 @@ describe(`Decryptor reconstruction over ${label}`, () => {
 
   test('Skip threshold check', async () => {
     const { combiner, ciphertext, decryptor: targetDecryptor, partialDecryptors } = setup;
-    partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
-      const decryptor = await combiner.reconstructDecryptor(qualifiedSet, { skipThreshold: true });
-      expect(await decryptor.equals(targetDecryptor)).toBe(qualifiedSet.length >= threshold);
+    partialPermutations(partialDecryptors).forEach(async (qulifiedShares) => {
+      const decryptor = await combiner.reconstructDecryptor(qulifiedShares, { skipThreshold: true });
+      expect(await decryptor.equals(targetDecryptor)).toBe(qulifiedShares.length >= threshold);
     });
   });
   test('With threshold check', async () => {
     const { combiner, ciphertext, decryptor: targetDecryptor, partialDecryptors } = setup;
-    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedSet) => {
-      await expect(combiner.reconstructDecryptor(qualifiedSet)).rejects.toThrow('Nr shares less than threshold');
+    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qulifiedShares) => {
+      await expect(combiner.reconstructDecryptor(qulifiedShares)).rejects.toThrow('Nr shares less than threshold');
     });
-    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
-      const decryptor = await combiner.reconstructDecryptor(qualifiedSet);
+    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qulifiedShares) => {
+      const decryptor = await combiner.reconstructDecryptor(qulifiedShares);
       expect(await decryptor.equals(targetDecryptor)).toBe(true);
     });
   });
@@ -141,15 +141,15 @@ describe('Threshold decryption', () => {
 
   test('Skip threshold check', async () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
-    partialPermutations(partialDecryptors).forEach(async (qualifiedSet) => {
-      const plaintext1 = await combiner.decrypt(ciphertext, qualifiedSet, {
+    partialPermutations(partialDecryptors).forEach(async (qulifiedShares) => {
+      const plaintext1 = await combiner.decrypt(ciphertext, qulifiedShares, {
         scheme,
         skipThreshold: true
       });
       const plaintext2 = await privateKey.decrypt(ciphertext, {
         scheme
       });
-      if (qualifiedSet.length >= threshold) {
+      if (qulifiedShares.length >= threshold) {
         expect(plaintext1).toEqual(message);
         expect(plaintext1).toEqual(plaintext2);
       } else {
@@ -160,13 +160,13 @@ describe('Threshold decryption', () => {
   });
   test('With threshold check', async () => {
     const { privateKey, message, ciphertext, partialDecryptors, combiner } = setup;
-    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedSet) => {
+    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qulifiedShares) => {
       await expect(
-        combiner.decrypt(ciphertext, qualifiedSet, { scheme })
+        combiner.decrypt(ciphertext, qulifiedShares, { scheme })
       ).rejects.toThrow('Nr shares less than threshold');
     });
-    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedSet) => {
-      const plaintext = await combiner.decrypt(ciphertext, qualifiedSet, { scheme });
+    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qulifiedShares) => {
+      const plaintext = await combiner.decrypt(ciphertext, qulifiedShares, { scheme });
       expect(plaintext).toEqual(message);
     });
   });

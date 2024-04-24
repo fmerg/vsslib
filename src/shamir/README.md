@@ -13,7 +13,7 @@ const secret = await ctx.randomScalar();
 ## Secret sharing
 
 ```js
-const sharing = await shamir(ctx).distribute(secret, 5, 3);
+const sharing = await shamir(ctx).shareSecret(5, 3, secret);
 ```
 
 ```js
