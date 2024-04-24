@@ -1,6 +1,8 @@
 // TODO: browser
-const crypto = require('node:crypto');
+const { createCipheriv, createDecipheriv } = require('node:crypto');
+
 import { AesModes, AesMode } from '../../schemes';
+import { randomBytes } from '../random';
 
 class AesCipher {
   mode: AesMode;
@@ -16,16 +18,16 @@ class AesCipher {
   ): { ciphered: Uint8Array, iv: Uint8Array, tag?: Uint8Array } => {
     if (key.length !== 32) throw new Error('Invalid key length');
     const ivLength = (this.mode == AesModes.AES_256_GCM) ? 12 : 16;
-    const _iv = iv == undefined ? crypto.randomBytes(ivLength) : iv;
-    if (_iv.length !== ivLength) throw new Error('Invalid IV length');
-    const cipher = crypto.createCipheriv(this.mode, key, _iv);
+    iv = !iv ? randomBytes(ivLength) : iv;
+    if (iv.length !== ivLength) throw new Error('Invalid IV length');
+    const cipher = createCipheriv(this.mode, key, iv);
     const ciphered = Uint8Array.from(
       Buffer.from(cipher.update(message, 'binary', 'binary') + cipher.final('binary'))
     );
     const tag = (this.mode == AesModes.AES_256_GCM) ?
       Uint8Array.from(cipher.getAuthTag()) :
       undefined;
-    return { ciphered, iv: _iv, tag };
+    return { ciphered, iv, tag };
   }
 
   decrypt = (
@@ -37,7 +39,7 @@ class AesCipher {
     if (key.length !== 32) throw new Error('Invalid key length');
     if (iv.length !== (this.mode == AesModes.AES_256_GCM ? 12 : 16))
       throw new Error('Invalid IV length');
-    const decipher = crypto.createDecipheriv(this.mode, key, iv);
+    const decipher = createDecipheriv(this.mode, key, iv);
     if (this.mode == AesModes.AES_256_GCM) {
       if (tag === undefined) throw new Error('No authentication tag provided');
       decipher.setAuthTag(tag);

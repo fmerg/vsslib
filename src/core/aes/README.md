@@ -5,9 +5,9 @@ import aes from 'vsslib/core/aes';
 ```
 
 ```js
-const crypto = require('crypto');
+const { randomBytes } = require('vsslib/core/random');
 
-const key = crypto.randomBytes(32);
+const key = randomBytes(32);
 ```
 
 ### AES-256-CBC

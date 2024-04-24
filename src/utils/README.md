@@ -4,25 +4,6 @@
 const { utils } = require('vsslib');
 ```
 
-### Hashing
-
-```js
-const textBytes = Buffer.from('some text');
-
-// Digest as bytes
-const digest = utils.hash(textBytes, { algorithm: 'sha256' });
-
-// Digest as string
-const hexDigest = utils.hash(textBytes, { algorithm: 'sha256', encoding: 'hex' });
-const b64Digest = utils.hash(textBytes, { algorithm: 'sha256', encoding: 'base64' });
-```
-
-### Random
-
-```js
-const num = await utils.randBigint(64);
-```
-
 ### Bitwise
 
 ```js

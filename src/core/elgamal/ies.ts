@@ -2,7 +2,6 @@ import { Algorithms, Algorithm, AesMode } from '../../schemes';
 import { Point, Group } from '../../backend/abstract';
 import { BaseCipher, Ciphertext } from './base';
 
-const crypto = require('node:crypto');
 import aes from '../aes';
 import hash from '../hash';
 import hmac from '../hmac';

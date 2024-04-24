@@ -165,9 +165,7 @@ export default function(label: Label): EcGroup {
       group = new EcGroup(label, __curves[label]);
       break;
     default:
-      throw new Error(
-        `Unsupported crypto: ${label}`
-    );
+      throw new Error(`Unsupported group: ${label}`)
   }
 
   return group;

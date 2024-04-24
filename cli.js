@@ -12,7 +12,7 @@ const schemes = require('./dist/schemes')
 const program = new Command();
 
 async function generateKey(options) {
-  const { privateKey, publicKey } = await key.generate(options.crypto);
+  const { privateKey, publicKey } = await key.generate(options.system);
 
   const privSerialized = privateKey.serialize();
   console.log(privSerialized);
@@ -43,7 +43,7 @@ program
   .option('--some-option', 'some option')
 
 
-const cryptoOption = new Option('-c, --crypto <label>', 'underlying cryptosystem')
+const cryptoOption = new Option('-s, --system <label>', 'underlying cryptosystem')
   .default(schemes.Systems.ED25519)
   .choices(Object.values(schemes.Systems));
 

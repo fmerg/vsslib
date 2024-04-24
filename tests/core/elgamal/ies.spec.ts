@@ -1,10 +1,9 @@
 import { Systems, Algorithms, AesModes } from '../../../src/schemes';
+import { randomBytes } from '../../../src/core/random';
 import { ies, backend } from '../../../src';
 import { cartesian } from '../../helpers';
 import { resolveBackends, resolveAesModes, resolveAlgorithms } from '../../environ';
 
-
-const crypto = require('crypto');
 
 const __labels      = resolveBackends();
 const __aesModes    = resolveAesModes();
@@ -49,7 +48,7 @@ describe('Decryption - failure if forged iv', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await ies(ctx, mode, algorithm).encrypt(message, pub);
-    ciphertext.alpha.iv = await crypto.randomBytes(mode == AesModes.AES_256_GCM ? 12 : 16);
+    ciphertext.alpha.iv = await randomBytes(mode == AesModes.AES_256_GCM ? 12 : 16);
     if (!mode || [AesModes.AES_256_CBC, AesModes.AES_256_GCM].includes(mode)) {
       await expect(ies(ctx, mode, algorithm).decrypt(ciphertext, secret)).rejects.toThrow(
         'Could not decrypt: AES decryption failure'
