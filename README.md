@@ -13,16 +13,16 @@ const { privateKey, publicKey, ctx } = await key.generate('ed25519');
 ```
 
 ```js
-import tds from 'vsslib/tds';
+import vss from 'vsslib/vss';
 
 const ctx = backend.initGroup(label);
-const combiner = tds(ctx, threshold);
+const combiner = vss(ctx, threshold);
 ```
 
 ### Key sharing
 
 ```js
-const sharing = privateKey.distribute(5, 3);
+const sharing = vss.distributeKey(5, 3, privateKey);
 
 const publicShares = await sharing.getPublicShares();
 ```
@@ -94,7 +94,7 @@ const verified = await verifyPedersen(ctx, secret, binding, index, hPub, commitm
 - [`vsslib.aes`](./src/aes)
 - [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.backend`](./src/backend)
-- [`vsslib.tds`](./src/tds)
+- [`vsslib.core`](./src/core)
 - [`vsslib.plain`](./src/elgamal)
 - [`vsslib.ies`](./src/elgamal)
 - [`vsslib.kem`](./src/elgamal)

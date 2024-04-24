@@ -1,5 +1,5 @@
 import { Point, Group } from '../backend/abstract';
-import { mod, modInv } from '../core/arith';
+import { mod, modInv } from '../crypto/arith';
 import {
   BaseShare,
   BaseSharing,
@@ -120,21 +120,21 @@ export class ShamirParty<P extends Point> {
     return lambda;
   }
 
-  reconstructSecret = (qulifiedShares: SecretShare<P>[]): bigint => {
+  reconstructSecret = (qualifiedShares: SecretShare<P>[]): bigint => {
     const { order } = this.ctx;
-    const indexes = qulifiedShares.map(share => share.index);
-    return qulifiedShares.reduce((acc, share) => {
+    const indexes = qualifiedShares.map(share => share.index);
+    return qualifiedShares.reduce((acc, share) => {
       const { value, index } = share;
       const lambda = this.computeLambda(index, indexes);
       return mod(acc + value * lambda, order);
     }, __0n);
   }
 
-  reconstructPublic = async (qulifiedShares: PubShare<P>[]): Promise<P> => {
+  reconstructPublic = async (qualifiedShares: PubShare<P>[]): Promise<P> => {
     const { order, combine, neutral, operate } = this.ctx;
-    const indexes = qulifiedShares.map(share => share.index);
+    const indexes = qualifiedShares.map(share => share.index);
     let acc = neutral;
-    for (const { index, value } of qulifiedShares) {
+    for (const { index, value } of qualifiedShares) {
       const lambda = this.computeLambda(index, indexes);
       acc = await combine(acc, await operate(lambda, value));
     }

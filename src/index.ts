@@ -1,27 +1,28 @@
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './key';
-import { plain, kem, ies } from './core';
-import signer from './core/signer';
+import { plain, kem, ies } from './crypto';
+import signer from './crypto/signer';
 
-const { aes, elgamal, hash } = require('./core');
+import { VssParty } from './core';
+
+const { aes, elgamal, hash } = require('./crypto');
 const backend = require('./backend');
-const core = require('./core');
-const tds = require('./tds');
+const crypto = require('./crypto');
 const key = require('./key');
 const lagrange = require('./lagrange');
 const schemes = require('./schemes');
 const shamir = require('./shamir');
-const sigma = require('./core/sigma');
+const sigma = require('./crypto/sigma');
 
 export {
+  VssParty,
   PrivateKey,
   PublicKey,
   PrivateShare,
   PublicShare,
   aes,
   backend,
-  tds,
   plain,
-  core,
+  crypto,
   hash,
   ies,
   kem,

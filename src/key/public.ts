@@ -1,7 +1,7 @@
 import { Group, Point } from '../backend/abstract';
-import { SigmaProof } from '../core/sigma';
+import { SigmaProof } from '../crypto/sigma';
 import { Messages } from './enums';
-import { PartialDecryptor } from '../tds';
+import { PartialDecryptor } from '../core';
 import {
   ElgamalSchemes, ElgamalScheme,
   AesMode, AesModes,
@@ -9,14 +9,14 @@ import {
   SignatureSchemes,
   Label,
 } from '../schemes';
-import { dlog, ddh } from '../core/sigma';
-import signer from '../core/signer';
-import { Signature } from '../core/signer/base';
-import { SchnorrSignature } from '../core/signer/schnorr';
+import { dlog, ddh } from '../crypto/sigma';
+import signer from '../crypto/signer';
+import { Signature } from '../crypto/signer/base';
+import { SchnorrSignature } from '../crypto/signer/schnorr';
 const backend = require('../backend');
-const sigma = require('../core/sigma');
-import elgamal from '../core/elgamal';
-import { ElgamalCiphertext } from '../core/elgamal';
+const sigma = require('../crypto/sigma');
+import elgamal from '../crypto/elgamal';
+import { ElgamalCiphertext } from '../crypto/elgamal';
 import shamir from '../shamir';
 
 
@@ -123,17 +123,6 @@ export class PublicKey<P extends Point> {
       true;
     if (!verified && raiseOnInvalid) throw new Error(Messages.INVALID_DECRYPTOR_PROOF);
     return verified;
-  }
-
-  static async fromShares<Q extends Point>(qulifiedShares: PublicShare<Q>[]): Promise<PublicKey<Q>> {
-    if (qulifiedShares.length < 1) throw new Error(Messages.AT_LEAST_ONE_SHARE_NEEDED);
-    const ctx = qulifiedShares[0].ctx;
-    const PubShares = qulifiedShares.map(({ pub: value, index }) => { return {
-        value, index
-      };
-    });
-    const pub = await shamir(ctx).reconstructPublic(PubShares);
-    return new PublicKey(ctx, pub);
   }
 }
 

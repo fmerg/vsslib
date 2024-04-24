@@ -9,10 +9,11 @@ import {
 } from '../../src/key';
 import { Polynomial } from '../../src/lagrange';
 import { Messages } from '../../src/key/enums';
-import { PartialDecryptor } from '../../src/tds';
-import { PlainCiphertext } from '../../src/core/elgamal/plain';
+import { PartialDecryptor } from '../../src/core';
+import { PlainCiphertext } from '../../src/crypto/elgamal/plain';
 import { ElgamalSchemes } from '../../src/schemes';
 import { partialPermutations } from '../helpers';
+import { VssParty } from '../../src/core';
 import { resolveBackend } from '../environ';
 
 
@@ -30,6 +31,7 @@ describe(`Key sharing over ${__label}`, () => {
   const nrShares = 5;
   const threshold = 3;
 
+  let vss: VssParty<Point>;
   let sharing: KeySharing<Point>;
   let polynomial: Polynomial<Point>
   let privateKey: PrivateKey<Point>;
@@ -43,7 +45,8 @@ describe(`Key sharing over ${__label}`, () => {
     const keypair = await key.generate(__label);
     privateKey = keypair.privateKey;
     publicKey = keypair.publicKey;
-    sharing = await privateKey.distribute(nrShares, threshold);
+    vss = new VssParty(ctx);
+    sharing = await vss.distributeKey(nrShares, threshold, privateKey);
     polynomial = sharing.polynomial;
     privateShares = await sharing.getSecretShares();
     publicShares = await sharing.getPublicShares();
@@ -101,22 +104,17 @@ describe(`Key sharing over ${__label}`, () => {
     });
   });
 
-  test('Reconstruction errors', async () => {
-    await expect(PrivateKey.fromShares([])).rejects.toThrow(Messages.AT_LEAST_ONE_SHARE_NEEDED);
-    await expect(PublicKey.fromShares([])).rejects.toThrow(Messages.AT_LEAST_ONE_SHARE_NEEDED);
-  })
-
   test('Private key reconstruction', async () => {
-    partialPermutations(privateShares, 1).forEach(async (qulifiedShares) => {
-      const reconstructed = await PrivateKey.fromShares(qulifiedShares);
-      expect(await reconstructed.equals(privateKey)).toBe(qulifiedShares.length >= threshold);
+    partialPermutations(privateShares, 1).forEach(async (qualifiedShares) => {
+      const { privateKey: reconstructed } = await vss.reconstructKey(qualifiedShares);
+      expect(await reconstructed.equals(privateKey)).toBe(qualifiedShares.length >= threshold);
     });
   });
 
   test('Public key reconstruction', async () => {
-    partialPermutations(publicShares, 1).forEach(async (qulifiedShares) => {
-      const reconstructed = await PublicKey.fromShares(qulifiedShares);
-      expect(await reconstructed.equals(publicKey)).toBe(qulifiedShares.length >= threshold);
+    partialPermutations(publicShares, 1).forEach(async (qualifiedShares) => {
+      const reconstructed = await vss.reconstructPublic(qualifiedShares);
+      expect(await reconstructed.equals(publicKey)).toBe(qualifiedShares.length >= threshold);
     });
   });
 

@@ -11,10 +11,10 @@ usage_string="usage: ./$(basename "$0") [options]
 TODO
 
 Options
-  --system GROUP      TODO
-  --algorithm HASH    TODO
-  --reload            Reload and run tests when saving changes
-  -h, --help          Display help message and exit
+  -s, --system GROUP      TODO
+  -a, --algorithm HASH    TODO
+  -r, --reload            Reload and run tests when saving changes
+  -h, --help              Display help message and exit
 
 Examples:
   ./$(basename "$0") --system ed25519 --algorithm sha256
@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]
 do
     arg="$1"
     case $arg in
-        hash|hmac|aes|elgamal|key|tds|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|fiatShamir|linearDlog|okamoto|sigma|core|lagrange|key|backend|arith|bitwise)
+        hash|hmac|aes|elgamal|key|core|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|fiatShamir|linearDlog|okamoto|sigma|crypto|lagrange|key|backend|arith|bitwise)
             MODULE="$arg"
             shift
             ;;

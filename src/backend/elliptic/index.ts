@@ -6,8 +6,8 @@ import { secp256k1 } from '@noble/curves/secp256k1';
 import { Elliptic, Label } from '../../schemes';
 import { Messages } from '../enums';
 import { Point, Group } from '../abstract';
-import { mod } from '../../core/arith';
-import { leBuff2Int } from '../../core/bitwise';
+import { mod } from '../../crypto/arith';
+import { leBuff2Int } from '../../crypto/bitwise';
 
 
 const __0n = BigInt(0);

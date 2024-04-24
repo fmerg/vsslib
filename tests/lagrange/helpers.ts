@@ -1,6 +1,6 @@
 import { BasePolynomial } from '../../src/lagrange/base';
 import { XYTuple } from '../../src/lagrange/core'
-import { modInv } from '../../src/core/arith';
+import { modInv } from '../../src/crypto/arith';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);

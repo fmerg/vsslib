@@ -147,7 +147,7 @@ await publicKey.verifyIdentity(proof);
 ## Verifiable key sharing (Shamir scheme)
 
 ```js
-const sharing = privateKey.distribute(5, 3);
+const sharing = vss.distributeKey(5, 3, privateKey);
 
 const { nrShares, threshold, polynomial } = sharing;
 ```
@@ -187,20 +187,6 @@ const binding = bindings[share.index];
 
 ```js
 const verified = await share.verifyPedersen(binding, hPub, commitments);
-```
-
-### Key reconstruction
-
-```js
-const qualifiedShares = privateShares.slice(0, 3);
-
-const reconstructed = await PrivateKey.fromShares(qualifiedShares);
-```
-
-```js
-const qualifiedShares = privateShares.slice(0, 3);
-
-const reconstructed = await PublicKey.fromShares(qualifiedShares);
 ```
 
 ### Verifiable partial decryptors

@@ -1,16 +1,16 @@
 import { Group, Point } from '../backend/abstract';
-import { SigmaProof } from '../core/sigma';
+import { SigmaProof } from '../crypto/sigma';
 import { PublicKey, PublicShare } from './public';
 import { SecretShare } from '../shamir';
-import { PartialDecryptor } from '../tds';
+import { PartialDecryptor } from '../core';
 import { BaseShare, BaseSharing } from '../base';
 import { Messages } from './enums';
-import { leInt2Buff } from '../core/bitwise';
-import signer from '../core/signer';
-import { Signature } from '../core/signer/base';
+import { leInt2Buff } from '../crypto/bitwise';
+import signer from '../crypto/signer';
+import { Signature } from '../crypto/signer/base';
 const backend = require('../backend');
-const sigma = require('../core/sigma');
-import { dlog, ddh } from '../core/sigma';
+const sigma = require('../crypto/sigma');
+import { dlog, ddh } from '../crypto/sigma';
 import {
   Algorithms, Algorithm,
   AesModes, AesMode,
@@ -18,11 +18,11 @@ import {
   SignatureSchemes,
   Label,
 } from '../schemes';
-const elgamal = require('../core/elgamal');
-import { ElgamalCiphertext } from '../core/elgamal';
-import { PlainCiphertext } from '../core/elgamal/plain';
-import { KemCiphertext } from '../core/elgamal/kem';
-import { IesCiphertext } from '../core/elgamal/ies';
+const elgamal = require('../crypto/elgamal');
+import { ElgamalCiphertext } from '../crypto/elgamal';
+import { PlainCiphertext } from '../crypto/elgamal/plain';
+import { KemCiphertext } from '../crypto/elgamal/kem';
+import { IesCiphertext } from '../crypto/elgamal/ies';
 import shamir from '../shamir';
 
 
@@ -167,23 +167,6 @@ export class PrivateKey<P extends Point> {
     if (noProof) return { decryptor };
     const proof = await this.proveDecryptor(ciphertext, decryptor, opts);
     return { decryptor, proof };
-  }
-
-  async distribute(nrShares: number, threshold: number): Promise<KeySharing<P>> {
-    const { ctx, secret: secret } = this;
-    const { polynomial } = await shamir(ctx).shareSecret(nrShares, threshold, secret);
-    return new KeySharing(ctx, nrShares, threshold, polynomial);
-  }
-
-  static async fromShares<Q extends Point>(qulifiedShares: PrivateShare<Q>[]): Promise<PrivateKey<Q>> {
-    if (qulifiedShares.length < 1) throw new Error(Messages.AT_LEAST_ONE_SHARE_NEEDED);
-    const ctx = qulifiedShares[0].ctx;
-    const secretShares = qulifiedShares.map(({ secret: value, index }) => { return {
-        value, index
-      };
-    });
-    const secret = await shamir(ctx).reconstructSecret(secretShares);
-    return new PrivateKey(ctx, leInt2Buff(secret));
   }
 }
 

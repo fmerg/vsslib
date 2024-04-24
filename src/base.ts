@@ -1,6 +1,6 @@
 import { Group, Point } from './backend/abstract';
 import { Polynomial } from './lagrange';
-import { mod } from './core/arith';
+import { mod } from './crypto/arith';
 
 
 export interface BaseShare<T> {

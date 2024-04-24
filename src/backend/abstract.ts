@@ -1,6 +1,6 @@
 import { Label } from '../schemes';
-import { mod } from '../core/arith';
-import { leInt2Buff, leBuff2Int } from '../core/bitwise';
+import { mod } from '../crypto/arith';
+import { leInt2Buff, leBuff2Int } from '../crypto/bitwise';
 
 export interface Point {
   equals: (other: Point) => Promise<boolean>;
