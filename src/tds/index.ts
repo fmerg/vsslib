@@ -15,7 +15,7 @@ import {
   Label,
 } from '../schemes';
 
-import shamir from '../core/shamir';
+import shamir from '../shamir';
 const backend = require('../backend');
 const elgamal = require('../core/elgamal');
 

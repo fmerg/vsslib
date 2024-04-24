@@ -1,10 +1,10 @@
-import { backend } from '../../../src';
-import { Point } from '../../../src/backend/abstract';
-import { ScalarShare, PointShare } from '../../../src/core/shamir';
-import shamir from '../../../src/core/shamir';
+import { backend } from '../../src';
+import { Point } from '../../src/backend/abstract';
+import { ScalarShare, PointShare } from '../../src/shamir';
+import shamir from '../../src/shamir';
 
-import { partialPermutations } from '../../helpers';
-import { resolveBackend } from '../../environ';
+import { partialPermutations } from '../helpers';
+import { resolveBackend } from '../environ';
 
 
 describe('Reconstruction from shares', () => {

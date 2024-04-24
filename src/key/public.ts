@@ -17,7 +17,7 @@ const backend = require('../backend');
 const sigma = require('../core/sigma');
 import elgamal from '../core/elgamal';
 import { ElgamalCiphertext } from '../core/elgamal';
-import shamir from '../core/shamir';
+import shamir from '../shamir';
 
 
 export type SerializedPublicKey = {

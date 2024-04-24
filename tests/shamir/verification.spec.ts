@@ -1,10 +1,10 @@
-import { backend } from '../../../src';
-import { verifyFeldmann, verifyPedersen } from '../../../src/vss';
-import { ScalarShare, PointShare, ScalarSharing } from '../../../src/core/shamir';
-import shamir from '../../../src/core/shamir';
-import { Point } from '../../../src/backend/abstract';
+import { backend } from '../../src';
+import { verifyFeldmann, verifyPedersen } from '../../src/vss';
+import { ScalarShare, PointShare, ScalarSharing } from '../../src/shamir';
+import shamir from '../../src/shamir';
+import { Point } from '../../src/backend/abstract';
 
-import { resolveBackend } from '../../environ';
+import { resolveBackend } from '../environ';
 
 const __label = resolveBackend();
 

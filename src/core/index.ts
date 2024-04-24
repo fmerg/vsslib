@@ -1,6 +1,5 @@
 const aes = require('./aes');
 const elgamal = require('./elgamal');
-const shamir = require('./shamir');
 const lagrange = require('./lagrange');
 const signer = require('./signer');
 const hash = require('./hash');
@@ -16,6 +15,5 @@ export {
   kem,
   lagrange,
   plain,
-  shamir,
   signer,
 }

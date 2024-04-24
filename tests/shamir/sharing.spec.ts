@@ -1,9 +1,9 @@
-import { backend } from '../../../src';
-import { BaseShare } from '../../../src/vss';
-import { Point } from '../../../src/backend/abstract';
-import shamir from '../../../src/core/shamir';
+import { backend } from '../../src';
+import { BaseShare } from '../../src/vss';
+import { Point } from '../../src/backend/abstract';
+import shamir from '../../src/shamir';
 
-import { resolveBackend } from '../../environ';
+import { resolveBackend } from '../environ';
 
 const __label = resolveBackend();
 

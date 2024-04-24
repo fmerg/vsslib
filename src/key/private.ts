@@ -1,7 +1,7 @@
 import { Group, Point } from '../backend/abstract';
 import { SigmaProof } from '../core/sigma';
 import { PublicKey, PublicShare } from './public';
-import { ScalarShare } from '../core/shamir';
+import { ScalarShare } from '../shamir';
 import { PartialDecryptor } from '../tds';
 import { BaseShare, BaseSharing } from '../vss';
 import { Messages } from './enums';
@@ -23,7 +23,7 @@ import { ElgamalCiphertext } from '../core/elgamal';
 import { PlainCiphertext } from '../core/elgamal/plain';
 import { KemCiphertext } from '../core/elgamal/kem';
 import { IesCiphertext } from '../core/elgamal/ies';
-import shamir from '../core/shamir';
+import shamir from '../shamir';
 
 
 export type SerializedPrivateKey = {

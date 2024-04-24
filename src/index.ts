@@ -9,7 +9,7 @@ const tds = require('./tds');
 const key = require('./key');
 const lagrange = require('./core/lagrange');
 const schemes = require('./schemes');
-const shamir = require('./core/shamir');
+const shamir = require('./shamir');
 const sigma = require('./core/sigma');
 const utils = require('./utils');
 
