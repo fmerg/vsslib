@@ -103,7 +103,7 @@ const verified = await verifyPedersen(ctx, secret, binding, index, hPub, commitm
 - [`vsslib.schemes`](./src/schemes)
 - [`vsslib.schnorr`](./src/schnorr)
 - [`vsslib.shamir`](./src/shamir)
-- [`vsslib.sigma`](./src/sigma)
+- [`vsslib.nizk`](./src/nizk)
 - [`vsslib.utils`](./src/utils)
 
 ## Development

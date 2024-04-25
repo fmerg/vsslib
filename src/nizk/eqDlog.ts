@@ -1,6 +1,6 @@
-import { Algorithm } from '../../schemes';
-import { Group, Point } from '../../backend/abstract';
-import { SigmaProtocol, SigmaProof } from './base';
+import { Algorithm } from '../schemes';
+import { Group, Point } from '../backend/abstract';
+import { NizkProtocol, NizkProof } from './base';
 import { DlogPair } from './dlog';
 
 
@@ -8,8 +8,8 @@ export function fillMatrix<P extends Point>(point: P, m: number, n: number): P[]
   return Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, i) => point));
 }
 
-export class EqDlogProtocol<P extends Point> extends SigmaProtocol<P> {
-  prove = async (x: bigint, pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<SigmaProof<P>> => {
+export class EqDlogProtocol<P extends Point> extends NizkProtocol<P> {
+  prove = async (x: bigint, pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<NizkProof<P>> => {
     const { neutral } = this.ctx;
     const m = pairs.length;
     const witnesses = Array.from({ length: m }, (_, i) => x);
@@ -20,7 +20,7 @@ export class EqDlogProtocol<P extends Point> extends SigmaProtocol<P> {
     const vs = pairs.map(({ v }) => v);
     return this.proveLinearDlog(witnesses, { us, vs }, [], nonce);
   }
-  verify = async (pairs: DlogPair<P>[], proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> => {
+  verify = async (pairs: DlogPair<P>[], proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
     const { neutral } = this.ctx;
     const m = pairs.length;
     const us = fillMatrix(neutral, m, m);

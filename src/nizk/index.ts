@@ -1,4 +1,4 @@
-import { SigmaProof, DlogLinear } from './base';
+import { NizkProof, DlogLinear } from './base';
 import { DlogPair } from './dlog';
 import { DDHTuple } from './ddh';
 
@@ -12,7 +12,7 @@ import okamoto from './okamoto';
 
 export {
   fiatShamir,
-  SigmaProof,
+  NizkProof,
   DlogLinear,
   DlogPair,
   DDHTuple,

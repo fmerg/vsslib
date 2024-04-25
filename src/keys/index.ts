@@ -1,7 +1,7 @@
 import { Group, Point } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
 import { leInt2Buff } from '../crypto/bitwise';
-import { dlog, ddh, SigmaProof } from '../crypto/sigma';
+import { dlog, ddh, NizkProof } from '../nizk';
 import { Signature } from '../crypto/signer/base';
 import { SchnorrSignature } from '../crypto/signer/schnorr';
 import {
@@ -89,7 +89,7 @@ class PrivateKey<P extends Point> {
     return signature;
   }
 
-  async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<SigmaProof<P>> {
+  async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<NizkProof<P>> {
     const { ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
@@ -123,7 +123,7 @@ class PrivateKey<P extends Point> {
 
   async verifyEncryption(
     ciphertext: ElgamalCiphertext<P>,
-    proof: SigmaProof<P>,
+    proof: NizkProof<P>,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<boolean> {
     const { ctx } = this;
@@ -140,7 +140,7 @@ class PrivateKey<P extends Point> {
     ciphertext: ElgamalCiphertext<P>,
     decryptor: P,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
-  ): Promise<SigmaProof<P>> {
+  ): Promise<NizkProof<P>> {
     const { ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
@@ -151,7 +151,7 @@ class PrivateKey<P extends Point> {
   async generateDecryptor(
     ciphertext: ElgamalCiphertext<P>,
     opts?: { algorithm?: Algorithm },
-  ): Promise<{ decryptor: P, proof: SigmaProof<P> }> {
+  ): Promise<{ decryptor: P, proof: NizkProof<P> }> {
     const { ctx, secret } = this;
     const decryptor = await ctx.operate(secret, ciphertext.beta);
     const proof = await this.proveDecryptor(ciphertext, decryptor, opts);
@@ -210,7 +210,7 @@ class PublicKey<P extends Point> {
     return verified;
   }
 
-  async verifyIdentity(proof: SigmaProof<P>, nonce?: Uint8Array): Promise<boolean> {
+  async verifyIdentity(proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> {
     const { ctx, pub } = this;
     const verified = await dlog(ctx, Algorithms.DEFAULT).verify(
       { u: ctx.generator, v: pub }, proof, nonce
@@ -251,7 +251,7 @@ class PublicKey<P extends Point> {
     ciphertext: ElgamalCiphertext<P>,
     randomness: bigint,
     opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
-  ): Promise<SigmaProof<P>> {
+  ): Promise<NizkProof<P>> {
     const { ctx } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
@@ -263,7 +263,7 @@ class PublicKey<P extends Point> {
   async verifyDecryptor(
     ciphertext: ElgamalCiphertext<P>,
     decryptor: P,
-    proof: SigmaProof<P>,
+    proof: NizkProof<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
   ): Promise<boolean> {
     const { ctx, pub } = this;

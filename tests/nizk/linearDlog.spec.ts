@@ -1,9 +1,9 @@
-import { Systems, Algorithms, Algorithm } from '../../../src/schemes';
-import { backend } from '../../../src';
-import { cartesian } from '../../helpers';
+import { Systems, Algorithms, Algorithm } from '../../src/schemes';
+import { backend } from '../../src';
+import { cartesian } from '../helpers';
 import { createLinearRelation } from './helpers';
-import { linearDlog } from '../../../src/crypto/sigma';
-import { resolveBackends, resolveAlgorithms } from '../../environ';
+import { linearDlog } from '../../src/nizk';
+import { resolveBackends, resolveAlgorithms } from '../environ';
 
 const __labels      = resolveBackends();
 const __algorithms  = resolveAlgorithms();

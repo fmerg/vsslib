@@ -1,6 +1,6 @@
-import { Algorithms, Algorithm } from '../../schemes';
-import { Group, Point } from '../../backend/abstract';
-import { mod } from '../../crypto/arith';
+import { Algorithms, Algorithm } from '../schemes';
+import { Group, Point } from '../backend/abstract';
+import { mod } from '../crypto/arith';
 import { FiatShamir } from './fiatShamir';
 
 export type DlogLinear<P extends Point> = {
@@ -8,18 +8,18 @@ export type DlogLinear<P extends Point> = {
   vs: P[],
 }
 
-export type SigmaProof<P extends Point> = {
+export type NizkProof<P extends Point> = {
   commitments: P[],
   response: bigint[],
   algorithm: Algorithm,
 }
 
-export abstract class SigmaProtocol<P extends Point> extends FiatShamir<P> {
+export abstract class NizkProtocol<P extends Point> extends FiatShamir<P> {
 
-  abstract prove: (witnesses: any, relation: any, nonce?: Uint8Array) => Promise<SigmaProof<P>>;
-  abstract verify: (relation: any, proof: SigmaProof<P>, nonce?: Uint8Array) => Promise<boolean>;
+  abstract prove: (witnesses: any, relation: any, nonce?: Uint8Array) => Promise<NizkProof<P>>;
+  abstract verify: (relation: any, proof: NizkProof<P>, nonce?: Uint8Array) => Promise<boolean>;
 
-  async proveLinearDlog(witnesses: bigint[], relation: DlogLinear<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<SigmaProof<P>> {
+  async proveLinearDlog(witnesses: bigint[], relation: DlogLinear<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<NizkProof<P>> {
     const { ctx: { order, randomScalar, neutral, operate, combine }, algorithm } = this;
     const { us, vs } = relation;
     const m = vs.length;
@@ -54,7 +54,7 @@ export abstract class SigmaProtocol<P extends Point> extends FiatShamir<P> {
     return { commitments, response, algorithm };
   }
 
-  async verifyLinearDlog(relation: DlogLinear<P>, proof: SigmaProof<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<boolean> {
+  async verifyLinearDlog(relation: DlogLinear<P>, proof: NizkProof<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<boolean> {
     const { neutral, operate, combine } = this.ctx;
     const { us, vs } = relation;
     const { commitments, response, algorithm } = proof;

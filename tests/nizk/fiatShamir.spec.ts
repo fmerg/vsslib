@@ -1,9 +1,9 @@
-import { Systems, Algorithms, Algorithm } from '../../../src/schemes';
-import { backend } from '../../../src';
-import { cartesian } from '../../helpers';
-import { fiatShamir } from '../../../src/crypto/sigma';
+import { Systems, Algorithms, Algorithm } from '../../src/schemes';
+import { backend } from '../../src';
+import { cartesian } from '../helpers';
+import { fiatShamir } from '../../src/nizk';
 import { computeFiatShamir } from './helpers';
-import { resolveBackends, resolveAlgorithms } from '../../environ';
+import { resolveBackends, resolveAlgorithms } from '../environ';
 
 const __labels      = resolveBackends();
 const __algorithms  = resolveAlgorithms();

@@ -1,7 +1,7 @@
-# `vsslib.sigma`
+# `vsslib.nizk`
 
 ```js
-const { sigma, backend } = require('vsslib');
+const { nizk, backend } = require('vsslib');
 
 const ctx = backend.initGroup('ed25519');
 ```
@@ -9,7 +9,7 @@ const ctx = backend.initGroup('ed25519');
 ## Fiat-Shamir heuristic
 
 ```js
-import { fiatShamir } from 'vsslib/sigma';
+import { fiatShamir } from 'vsslib/nizk';
 
 const challenge = await fiatShamir(ctx, 'sha256').computeChallenge(points, scalars, extras, nonce)
 ```
@@ -20,7 +20,7 @@ Generate a SHA256-based NIZK proof-of-knowledge of a secret scalar `x` such
 that `v = u ^ x` as follows:
 
 ```js
-import { dlog } from 'vsslib/sigma';
+import { dlog } from 'vsslib/nizk';
 
 const proof = await dlog(ctx, 'sha256').prove(x, { u, v });
 ```
@@ -64,7 +64,7 @@ Generate a SHA256-based NIZK proof-of-knowledge of a uniform secret scalar `x` s
 that `v_i = u_i ^ x` as follows:
 
 ```js
-import { eqDlog } from 'vsslib/sigma';
+import { eqDlog } from 'vsslib/nizk';
 
 const proof = await eqDlog(ctx, 'sha256').prove(x, [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...]);
 ```
@@ -82,7 +82,7 @@ Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `x_i` such
 that `v_i = u_i ^ x_i` as follows:
 
 ```js
-import { andDlog } from 'vsslib/sigma';
+import { andDlog } from 'vsslib/nizk';
 
 const proof = await andDlog(ctx, algorithm)([x1, x2, ...], [{ u: u_1, v: v_1 }, { u: u_2, v: v_2 }, ...]);
 ```
@@ -100,7 +100,7 @@ Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `s`, `t`
 such that `u = g ^ s * h ^ t` as follows:
 
 ```js
-import { okamoto } from 'vsslib/sigma';
+import { okamoto } from 'vsslib/nizk';
 
 const proof = await okamoto(ctx, 'sha256').prove({ s, t }, { h, u });
 ```
@@ -117,7 +117,7 @@ Generate a SHA256-based NIZK proof-of-knowledge of secret scalars `x_j` such
 that `v_i = Π_{j} u_ij ^ x_j` as follows:
 
 ```js
-import { linearDlog } from 'vsslib/sigma';
+import { linearDlog } from 'vsslib/nizk';
 
 const proof = await linearDlog(ctx, 'sha256').prove([x1, x2, ...], { us: [[u_11, u_12, ...], [u_21, u_22, ...], ...], vs: [v_1, v_2, ...] });
 ```

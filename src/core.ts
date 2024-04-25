@@ -1,7 +1,7 @@
 import { Point, Group } from './backend/abstract';
 import { leInt2Buff } from './crypto/bitwise';
 import { ElgamalCiphertext } from './crypto/elgamal';
-import { SigmaProof } from './crypto/sigma';
+import { NizkProof } from './nizk';
 import { BaseShare } from './base';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';

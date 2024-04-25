@@ -1,8 +1,8 @@
 // TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
 import { Algorithms, Algorithm} from '../../schemes';
 import { Point, Group } from '../../backend/abstract';
-import { DlogProtocol } from '../../crypto/sigma/dlog';
-import { SigmaProof } from '../../crypto/sigma/base';
+import { DlogProtocol } from '../../nizk/dlog';
+import { NizkProof } from '../../nizk/base';
 import { Signature, Signer } from './base';
 
 

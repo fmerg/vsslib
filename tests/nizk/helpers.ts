@@ -1,8 +1,8 @@
-import { Algorithm } from '../../../src/schemes';
-import { Point, Group } from '../../../src/backend/abstract';
-import { leInt2Buff, leBuff2Int } from '../../../src/crypto/bitwise';
-import { DlogLinear, DlogPair, DDHTuple } from '../../../src/crypto/sigma';
-import hash from '../../../src/crypto/hash';
+import { Algorithm } from '../../src/schemes';
+import { Point, Group } from '../../src/backend/abstract';
+import { leInt2Buff, leBuff2Int } from '../../src/crypto/bitwise';
+import { DlogLinear, DlogPair, DDHTuple } from '../../src/nizk';
+import hash from '../../src/crypto/hash';
 
 
 const __0n = BigInt(0);

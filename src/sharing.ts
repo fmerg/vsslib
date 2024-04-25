@@ -1,6 +1,6 @@
 import { Group, Point } from './backend/abstract';
 import { ElgamalCiphertext } from './crypto/elgamal';
-import { SigmaProof } from './crypto/sigma';
+import { NizkProof } from './nizk';
 import { BaseShare, BaseSharing } from './base';
 import { ErrorMessages } from './errors';
 import { SecretShare } from './shamir';
@@ -151,9 +151,9 @@ export class KeySharing<P extends Point> extends BaseSharing<
 export class PartialDecryptor<P extends Point> implements BaseShare<P> {
   value: P;
   index: number;
-  proof: SigmaProof<P>;
+  proof: NizkProof<P>;
 
-  constructor(value: P, index: number, proof: SigmaProof<P>) {
+  constructor(value: P, index: number, proof: NizkProof<P>) {
     this.value = value;
     this.index = index;
     this.proof = proof;

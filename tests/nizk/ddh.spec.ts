@@ -1,9 +1,9 @@
-import { Systems, Algorithms, Algorithm } from '../../../src/schemes';
-import { sigma, backend } from '../../../src';
-import { cartesian } from '../../helpers';
+import { Systems, Algorithms, Algorithm } from '../../src/schemes';
+import { backend } from '../../src';
+import { cartesian } from '../helpers';
 import { createDDHTuple } from './helpers';
-import { ddh } from '../../../src/crypto/sigma';
-import { resolveBackends, resolveAlgorithms } from '../../environ';
+import { ddh } from '../../src/nizk';
+import { resolveBackends, resolveAlgorithms } from '../environ';
 
 const __labels      = resolveBackends();
 const __algorithms  = resolveAlgorithms();

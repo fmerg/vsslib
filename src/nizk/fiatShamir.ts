@@ -1,7 +1,7 @@
-import { Algorithm } from '../../schemes';
-import { Group, Point } from '../../backend/abstract';
-import { leInt2Buff, leBuff2Int } from '../../crypto/bitwise';
-import hash from '../hash';
+import { Algorithm } from '../schemes';
+import { Group, Point } from '../backend/abstract';
+import { leInt2Buff, leBuff2Int } from '../crypto/bitwise';
+import hash from '../crypto/hash';
 
 
 export class FiatShamir<P extends Point>{
