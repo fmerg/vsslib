@@ -1,4 +1,5 @@
 import { Group, Point } from '../backend/abstract';
+import { ErrorMessages } from '../errors';
 import { leInt2Buff } from '../crypto/bitwise';
 import { dlog, ddh, SigmaProof } from '../crypto/sigma';
 import { Signature } from '../crypto/signer/base';
@@ -17,13 +18,6 @@ import shamir from '../shamir';
 
 const elgamal = require('../crypto/elgamal');
 const backend = require('../backend');
-
-enum ErrorMessage {
-  INVALID_ENCRYPTION_PROOF = 'Invalid encryption proof',
-  INVALID_IDENTITY_PROOF = 'Invalid identity proof',
-  INVALID_DECRYPTOR_PROOF = 'Invalid decryptor proof',
-  INVALID_PARTIAL_DECRYPTOR = 'Invalid partial decryptor',
-}
 
 type SerializedPrivateKey = { value: string, system: Label };
 type SerializedPublicKey = { value: string, system: Label };
@@ -138,7 +132,7 @@ class PrivateKey<P extends Point> {
     const verified = await dlog(ctx, algorithm).verify(
       { u: ctx.generator, v: ciphertext.beta }, proof, nonce
     );
-    if (!verified) throw new Error(ErrorMessage.INVALID_ENCRYPTION_PROOF);
+    if (!verified) throw new Error(ErrorMessages.INVALID_ENCRYPTION);
     return verified;
   }
 
@@ -212,7 +206,7 @@ class PublicKey<P extends Point> {
     const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
       pub, message, signature as SchnorrSignature<P>, nonce
     );
-    if (!verified) throw new Error('Invalid signature');
+    if (!verified) throw new Error(ErrorMessages.INVALID_SIGNATURE);
     return verified;
   }
 
@@ -221,7 +215,7 @@ class PublicKey<P extends Point> {
     const verified = await dlog(ctx, Algorithms.DEFAULT).verify(
       { u: ctx.generator, v: pub }, proof, nonce
     );
-    if (!verified) throw new Error(ErrorMessage.INVALID_IDENTITY_PROOF);
+    if (!verified) throw new Error(ErrorMessages.INVALID_SECRET);
     return verified;
   }
 
@@ -280,7 +274,7 @@ class PublicKey<P extends Point> {
     const raiseOnInvalid = opts ?
       (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
       true;
-    if (!verified && raiseOnInvalid) throw new Error(ErrorMessage.INVALID_DECRYPTOR_PROOF);
+    if (!verified && raiseOnInvalid) throw new Error(ErrorMessages.INVALID_DECRYPTOR);
     return verified;
   }
 }
@@ -291,5 +285,4 @@ export {
   PublicKey,
   SerializedPrivateKey,
   SerializedPublicKey,
-  ErrorMessage,
 }

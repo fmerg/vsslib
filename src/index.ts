@@ -13,6 +13,7 @@ const lagrange = require('./lagrange');
 const schemes = require('./schemes');
 const shamir = require('./shamir');
 const sigma = require('./crypto/sigma');
+const errors = require('./errors');
 
 export {
   generateKey,
@@ -34,4 +35,5 @@ export {
   signer,
   shamir,
   sigma,
+  errors,
 }

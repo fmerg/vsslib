@@ -1,6 +1,7 @@
 import { Algorithms, Algorithm, AesMode } from '../../schemes';
 import { Point, Group } from '../../backend/abstract';
 import { BaseCipher, Ciphertext } from './base';
+import { ErrorMessages } from '../../errors';
 
 import aes from '../aes';
 import hash from '../hash';
@@ -49,7 +50,7 @@ export class IesCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {
     for (let i = 0; i < mac.length; i++) {
       isMacValid &&= mac[i] === targetMac[i];
     }
-    if (!isMacValid) throw new Error('Invalid MAC');
+    if (!isMacValid) throw new Error(ErrorMessages.INVALID_MAC);
     const plaintext = aes(this.mode).decrypt(keyAes, ciphered, iv, tag);
     return plaintext;
   }

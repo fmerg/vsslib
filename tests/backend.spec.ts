@@ -1,7 +1,7 @@
 import { Systems } from '../src/schemes';
 import { backend } from '../src';
 import { Point } from '../src/backend/abstract';
-import { Messages } from '../src/backend/enums';
+import { ErrorMessages } from '../src/errors';
 import { resolveBackends } from './environ';
 
 const __labels = resolveBackends();
@@ -19,9 +19,9 @@ describe('group initialization', () => {
 
 describe('group initialization failure', () => {
   test('unsupported group', () => {
-    const unsupported = 'unsupported';
-    expect(() => backend.initGroup(unsupported)).toThrow(
-      `Unsupported group: ${unsupported}`
+    const label = 'unsupported';
+    expect(() => backend.initGroup(label)).toThrow(
+      `${ErrorMessages.UNSUPPORTED_GROUP}: ${label}`
     );
   });
 })
@@ -223,7 +223,7 @@ describe('scalar validation', () => {
     expect(isValid).toBe(true);
     const t = ctx.order;
     await expect(ctx.validateScalar(t)).rejects.toThrow(
-      Messages.INVALID_SCALAR
+      ErrorMessages.INVALID_SCALAR
     );
   })
 });
@@ -237,7 +237,7 @@ describe('bytes validation', () => {
     expect(isValid).toBe(true);
     const c = Uint8Array.from([...b, 0]);
     await expect(ctx.validateBytes(c)).rejects.toThrow(
-      Messages.INVALID_BYTELENGTH
+      ErrorMessages.INVALID_BYTELENGTH
     );
   })
 });

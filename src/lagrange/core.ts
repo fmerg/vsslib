@@ -1,8 +1,7 @@
 import { Point, Group } from '../backend/abstract';
 import { mod, modInv } from '../crypto/arith';
-import { Messages as utilMessages } from '../crypto/enums';
 import { Polynomial } from './base';
-import { Messages } from './enums';
+import { ErrorMessages } from '../errors';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -18,7 +17,7 @@ export class Lagrange<P extends Point> extends Polynomial<P> {
   constructor(ctx: Group<P>, points: [bigint, bigint][]) {
     const k = points.length
     const { order } = ctx;
-    if (k > order) throw new Error(Messages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER);
+    if (k > order) throw new Error(ErrorMessages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER);
     const xs = new Array(k);
     const ys = new Array(k);
     const ws = new Array(k);
@@ -43,8 +42,8 @@ export class Lagrange<P extends Point> extends Polynomial<P> {
       }
       let wj;
       try { wj = modInv(w, order); } catch (err: any) {
-        if (err.message == utilMessages.INVERSE_NOT_EXISTS)
-          throw new Error(Messages.INTERPOLATION_NON_DISTINCT_XS);
+        if (err.message == ErrorMessages.INVERSE_NOT_EXISTS)
+          throw new Error(ErrorMessages.INTERPOLATION_NON_DISTINCT);
         else throw err;
       }
       xs[j] = xj;

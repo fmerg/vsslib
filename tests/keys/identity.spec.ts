@@ -1,6 +1,7 @@
 import { Algorithms, Algorithm, Systems } from '../../src/schemes';
 import { generateKey } from '../../src/core';
-import { PrivateKey, PublicKey, ErrorMessage } from '../../src/keys';
+import { PrivateKey, PublicKey } from '../../src/keys';
+import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
 import { resolveBackends, resolveAlgorithms } from '../environ';
 
@@ -36,7 +37,7 @@ describe('Identity proof - failure if forged proof', () => {
     const proof = await privateKey.proveIdentity();
     proof.commitments[0] = await ctx.randomPoint();
     await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
-      ErrorMessage.INVALID_IDENTITY_PROOF
+      ErrorMessages.INVALID_SECRET
     );
   });
 });
@@ -50,7 +51,7 @@ describe('Identity proof - failure if wrong algorithm', () => {
       Algorithms.SHA512 :
       Algorithms.SHA256;
     await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
-      ErrorMessage.INVALID_IDENTITY_PROOF
+      ErrorMessages.INVALID_SECRET
     );
   });
 });
@@ -62,7 +63,7 @@ describe('Identity proof - failure if missing nonce', () => {
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveIdentity({ nonce });
     await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
-      ErrorMessage.INVALID_IDENTITY_PROOF
+      ErrorMessages.INVALID_SECRET
     );
   });
 });
@@ -75,7 +76,7 @@ describe('Identity proof - failure if forged nonce', () => {
     const proof = await privateKey.proveIdentity({ nonce });
     const forgedNonce = await ctx.randomBytes();
     await expect(publicKey.verifyIdentity(proof, forgedNonce)).rejects.toThrow(
-      ErrorMessage.INVALID_IDENTITY_PROOF
+      ErrorMessages.INVALID_SECRET
     );
   });
 });

@@ -1,6 +1,6 @@
 import { Systems } from '../../src/schemes';
 import { backend } from '../../src'
-import { Messages } from '../../src/lagrange/enums';
+import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
 import { lagrange } from '../../src';
 import { resolveBackends } from '../environ';
@@ -17,7 +17,7 @@ describe('Interpolation - errors', () => {
     const ctx = backend.initGroup('ed25519')
     const points: [number, number][] = [[1, 2], [1, 3]];
     await expect(lagrange.interpolate(ctx, points)).rejects.toThrow(
-      Messages.INTERPOLATION_NON_DISTINCT_XS
+      ErrorMessages.INTERPOLATION_NON_DISTINCT
     );
   });
 });

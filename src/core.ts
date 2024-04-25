@@ -4,6 +4,7 @@ import { ElgamalCiphertext } from './crypto/elgamal';
 import { SigmaProof } from './crypto/sigma';
 import { BaseShare } from './base';
 import { PrivateKey, PublicKey } from './keys';
+import { ErrorMessages } from './errors';
 import { PrivateShare, PublicShare, PartialDecryptor, KeySharing } from './sharing';
 import {
   ElgamalScheme, ElgamalSchemes,
@@ -15,10 +16,6 @@ import {
 import shamir from './shamir';
 const elgamal = require('./crypto/elgamal');
 const backend = require('./backend');
-
-export enum ErrorMessage {
-  INVALID_PARTIAL_DECRYPTOR = 'Invalid partial decryptor',
-}
 
 
 type KeyPair<P extends Point> = { privateKey: PrivateKey<P>, publicKey: PublicKey<P>, ctx: Group<P> };
@@ -44,7 +41,7 @@ export class VssParty<P extends Point> {
   }
 
   reconstructKey = async (shares: PrivateShare<P>[], threshold?: number): Promise<PrivateKey<P>> => {
-    if (threshold && shares.length < threshold) throw new Error('Insufficient number of shares');
+    if (threshold && shares.length < threshold) throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
     const secretShares = shares.map(({ secret: value, index }) => { return { value, index } });
     const secret = await shamir(this.ctx).reconstructSecret(secretShares);
     return new PrivateKey(this.ctx, leInt2Buff(secret));
@@ -52,7 +49,7 @@ export class VssParty<P extends Point> {
 
   reconstructPublic = async (shares: PublicShare<P>[], threshold?: number): Promise<PublicKey<P>> => {
     // TODO: Include validation
-    if (threshold && shares.length < threshold) throw new Error('Insufficient number of shares');
+    if (threshold && shares.length < threshold) throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
     const pubShares = shares.map(({ pub: value, index }) => { return { value, index } });
     const pub = await shamir(this.ctx).reconstructPublic(pubShares);
     return new PublicKey(this.ctx, pub);
@@ -66,7 +63,7 @@ export class VssParty<P extends Point> {
     opts?: { threshold?: number, raiseOnInvalid?: boolean },
   ): Promise<{ flag: boolean, indexes: number[]}> => {
     const threshold = opts ? opts.threshold : undefined;
-    if (threshold && shares.length < threshold) throw new Error('Insufficient number of shares');
+    if (threshold && shares.length < threshold) throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
     const selectPublicShare = (index: number, shares: PublicShare<P>[]) => {
       const selected = shares.filter(share => share.index == index)[0];
       if (!selected) throw new Error('No share with index');
@@ -82,7 +79,7 @@ export class VssParty<P extends Point> {
         raiseOnInvalid: false,
       });
       if (!verified && raiseOnInvalid)
-        throw new Error(ErrorMessage.INVALID_PARTIAL_DECRYPTOR);
+        throw new Error(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
       flag &&= verified;
       if(!verified) indexes.push(partialDecryptor.index);
     }
@@ -95,7 +92,7 @@ export class VssParty<P extends Point> {
   ): Promise<P> => {
     // TODO: Include validation
     const threshold = opts ? opts.threshold : undefined;
-    if (threshold && shares.length < threshold) throw new Error('Insufficient number of shares');
+    if (threshold && shares.length < threshold) throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
     const { order, neutral, operate, combine } = this.ctx;
     const qualifiedIndexes = shares.map(share => share.index);
     let acc = neutral;

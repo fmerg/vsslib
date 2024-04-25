@@ -2,6 +2,7 @@ import { Group, Point } from './backend/abstract';
 import { ElgamalCiphertext } from './crypto/elgamal';
 import { SigmaProof } from './crypto/sigma';
 import { BaseShare, BaseSharing } from './base';
+import { ErrorMessages } from './errors';
 import { SecretShare } from './shamir';
 import { leInt2Buff } from './crypto/bitwise';
 import { PrivateKey, PublicKey, SerializedPrivateKey, SerializedPublicKey } from './keys';
@@ -15,10 +16,6 @@ import {
 const backend = require('./backend');
 import shamir from './shamir';
 
-
-export enum ErrorMessage {
-  INVALID_PARTIAL_DECRYPTOR = 'Invalid partial decryptor',
-}
 
 export interface SerializedPrivateShare extends SerializedPrivateKey {
   index: number;
@@ -57,7 +54,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     const { ctx, value, index } = this;
     const secretShare = new SecretShare(value, index);
     const verified = await shamir(ctx).verifyFeldmann(secretShare, commitments);
-    if (!verified) throw new Error('Invalid share');
+    if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
     return verified;
   }
 
@@ -65,7 +62,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     const { ctx, value, index } = this;
     const secretShare = new SecretShare(value, index);
     const verified = await shamir(ctx).verifyPedersen(secretShare, binding, pub, commitments);
-    if (!verified) throw new Error('Invalid share');
+    if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
     return verified;
   }
 
@@ -118,7 +115,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
     const raiseOnInvalid = opts ?
       (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
       true;
-    if (!verified && raiseOnInvalid) throw new Error(ErrorMessage.INVALID_PARTIAL_DECRYPTOR);
+    if (!verified && raiseOnInvalid) throw new Error(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
     return verified;
   }
 };

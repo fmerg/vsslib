@@ -1,6 +1,6 @@
 import { mod } from '../crypto/arith';
 import { Point, Group } from '../backend/abstract';
-import { Messages } from './enums';
+import { ErrorMessages } from '../errors';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -12,7 +12,7 @@ export class BasePolynomial {
   order: bigint;
 
   constructor(coeffs: (bigint | number)[], order: bigint | number) {
-    if ((order <= __1n)) throw new Error(Messages.ORDER_MUST_BE_GT_ONE);
+    if ((order <= __1n)) throw new Error(ErrorMessages.ORDER_NOT_ABOVE_ONE);
     const reduced = coeffs.map((num) => mod(BigInt(num), BigInt(order)));
     let len = reduced.length;
     if (len > 0) {
@@ -55,7 +55,7 @@ export class BasePolynomial {
   }
 
   add = (other: BasePolynomial): BasePolynomial => {
-    if (this.order !== other.order) throw new Error(Messages.DIFFERENT_ORDERS_CANNOT_ADD);
+    if (this.order !== other.order) throw new Error(ErrorMessages.DIFFERENT_ORDERS_CANNOT_ADD);
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     if (short.isZero()) return long.clone();
     let newCoeffs = new Array(long.degree).fill(__0n);
@@ -69,7 +69,7 @@ export class BasePolynomial {
   }
 
   mult = (other: BasePolynomial): BasePolynomial => {
-    if (this.order !== other.order) throw new Error(Messages.DIFFERENT_ORDERS_CANNOT_MULTIPLY);
+    if (this.order !== other.order) throw new Error(ErrorMessages.DIFFERENT_ORDERS_CANNOT_MULTIPLY);
     if (this.isZero() || other.isZero()) return new BasePolynomial([], this.order);
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     let newCoeffs = new Array(long.degree + short.degree + 1).fill(__0n);
@@ -102,7 +102,7 @@ export class Polynomial<P extends Point> extends BasePolynomial {
   }
 
   static async random<Q extends Point>(ctx: Group<Q>, degree: number): Promise<Polynomial<Q>> {
-    if (degree < 0) throw new Error(Messages.DEGREE_MUST_BE_GE_ZERO)
+    if (degree < 0) throw new Error(ErrorMessages.NON_POSITIVE_DEGREE);
     const { randomScalar } = ctx;
     const coeffs = new Array(degree + 1);
     for (let i = 0; i < coeffs.length; i++) {

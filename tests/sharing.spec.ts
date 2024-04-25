@@ -6,8 +6,8 @@ import {
   PublicShare,
   KeySharing,
   PartialDecryptor,
-  ErrorMessage
 } from '../src/sharing';
+import { ErrorMessages } from '../src/errors';
 import { Polynomial } from '../src/lagrange';
 import { PlainCiphertext } from '../src/crypto/elgamal/plain';
 import { ElgamalSchemes } from '../src/schemes';
@@ -129,7 +129,7 @@ describe(`Key sharing over ${__label}`, () => {
     for (const share of partialDecryptors) {
       const publicShare = selectShare(share.index, publicShares);
       await expect(publicShare.verifyPartialDecryptor(forgedCiphertext, share)).rejects.toThrow(
-        ErrorMessage.INVALID_PARTIAL_DECRYPTOR
+        ErrorMessages.INVALID_PARTIAL_DECRYPTOR
       );
     }
   });

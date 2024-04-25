@@ -6,6 +6,7 @@ import {
   verifyFeldmann as _verifyFeldmann,
   verifyPedersen as _verifyPedersen
 } from '../base';
+import { ErrorMessages } from '../errors';
 
 const lagrange = require('../lagrange');
 
@@ -70,11 +71,13 @@ export class ShamirParty<P extends Point> {
   }
 
   validateThreshold = (nrShares: number, predefined: [bigint, bigint][], threshold: number) => {
-    if (nrShares < 1) throw new Error('Number of shares must be at least 1');
-    if (threshold < 1) throw new Error('Threshold parameter must be at least 1');
-    if (threshold > nrShares) throw new Error('Threshold cannot exceed number of shares');
-    if (nrShares > this.ctx.order) throw new Error('Number of shares cannot exceed the group order');
-    if (predefined.length >= threshold) throw new Error('Number of predefined points violates threshold');
+    if (nrShares < 1) throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
+    if (threshold < 1) throw new Error(ErrorMessages.THRESHOLD_BELOW_ONE);
+    if (threshold > nrShares) throw new Error(ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES);
+    if (!(nrShares < this.ctx.order)) throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
+    if (!(predefined.length < threshold)) throw new Error(
+      ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD
+    );
   }
 
   shareSecret = async (

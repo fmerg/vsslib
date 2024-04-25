@@ -4,7 +4,7 @@ import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { Elliptic, Label } from '../../schemes';
-import { Messages } from '../enums';
+import { ErrorMessages } from '../../errors';
 import { Point, Group } from '../abstract';
 import { mod } from '../../crypto/arith';
 import { leBuff2Int } from '../../crypto/bitwise';
@@ -89,14 +89,14 @@ export class EcGroup extends Group<EcPoint> {
   validateBytes = async (bytes: Uint8Array, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
     const flag = bytes.length <= this.curve.CURVE.Fp.BYTES;
     if (!flag && (opts ? opts.raiseOnInvalid : true))
-      throw new Error(Messages.INVALID_BYTELENGTH);
+      throw new Error(ErrorMessages.INVALID_BYTELENGTH);
     return flag;
   }
 
   validateScalar = async (scalar: bigint, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
     if (!flag && (opts ? opts.raiseOnInvalid : true))
-      throw new Error(Messages.INVALID_SCALAR)
+      throw new Error(ErrorMessages.INVALID_SCALAR)
     return flag;
   }
 
@@ -107,7 +107,7 @@ export class EcGroup extends Group<EcPoint> {
       if (err.message.startsWith('bad point: ')) {
         flag = false;
         if (opts ? opts.raiseOnInvalid : true)
-          throw new Error(Messages.POINT_NOT_IN_SUBGROUP);
+          throw new Error(ErrorMessages.INVALID_POINT);
       }
       else throw err;
     }
@@ -166,7 +166,9 @@ export default function(label: Label): EcGroup {
       group = new EcGroup(label, __curves[label]);
       break;
     default:
-      throw new Error(`Unsupported group: ${label}`)
+      throw new Error(
+        `${ErrorMessages.UNSUPPORTED_GROUP}: ${label}`
+      )
   }
 
   return group;

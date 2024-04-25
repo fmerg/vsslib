@@ -1,7 +1,7 @@
 import { Systems } from '../../src/schemes';
 import { lagrange, backend } from '../../src';
 import { BasePolynomial } from '../../src/lagrange/base';
-import { Messages } from '../../src/lagrange/enums';
+import { ErrorMessages } from '../../src/errors';
 import { cartesian, trimZeroes } from '../helpers';
 
 const __0n = BigInt(0);
@@ -58,7 +58,7 @@ describe('Construction - coefficients greater than order', () => {
 describe('Construction errors', () => {
   test('Order not greater than one', async () => {
     expect(() => { new BasePolynomial([], 1) }).toThrow(
-      Messages.ORDER_MUST_BE_GT_ONE
+      ErrorMessages.ORDER_NOT_ABOVE_ONE
     );
   });
 });
@@ -122,14 +122,14 @@ describe('Algebraic operations errors', () => {
     const poly1 = new BasePolynomial([], 2);
     const poly2 = new BasePolynomial([], 3);
     expect(() => poly1.add(poly2)).toThrow(
-      Messages.DIFFERENT_ORDERS_CANNOT_ADD
+      ErrorMessages.DIFFERENT_ORDERS_CANNOT_ADD
     );
   });
   test('Multiplication error - different orders', async () => {
     const poly1 = new BasePolynomial([], 2);
     const poly2 = new BasePolynomial([], 3);
     expect(() => poly1.mult(poly2)).toThrow(
-      Messages.DIFFERENT_ORDERS_CANNOT_MULTIPLY
+      ErrorMessages.DIFFERENT_ORDERS_CANNOT_MULTIPLY
     );
   });
 });

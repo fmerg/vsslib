@@ -1,7 +1,7 @@
 import { Systems } from '../../src/schemes';
 import { backend } from '../../src';
 import { Polynomial } from '../../src/lagrange';
-import { Messages } from '../../src/lagrange/enums';
+import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
 
 
@@ -14,7 +14,7 @@ describe('Random polynomial generation', () => {
   test('Non-positive degree error', async () => {
     const ctx = backend.initGroup('ed25519');
     await expect(Polynomial.random(ctx, -1)).rejects.toThrow(
-      Messages.DEGREE_MUST_BE_GE_ZERO
+      ErrorMessages.NON_POSITIVE_DEGREE
     );
   });
   test('Correct parameters', async () => {

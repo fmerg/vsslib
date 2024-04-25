@@ -1,5 +1,5 @@
 import { mod, gcd, modInv } from '../../src/crypto/arith'
-import { Messages } from '../../src/crypto/enums';
+import { ErrorMessages } from '../../src/errors';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -8,13 +8,13 @@ const __2n = BigInt(2);
 
 describe('errors', () => {
   test('mod - Modulus <= 2', async () => {
-    expect(() => mod(__1n, __0n)).toThrow(Messages.MODULUS_MUST_BE_GT_TWO);
-    expect(() => mod(__1n, __1n)).toThrow(Messages.MODULUS_MUST_BE_GT_TWO);
+    expect(() => mod(__1n, __0n)).toThrow(ErrorMessages.MODULUS_NOT_ABOVE_TWO);
+    expect(() => mod(__1n, __1n)).toThrow(ErrorMessages.MODULUS_NOT_ABOVE_TWO);
   });
   test('gcd - Non-positive inputs', async () => {
-    expect(() => gcd(__0n, __1n)).toThrow(Messages.NON_POSITIVE_INPUTS);
-    expect(() => gcd(__1n, __0n)).toThrow(Messages.NON_POSITIVE_INPUTS);
-    expect(() => gcd(__0n, __0n)).toThrow(Messages.NON_POSITIVE_INPUTS);
+    expect(() => gcd(__0n, __1n)).toThrow(ErrorMessages.NON_POSITIVE_INPUTS);
+    expect(() => gcd(__1n, __0n)).toThrow(ErrorMessages.NON_POSITIVE_INPUTS);
+    expect(() => gcd(__0n, __0n)).toThrow(ErrorMessages.NON_POSITIVE_INPUTS);
   });
 });
 
@@ -165,7 +165,7 @@ describe('Inverse not exists', () => {
   ];
   it.each(fixtures)('%s, %s', async (x, q) => {
     expect(() => modInv(BigInt(x), BigInt(q))).toThrow(
-      Messages.INVERSE_NOT_EXISTS
+      ErrorMessages.INVERSE_NOT_EXISTS
     );
   })
 })

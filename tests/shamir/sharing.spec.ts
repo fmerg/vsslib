@@ -1,6 +1,7 @@
 import { backend } from '../../src';
 import { Point } from '../../src/backend/abstract';
 import { BaseShare } from '../../src/base';
+import { ErrorMessages } from '../../src/errors';
 
 import shamir from '../../src/shamir';
 
@@ -38,13 +39,22 @@ describe(`Sharing parameter errors over ${label}`, () => {
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
     await expect(shamir(ctx).shareSecret(1, 2, secret)).rejects.toThrow(
-      'Threshold cannot exceed number of shares'
+      ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES
     );
   });
   test('Threshold is < 1', async () => {
     const secret = await ctx.randomScalar();
     await expect(shamir(ctx).shareSecret(1, 0, secret)).rejects.toThrow(
-      'Threshold parameter must be at least 1'
+      ErrorMessages.THRESHOLD_BELOW_ONE
+    );
+  });
+  test('Number of shares violates group order', async () => {
+    const secret = await ctx.randomScalar();
+    await expect(shamir(ctx).shareSecret(ctx.order, 2, secret, [
+      [BigInt(0), BigInt(1)],
+      [BigInt(1), BigInt(2)],
+    ])).rejects.toThrow(
+      ErrorMessages.NR_SHARES_VIOLATES_ORDER
     );
   });
   test('Number of predefined points violates threshold', async () => {
@@ -53,7 +63,7 @@ describe(`Sharing parameter errors over ${label}`, () => {
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
-      'Number of predefined points violates threshold'
+      ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD
     );
   });
 })
