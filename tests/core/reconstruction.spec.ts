@@ -1,7 +1,7 @@
 import { Label } from '../../src/schemes';
 import { Point } from '../../src/backend/abstract'
-import { key, backend } from '../../src';
-import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/key';
+import { keys, backend } from '../../src';
+import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/keys';
 import { partialPermutations } from '../helpers';
 import { resolveBackend } from '../environ';
 import { createKeyDistributionSetup } from './helpers';

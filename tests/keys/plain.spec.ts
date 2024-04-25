@@ -1,6 +1,6 @@
 import { Algorithms, Algorithm, Systems, ElgamalSchemes } from '../../src/schemes';
-import { Messages } from '../../src/key/enums';
-const { backend, key, PrivateKey, PublicKey } = require('../../src')
+import { Messages } from '../../src/keys/enums';
+const { backend, keys, PrivateKey, PublicKey } = require('../../src')
 import { cartesian } from '../helpers';
 import { resolveBackends, resolveAlgorithms } from '../environ';
 
@@ -10,7 +10,7 @@ const __algorithms  = [...resolveAlgorithms(), undefined];
 
 describe('plain encryption and decryption', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const opts = { scheme: ElgamalSchemes.PLAIN };
     const { ciphertext } = await publicKey.encrypt(message, opts);
@@ -22,7 +22,7 @@ describe('plain encryption and decryption', () => {
 
 describe('plain encryption - invalid point encoding', () => {
   it.each(__labels)('over %s/%s', async (label) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = new Uint8Array([0, 1, 666, 999]);
     expect(publicKey.encrypt(message, { scheme: ElgamalSchemes.PLAIN })).rejects.toThrow(
       'Invalid point encoding'
@@ -33,7 +33,7 @@ describe('plain encryption - invalid point encoding', () => {
 
 describe('plain encryption proof - success without nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -48,7 +48,7 @@ describe('plain encryption proof - success without nonce', () => {
 
 describe('plain encryption proof - success with nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -64,7 +64,7 @@ describe('plain encryption proof - success with nonce', () => {
 
 describe('plain encryption proof - failure if forged proof', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -80,7 +80,7 @@ describe('plain encryption proof - failure if forged proof', () => {
 
 describe('plain encryption proof - failure if wrong algorithm', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -98,7 +98,7 @@ describe('plain encryption proof - failure if wrong algorithm', () => {
 
 describe('plain encryption proof - failure if missing nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -114,7 +114,7 @@ describe('plain encryption proof - failure if missing nonce', () => {
 
 describe('plain encryption proof - failure if forged nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -132,7 +132,7 @@ describe('plain encryption proof - failure if forged nonce', () => {
 
 describe('Decryptor generation', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor: targetDecryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -146,7 +146,7 @@ describe('Decryptor generation', () => {
 
 describe('Decryptor proof - success without nonce', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -160,7 +160,7 @@ describe('Decryptor proof - success without nonce', () => {
 
 describe('Decryptor proof - success with nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -176,7 +176,7 @@ describe('Decryptor proof - success with nonce', () => {
 
 describe('Decryptor proof - failure if forged proof', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -192,7 +192,7 @@ describe('Decryptor proof - failure if forged proof', () => {
 
 describe('Decryptor proof - failure if wrong algorithm', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -210,7 +210,7 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
 
 describe('Decryptor proof - failure if missing nonce', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
@@ -226,7 +226,7 @@ describe('Decryptor proof - failure if missing nonce', () => {
 
 describe('Decryptor proof - failure if forged nonce', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await key.generate(label);
+    const { privateKey, publicKey, ctx } = await keys.generate(label);
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN

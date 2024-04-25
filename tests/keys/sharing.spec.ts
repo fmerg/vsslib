@@ -1,14 +1,14 @@
 import { Point } from '../../src/backend/abstract'
-import { key, backend } from '../../src';
+import { keys, backend } from '../../src';
 import {
   PrivateKey,
   PublicKey,
   PrivateShare,
   PublicShare,
   KeySharing,
-} from '../../src/key';
+} from '../../src/keys';
 import { Polynomial } from '../../src/lagrange';
-import { Messages } from '../../src/key/enums';
+import { Messages } from '../../src/keys/enums';
 import { PartialDecryptor } from '../../src/core';
 import { PlainCiphertext } from '../../src/crypto/elgamal/plain';
 import { ElgamalSchemes } from '../../src/schemes';
@@ -42,7 +42,7 @@ describe(`Key sharing over ${__label}`, () => {
   let partialDecryptors: PartialDecryptor<Point>[];
 
   beforeAll(async () => {
-    const keypair = await key.generate(__label);
+    const keypair = await keys.generate(__label);
     privateKey = keypair.privateKey;
     publicKey = keypair.publicKey;
     vss = new VssParty(ctx);

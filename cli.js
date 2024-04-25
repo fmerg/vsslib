@@ -12,7 +12,7 @@ const schemes = require('./dist/schemes')
 const program = new Command();
 
 async function generateKey(options) {
-  const { privateKey, publicKey } = await key.generate(options.system);
+  const { privateKey, publicKey } = await keys.generate(options.system);
 
   const privSerialized = privateKey.serialize();
   console.log(privSerialized);

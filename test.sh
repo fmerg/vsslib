@@ -20,7 +20,7 @@ Examples:
   ./$(basename "$0") --system ed25519 --algorithm sha256
   ./$(basename "$0") backend --system ed25519
   ./$(basename "$0") sigma --system ed25519 --algorithms sha256
-  ./$(basename "$0") key --system ed25519 --algorithms sha256
+  ./$(basename "$0") keys --system ed25519 --algorithms sha256
   ./$(basename "$0") hash --algorithm sha256 --reload
 "
 
@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]
 do
     arg="$1"
     case $arg in
-        hash|hmac|aes|elgamal|key|core|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|fiatShamir|linearDlog|okamoto|sigma|crypto|lagrange|key|backend|arith|bitwise)
+        hash|hmac|aes|elgamal|core|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|fiatShamir|linearDlog|okamoto|sigma|crypto|lagrange|keys|backend|arith|bitwise)
             MODULE="$arg"
             shift
             ;;

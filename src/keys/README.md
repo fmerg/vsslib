@@ -9,7 +9,7 @@ const { key, PrivateKey, PublicKey } = require('vsslib/key');
 ### Key generation
 
 ```js
-const { privateKey, publicKey, ctx } = await key.generate('ed25519');
+const { privateKey, publicKey, ctx } = await keys.generate('ed25519');
 ```
 
 ```js

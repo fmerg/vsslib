@@ -6,7 +6,7 @@ import { BaseShare } from './base';
 import {
   PrivateKey, PublicKey, KeyPair,
   PrivateShare, PublicShare, KeySharing
-} from './key';
+} from './keys';
 import {
   ElgamalScheme, ElgamalSchemes,
   AesMode, AesModes,
