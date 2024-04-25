@@ -1,21 +1,18 @@
-import { Point, Group } from '../../src/backend/abstract'
-import { generateKey } from '../../src/core';
-import { backend } from '../../src';
+import { Point, Group } from '../src/backend/abstract'
+import { generateKey, VssParty } from '../src/core';
+import { PrivateKey, PublicKey } from '../src/keys';
 import {
-  PrivateKey,
-  PublicKey,
   PrivateShare,
   PublicShare,
   KeySharing,
-} from '../../src/keys';
-import { Polynomial } from '../../src/lagrange';
-import { Messages } from '../../src/keys/enums';
-import { PartialDecryptor } from '../../src/core';
-import { PlainCiphertext } from '../../src/crypto/elgamal/plain';
-import { ElgamalSchemes } from '../../src/schemes';
-import { partialPermutations } from '../helpers';
-import { VssParty } from '../../src/core';
-import { resolveBackend } from '../environ';
+  PartialDecryptor,
+  ErrorMessage
+} from '../src/sharing';
+import { Polynomial } from '../src/lagrange';
+import { PlainCiphertext } from '../src/crypto/elgamal/plain';
+import { ElgamalSchemes } from '../src/schemes';
+import { partialPermutations } from './helpers';
+import { resolveBackend } from './environ';
 
 
 export function selectShare<P extends Point>(index: number, shares: PublicShare<P>[]): PublicShare<P> {
@@ -132,7 +129,7 @@ describe(`Key sharing over ${__label}`, () => {
     for (const share of partialDecryptors) {
       const publicShare = selectShare(share.index, publicShares);
       await expect(publicShare.verifyPartialDecryptor(forgedCiphertext, share)).rejects.toThrow(
-        Messages.INVALID_PARTIAL_DECRYPTOR
+        ErrorMessage.INVALID_PARTIAL_DECRYPTOR
       );
     }
   });

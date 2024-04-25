@@ -1,4 +1,5 @@
-import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './keys';
+import { PrivateKey, PublicKey } from './keys';
+import { PrivateShare, PublicShare } from './sharing';
 import { plain, kem, ies } from './crypto';
 import signer from './crypto/signer';
 

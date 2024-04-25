@@ -1,8 +1,4 @@
-import { ElgamalSchemes, ElgamalScheme, Label } from '../../src/schemes';
-import { Point } from '../../src/backend/abstract'
-import { keys, backend } from '../../src';
-import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/keys';
-import { PartialDecryptor } from '../../src/core';
+import { ElgamalSchemes } from '../../src/schemes';
 import { partialPermutations } from '../helpers';
 import { createThresholdDecryptionSetup } from './helpers';
 import { resolveBackend } from '../environ';

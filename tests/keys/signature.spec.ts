@@ -1,6 +1,5 @@
 import { Algorithms, Algorithm, Systems } from '../../src/schemes';
 import { generateKey } from '../../src/core';
-import { Messages } from '../../src/keys/enums';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { cartesian } from '../helpers';
 import { resolveBackends, resolveAlgorithms } from '../environ';

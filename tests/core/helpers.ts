@@ -1,8 +1,5 @@
 import { ElgamalSchemes, ElgamalScheme, Label } from '../../src/schemes';
-import { Point } from '../../src/backend/abstract'
 import { generateKey } from '../../src';
-import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/keys';
-import { PartialDecryptor } from '../../src/core';
 import { partialPermutations } from '../helpers';
 import { VssParty } from '../../src/core';
 
@@ -45,12 +42,9 @@ export const createThresholdDecryptionSetup = async (opts: {
     vss,
     ctx,
   } = await createKeyDistributionSetup({ label, nrShares, threshold, });
-  let message;
-  if (scheme == ElgamalSchemes.PLAIN) {
-    message = (await ctx.randomPoint()).toBytes();
-  } else {
-    message = Uint8Array.from(Buffer.from('destroy earth'));
-  }
+  const message = scheme == ElgamalSchemes.PLAIN ?
+    (await ctx.randomPoint()).toBytes() :
+    Uint8Array.from(Buffer.from('destroy earth'));
   const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {

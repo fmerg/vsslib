@@ -1,7 +1,6 @@
 import { Algorithms, Algorithm, Systems, AesModes, ElgamalSchemes } from '../../src/schemes';
 import { generateKey } from '../../src/core';
-import { Messages } from '../../src/keys/enums';
-import { PrivateKey, PublicKey } from '../../src/keys';
+import { PrivateKey, PublicKey, ErrorMessage } from '../../src/keys';
 import { cartesian } from '../helpers';
 import { resolveBackends, resolveAlgorithms, resolveAesModes } from '../environ';
 
@@ -65,7 +64,7 @@ describe('IES hybrid encryption proof - failure if forged proof', () => {
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     proof.commitments[0] = await ctx.randomPoint();
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
-      Messages.INVALID_ENCRYPTION_PROOF
+      ErrorMessage.INVALID_ENCRYPTION_PROOF
     );
   });
 });
@@ -83,7 +82,7 @@ describe('IES hybrid encryption proof - failure if wrong algorithm', () => {
       Algorithms.SHA512 :
       Algorithms.SHA256;
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
-      Messages.INVALID_ENCRYPTION_PROOF
+      ErrorMessage.INVALID_ENCRYPTION_PROOF
     );
   });
 });
@@ -99,7 +98,7 @@ describe('IES hybrid encryption proof - failure if missing nonce', () => {
     const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
-      Messages.INVALID_ENCRYPTION_PROOF
+      ErrorMessage.INVALID_ENCRYPTION_PROOF
     );
   });
 });
@@ -117,7 +116,7 @@ describe('IES hybrid encryption proof - failure if forged nonce', () => {
     await expect(
       privateKey.verifyEncryption(ciphertext, proof, { nonce: await ctx.randomBytes() })
     ).rejects.toThrow(
-      Messages.INVALID_ENCRYPTION_PROOF
+      ErrorMessage.INVALID_ENCRYPTION_PROOF
     );
   });
 });
@@ -177,7 +176,7 @@ describe('Decryptor proof - failure if forged proof', () => {
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     proof.commitments[0] = await ctx.randomPoint();
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
-      Messages.INVALID_DECRYPTOR_PROOF
+      ErrorMessage.INVALID_DECRYPTOR_PROOF
     );
   });
 });
@@ -195,7 +194,7 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
       Algorithms.SHA512 :
       Algorithms.SHA256;
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
-      Messages.INVALID_DECRYPTOR_PROOF
+      ErrorMessage.INVALID_DECRYPTOR_PROOF
     );
   });
 });
@@ -211,7 +210,7 @@ describe('Decryptor proof - failure if missing nonce', () => {
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
-      Messages.INVALID_DECRYPTOR_PROOF
+      ErrorMessage.INVALID_DECRYPTOR_PROOF
     );
   });
 });
@@ -229,7 +228,7 @@ describe('Decryptor proof - failure if forged nonce', () => {
     await expect(
       publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce: await ctx.randomBytes() })
     ).rejects.toThrow(
-      Messages.INVALID_DECRYPTOR_PROOF
+      ErrorMessage.INVALID_DECRYPTOR_PROOF
     );
   });
 });

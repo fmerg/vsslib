@@ -3,10 +3,8 @@ import { leInt2Buff } from './crypto/bitwise';
 import { ElgamalCiphertext } from './crypto/elgamal';
 import { SigmaProof } from './crypto/sigma';
 import { BaseShare } from './base';
-import {
-  PrivateKey, PublicKey,
-  PrivateShare, PublicShare, KeySharing
-} from './keys';
+import { PrivateKey, PublicKey } from './keys';
+import { PrivateShare, PublicShare, PartialDecryptor, KeySharing } from './sharing';
 import {
   ElgamalScheme, ElgamalSchemes,
   AesMode, AesModes,
@@ -18,6 +16,10 @@ import shamir from './shamir';
 const elgamal = require('./crypto/elgamal');
 const backend = require('./backend');
 
+export enum ErrorMessage {
+  INVALID_PARTIAL_DECRYPTOR = 'Invalid partial decryptor',
+}
+
 
 type KeyPair<P extends Point> = { privateKey: PrivateKey<P>, publicKey: PublicKey<P>, ctx: Group<P> };
 
@@ -27,19 +29,6 @@ export async function generateKey(label: Label): Promise<KeyPair<Point>> {
   const publicKey = await privateKey.publicKey();
   return { privateKey, publicKey, ctx };
 }
-
-
-export class PartialDecryptor<P extends Point> implements BaseShare<P> {
-  value: P;
-  index: number;
-  proof: SigmaProof<P>;
-
-  constructor(value: P, index: number, proof: SigmaProof<P>) {
-    this.value = value;
-    this.index = index;
-    this.proof = proof;
-  }
-};
 
 
 export class VssParty<P extends Point> {
@@ -93,7 +82,7 @@ export class VssParty<P extends Point> {
         raiseOnInvalid: false,
       });
       if (!verified && raiseOnInvalid)
-        throw new Error('Invalid partial decryptor');
+        throw new Error(ErrorMessage.INVALID_PARTIAL_DECRYPTOR);
       flag &&= verified;
       if(!verified) indexes.push(partialDecryptor.index);
     }
