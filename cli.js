@@ -1,6 +1,7 @@
 #!/usr/bin/node
 const { Command, Option } = require('commander');
 const {
+  generateKey,
   PrivateKey,
   PublicKey,
   key,
@@ -11,8 +12,8 @@ const schemes = require('./dist/schemes')
 
 const program = new Command();
 
-async function generateKey(options) {
-  const { privateKey, publicKey } = await keys.generate(options.system);
+async function doGenerateKey(options) {
+  const { privateKey, publicKey } = await generateKey(options.system);
 
   const privSerialized = privateKey.serialize();
   console.log(privSerialized);
@@ -52,7 +53,7 @@ program
   .description('Key generation')
   .addOption(cryptoOption)
   .option('-d, --dump <filepath>', 'Dump key in the provided file')
-  .action(generateKey)
+  .action(doGenerateKey)
 
 program
   .command('sample')

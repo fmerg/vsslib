@@ -1,6 +1,7 @@
 import { Algorithms, Algorithm, Systems, AesModes, ElgamalSchemes } from '../../src/schemes';
+import { generateKey } from '../../src/core';
 import { Messages } from '../../src/keys/enums';
-const { backend, keys, PrivateKey, PublicKey } = require('../../src')
+import { PrivateKey, PublicKey } from '../../src/keys';
 import { cartesian } from '../helpers';
 import { resolveBackends, resolveAlgorithms, resolveAesModes } from '../environ';
 
@@ -11,7 +12,7 @@ const __modes  = [...resolveAesModes(), undefined];
 
 describe('KEM hybrid encryption and decryption', () => {
   it.each(cartesian([__labels, __modes]))('over %s/%s', async (label, mode) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const opts = { scheme: ElgamalSchemes.KEM, mode };
     const { ciphertext } = await publicKey.encrypt(message, opts)
@@ -23,7 +24,7 @@ describe('KEM hybrid encryption and decryption', () => {
 
 describe('KEM hybrid encryption proof - success without nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -38,7 +39,7 @@ describe('KEM hybrid encryption proof - success without nonce', () => {
 
 describe('KEM hybrid encryption proof - success with nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -54,7 +55,7 @@ describe('KEM hybrid encryption proof - success with nonce', () => {
 
 describe('KEM hybrid encryption proof - failure if forged proof', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -70,7 +71,7 @@ describe('KEM hybrid encryption proof - failure if forged proof', () => {
 
 describe('KEM hybrid encryption proof - failure if wrong algorithm', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -88,7 +89,7 @@ describe('KEM hybrid encryption proof - failure if wrong algorithm', () => {
 
 describe('KEM hybrid encryption proof - failure if missing nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -104,7 +105,7 @@ describe('KEM hybrid encryption proof - failure if missing nonce', () => {
 
 describe('KEM hybrid encryption proof - failure if forged nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -122,12 +123,12 @@ describe('KEM hybrid encryption proof - failure if forged nonce', () => {
 
 describe('Decryptor generation', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor: targetDecryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
     });
-    const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { noProof: false });
+    const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext);
     expect(await decryptor.equals(targetDecryptor)).toBe(true);
     expect(await publicKey.verifyDecryptor(ciphertext, decryptor, proof)).toBe(true);
   });
@@ -136,7 +137,7 @@ describe('Decryptor generation', () => {
 
 describe('Decryptor proof - success without nonce', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -150,7 +151,7 @@ describe('Decryptor proof - success without nonce', () => {
 
 describe('Decryptor proof - success with nonce', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -166,7 +167,7 @@ describe('Decryptor proof - success with nonce', () => {
 
 describe('Decryptor proof - failure if forged proof', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -182,7 +183,7 @@ describe('Decryptor proof - failure if forged proof', () => {
 
 describe('Decryptor proof - failure if wrong algorithm', () => {
   it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -200,7 +201,7 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
 
 describe('Decryptor proof - failure if missing nonce', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM
@@ -216,7 +217,7 @@ describe('Decryptor proof - failure if missing nonce', () => {
 
 describe('Decryptor proof - failure if forged nonce', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.KEM

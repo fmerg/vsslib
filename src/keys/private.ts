@@ -159,12 +159,10 @@ export class PrivateKey<P extends Point> {
 
   async generateDecryptor(
     ciphertext: ElgamalCiphertext<P>,
-    opts?: { noProof?: boolean, algorithm?: Algorithm },
-  ): Promise<{ decryptor: P, proof?: SigmaProof<P> }> {
-    const { ctx, secret: secret } = this;
+    opts?: { algorithm?: Algorithm },
+  ): Promise<{ decryptor: P, proof: SigmaProof<P> }> {
+    const { ctx, secret } = this;
     const decryptor = await ctx.operate(secret, ciphertext.beta);
-    const noProof = opts ? opts.noProof : false;
-    if (noProof) return { decryptor };
     const proof = await this.proveDecryptor(ciphertext, decryptor, opts);
     return { decryptor, proof };
   }
@@ -221,13 +219,10 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   }
 
   async generatePartialDecryptor(
-    ciphertext: ElgamalCiphertext<P>,
-    opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
+    ciphertext: ElgamalCiphertext<P>, opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
   ): Promise<PartialDecryptor<P>> {
-    const { ctx, index } = this;
-    const { decryptor } = await this.generateDecryptor(ciphertext, { noProof: true });
-    const proof = await this.proveDecryptor(ciphertext, decryptor, opts);
-    return { value: decryptor, index, proof}
+    const { decryptor, proof } = await this.generateDecryptor(ciphertext, opts);
+    return { value: decryptor, index: this.index, proof };
   }
 };
 

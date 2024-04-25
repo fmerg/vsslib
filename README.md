@@ -7,9 +7,9 @@
 ## Usage
 
 ```js
-import { keys } from 'vsslib';
+import { generateKey } from 'vsslib';
 
-const { privateKey, publicKey, ctx } = await keys.generate('ed25519');
+const { privateKey, publicKey, ctx } = await generateKey('ed25519');
 ```
 
 ```js

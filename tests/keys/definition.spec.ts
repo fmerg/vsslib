@@ -1,6 +1,7 @@
 import { Algorithms, Algorithm, Systems } from '../../src/schemes';
+import { generateKey } from '../../src/core';
 import { Messages } from '../../src/keys/enums';
-const { backend, keys, PrivateKey, PublicKey } = require('../../src')
+import { PrivateKey, PublicKey } from '../../src/keys';
 import { cartesian } from '../helpers';
 import { resolveBackends } from '../environ';
 
@@ -9,8 +10,7 @@ const __labels = resolveBackends();
 
 describe('Key generation', () => {
   it.each(__labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
-    const { privateKey, publicKey } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     const priv1 = await PrivateKey.fromScalar(ctx, privateKey.secret);
     const priv2 = await PrivateKey.fromBytes(ctx, privateKey.bytes);
     expect(await priv1.equals(privateKey)).toBe(true);
@@ -23,7 +23,7 @@ describe('Key generation', () => {
 
 describe('Key serialization and deserialization', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
 
     // Private counterpart
     const privSerialized = privateKey.serialize();
@@ -48,7 +48,7 @@ describe('Key serialization and deserialization', () => {
 
 describe('Public key extraction', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await keys.generate(label);
+    const { privateKey, publicKey, ctx } = await generateKey(label);
     expect(await ctx.equals(ctx)).toBe(true);
     expect(await publicKey.pub.equals(await ctx.operate(privateKey.secret, ctx.generator)));
   });
@@ -57,8 +57,8 @@ describe('Public key extraction', () => {
 
 describe('Diffie-Hellman handshake', () => {
   it.each(__labels)('over %s', async (label) => {
-    const { privateKey: priv1, publicKey: pub1, ctx } = await keys.generate(label);
-    const { privateKey: priv2, publicKey: pub2 } = await keys.generate(label);
+    const { privateKey: priv1, publicKey: pub1, ctx } = await generateKey(label);
+    const { privateKey: priv2, publicKey: pub2 } = await generateKey(label);
     const point1 = await priv1.diffieHellman(pub2);
     const point2 = await priv2.diffieHellman(pub1);
     const expected = await ctx.operate(priv1.secret, pub2.pub);

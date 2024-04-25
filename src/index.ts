@@ -2,7 +2,7 @@ import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './keys';
 import { plain, kem, ies } from './crypto';
 import signer from './crypto/signer';
 
-import { VssParty } from './core';
+import { generateKey, VssParty } from './core';
 
 const { aes, elgamal, hash } = require('./crypto');
 const backend = require('./backend');
@@ -14,6 +14,7 @@ const shamir = require('./shamir');
 const sigma = require('./crypto/sigma');
 
 export {
+  generateKey,
   VssParty,
   PrivateKey,
   PublicKey,

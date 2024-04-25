@@ -1,7 +1,10 @@
 import { Algorithm } from '../../schemes';
 import { Point, Group } from '../../backend/abstract';
 
-export interface Signature<P> {}
+export interface Signature<P> {
+  commitment: P;
+  response: bigint;
+}
 
 export abstract class Signer<P extends Point, S> {
   ctx: Group<P>;

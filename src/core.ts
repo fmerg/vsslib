@@ -4,17 +4,29 @@ import { ElgamalCiphertext } from './crypto/elgamal';
 import { SigmaProof } from './crypto/sigma';
 import { BaseShare } from './base';
 import {
-  PrivateKey, PublicKey, KeyPair,
+  PrivateKey, PublicKey,
   PrivateShare, PublicShare, KeySharing
 } from './keys';
 import {
   ElgamalScheme, ElgamalSchemes,
   AesMode, AesModes,
   Algorithm, Algorithms,
+  Label,
 } from './schemes';
 
 import shamir from './shamir';
 const elgamal = require('./crypto/elgamal');
+const backend = require('./backend');
+
+
+type KeyPair<P extends Point> = { privateKey: PrivateKey<P>, publicKey: PublicKey<P>, ctx: Group<P> };
+
+export async function generateKey(label: Label): Promise<KeyPair<Point>> {
+  const ctx = backend.initGroup(label);
+  const privateKey = new PrivateKey(ctx, await ctx.randomBytes());
+  const publicKey = await privateKey.publicKey();
+  return { privateKey, publicKey, ctx };
+}
 
 
 export class PartialDecryptor<P extends Point> implements BaseShare<P> {
@@ -42,13 +54,11 @@ export class VssParty<P extends Point> {
     return new KeySharing(this.ctx, nrShares, threshold, polynomial);
   }
 
-  reconstructKey = async (shares: PrivateShare<P>[], threshold?: number): Promise<KeyPair<P>> => {
+  reconstructKey = async (shares: PrivateShare<P>[], threshold?: number): Promise<PrivateKey<P>> => {
     if (threshold && shares.length < threshold) throw new Error('Insufficient number of shares');
     const secretShares = shares.map(({ secret: value, index }) => { return { value, index } });
     const secret = await shamir(this.ctx).reconstructSecret(secretShares);
-    const privateKey = new PrivateKey(this.ctx, leInt2Buff(secret));
-    const publicKey = await privateKey.publicKey();
-    return { privateKey, publicKey };
+    return new PrivateKey(this.ctx, leInt2Buff(secret));
   }
 
   reconstructPublic = async (shares: PublicShare<P>[], threshold?: number): Promise<PublicKey<P>> => {

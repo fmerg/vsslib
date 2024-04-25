@@ -1,10 +1,9 @@
 import { ElgamalSchemes, ElgamalScheme, Label } from '../../src/schemes';
 import { Point } from '../../src/backend/abstract'
-import { keys, backend } from '../../src';
+import { generateKey } from '../../src';
 import { PrivateKey, PublicKey, PrivateShare, PublicShare } from '../../src/keys';
 import { PartialDecryptor } from '../../src/core';
 import { partialPermutations } from '../helpers';
-import { resolveBackend } from '../environ';
 import { VssParty } from '../../src/core';
 
 
@@ -14,12 +13,11 @@ export const createKeyDistributionSetup = async (opts: {
   threshold: number,
 }) => {
   const { label, nrShares, threshold } = opts;
-  const { privateKey, publicKey } = await keys.generate(label);
+  const { privateKey, publicKey, ctx } = await generateKey(label);
   const vss = new VssParty(privateKey.ctx);
   const sharing = await vss.distributeKey(nrShares, threshold, privateKey);
   const privateShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
-  const ctx = backend.initGroup(label);
   return {
     privateKey,
     publicKey,
@@ -46,11 +44,7 @@ export const createThresholdDecryptionSetup = async (opts: {
     publicShares,
     vss,
     ctx,
-  } = await createKeyDistributionSetup({
-    label,
-    nrShares,
-    threshold,
-  });
+  } = await createKeyDistributionSetup({ label, nrShares, threshold, });
   let message;
   if (scheme == ElgamalSchemes.PLAIN) {
     message = (await ctx.randomPoint()).toBytes();

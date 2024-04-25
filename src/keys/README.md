@@ -9,7 +9,7 @@ const { key, PrivateKey, PublicKey } = require('vsslib/key');
 ### Key generation
 
 ```js
-const { privateKey, publicKey, ctx } = await keys.generate('ed25519');
+const { privateKey, publicKey, ctx } = ... // TODO
 ```
 
 ```js
@@ -116,10 +116,6 @@ const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, { al
 
 ```js
 await publicKey.verifyDecryptor(ciphertext, decryptor, proof);
-```
-
-```js
-const { decryptor } = await privateKey.generateDecryptor(ciphertext, { noProof: true });
 ```
 
 ## Schnorr signature

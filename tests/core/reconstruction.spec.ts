@@ -23,7 +23,7 @@ describe(`Key reconstruction over ${label}`, () => {
   test('Private reconstruction - skip threshold check', async () => {
     const { privateKey, privateShares, vss } = setup;
     partialPermutations(privateShares).forEach(async (qualifiedShares) => {
-      const { privateKey: reconstructed } = await vss.reconstructKey(qualifiedShares);
+      const reconstructed = await vss.reconstructKey(qualifiedShares);
       expect(await reconstructed.equals(privateKey)).toBe(
         qualifiedShares.length >= threshold
       );
@@ -37,7 +37,7 @@ describe(`Key reconstruction over ${label}`, () => {
       );
     });
     partialPermutations(privateShares, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const { privateKey: reconstructed } = await vss.reconstructKey(qualifiedShares, threshold);
+      const reconstructed = await vss.reconstructKey(qualifiedShares, threshold);
       expect(await reconstructed.equals(privateKey)).toBe(true);
     });
   });

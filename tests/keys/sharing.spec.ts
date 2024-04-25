@@ -1,5 +1,6 @@
-import { Point } from '../../src/backend/abstract'
-import { keys, backend } from '../../src';
+import { Point, Group } from '../../src/backend/abstract'
+import { generateKey } from '../../src/core';
+import { backend } from '../../src';
 import {
   PrivateKey,
   PublicKey,
@@ -24,13 +25,12 @@ export function selectShare<P extends Point>(index: number, shares: PublicShare<
 }
 
 const __label = resolveBackend();
+const nrShares = 5;
+const threshold = 3;
 
 
 describe(`Key sharing over ${__label}`, () => {
-  const ctx = backend.initGroup(__label);
-  const nrShares = 5;
-  const threshold = 3;
-
+  let ctx: Group<Point>;
   let vss: VssParty<Point>;
   let sharing: KeySharing<Point>;
   let polynomial: Polynomial<Point>
@@ -42,9 +42,10 @@ describe(`Key sharing over ${__label}`, () => {
   let partialDecryptors: PartialDecryptor<Point>[];
 
   beforeAll(async () => {
-    const keypair = await keys.generate(__label);
+    const keypair = await generateKey(__label);
     privateKey = keypair.privateKey;
     publicKey = keypair.publicKey;
+    ctx = keypair.ctx;
     vss = new VssParty(ctx);
     sharing = await vss.distributeKey(nrShares, threshold, privateKey);
     polynomial = sharing.polynomial;
@@ -106,7 +107,7 @@ describe(`Key sharing over ${__label}`, () => {
 
   test('Private key reconstruction', async () => {
     partialPermutations(privateShares, 1).forEach(async (qualifiedShares) => {
-      const { privateKey: reconstructed } = await vss.reconstructKey(qualifiedShares);
+      const reconstructed = await vss.reconstructKey(qualifiedShares);
       expect(await reconstructed.equals(privateKey)).toBe(qualifiedShares.length >= threshold);
     });
   });
