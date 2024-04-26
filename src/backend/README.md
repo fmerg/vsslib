@@ -1,7 +1,7 @@
 # `vsslib.backend`
 
 ```js
-const { backend } = require('vsslib');
+import { initGroup }  from 'vsslib/backend';
 
 const ctx = backend.initGroup('ed25519');
 ```

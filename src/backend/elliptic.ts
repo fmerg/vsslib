@@ -3,11 +3,11 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
 import { secp256k1 } from '@noble/curves/secp256k1';
-import { Elliptic, Label } from '../../schemes';
-import { ErrorMessages } from '../../errors';
-import { Point, Group } from '../abstract';
-import { mod } from '../../crypto/arith';
-import { leBuff2Int } from '../../crypto/bitwise';
+import { Elliptic, Label } from '../schemes';
+import { ErrorMessages } from '../errors';
+import { Point, Group } from './abstract';
+import { mod } from '../crypto/arith';
+import { leBuff2Int } from '../crypto/bitwise';
 
 
 const __0n = BigInt(0);
