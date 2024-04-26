@@ -5,21 +5,15 @@ import { BaseShare, BaseSharing } from './base';
 import { ErrorMessages } from './errors';
 import { SecretShare } from './shamir';
 import { leInt2Buff } from './crypto/bitwise';
-import { PrivateKey, PublicKey, SerializedPrivateKey, SerializedPublicKey } from './keys';
+import { PrivateKey, PublicKey } from './keys';
 import {
   Algorithms, Algorithm,
   AesModes, AesMode,
   ElgamalSchemes, ElgamalScheme,
   SignatureSchemes,
-  Label,
 } from './schemes';
-const backend = require('./backend');
 import shamir from './shamir';
 
-
-export interface SerializedPrivateShare extends SerializedPrivateKey {
-  index: number;
-}
 
 export class PrivateShare<P extends Point> extends PrivateKey<P> implements BaseShare<bigint>{
   value: bigint;
@@ -29,19 +23,6 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     super(ctx, leInt2Buff(secret));
     this.value = this.secret;
     this.index = index;
-  }
-
-  serialize = (): SerializedPrivateShare => {
-    const { ctx, bytes, index } = this;
-    return { value: Buffer.from(bytes).toString('hex'), system: ctx.label, index };
-  }
-
-  static async deserialize(serialized: SerializedPrivateShare): Promise<PrivateKey<Point>> {
-    const { value, system: label, index } = serialized;
-    const ctx = backend.initGroup(label);
-    const bytes = Uint8Array.from(Buffer.from(value, 'hex'));
-    await ctx.validateBytes(bytes);
-    return new PrivateShare(ctx, ctx.leBuff2Scalar(bytes), index);
   }
 
   async publicShare(): Promise<PublicShare<P>> {
@@ -75,11 +56,6 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
 };
 
 
-export interface SerializedPublicShare extends SerializedPublicKey {
-  index: number;
-}
-
-
 export class PublicShare<P extends Point> extends PublicKey<P> {
   value: P;
   index: number;
@@ -88,19 +64,6 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
     super(ctx, pub);
     this.value = pub;
     this.index = index;
-  }
-
-  serialize = (): SerializedPublicShare => {
-    const { ctx, pub, index } = this;
-    return { value: pub.toHex(), system: ctx.label, index };
-  }
-
-  static async deserialize(serialized: SerializedPublicShare): Promise<PublicKey<Point>> {
-    const { value, system: label, index } = serialized;
-    const ctx = backend.initGroup(label);
-    const pub = ctx.unhexify(value);
-    await ctx.validatePoint(pub);
-    return new PublicShare(ctx, pub, index);
   }
 
   async verifyPartialDecryptor<A>(

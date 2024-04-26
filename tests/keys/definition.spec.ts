@@ -20,31 +20,6 @@ describe('Key generation', () => {
 });
 
 
-describe('Key serialization and deserialization', () => {
-  it.each(__labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
-
-    // Private counterpart
-    const privSerialized = privateKey.serialize();
-    expect(privSerialized).toEqual({
-      value: Buffer.from(privateKey.bytes).toString('hex'),
-      system: ctx.label,
-    });
-    const privateBack = await PrivateKey.deserialize(privSerialized);
-    expect(await privateBack.equals(privateKey)).toBe(true);
-
-    // Public counterpart
-    const pubSerialized = publicKey.serialize();
-    expect(pubSerialized).toEqual({
-      value: Buffer.from(publicKey.bytes).toString('hex'),
-      system: ctx.label,
-    });
-    const publicBack = await PublicKey.deserialize(pubSerialized);
-    expect(await publicBack.equals(publicKey)).toBe(true);
-  });
-});
-
-
 describe('Public key extraction', () => {
   it.each(__labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);

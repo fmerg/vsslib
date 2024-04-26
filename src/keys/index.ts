@@ -9,7 +9,6 @@ import {
   AesModes, AesMode,
   ElgamalSchemes, ElgamalScheme,
   SignatureSchemes,
-  Label,
 } from '../schemes';
 import { ElgamalCiphertext } from '../crypto/elgamal';
 
@@ -17,10 +16,6 @@ import signer from '../crypto/signer';
 import shamir from '../shamir';
 
 const elgamal = require('../crypto/elgamal');
-const backend = require('../backend');
-
-type SerializedPrivateKey = { value: string, system: Label };
-type SerializedPublicKey = { value: string, system: Label };
 
 
 class PrivateKey<P extends Point> {
@@ -42,18 +37,6 @@ class PrivateKey<P extends Point> {
   static async fromScalar(ctx: Group<Point>, secret: bigint): Promise<PrivateKey<Point>> {
     await ctx.validateScalar(secret);
     return new PrivateKey(ctx, leInt2Buff(secret));
-  }
-
-  serialize = (): SerializedPrivateKey => {
-    const { ctx, bytes } = this;
-    return { value: Buffer.from(bytes).toString('hex'), system: ctx.label };
-  }
-
-  static async deserialize(serialized: SerializedPrivateKey): Promise<PrivateKey<Point>> {
-    const { value, system: label } = serialized;
-    const ctx = backend.initGroup(label);
-    const bytes = Uint8Array.from(Buffer.from(value, 'hex'));
-    return PrivateKey.fromBytes(ctx, bytes);
   }
 
   async equals<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
@@ -176,17 +159,6 @@ class PublicKey<P extends Point> {
     return new PublicKey(ctx, pub);
   }
 
-  serialize = (): SerializedPublicKey => {
-    const { ctx, pub } = this;
-    return { value: pub.toHex(), system: ctx.label };
-  }
-
-  static async deserialize(serialized: SerializedPublicKey): Promise<PublicKey<Point>> {
-    const { value, system: label } = serialized;
-    const ctx = backend.initGroup(label);
-    return PublicKey.fromPoint(ctx, ctx.unhexify(value));
-  }
-
   async equals<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
     return (
       (await this.ctx.equals(other.ctx)) &&
@@ -283,6 +255,4 @@ class PublicKey<P extends Point> {
 export {
   PrivateKey,
   PublicKey,
-  SerializedPrivateKey,
-  SerializedPublicKey,
 }

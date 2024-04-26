@@ -14,6 +14,7 @@ const schemes = require('./schemes');
 const shamir = require('./shamir');
 const nizk = require('./nizk');
 const errors = require('./errors');
+const serializers = require('./serializers');
 
 export {
   generateKey,
@@ -36,4 +37,5 @@ export {
   shamir,
   nizk,
   errors,
+  serializers,
 }

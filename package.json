@@ -35,6 +35,8 @@
     "test-shamir:reload": "jest tests/shamir --watch --maxWorkers=1 --verbose",
     "test-nizk": "jest tests/nizk --maxWorkers=1 --verbose",
     "test-nizk:reload": "jest tests/nizk --watch --maxWorkers=1 --verbose",
+    "test-serializers": "jest tests/serializers --maxWorkers=1 --verbose",
+    "test-serializers:reload": "jest tests/serializers --watch --maxWorkers=1 --verbose",
     "test-crypto": "jest tests/crypto --maxWorkers=1 --verbose",
     "test-crypto:reload": "jest tests/crypto --watch --maxWorkers=1 --verbose",
     "test-aes": "jest tests/crypto/aes --maxWorkers=1 --verbose",

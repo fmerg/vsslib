@@ -30,15 +30,15 @@ const publicKey = await privateKey.publicKey();
 ### Serialization
 
 ```js
-const serialized = privateKey.serialize();
+const data = serializePrivateKey(privateKey);
 
-const privBack = await PrivateKey.deserialize(serialized);
+const privBack = await deserializePrivateKey(data);
 ```
 
 ```js
-const serialized = publicKey.serialize();
+const serialized = serializePublicKey(publicKey);
 
-const pubBack = await PublicKey.deserialize(serialized);
+const pubBack = await deserializePublicKey(data);
 ```
 
 ## ElGamal encryption schemes
