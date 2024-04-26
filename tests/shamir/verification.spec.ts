@@ -1,14 +1,12 @@
 import { backend } from '../../src';
 import { Point } from '../../src/backend/abstract';
 import { SecretShare, SecretSharing } from '../../src/shamir';
-
+import { resolveBackend, resolveThresholdParams } from '../environ';
 import shamir from '../../src/shamir';
 
-import { resolveBackend } from '../environ';
-
 const label = resolveBackend();
-const nrShares = 5;
-const threshold = 3;
+const { nrShares, threshold } = resolveThresholdParams();
+
 
 describe(`Secret share verification over ${label}`, () => {
   const ctx = backend.initGroup(label);

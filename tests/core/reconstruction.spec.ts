@@ -1,12 +1,11 @@
 import { partialPermutations } from '../helpers';
-import { resolveBackend } from '../environ';
+import { resolveBackend, resolveThresholdParams } from '../environ';
 import { createKeyDistributionSetup } from './helpers';
 import { VssParty } from '../../src/core';
 
 
 const label = resolveBackend();
-const nrShares = 5;
-const threshold = 3;
+const { nrShares, threshold } = resolveThresholdParams();
 
 
 describe(`Key reconstruction over ${label}`, () => {

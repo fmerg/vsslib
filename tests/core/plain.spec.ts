@@ -2,12 +2,12 @@ import { ElgamalSchemes } from '../../src/schemes';
 import { ErrorMessages } from '../../src/errors';
 import { partialPermutations } from '../helpers';
 import { createThresholdDecryptionSetup } from './helpers';
-import { resolveBackend } from '../environ';
+import { resolveBackend, resolveThresholdParams } from '../environ';
 
 const label = resolveBackend();
+const { nrShares, threshold } = resolveThresholdParams();
+
 const scheme = ElgamalSchemes.PLAIN
-const nrShares = 5;
-const threshold = 3;
 
 describe(`Partial decryptors validation over ${label}`, () => {
   let setup: any;
@@ -62,8 +62,6 @@ describe(`Partial decryptors validation over ${label}`, () => {
 
 
 describe(`Decryptor reconstruction over ${label}`, () => {
-  const nrShares = 3;
-  const threshold = 2;
   let setup: any;
 
   beforeAll(async () => {
@@ -93,8 +91,6 @@ describe(`Decryptor reconstruction over ${label}`, () => {
 
 
 describe('Threshold decryption', () => {
-  const nrShares = 3;
-  const threshold = 2;
   let setup: any;
 
   beforeAll(async () => {
