@@ -1,5 +1,10 @@
 import { Point, Group } from '../src/backend/abstract'
-import { generateKey, VssParty } from '../src/core';
+import {
+  generateKey,
+  distributeKey,
+  reconstructKey,
+  reconstructPublic,
+} from '../src/core';
 import { PrivateKey, PublicKey } from '../src/keys';
 import {
   PrivateShare,
@@ -27,7 +32,6 @@ const { nrShares, threshold } = resolveThresholdParams();
 
 describe(`Key sharing over ${__label}`, () => {
   let ctx: Group<Point>;
-  let vss: VssParty<Point>;
   let sharing: KeySharing<Point>;
   let polynomial: Polynomial<Point>
   let privateKey: PrivateKey<Point>;
@@ -42,8 +46,7 @@ describe(`Key sharing over ${__label}`, () => {
     privateKey = keypair.privateKey;
     publicKey = keypair.publicKey;
     ctx = keypair.ctx;
-    vss = new VssParty(ctx);
-    sharing = await vss.distributeKey(nrShares, threshold, privateKey);
+    sharing = await distributeKey(ctx, nrShares, threshold, privateKey);
     polynomial = sharing.polynomial;
     privateShares = await sharing.getSecretShares();
     publicShares = await sharing.getPublicShares();
@@ -66,7 +69,7 @@ describe(`Key sharing over ${__label}`, () => {
     expect(polynomial.evaluate(0)).toEqual(privateKey.secret);
   });
 
-  test('Feldmann VSS scheme - success', async () => {
+  test('Feldmann scheme - success', async () => {
     const { commitments } = await sharing.proveFeldmann();
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const verified = await share.verifyFeldmann(commitments);
@@ -74,7 +77,7 @@ describe(`Key sharing over ${__label}`, () => {
     });
   });
 
-  test('Feldmann VSS scheme - failure', async () => {
+  test('Feldmann scheme - failure', async () => {
     const { commitments } = await sharing.proveFeldmann();
     const forgedCommitmnets = [...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()];
     privateShares.forEach(async (share: PrivateShare<Point>) => {
@@ -82,7 +85,7 @@ describe(`Key sharing over ${__label}`, () => {
     });
   });
 
-  test('Pedersen VSS scheme - success', async () => {
+  test('Pedersen scheme - success', async () => {
     const hPub = await ctx.randomPoint();
     const { bindings, commitments } = await sharing.provePedersen(hPub);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
@@ -92,7 +95,7 @@ describe(`Key sharing over ${__label}`, () => {
     });
   });
 
-  test('Pedersen VSS scheme - failure', async () => {
+  test('Pedersen scheme - failure', async () => {
     const hPub = await ctx.randomPoint();
     const { bindings, commitments } = await sharing.provePedersen(hPub);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
@@ -103,14 +106,14 @@ describe(`Key sharing over ${__label}`, () => {
 
   test('Private key reconstruction', async () => {
     partialPermutations(privateShares, 1).forEach(async (qualifiedShares) => {
-      const reconstructed = await vss.reconstructKey(qualifiedShares);
+      const reconstructed = await reconstructKey(ctx, qualifiedShares);
       expect(await reconstructed.equals(privateKey)).toBe(qualifiedShares.length >= threshold);
     });
   });
 
   test('Public key reconstruction', async () => {
     partialPermutations(publicShares, 1).forEach(async (qualifiedShares) => {
-      const reconstructed = await vss.reconstructPublic(qualifiedShares);
+      const reconstructed = await reconstructPublic(ctx, qualifiedShares);
       expect(await reconstructed.equals(publicKey)).toBe(qualifiedShares.length >= threshold);
     });
   });

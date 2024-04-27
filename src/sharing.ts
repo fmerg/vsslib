@@ -12,7 +12,7 @@ import {
   ElgamalSchemes, ElgamalScheme,
   SignatureSchemes,
 } from './schemes';
-import shamir from './shamir';
+const shamir = require('./shamir');
 
 
 export class PrivateShare<P extends Point> extends PrivateKey<P> implements BaseShare<bigint>{
@@ -34,7 +34,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   async verifyFeldmann(commitments: P[]): Promise<boolean> {
     const { ctx, value, index } = this;
     const secretShare = new SecretShare(value, index);
-    const verified = await shamir(ctx).verifyFeldmann(secretShare, commitments);
+    const verified = await shamir.verifyFeldmann(ctx, secretShare, commitments);
     if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
     return verified;
   }
@@ -42,7 +42,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   async verifyPedersen(binding: bigint, pub: P, commitments: P[]): Promise<boolean> {
     const { ctx, value, index } = this;
     const secretShare = new SecretShare(value, index);
-    const verified = await shamir(ctx).verifyPedersen(secretShare, binding, pub, commitments);
+    const verified = await shamir.verifyPedersen(ctx, secretShare, binding, pub, commitments);
     if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
     return verified;
   }

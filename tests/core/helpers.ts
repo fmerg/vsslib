@@ -1,7 +1,7 @@
 import { ElgamalSchemes, ElgamalScheme, Label } from '../../src/schemes';
 import { generateKey } from '../../src';
 import { partialPermutations } from '../helpers';
-import { VssParty } from '../../src/core';
+import { distributeKey } from '../../src/core';
 
 
 export const createKeyDistributionSetup = async (opts: {
@@ -11,8 +11,7 @@ export const createKeyDistributionSetup = async (opts: {
 }) => {
   const { label, nrShares, threshold } = opts;
   const { privateKey, publicKey, ctx } = await generateKey(label);
-  const vss = new VssParty(privateKey.ctx);
-  const sharing = await vss.distributeKey(nrShares, threshold, privateKey);
+  const sharing = await distributeKey(ctx, nrShares, threshold, privateKey);
   const privateShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
   return {
@@ -20,7 +19,6 @@ export const createKeyDistributionSetup = async (opts: {
     publicKey,
     privateShares,
     publicShares,
-    vss,
     ctx,
   }
 }
@@ -39,7 +37,6 @@ export const createThresholdDecryptionSetup = async (opts: {
     publicKey,
     privateShares,
     publicShares,
-    vss,
     ctx,
   } = await createKeyDistributionSetup({ label, nrShares, threshold, });
   const message = scheme == ElgamalSchemes.PLAIN ?
@@ -73,6 +70,6 @@ export const createThresholdDecryptionSetup = async (opts: {
     partialDecryptors,
     invalidDecryptors,
     invalidIndexes,
-    vss,
+    ctx,
   }
 }

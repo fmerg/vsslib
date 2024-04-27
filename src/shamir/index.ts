@@ -63,89 +63,111 @@ export class SecretSharing<P extends Point> extends BaseSharing<
 };
 
 
-export class ShamirParty<P extends Point> {
-  ctx: Group<P>;
-
-  constructor(ctx: Group<P>) {
-    this.ctx = ctx;
-  }
-
-  validateThreshold = (nrShares: number, predefined: [bigint, bigint][], threshold: number) => {
-    if (nrShares < 1) throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
-    if (threshold < 1) throw new Error(ErrorMessages.THRESHOLD_BELOW_ONE);
-    if (threshold > nrShares) throw new Error(ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES);
-    if (!(nrShares < this.ctx.order)) throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
-    if (!(predefined.length < threshold)) throw new Error(
-      ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD
-    );
-  }
-
-  shareSecret = async (
-    nrShares: number, threshold: number, secret: bigint, predefined?: [bigint, bigint][]
-  ): Promise<SecretSharing<P>> => {
-    predefined = predefined || [];
-    this.validateThreshold(nrShares, predefined, threshold);
-    const xyPoints = new Array(threshold);
-    xyPoints[0] = [__0n, secret];
-    let index = 1;
-    while (index < threshold) {
-      const x = index;
-      const y = index <= predefined.length ? predefined[index - 1] : await this.ctx.randomScalar();
-      xyPoints[index] = [x, y];
-      index++;
-    }
-    const polynomial = await lagrange.interpolate(this.ctx, xyPoints);
-    return new SecretSharing<P>(this.ctx, nrShares, threshold, polynomial);
-  }
-
-  verifyFeldmann = async (share: SecretShare<P>, commitments: P[]): Promise<boolean> => {
-    const { value: secret, index } = share;
-    return _verifyFeldmann(this.ctx, secret, index, commitments);
-  }
-
-   verifyPedersen = async (
-    share: SecretShare<P>, binding: bigint, pub: P, commitments: P[],
-  ): Promise<boolean> => {
-    const { value: secret, index } = share;
-    return _verifyPedersen(this.ctx, secret, binding, index, pub, commitments);
-  }
-
-  computeLambda = (index: number, qualifiedIndexes: number[]): bigint => {
-    let lambda = __1n;
-    const { order } = this.ctx
-    const i = index;
-    qualifiedIndexes.forEach(j => {
-      if (i != j) {
-        const curr = BigInt(j) * modInv(BigInt(j - i), order);
-        lambda = mod(lambda * curr, order);
-      }
-    });
-    return lambda;
-  }
-
-  reconstructSecret = (qualifiedShares: SecretShare<P>[]): bigint => {
-    const { order } = this.ctx;
-    const indexes = qualifiedShares.map(share => share.index);
-    return qualifiedShares.reduce((acc, share) => {
-      const { value, index } = share;
-      const lambda = this.computeLambda(index, indexes);
-      return mod(acc + value * lambda, order);
-    }, __0n);
-  }
-
-  reconstructPublic = async (qualifiedShares: PubShare<P>[]): Promise<P> => {
-    const { order, combine, neutral, operate } = this.ctx;
-    const indexes = qualifiedShares.map(share => share.index);
-    let acc = neutral;
-    for (const { index, value } of qualifiedShares) {
-      const lambda = this.computeLambda(index, indexes);
-      acc = await combine(acc, await operate(lambda, value));
-    }
-    return acc;
-  }
+export function validateThresholdParams<P extends Point>(
+  ctx: Group<P>,
+  nrShares: number,
+  predefined: [bigint, bigint][],
+  threshold: number
+) {
+  if (nrShares < 1) throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
+  if (threshold < 1) throw new Error(ErrorMessages.THRESHOLD_BELOW_ONE);
+  if (threshold > nrShares) throw new Error(ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES);
+  if (!(nrShares < ctx.order)) throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
+  if (!(predefined.length < threshold)) throw new Error(
+    ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD
+  );
 }
 
 
-export default function<P extends Point>(ctx: Group<P>) {
-  return new ShamirParty(ctx);
+export async function shareSecret<P extends Point>(
+  ctx: Group<P>,
+  nrShares: number,
+  threshold: number,
+  secret: bigint,
+  predefined?: [bigint, bigint][]
+): Promise<SecretSharing<P>> {
+  predefined = predefined || [];
+  validateThresholdParams(ctx, nrShares, predefined, threshold);
+  const xyPoints = new Array(threshold);
+  xyPoints[0] = [__0n, secret];
+  let index = 1;
+  while (index < threshold) {
+    const x = index;
+    const y = index <= predefined.length ? predefined[index - 1] : await ctx.randomScalar();
+    xyPoints[index] = [x, y];
+    index++;
+  }
+  const polynomial = await lagrange.interpolate(ctx, xyPoints);
+  return new SecretSharing<P>(ctx, nrShares, threshold, polynomial);
+}
+
+
+export async function verifyFeldmann<P extends Point>(
+  ctx: Group<P>,
+  share: SecretShare<P>,
+  commitments: P[]
+): Promise<boolean> {
+  const { value: secret, index } = share;
+  return _verifyFeldmann(ctx, secret, index, commitments);
+}
+
+
+export async function verifyPedersen<P extends Point>(
+  ctx: Group<P>,
+  share: SecretShare<P>,
+  binding: bigint,
+  pub: P,
+  commitments: P[],
+): Promise<boolean> {
+  const { value: secret, index } = share;
+  return _verifyPedersen(ctx, secret, binding, index, pub, commitments);
+}
+
+
+export function computeLambda<P extends Point>(
+  ctx: Group<P>,
+  index: number,
+  qualifiedIndexes: number[]
+): bigint {
+  let lambda = __1n;
+  const { order } = ctx
+  const i = index;
+  qualifiedIndexes.forEach(j => {
+    if (i != j) {
+      const curr = BigInt(j) * modInv(BigInt(j - i), order);
+      lambda = mod(lambda * curr, order);
+    }
+  });
+  return lambda;
+}
+
+
+export function reconstructSecret<P extends Point>(
+  ctx: Group<P>,
+  qualifiedShares: SecretShare<P>[]
+): bigint {
+  const { order } = ctx;
+  const indexes = qualifiedShares.map(share => share.index);
+  return qualifiedShares.reduce(
+    (acc, { value, index }) => {
+      const lambda = computeLambda(ctx, index, indexes);
+      return mod(acc + value * lambda, order);
+    },
+    __0n
+  );
+}
+
+
+export async function reconstructPublic<P extends Point>(
+  ctx: Group<P>,
+  qualifiedShares: PubShare<P>[]
+): Promise<P> {
+  const { order, combine, neutral, operate } = ctx;
+  const indexes = qualifiedShares.map(share => share.index);
+  let acc = neutral;
+  for (const { index, value } of qualifiedShares) {
+    const lambda = computeLambda(ctx, index, indexes);
+    acc = await combine(acc, await operate(lambda, value));
+  }
+  return acc;
 }

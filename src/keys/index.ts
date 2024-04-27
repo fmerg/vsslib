@@ -13,7 +13,6 @@ import {
 import { ElgamalCiphertext } from '../crypto/elgamal';
 
 import signer from '../crypto/signer';
-import shamir from '../shamir';
 
 const elgamal = require('../crypto/elgamal');
 

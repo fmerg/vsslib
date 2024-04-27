@@ -3,7 +3,7 @@ import { Point } from '../../src/backend/abstract';
 import { BaseShare } from '../../src/base';
 import { ErrorMessages } from '../../src/errors';
 
-import shamir from '../../src/shamir';
+import { shareSecret } from '../../src/shamir';
 
 import { resolveBackend } from '../environ';
 
@@ -38,19 +38,19 @@ describe(`Sharing parameter errors over ${label}`, () => {
   const ctx = backend.initGroup(label);
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir(ctx).shareSecret(1, 2, secret)).rejects.toThrow(
+    await expect(shareSecret(ctx, 1, 2, secret)).rejects.toThrow(
       ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES
     );
   });
   test('Threshold is < 1', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir(ctx).shareSecret(1, 0, secret)).rejects.toThrow(
+    await expect(shareSecret(ctx, 1, 0, secret)).rejects.toThrow(
       ErrorMessages.THRESHOLD_BELOW_ONE
     );
   });
   test('Number of shares violates group order', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir(ctx).shareSecret(ctx.order, 2, secret, [
+    await expect(shareSecret(ctx, ctx.order, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
@@ -59,7 +59,7 @@ describe(`Sharing parameter errors over ${label}`, () => {
   });
   test('Number of predefined points violates threshold', async () => {
     const secret = await ctx.randomScalar();
-    await expect(shamir(ctx).shareSecret(3, 2, secret, [
+    await expect(shareSecret(ctx, 3, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
@@ -73,7 +73,7 @@ describe(`Sharing without predefined points over ${label}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const ctx = backend.initGroup(label);
     const secret = await ctx.randomScalar();
-    const sharing = await shamir(ctx).shareSecret(n, t, secret);
+    const sharing = await shareSecret(ctx, n, t, secret);
     const { nrShares, threshold, polynomial } = sharing;
     expect(nrShares).toEqual(n);
     expect(threshold).toEqual(t);
@@ -104,7 +104,7 @@ describe(`Sharing with predefined points over ${label}`, () => {
       for (let i = 0; i < nrPredefined; i++) {
         predefined.push(await ctx.randomScalar());
       }
-      const sharing = await shamir(ctx).shareSecret(n, t, secret, predefined);
+      const sharing = await shareSecret(ctx, n, t, secret, predefined);
       const { nrShares, threshold, polynomial } = sharing;
       expect(nrShares).toEqual(n);
       expect(threshold).toEqual(t);

@@ -3,7 +3,15 @@ import { PrivateShare, PublicShare } from './sharing';
 import { plain, kem, ies } from './crypto';
 import signer from './crypto/signer';
 
-import { generateKey, VssParty } from './core';
+import {
+  generateKey,
+  distributeKey,
+  reconstructKey,
+  reconstructPublic,
+  verifyPartialDecryptors,
+  reconstructDecryptor,
+  thresholdDecrypt
+} from './core';
 
 const { aes, elgamal, hash } = require('./crypto');
 const backend = require('./backend');
@@ -18,7 +26,12 @@ const serializers = require('./serializers');
 
 export {
   generateKey,
-  VssParty,
+  distributeKey,
+  reconstructKey,
+  reconstructPublic,
+  reconstructDecryptor,
+  verifyPartialDecryptors,
+  thresholdDecrypt,
   PrivateKey,
   PublicKey,
   PrivateShare,
