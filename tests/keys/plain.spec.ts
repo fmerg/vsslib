@@ -1,4 +1,5 @@
-import { Algorithms, Algorithm, Systems, ElgamalSchemes } from '../../src/schemes';
+import { Algorithms, AesModes, ElgamalSchemes } from '../../src/enums';
+import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src/core';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { ErrorMessages } from '../../src/errors';

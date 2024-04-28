@@ -1,4 +1,4 @@
-import { Systems } from '../../src/schemes';
+import { Systems } from '../../src/enums';
 import { lagrange, backend } from '../../src';
 import { BasePolynomial } from '../../src/lagrange/base';
 import { ErrorMessages } from '../../src/errors';

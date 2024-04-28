@@ -1,13 +1,13 @@
-import { Systems } from '../../src/schemes';
 import { backend } from '../../src';
 import { Polynomial } from '../../src/lagrange';
 import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
+import { resolveTestConfig } from '../environ';
 
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
-const __labels = Object.values(Systems);
+const { labels } = resolveTestConfig();
 
 
 describe('Random polynomial generation', () => {
@@ -33,7 +33,7 @@ describe('Algebraic operations with random poynomials', () => {
     [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]
   ];
 
-  it.each(cartesian([degree_pairs, __labels]))('Addition with degrees %s over %s', async (
+  it.each(cartesian([degree_pairs, labels]))('Addition with degrees %s over %s', async (
     degrees, label
   ) => {
     const ctx = backend.initGroup(label);
@@ -50,7 +50,7 @@ describe('Algebraic operations with random poynomials', () => {
     expect(poly3.equals(poly2.add(poly1))).toBe(true);
   });
 
-  it.each(cartesian([degree_pairs, __labels]))('Multiplication with degrees %s over %s', async (
+  it.each(cartesian([degree_pairs, labels]))('Multiplication with degrees %s over %s', async (
     degrees, label
   ) => {
     const ctx = backend.initGroup(label);

@@ -1,4 +1,4 @@
-import { Systems } from '../src/schemes';
+import { Systems } from '../src/enums';
 import { backend } from '../src';
 import { Point } from '../src/backend/abstract';
 import { ErrorMessages } from '../src/errors';

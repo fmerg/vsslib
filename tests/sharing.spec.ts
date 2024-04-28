@@ -15,7 +15,7 @@ import {
 import { ErrorMessages } from '../src/errors';
 import { Polynomial } from '../src/lagrange';
 import { PlainCiphertext } from '../src/crypto/elgamal/plain';
-import { ElgamalSchemes } from '../src/schemes';
+import { ElgamalSchemes } from '../src/enums';
 import { partialPermutations } from './helpers';
 import { resolveTestConfig } from './environ';
 

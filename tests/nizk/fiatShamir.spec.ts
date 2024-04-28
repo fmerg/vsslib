@@ -1,4 +1,4 @@
-import { Systems, Algorithms, Algorithm } from '../../src/schemes';
+import { Algorithms } from '../../src/enums';
 import { backend } from '../../src';
 import { cartesian } from '../helpers';
 import { fiatShamir } from '../../src/nizk';

@@ -1,4 +1,4 @@
-import { Algorithm } from '../schemes';
+import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
 import { leInt2Buff, leBuff2Int } from '../crypto/bitwise';
 import hash from '../crypto/hash';

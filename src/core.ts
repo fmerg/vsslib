@@ -7,12 +7,8 @@ import { BaseShare } from './base';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
 import { PrivateShare, PublicShare, PartialDecryptor, KeySharing } from './sharing';
-import {
-  ElgamalScheme, ElgamalSchemes,
-  AesMode, AesModes,
-  Algorithm, Algorithms,
-  Label,
-} from './schemes';
+import { ElgamalSchemes, AesModes, Algorithms } from './enums';
+import { ElgamalScheme, AesMode, Algorithm, Label } from './types';
 
 const shamir = require('./shamir');
 const elgamal = require('./crypto/elgamal');

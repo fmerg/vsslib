@@ -1,8 +1,5 @@
-import {
-  ElgamalSchemes, ElgamalScheme,
-  AesMode, AesModes,
-  Algorithms, Algorithm,
-} from '../../schemes';
+import { ElgamalSchemes, AesModes, Algorithms } from '../../enums';
+import { ElgamalScheme, AesMode, Algorithm } from '../../types';
 import { Ciphertext, BaseCipher } from './base';
 import { Point, Group } from '../../backend/abstract';
 import { PlainCiphertext } from '../elgamal/plain';

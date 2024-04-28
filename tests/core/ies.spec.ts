@@ -1,4 +1,4 @@
-import { ElgamalSchemes } from '../../src/schemes';
+import { ElgamalSchemes } from '../../src/enums';
 import { ErrorMessages } from '../../src/errors';
 import {
   verifyPartialDecryptors,

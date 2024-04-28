@@ -1,4 +1,5 @@
-import { ElgamalSchemes, ElgamalScheme, Label } from '../../src/schemes';
+import { ElgamalSchemes } from '../../src/enums';
+import { ElgamalScheme, Label } from '../../src/types';
 import { generateKey } from '../../src';
 import { partialPermutations } from '../helpers';
 import { distributeKey } from '../../src/core';

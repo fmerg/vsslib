@@ -1,4 +1,4 @@
-import { Encodings } from '../src/schemes';
+import { Encodings } from '../src/enums';
 import { generateKey } from '../src/core';
 import { PrivateShare, PublicShare } from '../src/sharing';
 import { initGroup } from '../src/backend';

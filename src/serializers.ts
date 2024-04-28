@@ -1,5 +1,6 @@
 import { Group, Point } from './backend/abstract';
-import { Label, Encoding, Encodings } from './schemes';
+import { Encodings } from './enums';
+import { Label, Encoding } from './types';
 import { PrivateKey, PublicKey } from './keys';
 import { PrivateShare, PublicShare } from './sharing';
 import { initGroup } from './backend';

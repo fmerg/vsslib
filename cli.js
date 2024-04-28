@@ -8,7 +8,7 @@ const {
   plain,
 } = require('./dist');
 
-const schemes = require('./dist/schemes')
+const enums = require('./dist/enums')
 
 const program = new Command();
 
@@ -45,8 +45,8 @@ program
 
 
 const cryptoOption = new Option('-s, --system <label>', 'underlying cryptosystem')
-  .default(schemes.Systems.ED25519)
-  .choices(Object.values(schemes.Systems));
+  .default(enums.Systems.ED25519)
+  .choices(Object.values(enums.Systems));
 
 program
   .command('generate')

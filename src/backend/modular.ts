@@ -1,4 +1,5 @@
-import { Modular, Label } from '../schemes';
+import { Label } from '../types';
+import { Modular } from '../enums';
 import { Group, Point } from './abstract';
 
 

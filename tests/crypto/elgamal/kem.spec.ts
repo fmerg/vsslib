@@ -1,4 +1,4 @@
-import { Algorithms, AesModes } from '../../../src/schemes';
+import { Algorithms, AesModes } from '../../../src/enums';
 import { randomBytes } from '../../../src/crypto/random';
 import { kem, backend } from '../../../src';
 import { cartesian } from '../../helpers';

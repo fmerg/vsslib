@@ -18,7 +18,8 @@ const backend = require('./backend');
 const crypto = require('./crypto');
 const keys = require('./keys');
 const lagrange = require('./lagrange');
-const schemes = require('./schemes');
+const enums = require('./enums');
+const types = require('./types');
 const shamir = require('./shamir');
 const nizk = require('./nizk');
 const errors = require('./errors');
@@ -45,7 +46,8 @@ export {
   kem,
   keys,
   lagrange,
-  schemes,
+  enums,
+  types,
   signer,
   shamir,
   nizk,

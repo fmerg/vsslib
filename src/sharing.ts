@@ -6,12 +6,9 @@ import { ErrorMessages } from './errors';
 import { SecretShare } from './shamir';
 import { leInt2Buff } from './crypto/bitwise';
 import { PrivateKey, PublicKey } from './keys';
-import {
-  Algorithms, Algorithm,
-  AesModes, AesMode,
-  ElgamalSchemes, ElgamalScheme,
-  SignatureSchemes,
-} from './schemes';
+import { Algorithm, AesMode, ElgamalScheme } from './types';
+import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from './enums';
+
 const shamir = require('./shamir');
 
 

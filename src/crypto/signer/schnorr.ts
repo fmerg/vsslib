@@ -1,5 +1,6 @@
 // TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
-import { Algorithms, Algorithm} from '../../schemes';
+import { Algorithms } from '../../enums';
+import { Algorithm } from '../../types';
 import { Point, Group } from '../../backend/abstract';
 import { DlogProtocol } from '../../nizk/dlog';
 import { NizkProof } from '../../nizk/base';

@@ -1,7 +1,8 @@
 // TODO: browser
 const { createCipheriv, createDecipheriv } = require('node:crypto');
 
-import { AesModes, AesMode } from '../../schemes';
+import { AesMode } from '../../types';
+import { AesModes } from '../../enums';
 import { ErrorMessages } from '../../errors';
 import { randomBytes } from '../random';
 

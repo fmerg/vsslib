@@ -1,9 +1,5 @@
-import {
-  AesModes, AesMode,
-  Algorithms, Algorithm,
-  Encodings, Encoding,
-  Systems, Label,
-} from '../src/schemes';
+import { AesModes, Algorithms, Encodings, Systems } from '../src/enums';
+import { AesMode, Algorithm, Encoding, Label } from '../src/types';
 import { removeItem } from './helpers';
 
 const __aesModes    = removeItem([...Object.values(AesModes)], AesModes.DEFAULT);

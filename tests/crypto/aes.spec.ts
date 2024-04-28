@@ -1,4 +1,4 @@
-import { AesModes } from '../../src/schemes';
+import { AesModes } from '../../src/enums';
 import { randomBytes } from '../../src/crypto/random';
 import aes from '../../src/crypto/aes';
 

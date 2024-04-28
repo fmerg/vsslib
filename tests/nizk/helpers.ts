@@ -1,4 +1,4 @@
-import { Algorithm } from '../../src/schemes';
+import { Algorithm } from '../../src/types';
 import { Point, Group } from '../../src/backend/abstract';
 import { leInt2Buff, leBuff2Int } from '../../src/crypto/bitwise';
 import { DlogLinear, DlogPair, DDHTuple } from '../../src/nizk';

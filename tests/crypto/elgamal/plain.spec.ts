@@ -1,4 +1,4 @@
-import { Systems } from '../../../src/schemes';
+import { Systems } from '../../../src/enums';
 import { plain, backend } from '../../../src';
 import { cartesian } from '../../helpers';
 import { resolveTestConfig } from '../../environ';

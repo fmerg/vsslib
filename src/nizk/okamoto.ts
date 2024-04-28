@@ -1,4 +1,4 @@
-import { Algorithm } from '../schemes';
+import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
 import { NizkProtocol, NizkProof } from './base';
 

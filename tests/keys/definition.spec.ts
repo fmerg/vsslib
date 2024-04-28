@@ -1,4 +1,5 @@
-import { Algorithms, Algorithm, Systems } from '../../src/schemes';
+import { Algorithms } from '../../src/enums';
+import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src/core';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { cartesian } from '../helpers';

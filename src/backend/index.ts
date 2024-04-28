@@ -1,4 +1,5 @@
-import { Modular, Label } from '../schemes';
+import { Modular } from '../enums';
+import { Label } from '../types';
 import { Point, Group } from './abstract';
 import { default as initModular } from './modular';
 import { default as initElliptic } from './elliptic';

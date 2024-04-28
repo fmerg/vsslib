@@ -1,4 +1,5 @@
-import { Algorithms, Algorithm, AesMode } from '../../schemes';
+import { Algorithms } from '../../enums';
+import { Algorithm, AesMode } from '../../types';
 import { Point, Group } from '../../backend/abstract';
 import { BaseCipher, Ciphertext } from './base';
 import { ErrorMessages } from '../../errors';

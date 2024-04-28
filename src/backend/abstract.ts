@@ -1,4 +1,4 @@
-import { Label } from '../schemes';
+import { Label } from '../types';
 import { mod } from '../crypto/arith';
 import { leInt2Buff, leBuff2Int } from '../crypto/bitwise';
 

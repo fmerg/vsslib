@@ -4,14 +4,9 @@ import { leInt2Buff } from '../crypto/bitwise';
 import { dlog, ddh, NizkProof } from '../nizk';
 import { Signature } from '../crypto/signer/base';
 import { SchnorrSignature } from '../crypto/signer/schnorr';
-import {
-  Algorithms, Algorithm,
-  AesModes, AesMode,
-  ElgamalSchemes, ElgamalScheme,
-  SignatureSchemes,
-} from '../schemes';
+import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
+import { Algorithm, AesMode, ElgamalScheme } from '../types';
 import { ElgamalCiphertext } from '../crypto/elgamal';
-
 import signer from '../crypto/signer';
 
 const elgamal = require('../crypto/elgamal');
