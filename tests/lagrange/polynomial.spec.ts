@@ -1,5 +1,5 @@
 import { initGroup } from '../../src/backend';
-import { Polynomial } from '../../src/lagrange';
+import { FieldPolynomial, randomPolynomial } from '../../src/lagrange';
 import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
@@ -13,14 +13,14 @@ const { systems } = resolveTestConfig();
 describe('Random polynomial generation', () => {
   test('Non-positive degree error', async () => {
     const ctx = initGroup('ed25519');
-    await expect(Polynomial.random(ctx, -1)).rejects.toThrow(
+    await expect(randomPolynomial(ctx, -1)).rejects.toThrow(
       ErrorMessages.NON_POSITIVE_DEGREE
     );
   });
   test('Correct parameters', async () => {
     const ctx = initGroup('ed25519');
     const degree = 7;
-    const polynomial = await Polynomial.random(ctx, degree);
+    const polynomial = await randomPolynomial(ctx, degree);
     expect(await polynomial.ctx.equals(ctx)).toBe(true);
     expect(polynomial.degree).toEqual(degree);
     expect(polynomial.coeffs.length).toEqual(degree + 1);
@@ -38,9 +38,9 @@ describe('Algebraic operations with random poynomials', () => {
   ) => {
     const ctx = initGroup(system);
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
-    const poly1 = await Polynomial.random(ctx, degree1);
-    const poly2 = await Polynomial.random(ctx, degree2);
-    const poly3 = new Polynomial(
+    const poly1 = await randomPolynomial(ctx, degree1);
+    const poly2 = await randomPolynomial(ctx, degree2);
+    const poly3 = new FieldPolynomial(
       ctx,
       poly1.coeffs.map((c: bigint, i: number) => c + poly2.coeffs[i]).concat(
         poly2.coeffs.slice(poly1.degree + 1)
@@ -55,15 +55,15 @@ describe('Algebraic operations with random poynomials', () => {
   ) => {
     const ctx = initGroup(system);
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
-    const poly1 = await Polynomial.random(ctx, degree1);
-    const poly2 = await Polynomial.random(ctx, degree2);
+    const poly1 = await randomPolynomial(ctx, degree1);
+    const poly2 = await randomPolynomial(ctx, degree2);
     let newCoeffs = new Array(degree1 + degree2 + 1).fill(__0n);
     for (let i = 0; i <= degree1; i++) {
       for (let j = 0; j <= degree2; j++) {
         newCoeffs[i + j] += poly1.coeffs[i] * poly2.coeffs[j];
       }
     }
-    const poly3 = new Polynomial(ctx, newCoeffs);
+    const poly3 = new FieldPolynomial(ctx, newCoeffs);
     expect(poly3.equals(poly1.mult(poly2))).toBe(true);
     expect(poly3.equals(poly2.mult(poly1))).toBe(true);
   });

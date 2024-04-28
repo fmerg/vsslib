@@ -13,7 +13,7 @@ import {
   PartialDecryptor,
 } from '../src/sharing';
 import { ErrorMessages } from '../src/errors';
-import { Polynomial } from '../src/lagrange';
+import { FieldPolynomial } from '../src/lagrange';
 import { PlainCiphertext } from '../src/crypto/elgamal/plain';
 import { ElgamalSchemes } from '../src/enums';
 import { partialPermutations } from './helpers';
@@ -32,7 +32,7 @@ const { system, nrShares, threshold } = resolveTestConfig();
 describe(`Key sharing over ${system}`, () => {
   let ctx: Group<Point>;
   let sharing: KeySharing<Point>;
-  let polynomial: Polynomial<Point>
+  let polynomial: FieldPolynomial<Point>
   let privateKey: PrivateKey<Point>;
   let publicKey: PublicKey<Point>;
   let privateShares: PrivateShare<Point>[];

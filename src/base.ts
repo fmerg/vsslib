@@ -1,5 +1,5 @@
 import { Group, Point } from './backend/abstract';
-import { Polynomial } from './lagrange';
+import { FieldPolynomial, randomPolynomial } from './lagrange';
 import { mod } from './crypto/arith';
 
 
@@ -13,10 +13,10 @@ export abstract class BaseSharing<S, P extends Point, Q extends BaseShare<S>, R 
   ctx: Group<P>;
   nrShares: number;
   threshold: number;
-  polynomial: Polynomial<P>;
+  polynomial: FieldPolynomial<P>;
 
   constructor(
-    ctx: Group<P>, nrShares: number, threshold: number, polynomial: Polynomial<P>
+    ctx: Group<P>, nrShares: number, threshold: number, polynomial: FieldPolynomial<P>
   ) {
     this.ctx = ctx;
     this.threshold = threshold;
@@ -43,7 +43,7 @@ export abstract class BaseSharing<S, P extends Point, Q extends BaseShare<S>, R 
   }> => {
     const { generator: g, combine, operate } = this.ctx;
     const { coeffs, degree } = this.polynomial;
-    const bindingPolynomial = await Polynomial.random(this.ctx, degree);
+    const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     const commitments = new Array(degree + 1);
     const bindings = new Array(degree + 1);
     const h = hPub || await this.ctx.randomPoint();
