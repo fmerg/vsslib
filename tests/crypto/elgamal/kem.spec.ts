@@ -1,16 +1,15 @@
-import { Systems, Algorithms, AesModes } from '../../../src/schemes';
+import { Algorithms, AesModes } from '../../../src/schemes';
 import { randomBytes } from '../../../src/crypto/random';
 import { kem, backend } from '../../../src';
 import { cartesian } from '../../helpers';
-import { resolveBackends, resolveAesModes } from '../../environ';
+import { resolveTestConfig } from '../../environ';
 
 
-const __labels    = resolveBackends();
-const __aesModes  = resolveAesModes();
+const { labels, aesModes } = resolveTestConfig();
 
 
 describe('Decryption - success', () => {
-  it.each(cartesian([__labels, __aesModes]))('over %s/%s', async (label, mode) => {
+  it.each(cartesian([labels, aesModes]))('over %s/%s', async (label, mode) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -22,7 +21,7 @@ describe('Decryption - success', () => {
 
 
 describe('Decryption - failure if forged secret', () => {
-  it.each(cartesian([__labels, __aesModes]))('over %s/%s', async (label, mode) => {
+  it.each(cartesian([labels, aesModes]))('over %s/%s', async (label, mode) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -41,7 +40,7 @@ describe('Decryption - failure if forged secret', () => {
 
 
 describe('Decryption - failure if forged iv', () => {
-  it.each(cartesian([__labels, __aesModes]))('over %s/%s', async (label, mode) => {
+  it.each(cartesian([labels, aesModes]))('over %s/%s', async (label, mode) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -60,7 +59,7 @@ describe('Decryption - failure if forged iv', () => {
 
 
 describe('Decryption with decryptor - success', () => {
-  it.each(cartesian([__labels, __aesModes]))('over %s/%s', async (label, mode) => {
+  it.each(cartesian([labels, aesModes]))('over %s/%s', async (label, mode) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -72,7 +71,7 @@ describe('Decryption with decryptor - success', () => {
 
 
 describe('Decryption with decryptor - failure if forged decryptor', () => {
-  it.each(cartesian([__labels, __aesModes]))('over %s/%s', async (label, mode) => {
+  it.each(cartesian([labels, aesModes]))('over %s/%s', async (label, mode) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -91,7 +90,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
 
 
 describe('Decryption with randomness - success', () => {
-  it.each(cartesian([__labels, __aesModes]))('over %s/%s', async (label, mode) => {
+  it.each(cartesian([labels, aesModes]))('over %s/%s', async (label, mode) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -103,7 +102,7 @@ describe('Decryption with randomness - success', () => {
 
 
 describe('Decryption with decryptor - failure if forged randomness', () => {
-  it.each(cartesian([__labels, __aesModes]))('over %s/%s', async (label, mode) => {
+  it.each(cartesian([labels, aesModes]))('over %s/%s', async (label, mode) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));

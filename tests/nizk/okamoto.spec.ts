@@ -3,14 +3,13 @@ import { backend } from '../../src';
 import { cartesian } from '../helpers';
 import { okamoto } from '../../src/nizk';
 import { createRepresentation } from './helpers';
-import { resolveBackends, resolveAlgorithms } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const __labels      = resolveBackends();
-const __algorithms  = resolveAlgorithms();
+let { labels, algorithms } = resolveTestConfig();
 
 
 describe('Success - without nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
@@ -23,7 +22,7 @@ describe('Success - without nonce', () => {
 
 
 describe('Success - with nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
@@ -36,7 +35,7 @@ describe('Success - with nonce', () => {
 
 
 describe('Failure - if swaped scalar factors', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
@@ -48,7 +47,7 @@ describe('Failure - if swaped scalar factors', () => {
 
 
 describe('Failure - if tampered proof', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
@@ -61,7 +60,7 @@ describe('Failure - if tampered proof', () => {
 
 
 describe('Failure - if wrong algorithm', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
@@ -76,7 +75,7 @@ describe('Failure - if wrong algorithm', () => {
 
 
 describe('Failure - if missing nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
@@ -89,7 +88,7 @@ describe('Failure - if missing nonce', () => {
 
 
 describe('Failure - if forged nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);

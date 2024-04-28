@@ -1,13 +1,13 @@
 import { Systems } from '../../../src/schemes';
 import { plain, backend } from '../../../src';
 import { cartesian } from '../../helpers';
-import { resolveBackends } from '../../environ';
+import { resolveTestConfig } from '../../environ';
 
-const __labels = resolveBackends();
+const { labels, aesModes } = resolveTestConfig();
 
 
 describe('Decryption - success', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();
@@ -19,7 +19,7 @@ describe('Decryption - success', () => {
 
 
 describe('Decryption - failure if forged secret', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();
@@ -32,7 +32,7 @@ describe('Decryption - failure if forged secret', () => {
 
 
 describe('Decryption with decryptor - success', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();
@@ -44,7 +44,7 @@ describe('Decryption with decryptor - success', () => {
 
 
 describe('Decryption with decryptor - failure if forged decryptor', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();
@@ -57,7 +57,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
 
 
 describe('Decryption with randomness - success', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();
@@ -69,7 +69,7 @@ describe('Decryption with randomness - success', () => {
 
 
 describe('Decryption with randomness - failure if forged randomness', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();

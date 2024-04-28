@@ -35,8 +35,14 @@ export const cartesian = (arrays: any[]): any[] => {
 /** Trim trailing zeroes from number array */
 export const trimZeroes = (arr: number[]): number[] => {
   let len = arr.length;
-  if (len > 0) {
-    while (arr[len - 1] == 0) len--;
-  }
+  if (len > 0) while (arr[len - 1] == 0) len--;
   return arr.slice(0, len);
+}
+
+
+/** Remove item from and return array */
+export const removeItem = (array: any[], item: any) => {
+  const index = array.indexOf(item);
+  if (index !== -1) array.splice(index, 1);
+  return array;
 }

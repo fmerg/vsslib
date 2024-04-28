@@ -3,15 +3,14 @@ import { backend } from '../../src';
 import { cartesian } from '../helpers';
 import { createDDHTuple } from './helpers';
 import { ddh } from '../../src/nizk';
-import { resolveBackends, resolveAlgorithms } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const __labels      = resolveBackends();
-const __algorithms  = resolveAlgorithms();
+let { labels, algorithms } = resolveTestConfig();
 
 
 
 describe('Success - without nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const [z, { u, v, w }] = await createDDHTuple(ctx);
     const proof = await ddh(ctx, algorithm).prove(z, { u, v, w });
@@ -23,7 +22,7 @@ describe('Success - without nonce', () => {
 
 
 describe('Success - with nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const [z, { u, v, w }] = await createDDHTuple(ctx);
     const nonce = await ctx.randomBytes();
@@ -35,7 +34,7 @@ describe('Success - with nonce', () => {
 
 
 describe('Failure - forged proof', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const [z, { u, v, w }] = await createDDHTuple(ctx);
     const proof = await ddh(ctx, Algorithms.SHA256).prove(z, { u, v, w })
@@ -47,7 +46,7 @@ describe('Failure - forged proof', () => {
 
 
 describe('Failure - wrong algorithm', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const [z, { u, v, w }] = await createDDHTuple(ctx);
     const proof = await ddh(ctx, algorithm).prove(z, { u, v, w })
@@ -61,7 +60,7 @@ describe('Failure - wrong algorithm', () => {
 
 
 describe('Failure - missing nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const [z, { u, v, w }] = await createDDHTuple(ctx);
     const nonce = await ctx.randomBytes();
@@ -73,7 +72,7 @@ describe('Failure - missing nonce', () => {
 
 
 describe('Failure - forged nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const [z, { u, v, w }] = await createDDHTuple(ctx);
     const nonce = await ctx.randomBytes();

@@ -1,16 +1,14 @@
-import { createHash } from 'node:crypto';
-
 import hash from '../../src/crypto/hash';
-
+import { createHash } from 'node:crypto';
 import { cartesian } from '../helpers';
-import { resolveAlgorithms } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const __algorithms  = resolveAlgorithms()
 
+const { algorithms }  = resolveTestConfig()
 
 describe('hash digest', () => {
   const buffer = Buffer.from('sample-text');
-  it.each(__algorithms)('%s', async (algorithm) => {
+  it.each(algorithms)('%s', async (algorithm) => {
     const digest = await hash(algorithm).digest(buffer);
     const hasher = createHash(algorithm).update(buffer);
     const expected = Uint8Array.from(hasher.digest());

@@ -9,11 +9,9 @@ import {
 } from '../../src/shamir';
 
 import { partialPermutations } from '../helpers';
-import { resolveBackend, resolveThresholdParams } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-
-const label = resolveBackend();
-const { nrShares, threshold } = resolveThresholdParams();
+let { label, nrShares, threshold } = resolveTestConfig();
 
 describe(`Reconstruction from shares over ${label}`, () => {
   const ctx = initGroup(label);

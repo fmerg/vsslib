@@ -17,7 +17,7 @@ import { Polynomial } from '../src/lagrange';
 import { PlainCiphertext } from '../src/crypto/elgamal/plain';
 import { ElgamalSchemes } from '../src/schemes';
 import { partialPermutations } from './helpers';
-import { resolveBackend, resolveThresholdParams } from './environ';
+import { resolveTestConfig } from './environ';
 
 
 export function selectShare<P extends Point>(index: number, shares: PublicShare<P>[]): PublicShare<P> {
@@ -26,11 +26,10 @@ export function selectShare<P extends Point>(index: number, shares: PublicShare<
   return selected;
 }
 
-const __label = resolveBackend();
-const { nrShares, threshold } = resolveThresholdParams();
+const { label, nrShares, threshold } = resolveTestConfig();
 
 
-describe(`Key sharing over ${__label}`, () => {
+describe(`Key sharing over ${label}`, () => {
   let ctx: Group<Point>;
   let sharing: KeySharing<Point>;
   let polynomial: Polynomial<Point>
@@ -42,7 +41,7 @@ describe(`Key sharing over ${__label}`, () => {
   let partialDecryptors: PartialDecryptor<Point>[];
 
   beforeAll(async () => {
-    const keypair = await generateKey(__label);
+    const keypair = await generateKey(label);
     privateKey = keypair.privateKey;
     publicKey = keypair.publicKey;
     ctx = keypair.ctx;

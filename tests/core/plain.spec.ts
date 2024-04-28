@@ -7,10 +7,9 @@ import {
 } from '../../src/core';
 import { partialPermutations } from '../helpers';
 import { createThresholdDecryptionSetup } from './helpers';
-import { resolveBackend, resolveThresholdParams } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const label = resolveBackend();
-const { nrShares, threshold } = resolveThresholdParams();
+const { label, nrShares, threshold } = resolveTestConfig();
 
 const scheme = ElgamalSchemes.PLAIN
 

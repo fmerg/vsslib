@@ -3,7 +3,7 @@ import { generateKey } from '../src/core';
 import { PrivateShare, PublicShare } from '../src/sharing';
 import { initGroup } from '../src/backend';
 import { cartesian } from './helpers';
-import { resolveBackends, resolveEncodings } from './environ';
+import { resolveTestConfig } from './environ';
 import {
   serializePrivateKey,
   serializePublicKey,
@@ -15,11 +15,10 @@ import {
   deserializePublicShare,
 } from '../src/serializers';
 
-const __labels = resolveBackends();
-const __encodings = resolveEncodings();
+const { labels, encodings } = resolveTestConfig();
 
 describe('Private key serialization roundtrip', () => {
-  it.each(cartesian([__labels, __encodings]))('over %s/%s', async (label, encoding) => {
+  it.each(cartesian([labels, encodings]))('over %s/%s', async (label, encoding) => {
     const { privateKey, ctx } = await generateKey(label);
     const data = serializePrivateKey(privateKey, encoding);
     expect(data).toEqual({
@@ -33,7 +32,7 @@ describe('Private key serialization roundtrip', () => {
 });
 
 describe('Public key serialization roundtrip', () => {
-  it.each(cartesian([__labels, __encodings]))('over %s/%s', async (label, encoding) => {
+  it.each(cartesian([labels, encodings]))('over %s/%s', async (label, encoding) => {
     const { publicKey, ctx } = await generateKey(label);
     const data = serializePublicKey(publicKey, encoding);
     expect(data).toEqual({
@@ -48,7 +47,7 @@ describe('Public key serialization roundtrip', () => {
 
 
 describe('Private share serialization roundtrip', () => {
-  it.each(cartesian([__labels, __encodings]))('over %s/%s', async (label, encoding) => {
+  it.each(cartesian([labels, encodings]))('over %s/%s', async (label, encoding) => {
     const ctx = initGroup(label);
     const privateShare = new PrivateShare(ctx, await ctx.randomScalar(), 666);
     const data = serializePrivateShare(privateShare, encoding);
@@ -64,7 +63,7 @@ describe('Private share serialization roundtrip', () => {
 });
 
 describe('Public share serialization roundtrip', () => {
-  it.each(cartesian([__labels, __encodings]))('over %s/%s', async (label, encoding) => {
+  it.each(cartesian([labels, encodings]))('over %s/%s', async (label, encoding) => {
     const ctx = initGroup(label);
     const publicShare = new PublicShare(ctx, await ctx.randomPoint(), 999);
     const data = serializePublicShare(publicShare, encoding);

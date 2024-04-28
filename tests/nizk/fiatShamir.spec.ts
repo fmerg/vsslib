@@ -3,15 +3,14 @@ import { backend } from '../../src';
 import { cartesian } from '../helpers';
 import { fiatShamir } from '../../src/nizk';
 import { computeFiatShamir } from './helpers';
-import { resolveBackends, resolveAlgorithms } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const __labels      = resolveBackends();
-const __algorithms  = resolveAlgorithms();
+let { labels, algorithms } = resolveTestConfig();
 
 
 
 describe('Fiat-Shamir - without nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { randomPoint, randomScalar, randomBytes } = ctx;
     const points  = [await randomPoint(), await randomPoint(), await randomPoint()];
@@ -25,7 +24,7 @@ describe('Fiat-Shamir - without nonce', () => {
 
 
 describe('Fiat-Shamir - with nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { randomPoint, randomScalar, randomBytes } = ctx;
     const points  = [await randomPoint(), await randomPoint(), await randomPoint()];

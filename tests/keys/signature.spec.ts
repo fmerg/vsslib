@@ -2,14 +2,15 @@ import { Algorithms, Algorithm, Systems } from '../../src/schemes';
 import { generateKey } from '../../src/core';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { cartesian } from '../helpers';
-import { resolveBackends, resolveAlgorithms } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const __labels      = resolveBackends();
-const __algorithms  = [...resolveAlgorithms(), undefined];
+let { labels, algorithms } = resolveTestConfig();
+
+algorithms  = [...algorithms, undefined];
 
 
 describe('Schnorr signature scheme - success without nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     // TODO
@@ -22,7 +23,7 @@ describe('Schnorr signature scheme - success without nonce', () => {
 
 
 describe('Schnorr signature scheme - success with nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
@@ -36,7 +37,7 @@ describe('Schnorr signature scheme - success with nonce', () => {
 
 
 describe('Schnorr signature scheme - failure if forged message', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
@@ -49,7 +50,7 @@ describe('Schnorr signature scheme - failure if forged message', () => {
 
 
 describe('Schnorr signature scheme - failure if forged signature', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
@@ -62,7 +63,7 @@ describe('Schnorr signature scheme - failure if forged signature', () => {
 
 
 describe('Schnorr signature scheme - failure if wrong algorithm', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
@@ -78,7 +79,7 @@ describe('Schnorr signature scheme - failure if wrong algorithm', () => {
 
 
 describe('Schnorr signature scheme - failure if missing nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
@@ -91,7 +92,7 @@ describe('Schnorr signature scheme - failure if missing nonce', () => {
 
 
 describe('Schnorr signature scheme - failure if forged nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();

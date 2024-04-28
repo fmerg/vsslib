@@ -2,13 +2,13 @@ import { AesModes } from '../../src/schemes';
 import { randomBytes } from '../../src/crypto/random';
 import aes from '../../src/crypto/aes';
 
-import { resolveAesModes } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const __aesModes  = resolveAesModes();
+const { aesModes }  = resolveTestConfig();
 
 
 describe('Encryption and decryption - success', () => {
-  it.each(__aesModes)('over %s', async (mode) => {
+  it.each(aesModes)('over %s', async (mode) => {
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const key = randomBytes(32);
     const { ciphered, iv, tag } = aes(mode).encrypt(key, message);
@@ -19,7 +19,7 @@ describe('Encryption and decryption - success', () => {
 
 
 describe('Encryption and decryption - failure if forged key', () => {
-  it.each(__aesModes)('over %s', async (mode) => {
+  it.each(aesModes)('over %s', async (mode) => {
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const key = randomBytes(32);
     const { ciphered, iv, tag } = aes(mode).encrypt(key, message);
@@ -37,7 +37,7 @@ describe('Encryption and decryption - failure if forged key', () => {
 
 
 describe('Encryption and decryption - failure if forged IV', () => {
-  it.each(__aesModes)('over %s', async (mode) => {
+  it.each(aesModes)('over %s', async (mode) => {
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const key = randomBytes(32);
     const { ciphered, iv, tag } = aes(mode).encrypt(key, message);
@@ -73,13 +73,13 @@ describe('Invalid input errors', () => {
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const key = randomBytes(32);
     describe('Encryption', () => {
-      it.each(__aesModes)('over %s', async (mode) => {
+      it.each(aesModes)('over %s', async (mode) => {
         const iv = randomBytes(mode == AesModes.AES_256_GCM ? 16 : 12);
         expect(() => aes(mode).encrypt(key, message, iv)).toThrow('Invalid IV length');
       });
     });
     describe('Decryption', () => {
-      it.each(__aesModes)('over %s', async (mode) => {
+      it.each(aesModes)('over %s', async (mode) => {
         const { ciphered } = aes(mode).encrypt(key, message);
         const iv = randomBytes(mode == AesModes.AES_256_GCM ? 16 : 12);
         expect(() => aes(mode).decrypt(key, ciphered, iv)).toThrow('Invalid IV length');

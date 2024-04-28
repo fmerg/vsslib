@@ -2,10 +2,8 @@ import { backend } from '../../src';
 import { Point } from '../../src/backend/abstract';
 import { BaseShare } from '../../src/base';
 import { ErrorMessages } from '../../src/errors';
-
 import { shareSecret } from '../../src/shamir';
-
-import { resolveBackend } from '../environ';
+import { resolveTestConfig } from '../environ';
 
 function selectShare<T>(index: number, shares: BaseShare<T>[]): BaseShare<T> {
   const selected = shares.filter(share => share.index == index)[0];
@@ -13,7 +11,7 @@ function selectShare<T>(index: number, shares: BaseShare<T>[]): BaseShare<T> {
   return selected;
 }
 
-const label = resolveBackend();
+let { label } = resolveTestConfig();
 
 const thresholdParams = [
   [1, 1],

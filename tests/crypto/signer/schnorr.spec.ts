@@ -3,14 +3,13 @@ import { backend } from '../../../src';
 import { cartesian } from '../../helpers';
 import signer from '../../../src/crypto/signer';
 
-import { resolveAlgorithms, resolveBackends } from '../../environ';
+import { resolveTestConfig } from '../../environ';
 
-const __labels      = resolveBackends();
-const __algorithms  = resolveAlgorithms();
+const { labels, algorithms } = resolveTestConfig();
 
 
 describe('Signature verification - success without nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -26,7 +25,7 @@ describe('Signature verification - success without nonce', () => {
 
 
 describe('Signature verification - success with nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -43,7 +42,7 @@ describe('Signature verification - success with nonce', () => {
 
 
 describe('Signature verification - failure if forged message', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -60,7 +59,7 @@ describe('Signature verification - failure if forged message', () => {
 
 
 describe('Signature verification - failure if forged key', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -77,7 +76,7 @@ describe('Signature verification - failure if forged key', () => {
 
 
 describe('Signature verification - failure if forged signature', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -94,7 +93,7 @@ describe('Signature verification - failure if forged signature', () => {
 
 
 describe('Signature verification - failure if forged nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -112,7 +111,7 @@ describe('Signature verification - failure if forged nonce', () => {
 
 
 describe('Signature verification - failure if missing nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const ctx = backend.initGroup(label);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));

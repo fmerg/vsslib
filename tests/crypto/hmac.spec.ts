@@ -1,17 +1,15 @@
-import { createHmac } from 'node:crypto';
-
-import { randomBytes } from '../../src/crypto/random';
 import hmac from '../../src/crypto/hmac';
-
+import { createHmac } from 'node:crypto';
+import { randomBytes } from '../../src/crypto/random';
 import { cartesian } from '../helpers';
-import { resolveAlgorithms } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const __algorithms  = resolveAlgorithms();
+const { algorithms }  = resolveTestConfig();
 
 
 describe('hmac digest', () => {
   const buffer = Buffer.from('sample-text');
-  it.each(__algorithms)('%s', async (algorithm) => {
+  it.each(algorithms)('%s', async (algorithm) => {
     const key = randomBytes(32);
     const digest = await hmac(algorithm, key).digest(buffer);
     const hasher = createHmac(algorithm, key).update(buffer);

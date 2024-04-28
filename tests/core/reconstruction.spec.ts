@@ -1,11 +1,10 @@
 import { reconstructKey, reconstructPublic } from '../../src/core';
 
 import { partialPermutations } from '../helpers';
-import { resolveBackend, resolveThresholdParams } from '../environ';
+import { resolveTestConfig } from '../environ';
 import { createKeyDistributionSetup } from './helpers';
 
-const label = resolveBackend();
-const { nrShares, threshold } = resolveThresholdParams();
+const { label, nrShares, threshold } = resolveTestConfig();
 
 
 describe(`Key reconstruction over ${label}`, () => {

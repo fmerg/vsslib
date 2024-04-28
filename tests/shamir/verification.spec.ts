@@ -1,11 +1,10 @@
 import { backend } from '../../src';
 import { Point } from '../../src/backend/abstract';
 import { SecretShare, SecretSharing } from '../../src/shamir';
-import { resolveBackend, resolveThresholdParams } from '../environ';
 import { shareSecret, verifyFeldmann, verifyPedersen } from '../../src/shamir';
+import { resolveTestConfig } from '../environ';
 
-const label = resolveBackend();
-const { nrShares, threshold } = resolveThresholdParams();
+let { label, nrShares, threshold } = resolveTestConfig();
 
 
 describe(`Secret share verification over ${label}`, () => {

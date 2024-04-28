@@ -3,14 +3,13 @@ import { generateKey } from '../../src/core';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
-import { resolveBackends, resolveAlgorithms } from '../environ';
+import { resolveTestConfig } from '../environ';
 
-const __labels      = resolveBackends();
-const __algorithms  = resolveAlgorithms();
+const { labels, algorithms } = resolveTestConfig();
 
 
 describe('Identity proof - success without nonce', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const proof = await privateKey.proveIdentity({ algorithm });
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT)
@@ -21,7 +20,7 @@ describe('Identity proof - success without nonce', () => {
 
 
 describe('Identity proof - success with nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveIdentity({ nonce });
@@ -32,7 +31,7 @@ describe('Identity proof - success with nonce', () => {
 
 
 describe('Identity proof - failure if forged proof', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const proof = await privateKey.proveIdentity();
     proof.commitments[0] = await ctx.randomPoint();
@@ -44,7 +43,7 @@ describe('Identity proof - failure if forged proof', () => {
 
 
 describe('Identity proof - failure if wrong algorithm', () => {
-  it.each(cartesian([__labels, __algorithms]))('over %s/%s', async (label, algorithm) => {
+  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const proof = await privateKey.proveIdentity();
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -58,7 +57,7 @@ describe('Identity proof - failure if wrong algorithm', () => {
 
 
 describe('Identity proof - failure if missing nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveIdentity({ nonce });
@@ -70,7 +69,7 @@ describe('Identity proof - failure if missing nonce', () => {
 
 
 describe('Identity proof - failure if forged nonce', () => {
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const { privateKey, publicKey, ctx } = await generateKey(label);
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveIdentity({ nonce });

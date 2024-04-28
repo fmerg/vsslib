@@ -3,10 +3,10 @@ import { backend } from '../../src'
 import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
 import { lagrange } from '../../src';
-import { resolveBackends } from '../environ';
+import { resolveTestConfig } from '../environ';
 import { interpolate } from './helpers';
 
-const __labels      = resolveBackends();
+const { labels } = resolveTestConfig();
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -35,7 +35,7 @@ describe('Interpolation - fixed points', () => {
     [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8]],
     [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9]],
   ];
-  it.each(__labels)('over %s', async (label) => {
+  it.each(labels)('over %s', async (label) => {
     const ctx = backend.initGroup(label);
     const { order } = ctx;
     for (const points of collections) {
@@ -52,7 +52,7 @@ describe('Interpolation - fixed points', () => {
 
 describe('Interpolation - random points', () => {
   const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-  it.each(cartesian([numbers, __labels]))('%s points over %s', async (nrPoints, label) => {
+  it.each(cartesian([numbers, labels]))('%s points over %s', async (nrPoints, label) => {
     const ctx = backend.initGroup(label);
     const { order, randomScalar } = ctx;
     const points = new Array(nrPoints);
