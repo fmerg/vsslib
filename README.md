@@ -15,7 +15,7 @@ const { privateKey, publicKey, ctx } = await generateKey('ed25519');
 ```js
 import vss from 'vsslib/vss';
 
-const ctx = backend.initGroup(label);
+const ctx = initGroup(system);
 const combiner = vss(ctx, threshold);
 ```
 

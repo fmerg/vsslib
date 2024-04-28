@@ -1,4 +1,4 @@
-import { backend } from '../../src';
+import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { BaseShare } from '../../src/base';
 import { ErrorMessages } from '../../src/errors';
@@ -11,7 +11,7 @@ function selectShare<T>(index: number, shares: BaseShare<T>[]): BaseShare<T> {
   return selected;
 }
 
-let { label } = resolveTestConfig();
+let { system } = resolveTestConfig();
 
 const thresholdParams = [
   [1, 1],
@@ -32,8 +32,8 @@ const thresholdParams = [
 ];
 
 
-describe(`Sharing parameter errors over ${label}`, () => {
-  const ctx = backend.initGroup(label);
+describe(`Sharing parameter errors over ${system}`, () => {
+  const ctx = initGroup(system);
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomScalar();
     await expect(shareSecret(ctx, 1, 2, secret)).rejects.toThrow(
@@ -67,9 +67,9 @@ describe(`Sharing parameter errors over ${label}`, () => {
 })
 
 
-describe(`Sharing without predefined points over ${label}`, () => {
+describe(`Sharing without predefined points over ${system}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
-    const ctx = backend.initGroup(label);
+    const ctx = initGroup(system);
     const secret = await ctx.randomScalar();
     const sharing = await shareSecret(ctx, n, t, secret);
     const { nrShares, threshold, polynomial } = sharing;
@@ -93,9 +93,9 @@ describe(`Sharing without predefined points over ${label}`, () => {
 });
 
 
-describe(`Sharing with predefined points over ${label}`, () => {
+describe(`Sharing with predefined points over ${system}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
-    const ctx = backend.initGroup(label);
+    const ctx = initGroup(system);
     const secret = await ctx.randomScalar();
     for (let nrPredefined = 1; nrPredefined < t; nrPredefined++) {
       const predefined = [];

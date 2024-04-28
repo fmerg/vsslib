@@ -3,7 +3,7 @@
 ```js
 const { nizk, backend } = require('vsslib');
 
-const ctx = backend.initGroup('ed25519');
+const ctx = initGroup('ed25519');
 ```
 
 ## Fiat-Shamir heuristic

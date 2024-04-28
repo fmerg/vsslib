@@ -1,13 +1,13 @@
 import { Group, Point } from './backend/abstract';
 import { Encodings } from './enums';
-import { Label, Encoding } from './types';
+import { System, Encoding } from './types';
 import { PrivateKey, PublicKey } from './keys';
 import { PrivateShare, PublicShare } from './sharing';
 import { initGroup } from './backend';
 
 
-export type SerializedPrivateKey = { value: string, system: Label, encoding: Encoding };
-export type SerializedPublicKey  = { value: string, system: Label, encoding: Encoding };
+export type SerializedPrivateKey = { value: string, system: System, encoding: Encoding };
+export type SerializedPublicKey  = { value: string, system: System, encoding: Encoding };
 export interface SerializedPrivateShare extends SerializedPrivateKey { index: number }
 export interface SerializedPublicShare extends SerializedPublicKey { index: number }
 
@@ -16,7 +16,7 @@ export const serializePrivateKey = (
 ): SerializedPrivateKey => {
   const { ctx, bytes } = privateKey;
   const value = Buffer.from(bytes).toString(encoding);
-  const system = ctx.label;
+  const system = ctx.system;
   return { value, system, encoding };
 }
 
@@ -32,7 +32,7 @@ export const serializePublicKey = (
   const { ctx, pub } = publicKey;
   const value = encoding == Encodings.HEX ? pub.toHex() :
     Buffer.from(pub.toBytes()).toString(Encodings.BASE64);
-  const system = ctx.label;
+  const system = ctx.system;
   return { value, system, encoding };
 }
 
@@ -48,7 +48,7 @@ export const serializePrivateShare = (
   privateShare: PrivateShare<Point>, encoding: Encoding): SerializedPrivateShare => {
   const { ctx, bytes, index } = privateShare;
   const value = Buffer.from(bytes).toString(encoding);
-  const system = ctx.label;
+  const system = ctx.system;
   return { value, system, encoding, index };
 }
 
@@ -65,7 +65,7 @@ export const serializePublicShare = (
   const { ctx, pub, index } = publicShare;
   const value = encoding == Encodings.HEX ? pub.toHex() :
     Buffer.from(pub.toBytes()).toString(Encodings.BASE64);
-  const system = ctx.label;
+  const system = ctx.system;
   return { value, system, encoding, index };
 }
 

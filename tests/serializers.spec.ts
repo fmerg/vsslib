@@ -15,15 +15,15 @@ import {
   deserializePublicShare,
 } from '../src/serializers';
 
-const { labels, encodings } = resolveTestConfig();
+const { systems, encodings } = resolveTestConfig();
 
 describe('Private key serialization roundtrip', () => {
-  it.each(cartesian([labels, encodings]))('over %s/%s', async (label, encoding) => {
-    const { privateKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, encodings]))('over %s/%s', async (system, encoding) => {
+    const { privateKey, ctx } = await generateKey(system);
     const data = serializePrivateKey(privateKey, encoding);
     expect(data).toEqual({
       value: Buffer.from(privateKey.bytes).toString(encoding),
-      system: ctx.label,
+      system: ctx.system,
       encoding: encoding,
     });
     const privateBack = await deserializePrivateKey(data);
@@ -32,12 +32,12 @@ describe('Private key serialization roundtrip', () => {
 });
 
 describe('Public key serialization roundtrip', () => {
-  it.each(cartesian([labels, encodings]))('over %s/%s', async (label, encoding) => {
-    const { publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, encodings]))('over %s/%s', async (system, encoding) => {
+    const { publicKey, ctx } = await generateKey(system);
     const data = serializePublicKey(publicKey, encoding);
     expect(data).toEqual({
       value: Buffer.from(publicKey.bytes).toString(encoding),
-      system: ctx.label,
+      system: ctx.system,
       encoding: encoding,
     });
     const publicBack = await deserializePublicKey(data)
@@ -47,13 +47,13 @@ describe('Public key serialization roundtrip', () => {
 
 
 describe('Private share serialization roundtrip', () => {
-  it.each(cartesian([labels, encodings]))('over %s/%s', async (label, encoding) => {
-    const ctx = initGroup(label);
+  it.each(cartesian([systems, encodings]))('over %s/%s', async (system, encoding) => {
+    const ctx = initGroup(system);
     const privateShare = new PrivateShare(ctx, await ctx.randomScalar(), 666);
     const data = serializePrivateShare(privateShare, encoding);
     expect(data).toEqual({
       value: Buffer.from(privateShare.bytes).toString(encoding),
-      system: ctx.label,
+      system: ctx.system,
       encoding: encoding,
       index: 666,
     });
@@ -63,13 +63,13 @@ describe('Private share serialization roundtrip', () => {
 });
 
 describe('Public share serialization roundtrip', () => {
-  it.each(cartesian([labels, encodings]))('over %s/%s', async (label, encoding) => {
-    const ctx = initGroup(label);
+  it.each(cartesian([systems, encodings]))('over %s/%s', async (system, encoding) => {
+    const ctx = initGroup(system);
     const publicShare = new PublicShare(ctx, await ctx.randomPoint(), 999);
     const data = serializePublicShare(publicShare, encoding);
     expect(data).toEqual({
       value: Buffer.from(publicShare.bytes).toString(encoding),
-      system: ctx.label,
+      system: ctx.system,
       encoding: encoding,
       index: 999,
     });

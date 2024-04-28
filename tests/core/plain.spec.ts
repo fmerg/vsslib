@@ -9,16 +9,16 @@ import { partialPermutations } from '../helpers';
 import { createThresholdDecryptionSetup } from './helpers';
 import { resolveTestConfig } from '../environ';
 
-const { label, nrShares, threshold } = resolveTestConfig();
+const { system, nrShares, threshold } = resolveTestConfig();
 
 const scheme = ElgamalSchemes.PLAIN
 
-describe(`Partial decryptors validation over ${label}`, () => {
+describe(`Partial decryptors validation over ${system}`, () => {
   let setup: any;
 
   beforeAll(async () => {
     setup = await createThresholdDecryptionSetup({
-      scheme, label, nrShares, threshold, invalidIndexes: [2, 3]
+      scheme, system, nrShares, threshold, invalidIndexes: [2, 3]
     });
   });
 
@@ -65,11 +65,11 @@ describe(`Partial decryptors validation over ${label}`, () => {
 });
 
 
-describe(`Decryptor reconstruction over ${label}`, () => {
+describe(`Decryptor reconstruction over ${system}`, () => {
   let setup: any;
 
   beforeAll(async () => {
-    setup = await createThresholdDecryptionSetup({ scheme, label, nrShares, threshold });
+    setup = await createThresholdDecryptionSetup({ scheme, system, nrShares, threshold });
   });
 
   test('Skip threshold check', async () => {
@@ -98,7 +98,7 @@ describe('Threshold decryption', () => {
   let setup: any;
 
   beforeAll(async () => {
-    setup = await createThresholdDecryptionSetup({ scheme, label, nrShares, threshold });
+    setup = await createThresholdDecryptionSetup({ scheme, system, nrShares, threshold });
   });
 
   test('Skip threshold check', async () => {

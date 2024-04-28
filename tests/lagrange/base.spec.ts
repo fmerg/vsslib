@@ -1,5 +1,6 @@
 import { Systems } from '../../src/enums';
-import { lagrange, backend } from '../../src';
+import { lagrange } from '../../src';
+import { initGroup } from '../../src/backend';
 import { BasePolynomial } from '../../src/lagrange/base';
 import { ErrorMessages } from '../../src/errors';
 import { cartesian, trimZeroes } from '../helpers';
@@ -24,7 +25,7 @@ const __coeffs_and_degree = [
   [[1, 1, 1], 2],
 ];
 const __small_orders = [2, 3, 4, 5, 6, 7];
-const __big_primes = Object.values(Systems).map((label) => backend.initGroup(label).order);
+const __big_primes = Object.values(Systems).map((system) => initGroup(system).order);
 
 
 describe('Construction - coefficients smaller than order', () => {

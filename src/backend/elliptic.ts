@@ -4,7 +4,7 @@ import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { Elliptic } from '../enums';
-import { Label } from '../types';
+import { System } from '../types';
 import { ErrorMessages } from '../errors';
 import { Point, Group } from './abstract';
 import { mod } from '../crypto/arith';
@@ -50,14 +50,14 @@ export class EcGroup extends Group<EcPoint> {
   _zero: NoblePoint;
   _curve: NobleCurve;
 
-  constructor(label: Label, curve: NobleCurve) {
+  constructor(system: System, curve: NobleCurve) {
     const modulus = curve.CURVE.Fp.ORDER;
     const order = curve.CURVE.n;
     const base = curve.ExtendedPoint.BASE;
     const zero = curve.ExtendedPoint.ZERO;
     const generator = new EcPoint(base);
     const neutral = new EcPoint(zero);
-    super(label, modulus, order, generator, neutral);
+    super(system, modulus, order, generator, neutral);
     this._base = base;
     this._zero = zero;
     this._curve = curve;
@@ -157,18 +157,18 @@ const __curves = {
   // 'bn254': bn254,
 };
 
-export default function(label: Label): EcGroup {
+export function initElliptic(system: System): EcGroup {
   let group: EcGroup;
 
-  switch (label) {
+  switch (system) {
     case Elliptic.ED25519:
     case Elliptic.ED448:
     case Elliptic.JUBJUB:
-      group = new EcGroup(label, __curves[label]);
+      group = new EcGroup(system, __curves[system]);
       break;
     default:
       throw new Error(
-        `${ErrorMessages.UNSUPPORTED_GROUP}: ${label}`
+        `Unsupported group: ${system}`
       )
   }
 

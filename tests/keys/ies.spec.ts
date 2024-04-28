@@ -6,17 +6,17 @@ import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
-let { labels, aesModes, algorithms } = resolveTestConfig();
+let { systems, aesModes, algorithms } = resolveTestConfig();
 
 algorithms  = [...algorithms, undefined];
 aesModes    = [...aesModes, undefined];
 
 
 describe('IES hybrid encryption and decryption', () => {
-  it.each(cartesian([labels, aesModes, algorithms]))('over %s/%s/%s', async (
-    label, mode, algorithm
+  it.each(cartesian([systems, aesModes, algorithms]))('over %s/%s/%s', async (
+    system, mode, algorithm
   ) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const opts = { scheme: ElgamalSchemes.IES, mode, algorithm };
     const { ciphertext } = await publicKey.encrypt(message, opts);
@@ -27,8 +27,8 @@ describe('IES hybrid encryption and decryption', () => {
 
 
 describe('IES hybrid encryption proof - success without nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -42,8 +42,8 @@ describe('IES hybrid encryption proof - success without nonce', () => {
 
 
 describe('IES hybrid encryption proof - success with nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -58,8 +58,8 @@ describe('IES hybrid encryption proof - success with nonce', () => {
 
 
 describe('IES hybrid encryption proof - failure if forged proof', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -74,8 +74,8 @@ describe('IES hybrid encryption proof - failure if forged proof', () => {
 
 
 describe('IES hybrid encryption proof - failure if wrong algorithm', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -92,8 +92,8 @@ describe('IES hybrid encryption proof - failure if wrong algorithm', () => {
 
 
 describe('IES hybrid encryption proof - failure if missing nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -108,8 +108,8 @@ describe('IES hybrid encryption proof - failure if missing nonce', () => {
 
 
 describe('IES hybrid encryption proof - failure if forged nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -126,8 +126,8 @@ describe('IES hybrid encryption proof - failure if forged nonce', () => {
 
 
 describe('Decryptor generation', () => {
-  it.each(labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(systems)('over %s', async (system) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor: targetDecryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -140,8 +140,8 @@ describe('Decryptor generation', () => {
 
 
 describe('Decryptor proof - success without nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(systems)('over %s', async (system) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -154,8 +154,8 @@ describe('Decryptor proof - success without nonce', () => {
 
 
 describe('Decryptor proof - success with nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -170,8 +170,8 @@ describe('Decryptor proof - success with nonce', () => {
 
 
 describe('Decryptor proof - failure if forged proof', () => {
-  it.each(labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(systems)('over %s', async (system) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -186,8 +186,8 @@ describe('Decryptor proof - failure if forged proof', () => {
 
 
 describe('Decryptor proof - failure if wrong algorithm', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -204,8 +204,8 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
 
 
 describe('Decryptor proof - failure if missing nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(systems)('over %s', async (system) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES
@@ -220,8 +220,8 @@ describe('Decryptor proof - failure if missing nonce', () => {
 
 
 describe('Decryptor proof - failure if forged nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(systems)('over %s', async (system) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.IES

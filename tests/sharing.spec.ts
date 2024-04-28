@@ -26,10 +26,10 @@ export function selectShare<P extends Point>(index: number, shares: PublicShare<
   return selected;
 }
 
-const { label, nrShares, threshold } = resolveTestConfig();
+const { system, nrShares, threshold } = resolveTestConfig();
 
 
-describe(`Key sharing over ${label}`, () => {
+describe(`Key sharing over ${system}`, () => {
   let ctx: Group<Point>;
   let sharing: KeySharing<Point>;
   let polynomial: Polynomial<Point>
@@ -41,7 +41,7 @@ describe(`Key sharing over ${label}`, () => {
   let partialDecryptors: PartialDecryptor<Point>[];
 
   beforeAll(async () => {
-    const keypair = await generateKey(label);
+    const keypair = await generateKey(system);
     privateKey = keypair.privateKey;
     publicKey = keypair.publicKey;
     ctx = keypair.ctx;

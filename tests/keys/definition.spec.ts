@@ -5,12 +5,12 @@ import { PrivateKey, PublicKey } from '../../src/keys';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
-const { labels } = resolveTestConfig();
+const { systems } = resolveTestConfig();
 
 
 describe('Key generation', () => {
-  it.each(labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(systems)('over %s', async (system) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     const priv1 = await PrivateKey.fromScalar(ctx, privateKey.secret);
     const priv2 = await PrivateKey.fromBytes(ctx, privateKey.bytes);
     expect(await priv1.equals(privateKey)).toBe(true);
@@ -22,8 +22,8 @@ describe('Key generation', () => {
 
 
 describe('Public key extraction', () => {
-  it.each(labels)('over %s', async (label) => {
-    const { privateKey, publicKey, ctx } = await generateKey(label);
+  it.each(systems)('over %s', async (system) => {
+    const { privateKey, publicKey, ctx } = await generateKey(system);
     expect(await ctx.equals(ctx)).toBe(true);
     expect(await publicKey.pub.equals(await ctx.operate(privateKey.secret, ctx.generator)));
   });
@@ -31,9 +31,9 @@ describe('Public key extraction', () => {
 
 
 describe('Diffie-Hellman handshake', () => {
-  it.each(labels)('over %s', async (label) => {
-    const { privateKey: priv1, publicKey: pub1, ctx } = await generateKey(label);
-    const { privateKey: priv2, publicKey: pub2 } = await generateKey(label);
+  it.each(systems)('over %s', async (system) => {
+    const { privateKey: priv1, publicKey: pub1, ctx } = await generateKey(system);
+    const { privateKey: priv2, publicKey: pub2 } = await generateKey(system);
     const point1 = await priv1.diffieHellman(pub2);
     const point2 = await priv2.diffieHellman(pub1);
     const expected = await ctx.operate(priv1.secret, pub2.pub);

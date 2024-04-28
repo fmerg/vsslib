@@ -4,14 +4,14 @@ import { partialPermutations } from '../helpers';
 import { resolveTestConfig } from '../environ';
 import { createKeyDistributionSetup } from './helpers';
 
-const { label, nrShares, threshold } = resolveTestConfig();
+const { system, nrShares, threshold } = resolveTestConfig();
 
 
-describe(`Key reconstruction over ${label}`, () => {
+describe(`Key reconstruction over ${system}`, () => {
   let setup: any;
 
   beforeAll(async () => {
-    setup = await createKeyDistributionSetup({ label, nrShares, threshold });
+    setup = await createKeyDistributionSetup({ system, nrShares, threshold });
   });
 
   test('Private reconstruction - skip threshold check', async () => {

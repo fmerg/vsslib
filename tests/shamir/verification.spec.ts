@@ -1,14 +1,14 @@
-import { backend } from '../../src';
+import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { SecretShare, SecretSharing } from '../../src/shamir';
 import { shareSecret, verifyFeldmann, verifyPedersen } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
 
-let { label, nrShares, threshold } = resolveTestConfig();
+let { system, nrShares, threshold } = resolveTestConfig();
 
 
-describe(`Secret share verification over ${label}`, () => {
-  const ctx = backend.initGroup(label);
+describe(`Secret share verification over ${system}`, () => {
+  const ctx = initGroup(system);
 
   let sharing: SecretSharing<Point>;
   let secretShares: SecretShare<Point>[];

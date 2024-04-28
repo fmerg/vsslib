@@ -1,39 +1,40 @@
 import { Systems } from '../src/enums';
-import { backend } from '../src';
+import { initGroup } from '../src/backend';
 import { Point } from '../src/backend/abstract';
 import { ErrorMessages } from '../src/errors';
 import { resolveTestConfig } from './environ';
 
-const { labels } = resolveTestConfig();
 const __0n = BigInt(0)
 const __1n = BigInt(1)
 
+const { systems } = resolveTestConfig();
+
 
 describe('group initialization', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
-    expect(ctx.label).toEqual(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
+    expect(ctx.system).toEqual(system);
   });
 })
 
 
 describe('group initialization failure', () => {
   test('unsupported group', () => {
-    const label = 'unsupported';
-    expect(() => backend.initGroup(label)).toThrow(
-      `${ErrorMessages.UNSUPPORTED_GROUP}: ${label}`
-    );
-  });
+    const system = 'foo';
+    expect(() => initGroup(system).toThrow(
+      `${ErrorMessages.UNSUPPORTED_GROUP}: ${system}`
+    ))
+  })
 })
 
 
 describe('group equality', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
-    expect(await ctx.equals(backend.initGroup(label))).toBe(true);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
+    expect(await ctx.equals(initGroup(system))).toBe(true);
     expect(await ctx.equals(
-      backend.initGroup(
-        label == Systems.ED25519 ?
+      initGroup(
+        system == Systems.ED25519 ?
           Systems.ED448 :
           Systems.ED25519
       )
@@ -43,8 +44,8 @@ describe('group equality', () => {
 
 
 describe('neutral element', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     await ctx.validatePoint(ctx.neutral);
 
     const neutral = await ctx.operate(__0n, ctx.generator);
@@ -54,8 +55,8 @@ describe('neutral element', () => {
 
 
 describe('group generator', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     await ctx.validatePoint(ctx.generator);
 
     const generator = await ctx.operate(__1n, ctx.generator);
@@ -65,8 +66,8 @@ describe('group generator', () => {
 
 
 describe('group law with neutral element', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
 
     const p = await ctx.randomPoint();
     const q = await ctx.combine(p, ctx.neutral);
@@ -79,8 +80,8 @@ describe('group law with neutral element', () => {
 
 
 describe('group law with random pair', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
 
     const r = await ctx.randomScalar();
     const s = await ctx.randomScalar();
@@ -98,8 +99,8 @@ describe('group law with random pair', () => {
 
 
 describe('inverse of neutral', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
 
     const neutInv = await ctx.invert(ctx.neutral);
     expect(await neutInv.equals(ctx.neutral)).toBe(true);
@@ -111,8 +112,8 @@ describe('inverse of neutral', () => {
 
 
 describe('inverse of generator', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
 
     const minusOne = ctx.order - __1n;             // TODO: scalar -1
     const expected = await ctx.operate(minusOne, ctx.generator);
@@ -126,8 +127,8 @@ describe('inverse of generator', () => {
 
 
 describe('inverse of random point', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
 
     const r = await ctx.randomScalar();
     const p = await ctx.operate(r, ctx.generator);
@@ -144,8 +145,8 @@ describe('inverse of random point', () => {
 
 
 describe('scalar operation on generator', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
 
     let expected = await ctx.operate(__0n, ctx.generator)
     expect(await ctx.neutral.equals(expected)).toBe(true);
@@ -161,8 +162,8 @@ describe('scalar operation on generator', () => {
 
 
 describe('scalar operation on random point', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
 
     let s: bigint;
     let current: Point;
@@ -194,8 +195,8 @@ describe('scalar operation on random point', () => {
 
 
 describe('point to bytes and back', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const p = await ctx.randomPoint();
     const pBytes = p.toBytes();
     const pBack = ctx.unpack(pBytes);
@@ -205,8 +206,8 @@ describe('point to bytes and back', () => {
 
 
 describe('point to hex and back', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const p = await ctx.randomPoint();
     const pHex = p.toHex();
     const pBack = ctx.unhexify(pHex);
@@ -216,8 +217,8 @@ describe('point to hex and back', () => {
 
 
 describe('scalar validation', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const s = await ctx.randomScalar();
     const isValid = await ctx.validateScalar(s);
     expect(isValid).toBe(true);
@@ -230,8 +231,8 @@ describe('scalar validation', () => {
 
 
 describe('bytes validation', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const b = await ctx.randomBytes();
     const isValid = await ctx.validateBytes(b);
     expect(isValid).toBe(true);
@@ -244,16 +245,16 @@ describe('bytes validation', () => {
 
 
 describe('Keypair generation - no given secret', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const { secret, pub } = await ctx.generateKeypair();
     expect(await pub.equals(await ctx.operate(secret, ctx.generator))).toBe(true);
   })
 });
 
 describe('Keypair generation - given secret', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const scalar = await ctx.randomScalar();
     const { secret, pub } = await ctx.generateKeypair(scalar);
     expect(secret).toEqual(scalar);

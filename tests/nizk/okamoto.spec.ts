@@ -1,16 +1,16 @@
 import { Algorithms } from '../../src/enums';
-import { backend } from '../../src';
+import { initGroup } from '../../src/backend';
 import { cartesian } from '../helpers';
 import { okamoto } from '../../src/nizk';
 import { createRepresentation } from './helpers';
 import { resolveTestConfig } from '../environ';
 
-let { labels, algorithms } = resolveTestConfig();
+let { systems, algorithms } = resolveTestConfig();
 
 
 describe('Success - without nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const proof = await okamoto(ctx, algorithm).prove({ s, t }, { h, u });
@@ -22,8 +22,8 @@ describe('Success - without nonce', () => {
 
 
 describe('Success - with nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const nonce = await ctx.randomBytes();
@@ -35,8 +35,8 @@ describe('Success - with nonce', () => {
 
 
 describe('Failure - if swaped scalar factors', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const proof = await okamoto(ctx, Algorithms.SHA256).prove({ s: t, t: s}, { h, u });
@@ -47,8 +47,8 @@ describe('Failure - if swaped scalar factors', () => {
 
 
 describe('Failure - if tampered proof', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const proof = await okamoto(ctx, Algorithms.SHA256).prove({ s, t }, { h, u });
@@ -60,8 +60,8 @@ describe('Failure - if tampered proof', () => {
 
 
 describe('Failure - if wrong algorithm', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const proof = await okamoto(ctx, algorithm).prove({ s, t }, { h, u });
@@ -75,8 +75,8 @@ describe('Failure - if wrong algorithm', () => {
 
 
 describe('Failure - if missing nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const nonce = await ctx.randomBytes();
@@ -88,8 +88,8 @@ describe('Failure - if missing nonce', () => {
 
 
 describe('Failure - if forged nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const nonce = await ctx.randomBytes();

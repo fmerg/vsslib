@@ -1,8 +1,24 @@
-import { Label } from '../types';
+import { System } from '../types';
 import { Modular } from '../enums';
 import { Group, Point } from './abstract';
 
 
-export default function(label: Label): any {
-  throw new Error('Not implemented yet');
+class ModPoint {  // implements Point
+  // TODO: Implement
+}
+
+export class ModGroup { // extends Group<ModPoint>
+  // TODO: Implement
+}
+
+export function initModular(system: System): any {  // ModGroup
+  switch (system) {
+    case Modular.BITS_2048:
+    case Modular.BITS_4096:
+      throw new Error('Not implemented yet');
+    default:
+      throw new Error(
+        `Unsupported group: ${system}`
+      )
+  }
 }

@@ -1,15 +1,15 @@
 import { Algorithms } from '../../src/enums';
-import { backend } from '../../src';
+import { initGroup } from '../../src/backend';
 import { cartesian } from '../helpers';
 import { createAndDlogPairs } from './helpers';
 import { andDlog } from '../../src/nizk';
 import { resolveTestConfig } from '../environ';
 
-let { labels, algorithms } = resolveTestConfig();
+let { systems, algorithms } = resolveTestConfig();
 
 describe('Success - without nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const [witnesses, pairs] = await createAndDlogPairs(ctx, 5);
     const proof = await andDlog(ctx, algorithm).prove(witnesses, pairs);
     expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
@@ -20,8 +20,8 @@ describe('Success - without nonce', () => {
 
 
 describe('Success - with nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const [witnesses, pairs] = await createAndDlogPairs(ctx, 5);
     const nonce = await ctx.randomBytes();
     const proof = await andDlog(ctx, Algorithms.SHA256).prove(witnesses, pairs, nonce);
@@ -32,8 +32,8 @@ describe('Success - with nonce', () => {
 
 
 describe('Failure - forged proof', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const [witnesses, pairs] = await createAndDlogPairs(ctx, 5);
     const proof = await andDlog(ctx, Algorithms.SHA256).prove(witnesses, pairs);
     proof.response[0] = await ctx.randomScalar();
@@ -44,8 +44,8 @@ describe('Failure - forged proof', () => {
 
 
 describe('Failure - wrong algorithm', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const [witnesses, pairs] = await createAndDlogPairs(ctx, 5);
     const proof = await andDlog(ctx, algorithm).prove(witnesses, pairs);
     proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
@@ -58,8 +58,8 @@ describe('Failure - wrong algorithm', () => {
 
 
 describe('Failure - missing nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const [witnesses, pairs] = await createAndDlogPairs(ctx, 5);
     const nonce = await ctx.randomBytes();
     const proof = await andDlog(ctx, Algorithms.SHA256).prove(witnesses, pairs, nonce);
@@ -70,8 +70,8 @@ describe('Failure - missing nonce', () => {
 
 
 describe('Failure - forged nonce', () => {
-  it.each(labels)('over %s', async (label) => {
-    const ctx = backend.initGroup(label);
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const nonce = await ctx.randomBytes();
     const [witnesses, pairs] = await createAndDlogPairs(ctx, 5);
     const proof = await andDlog(ctx, Algorithms.SHA256).prove(witnesses, pairs, nonce);

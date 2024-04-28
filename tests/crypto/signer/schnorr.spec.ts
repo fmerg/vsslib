@@ -1,15 +1,15 @@
 import { Systems, Algorithms, SignatureSchemes } from '../../../src/enums';
-import { backend } from '../../../src';
+import { initGroup } from '../../../src/backend';
 import { cartesian } from '../../helpers';
 import { resolveTestConfig } from '../../environ';
 import signer from '../../../src/crypto/signer';
 
-const { labels, algorithms } = resolveTestConfig();
+const { systems, algorithms } = resolveTestConfig();
 
 
 describe('Signature verification - success without nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
@@ -24,8 +24,8 @@ describe('Signature verification - success without nonce', () => {
 
 
 describe('Signature verification - success with nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
@@ -41,8 +41,8 @@ describe('Signature verification - success with nonce', () => {
 
 
 describe('Signature verification - failure if forged message', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
@@ -58,8 +58,8 @@ describe('Signature verification - failure if forged message', () => {
 
 
 describe('Signature verification - failure if forged key', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const forgedSecret = await ctx.randomScalar();
@@ -75,8 +75,8 @@ describe('Signature verification - failure if forged key', () => {
 
 
 describe('Signature verification - failure if forged signature', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
@@ -92,8 +92,8 @@ describe('Signature verification - failure if forged signature', () => {
 
 
 describe('Signature verification - failure if forged nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();
@@ -110,8 +110,8 @@ describe('Signature verification - failure if forged nonce', () => {
 
 
 describe('Signature verification - failure if missing nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await ctx.randomBytes();

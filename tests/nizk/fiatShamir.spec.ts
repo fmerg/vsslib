@@ -1,17 +1,17 @@
 import { Algorithms } from '../../src/enums';
-import { backend } from '../../src';
+import { initGroup } from '../../src/backend';
 import { cartesian } from '../helpers';
 import { fiatShamir } from '../../src/nizk';
 import { computeFiatShamir } from './helpers';
 import { resolveTestConfig } from '../environ';
 
-let { labels, algorithms } = resolveTestConfig();
+let { systems, algorithms } = resolveTestConfig();
 
 
 
 describe('Fiat-Shamir - without nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { randomPoint, randomScalar, randomBytes } = ctx;
     const points  = [await randomPoint(), await randomPoint(), await randomPoint()];
     const scalars = [await randomScalar(), await randomScalar()];
@@ -24,8 +24,8 @@ describe('Fiat-Shamir - without nonce', () => {
 
 
 describe('Fiat-Shamir - with nonce', () => {
-  it.each(cartesian([labels, algorithms]))('over %s/%s', async (label, algorithm) => {
-    const ctx = backend.initGroup(label);
+  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
+    const ctx = initGroup(system);
     const { randomPoint, randomScalar, randomBytes } = ctx;
     const points  = [await randomPoint(), await randomPoint(), await randomPoint()];
     const scalars = [await randomScalar(), await randomScalar()];

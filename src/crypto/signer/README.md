@@ -3,7 +3,7 @@
 ```js
 import { backend, signer } from 'vsslib';
 
-const ctx = backend.initGroup('ed25519');
+const ctx = initGroup('ed25519');
 
 const { secret, pub } = await ctx.generateKepair();
 ```

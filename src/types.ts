@@ -8,7 +8,7 @@ import {
   Encodings,
 } from './enums';
 
-export type Label =
+export type System =
   | Modular.BITS_2048
   | Modular.BITS_4096
   | Elliptic.ED25519

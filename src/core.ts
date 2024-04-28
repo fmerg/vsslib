@@ -8,7 +8,7 @@ import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
 import { PrivateShare, PublicShare, PartialDecryptor, KeySharing } from './sharing';
 import { ElgamalSchemes, AesModes, Algorithms } from './enums';
-import { ElgamalScheme, AesMode, Algorithm, Label } from './types';
+import { ElgamalScheme, AesMode, Algorithm, System } from './types';
 
 const shamir = require('./shamir');
 const elgamal = require('./crypto/elgamal');
@@ -17,8 +17,8 @@ const backend = require('./backend');
 
 type KeyPair<P extends Point> = { privateKey: PrivateKey<P>, publicKey: PublicKey<P>, ctx: Group<P> };
 
-export async function generateKey(label: Label): Promise<KeyPair<Point>> {
-  const ctx = initGroup(label);
+export async function generateKey(system: System): Promise<KeyPair<Point>> {
+  const ctx = initGroup(system);
   const privateKey = new PrivateKey(ctx, await ctx.randomBytes());
   const publicKey = await privateKey.publicKey();
   return { privateKey, publicKey, ctx };

@@ -1,4 +1,4 @@
-import { backend } from '../../src';
+import { initGroup } from '../../src/backend';
 import { Polynomial } from '../../src/lagrange';
 import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
@@ -7,18 +7,18 @@ import { resolveTestConfig } from '../environ';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
-const { labels } = resolveTestConfig();
+const { systems } = resolveTestConfig();
 
 
 describe('Random polynomial generation', () => {
   test('Non-positive degree error', async () => {
-    const ctx = backend.initGroup('ed25519');
+    const ctx = initGroup('ed25519');
     await expect(Polynomial.random(ctx, -1)).rejects.toThrow(
       ErrorMessages.NON_POSITIVE_DEGREE
     );
   });
   test('Correct parameters', async () => {
-    const ctx = backend.initGroup('ed25519');
+    const ctx = initGroup('ed25519');
     const degree = 7;
     const polynomial = await Polynomial.random(ctx, degree);
     expect(await polynomial.ctx.equals(ctx)).toBe(true);
@@ -33,10 +33,10 @@ describe('Algebraic operations with random poynomials', () => {
     [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]
   ];
 
-  it.each(cartesian([degree_pairs, labels]))('Addition with degrees %s over %s', async (
-    degrees, label
+  it.each(cartesian([degree_pairs, systems]))('Addition with degrees %s over %s', async (
+    degrees, system
   ) => {
-    const ctx = backend.initGroup(label);
+    const ctx = initGroup(system);
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await Polynomial.random(ctx, degree1);
     const poly2 = await Polynomial.random(ctx, degree2);
@@ -50,10 +50,10 @@ describe('Algebraic operations with random poynomials', () => {
     expect(poly3.equals(poly2.add(poly1))).toBe(true);
   });
 
-  it.each(cartesian([degree_pairs, labels]))('Multiplication with degrees %s over %s', async (
-    degrees, label
+  it.each(cartesian([degree_pairs, systems]))('Multiplication with degrees %s over %s', async (
+    degrees, system
   ) => {
-    const ctx = backend.initGroup(label);
+    const ctx = initGroup(system);
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await Polynomial.random(ctx, degree1);
     const poly2 = await Polynomial.random(ctx, degree2);

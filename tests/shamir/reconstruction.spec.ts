@@ -11,10 +11,10 @@ import {
 import { partialPermutations } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
-let { label, nrShares, threshold } = resolveTestConfig();
+let { system, nrShares, threshold } = resolveTestConfig();
 
-describe(`Reconstruction from shares over ${label}`, () => {
-  const ctx = initGroup(label);
+describe(`Reconstruction from shares over ${system}`, () => {
+  const ctx = initGroup(system);
 
   let secret: bigint;
   let pub: Point;

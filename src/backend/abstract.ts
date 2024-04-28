@@ -1,4 +1,4 @@
-import { Label } from '../types';
+import { System } from '../types';
 import { mod } from '../crypto/arith';
 import { leInt2Buff, leBuff2Int } from '../crypto/bitwise';
 
@@ -9,7 +9,7 @@ export interface Point {
 }
 
 export abstract class Group<P extends Point> {
-  label: Label;
+  system: System;
   modulus: bigint;
   order: bigint;
   generator: P;
@@ -18,8 +18,8 @@ export abstract class Group<P extends Point> {
   ordBytes: Uint8Array;
   genBytes: Uint8Array;
 
-  constructor(label: Label, modulus: bigint, order: bigint, generator: P, neutral: P) {
-    this.label = label;
+  constructor(system: System, modulus: bigint, order: bigint, generator: P, neutral: P) {
+    this.system = system;
     this.modulus = modulus;
     this.order = order;
     this.generator = generator;;

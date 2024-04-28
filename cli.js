@@ -44,7 +44,7 @@ program
   .option('--some-option', 'some option')
 
 
-const cryptoOption = new Option('-s, --system <label>', 'underlying cryptosystem')
+const cryptoOption = new Option('-s, --system <system>', 'underlying cryptosystem')
   .default(enums.Systems.ED25519)
   .choices(Object.values(enums.Systems));
 
