@@ -31,7 +31,7 @@ export async function computeFiatShamir<P extends Point>(
 }
 
 
-/** Create generic linearDlog relation with given dimensions */
+/** Create generic linearRelation relation with given dimensions */
 export async function createLinearRelation<P extends Point>(
   ctx: Group<P>,
   opts: { m: number, n: number },

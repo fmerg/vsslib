@@ -20,7 +20,7 @@ export abstract class NizkProtocol<P extends Point> extends FiatShamir<P> {
   abstract prove: (witnesses: any, relation: any, nonce?: Uint8Array) => Promise<NizkProof<P>>;
   abstract verify: (relation: any, proof: NizkProof<P>, nonce?: Uint8Array) => Promise<boolean>;
 
-  async proveLinearDlog(witnesses: bigint[], relation: DlogLinear<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<NizkProof<P>> {
+  async proveLinearRelation(witnesses: bigint[], relation: DlogLinear<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<NizkProof<P>> {
     const { ctx: { order, randomScalar, neutral, operate, combine }, algorithm } = this;
     const { us, vs } = relation;
     const m = vs.length;
@@ -55,7 +55,7 @@ export abstract class NizkProtocol<P extends Point> extends FiatShamir<P> {
     return { commitments, response, algorithm };
   }
 
-  async verifyLinearDlog(relation: DlogLinear<P>, proof: NizkProof<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<boolean> {
+  async verifyLinearRelation(relation: DlogLinear<P>, proof: NizkProof<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<boolean> {
     const { neutral, operate, combine } = this.ctx;
     const { us, vs } = relation;
     const { commitments, response, algorithm } = proof;

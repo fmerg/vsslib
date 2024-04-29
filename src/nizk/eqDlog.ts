@@ -18,7 +18,7 @@ export class EqDlogProtocol<P extends Point> extends NizkProtocol<P> {
       us[i][i] = pairs[i].u;
     }
     const vs = pairs.map(({ v }) => v);
-    return this.proveLinearDlog(witnesses, { us, vs }, [], nonce);
+    return this.proveLinearRelation(witnesses, { us, vs }, [], nonce);
   }
   verify = async (pairs: DlogPair<P>[], proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
     const { neutral } = this.ctx;
@@ -28,7 +28,7 @@ export class EqDlogProtocol<P extends Point> extends NizkProtocol<P> {
       us[i][i] = pairs[i].u;
     }
     const vs = pairs.map(({ v }) => v);
-    return this.verifyLinearDlog({ us, vs }, proof, [], nonce);
+    return this.verifyLinearRelation({ us, vs }, proof, [], nonce);
   }
 }
 

@@ -28,7 +28,7 @@ export class SchnorrSigner<P extends Point> extends Signer<P, SchnorrSignature<P
   signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<SchnorrSignature<P>> => {
     const { generator: g, operate } = this.ctx;
     const pub = await operate(secret, g);
-    const { commitments, response } = await this.protocol.proveLinearDlog(
+    const { commitments, response } = await this.protocol.proveLinearRelation(
       [secret], { us: [[g]], vs: [pub] }, [message], nonce
     );
     return { commitment: commitments[0], response: response[0] };
@@ -42,6 +42,6 @@ export class SchnorrSigner<P extends Point> extends Signer<P, SchnorrSignature<P
       response: [response],
       algorithm: this.algorithm,
     }
-    return this.protocol.verifyLinearDlog({ us: [[g]], vs: [pub] }, proof, [message], nonce);
+    return this.protocol.verifyLinearRelation({ us: [[g]], vs: [pub] }, proof, [message], nonce);
   }
 }

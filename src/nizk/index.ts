@@ -3,7 +3,7 @@ import { DlogPair } from './dlog';
 import { DDHTuple } from './ddh';
 
 import fiatShamir from './fiatShamir';
-import linearDlog from './linearDlog';
+import linearRelation from './linearRelation';
 import andDlog from './andDlog';
 import eqDlog from './eqDlog';
 import dlog from './dlog';
@@ -16,7 +16,7 @@ export {
   DlogLinear,
   DlogPair,
   DDHTuple,
-  linearDlog,
+  linearRelation,
   andDlog,
   eqDlog,
   dlog,

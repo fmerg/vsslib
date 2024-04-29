@@ -9,10 +9,10 @@ export type DlogPair<P extends Point> = {
 
 export class DlogProtocol<P extends Point> extends NizkProtocol<P> {
   prove = async (x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array): Promise<NizkProof<P>> => {
-    return this.proveLinearDlog([x], { us: [[u]], vs: [v] }, [], nonce);
+    return this.proveLinearRelation([x], { us: [[u]], vs: [v] }, [], nonce);
   }
   verify = async ({ u, v }: DlogPair<P>, proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
-    return this.verifyLinearDlog({ us: [[u]], vs: [v] }, proof, [], nonce);
+    return this.verifyLinearRelation({ us: [[u]], vs: [v] }, proof, [], nonce);
   }
 }
 
