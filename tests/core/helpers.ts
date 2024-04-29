@@ -2,7 +2,7 @@ import { Group, Point } from '../../src/backend/abstract';
 import { ElgamalSchemes } from '../../src/enums';
 import { ElgamalScheme, System } from '../../src/types';
 import { generateKey } from '../../src';
-import { partialPermutations } from '../helpers';
+import { randomIndex } from '../helpers';
 import { distributeKey } from '../../src/core';
 import { PublicShare } from '../../src/core';
 
@@ -41,9 +41,9 @@ export const createThresholdDecryptionSetup = async (opts: {
   scheme: ElgamalScheme,
   nrShares: number,
   threshold: number,
-  invalidIndexes?: number[],
+  nrInvalidIndexes?: number,
 }) => {
-  const { scheme, system, nrShares, threshold } = opts;
+  let { scheme, system, nrShares, threshold, nrInvalidIndexes } = opts;
   const {
     privateKey,
     publicKey,
@@ -60,8 +60,14 @@ export const createThresholdDecryptionSetup = async (opts: {
     const share = await privateShare.generatePartialDecryptor(ciphertext);
     partialDecryptors.push(share);
   }
+  let invalidIndexes: number[] = [];
+  nrInvalidIndexes = nrInvalidIndexes || 0;
+  while (invalidIndexes.length < nrInvalidIndexes) {
+    const index = randomIndex(1, nrShares);
+    if (invalidIndexes.includes(index)) continue;
+    invalidIndexes.push(index);
+  }
   const invalidDecryptors = [];
-  const invalidIndexes = opts.invalidIndexes || [];
   if (invalidIndexes) {
     for (const share of partialDecryptors) {
       invalidDecryptors.push(!(invalidIndexes.includes(share.index)) ? share : {

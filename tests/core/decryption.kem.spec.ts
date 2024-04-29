@@ -18,7 +18,7 @@ describe(`Single partial decryptor verification over ${system}`, () => {
   let setup: any;
   beforeAll(async () => {
     setup = await createThresholdDecryptionSetup({
-      scheme, system, nrShares, threshold, invalidIndexes: [2, 3]
+      scheme, system, nrShares, threshold, nrInvalidIndexes: 2
     });
   });
 
@@ -53,7 +53,7 @@ describe(`Partial decryptors verification over ${system}`, () => {
 
   beforeAll(async () => {
     setup = await createThresholdDecryptionSetup({
-      scheme, system, nrShares, threshold, invalidIndexes: [2, 3]
+      scheme, system, nrShares, threshold, nrInvalidIndexes: 2
     });
   });
 
@@ -71,7 +71,7 @@ describe(`Partial decryptors verification over ${system}`, () => {
       ctx, ciphertext, publicShares, invalidDecryptors
     );
     expect(flag).toBe(false);
-    expect(indexes).toEqual(invalidIndexes);
+    expect(indexes.sort()).toEqual(invalidIndexes.sort());
   });
   test('Failure - raise on invalid', async () => {
     const { ctx, publicShares, ciphertext, invalidDecryptors } = setup
