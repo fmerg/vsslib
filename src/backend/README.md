@@ -40,7 +40,7 @@ await ctx.validateBytes(b);
 ```
 
 
-### Keypair generation (discrete logarithm)
+### Keypair generation
 
 ```js
 const { secret, pub } = await ctx.generateKeypair();

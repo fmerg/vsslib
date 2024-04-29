@@ -1,4 +1,4 @@
-import { Systems, Modular } from '../enums';
+import { Modular } from '../enums';
 import { System } from '../types';
 import { initModular } from './modular';
 import { initElliptic } from './elliptic';

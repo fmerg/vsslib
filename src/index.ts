@@ -1,7 +1,5 @@
-import { PrivateKey, PublicKey, generateKey } from './keys';
+import { generateKey } from './keys';
 import {
-  PrivateShare,
-  PublicShare,
   distributeKey,
   verifyFeldmann,
   verifyPedersen,
@@ -12,19 +10,16 @@ import {
   thresholdDecrypt
 } from './core';
 
-import { plain, kem, ies } from './crypto';
-import signer from './crypto/signer';
-const { aes, elgamal, hash } = require('./crypto');
+
 const backend = require('./backend');
 const crypto = require('./crypto');
+const enums = require('./enums');
 const keys = require('./keys');
 const lagrange = require('./lagrange');
-const enums = require('./enums');
-const types = require('./types');
-const shamir = require('./shamir');
 const nizk = require('./nizk');
-const errors = require('./errors');
+const shamir = require('./shamir');
 const serializers = require('./serializers');
+
 
 export {
   generateKey,
@@ -36,24 +31,12 @@ export {
   reconstructDecryptor,
   verifyPartialDecryptors,
   thresholdDecrypt,
-  PrivateKey,
-  PublicKey,
-  PrivateShare,
-  PublicShare,
-  aes,
   backend,
-  plain,
   crypto,
-  hash,
-  ies,
-  kem,
+  enums,
   keys,
   lagrange,
-  enums,
-  types,
-  signer,
-  shamir,
   nizk,
-  errors,
+  shamir,
   serializers,
 }

@@ -4,22 +4,22 @@ import { DDHTuple } from './ddh';
 
 import fiatShamir from './fiatShamir';
 import linearRelation from './linearRelation';
+import dlog from './dlog';
 import andDlog from './andDlog';
 import eqDlog from './eqDlog';
-import dlog from './dlog';
 import ddh from './ddh';
 import okamoto from './okamoto';
 
 export {
-  fiatShamir,
   NizkProof,
   DlogLinear,
   DlogPair,
   DDHTuple,
+  fiatShamir,
   linearRelation,
+  dlog,
   andDlog,
   eqDlog,
-  dlog,
   ddh,
   okamoto,
 };

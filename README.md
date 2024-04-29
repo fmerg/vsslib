@@ -12,19 +12,78 @@ import { generateKey } from 'vsslib';
 const { privateKey, publicKey, ctx } = await generateKey('ed25519');
 ```
 
-```js
-import vss from 'vsslib/vss';
+### Sharing
 
-const ctx = initGroup(system);
-const combiner = vss(ctx, threshold);
+```js
+import { distributeKey } from 'vsslib';
+
+const sharing = distributeKey(5, 3, privateKey);
 ```
 
-### Key sharing
+```js
+const { nrShares, threshold, polynomial } = sharing;
+```
 
 ```js
-const sharing = vss.distributeKey(5, 3, privateKey);
+const privateShares = await sharing.getPrivateShares();
+```
 
+```js
 const publicShares = await sharing.getPublicShares();
+```
+
+### Verification
+
+
+#### Feldmann VSS scheme
+
+```js
+const { commitments } = await sharing.proveFeldmann();
+```
+
+```js
+import { verifyFeldmann } from 'vsslib';
+
+await verifyFeldmann(ctx, privateShare, commitments);
+```
+
+#### Pedersen VSS scheme
+
+```js
+const hPub = await ctx.randomPoint();
+```
+
+```js
+const { bindings, commitments } = await sharing.provePedersen(hPub);
+```
+
+```js
+const { bindings, commitments } = await sharing.provePedersen(hPub);
+
+const binding = bindings[share.index];
+```
+
+```js
+import { verifyPedersen } from 'vsslib';
+
+await verifyPedersen(ctx, share, binding, hPub, commitments);
+```
+
+### Reconstruction
+
+```js
+import { reconstructKey, reconstructPublic } from 'vsslib';
+```
+
+
+### Serialization
+
+```js
+import { serializePublicKey, deserializePublicKey } from 'vsslib/serializers';
+```
+
+```
+import { serializePrivateShare, deserializePrivateShare } from 'vsslib/serializers';
 ```
 
 ### Threshold decryption
@@ -42,102 +101,31 @@ await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
 ```
 
 ```js
-const { flag, indexes } = await combiner.verifyPartialDecryptors(ciphertext, publicShares, partialDecryptors);
+import { verifyPartialDecryptors } from 'vsslib';
+
+const { flag, indexes } = await verifyPartialDecryptors(
+  ctx, ciphertext, publicShares, partialDecryptors
+);
 ```
 
 ```js
-const plaintext = await combiner.plainDecrypt(ciphertext, partialDecryptors);
-```
-
-## Verifiable identity (Schnorr identification scheme)
-
-```js
-const proof = await privateKey.proveIdentity({ algorithm: 'sha256'});
+await verifyPartialDecryptors(
+  ctx, ciphertext, publicShares, partialDecryptors, { raiseOnInvalid: True }
+);
 ```
 
 ```js
-await publicKey.verifyIdentity(proof);
+const plaintext = await thresholdDecrypt(ciphertext, partialDecryptors);
 ```
-
-## Verifiable key sharing (Shamir scheme)
-
-```js
-const sharing = vss.distributeKey(5, 3, privateKey);
-
-const { nrShares, threshold, polynomial } = sharing;
-```
-
-```js
-const privateShares = await sharing.getSecretShares();
-```
-
-```js
-const publicShares = await sharing.getPublicShares();
-```
-
-### Feldmann verification scheme
-
-```js
-const { commitments } = await sharing.proveFeldmann();
-```
-
-```js
-await verifyFeldmann(ctx, privateShare, commitments);
-```
-
-### Pedersen verification scheme
-
-```js
-const hPub = await ctx.randomPoint();
-```
-
-```js
-const { bindings, commitments } = await sharing.provePedersen(hPub);
-```
-
-```js
-const { bindings, commitments } = await sharing.provePedersen(hPub);
-const binding = bindings[share.index];
-```
-
-```js
-const verified = await verifyPedersen(ctx, share, binding, hPub, commitments);
-```
-
-### Verifiable partial decryptors
-
-```js
-const partialDecryptor = await privateShare.generatePartialDecryptor(ciphertext);
-```
-
-```js
-await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
-```
-
-
-### Verification
-
-## Feldmann commitments
-
-## Pedersen commitments
 
 ## Modules
 
-- [`vsslib.aes`](./src/aes)
-- [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.backend`](./src/backend)
-- [`vsslib.core`](./src/core)
-- [`vsslib.plain`](./src/elgamal)
-- [`vsslib.ies`](./src/elgamal)
-- [`vsslib.kem`](./src/elgamal)
-- [`vsslib.key`](./src/key)
+- [`vsslib.crypto`](./src/crypto)
+- [`vsslib.keys`](./src/keys)
 - [`vsslib.lagrange`](./src/lagrange)
-- [`vsslib.enums`](./src/enums)
-- [`vsslib.types`](./src/types)
-- [`vsslib.schnorr`](./src/schnorr)
-- [`vsslib.shamir`](./src/shamir)
 - [`vsslib.nizk`](./src/nizk)
-- [`vsslib.utils`](./src/utils)
+- [`vsslib.shamir`](./src/shamir)
 
 ## Development
 

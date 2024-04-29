@@ -30,12 +30,16 @@ const publicKey = await privateKey.publicKey();
 ### Serialization
 
 ```js
+import { serializePrivateKey, deserializePrivateKey } from 'vsslib/serializers';
+
 const data = serializePrivateKey(privateKey);
 
 const privBack = await deserializePrivateKey(data);
 ```
 
 ```js
+import { serializePublicKey, deserializePublicKey } from 'vsslib/serializers';
+
 const serialized = serializePublicKey(publicKey);
 
 const pubBack = await deserializePublicKey(data);
@@ -80,7 +84,7 @@ const message = Uint8Array.from(Buffer.from('destroy earth'));
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
   scheme: 'ies',
   mode: 'aes-256-cbc'
-  algorithm: 'sha256'
+  'algorithm': 'sha256'
 });
 ```
 
@@ -128,4 +132,25 @@ const signature = await privateKey.sign(message, { algorithm: 'sha256' });
 
 ```js
 await publicKey.verifySignature(message, signature);
+```
+
+
+## Verifiable identity (Schnorr identification scheme)
+
+```js
+const proof = await privateKey.proveIdentity({ algorithm: 'sha256'});
+```
+
+```js
+await publicKey.verifyIdentity(proof);
+```
+
+## Verifiable partial decryptors
+
+```js
+const partialDecryptor = await privateShare.generatePartialDecryptor(ciphertext);
+```
+
+```js
+await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
 ```

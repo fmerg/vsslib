@@ -1,10 +1,10 @@
 // TODO: browser
 const { createCipheriv, createDecipheriv } = require('node:crypto');
 
-import { AesMode } from '../../types';
-import { AesModes } from '../../enums';
-import { ErrorMessages } from '../../errors';
-import { randomBytes } from '../random';
+import { AesMode } from '../types';
+import { AesModes } from '../enums';
+import { ErrorMessages } from '../errors';
+import { randomBytes } from './random';
 
 class AesCipher {
   mode: AesMode;
@@ -13,11 +13,11 @@ class AesCipher {
     this.mode = mode;
   }
 
-  encrypt = (
-    key: Uint8Array,
-    message: Uint8Array,
-    iv?: Uint8Array,
-  ): { ciphered: Uint8Array, iv: Uint8Array, tag?: Uint8Array } => {
+  encrypt = (key: Uint8Array, message: Uint8Array, iv?: Uint8Array): {
+    ciphered: Uint8Array,
+    iv: Uint8Array,
+    tag?: Uint8Array
+  } => {
     if (key.length !== 32) throw new Error(ErrorMessages.INVALID_KEY_LENGTH);
     const ivLength = (this.mode == AesModes.AES_256_GCM) ? 12 : 16;
     iv = !iv ? randomBytes(ivLength) : iv;
@@ -33,10 +33,7 @@ class AesCipher {
   }
 
   decrypt = (
-    key: Uint8Array,
-    ciphered: Uint8Array,
-    iv: Uint8Array,
-    tag?: Uint8Array
+    key: Uint8Array, ciphered: Uint8Array, iv: Uint8Array, tag?: Uint8Array
   ): Uint8Array => {
     if (key.length !== 32) throw new Error(ErrorMessages.INVALID_KEY_LENGTH);
     if (iv.length !== (this.mode == AesModes.AES_256_GCM ? 12 : 16))

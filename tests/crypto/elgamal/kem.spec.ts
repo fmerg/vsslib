@@ -1,6 +1,6 @@
 import { Algorithms, AesModes } from '../../../src/enums';
 import { randomBytes } from '../../../src/crypto/random';
-import { kem } from '../../../src/crypto';
+import { kem } from '../../../src/crypto/elgamal';
 import { initGroup } from '../../../src/backend';
 import { cartesian } from '../../helpers';
 import { resolveTestConfig } from '../../environ';
