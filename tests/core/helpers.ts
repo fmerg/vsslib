@@ -1,9 +1,17 @@
+import { Group, Point } from '../../src/backend/abstract';
 import { ElgamalSchemes } from '../../src/enums';
 import { ElgamalScheme, System } from '../../src/types';
 import { generateKey } from '../../src';
 import { partialPermutations } from '../helpers';
 import { distributeKey } from '../../src/core';
+import { PublicShare } from '../../src/core';
 
+
+export const selectShare = (index: number, shares: PublicShare<Point>[]) => {
+  const selected = shares.filter(share => share.index == index)[0];
+  if (!selected) throw new Error(`No share found for index ${index}`);
+  return selected;
+}
 
 export const createKeyDistributionSetup = async (opts: {
   system: System,
@@ -15,11 +23,14 @@ export const createKeyDistributionSetup = async (opts: {
   const sharing = await distributeKey(ctx, nrShares, threshold, privateKey);
   const privateShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
+  const { polynomial } = sharing;
   return {
     privateKey,
     publicKey,
     privateShares,
     publicShares,
+    polynomial,
+    sharing,
     ctx,
   }
 }

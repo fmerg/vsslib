@@ -1,11 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { mod, modInv } from '../crypto/arith';
-import {
-  BaseShare,
-  BaseSharing,
-  verifyFeldmann as _verifyFeldmann,
-  verifyPedersen as _verifyPedersen
-} from '../base';
+import { BaseShare, BaseSharing } from '../base';
 import { ErrorMessages } from '../errors';
 
 const lagrange = require('../lagrange');
@@ -59,7 +54,6 @@ export class SecretSharing<P extends Point> extends BaseSharing<
     }
     return shares;
   }
-
 };
 
 
@@ -93,7 +87,8 @@ export async function shareSecret<P extends Point>(
   let index = 1;
   while (index < threshold) {
     const x = index;
-    const y = index <= predefined.length ? predefined[index - 1] : await ctx.randomScalar();
+    const y = index <= predefined.length ? predefined[index - 1] :
+      await ctx.randomScalar();
     xyPoints[index] = [x, y];
     index++;
   }
@@ -108,7 +103,15 @@ export async function verifyFeldmann<P extends Point>(
   commitments: P[]
 ): Promise<boolean> {
   const { value: secret, index } = share;
-  return _verifyFeldmann(ctx, secret, index, commitments);
+  const { order, generator, neutral, operate, combine } = ctx;
+  const lhs = await operate(secret, generator);
+  let rhs = neutral;
+  const i = index;
+  for (const [j, c] of commitments.entries()) {
+    const curr = await operate(mod(BigInt(i ** j), order), c);
+    rhs = await combine(rhs, curr);
+  }
+  return lhs.equals(rhs);
 }
 
 
@@ -120,7 +123,14 @@ export async function verifyPedersen<P extends Point>(
   commitments: P[],
 ): Promise<boolean> {
   const { value: secret, index } = share;
-  return _verifyPedersen(ctx, secret, binding, index, pub, commitments);
+  const { order, generator: g, neutral, operate, combine } = ctx;
+  const lhs = await combine(await operate(secret, g), await operate(binding, pub));
+  let rhs = neutral;
+  const i = index;
+  for (const [j, c] of commitments.entries()) {
+    rhs = await combine(rhs, await operate(BigInt(i ** j), c));
+  }
+  return lhs.equals(rhs);
 }
 
 

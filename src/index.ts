@@ -1,11 +1,10 @@
-import { PrivateKey, PublicKey } from './keys';
-import { PrivateShare, PublicShare } from './sharing';
-import { plain, kem, ies } from './crypto';
-import signer from './crypto/signer';
-
+import { PrivateKey, PublicKey, generateKey } from './keys';
 import {
-  generateKey,
+  PrivateShare,
+  PublicShare,
   distributeKey,
+  verifyFeldmann,
+  verifyPedersen,
   reconstructKey,
   reconstructPublic,
   verifyPartialDecryptors,
@@ -13,6 +12,8 @@ import {
   thresholdDecrypt
 } from './core';
 
+import { plain, kem, ies } from './crypto';
+import signer from './crypto/signer';
 const { aes, elgamal, hash } = require('./crypto');
 const backend = require('./backend');
 const crypto = require('./crypto');
@@ -28,6 +29,8 @@ const serializers = require('./serializers');
 export {
   generateKey,
   distributeKey,
+  verifyFeldmann,
+  verifyPedersen,
   reconstructKey,
   reconstructPublic,
   reconstructDecryptor,

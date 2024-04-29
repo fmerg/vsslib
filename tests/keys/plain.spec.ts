@@ -1,6 +1,6 @@
 import { Algorithms, AesModes, ElgamalSchemes } from '../../src/enums';
 import { Algorithm } from '../../src/types';
-import { generateKey } from '../../src/core';
+import { generateKey } from '../../src';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';

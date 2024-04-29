@@ -6,14 +6,49 @@ import {
   thresholdDecrypt,
 } from '../../src/core';
 import { partialPermutations } from '../helpers';
-import { createThresholdDecryptionSetup } from './helpers';
+import { createThresholdDecryptionSetup, selectShare } from './helpers';
 import { resolveTestConfig } from '../environ';
 
 const { system, nrShares, threshold } = resolveTestConfig();
 
-const scheme = ElgamalSchemes.PLAIN
+const scheme = ElgamalSchemes.KEM;
 
-describe(`Partial decryptors validation over ${system}`, () => {
+
+describe(`Single partial decryptor verification over ${system}`, () => {
+  let setup: any;
+  beforeAll(async () => {
+    setup = await createThresholdDecryptionSetup({
+      scheme, system, nrShares, threshold, invalidIndexes: [2, 3]
+    });
+  });
+
+  test('Partial decryptor verification - success', async () => {
+    const { ctx, publicShares, ciphertext, partialDecryptors } = setup
+    for (const share of partialDecryptors) {
+      const publicShare = selectShare(share.index, publicShares);
+      const verified = await publicShare.verifyPartialDecryptor(
+        ciphertext, share
+      );
+      expect(verified).toBe(true);
+    }
+  });
+  test('Partial decryptor verification - failure', async () => {
+    const { ctx, publicShares, ciphertext, partialDecryptors } = setup
+    const forgedCiphertext = {
+      alpha: ciphertext.alpha, beta: await ctx.randomPoint()
+    };
+    for (const share of partialDecryptors) {
+      const publicShare = selectShare(share.index, publicShares);
+      await expect(
+        publicShare.verifyPartialDecryptor(forgedCiphertext, share)
+      ).rejects.toThrow(
+        ErrorMessages.INVALID_PARTIAL_DECRYPTOR
+      );
+    }
+  });
+})
+
+describe(`Partial decryptors verification over ${system}`, () => {
   let setup: any;
 
   beforeAll(async () => {
@@ -94,7 +129,7 @@ describe(`Decryptor reconstruction over ${system}`, () => {
 });
 
 
-describe('Threshold decryption', () => {
+describe(`Threshold decryption over ${system}`, () => {
   let setup: any;
 
   beforeAll(async () => {
@@ -104,14 +139,15 @@ describe('Threshold decryption', () => {
   test('Skip threshold check', async () => {
     const { privateKey, message, ciphertext, partialDecryptors, ctx } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-      const plaintext1 = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, { scheme });
-      const plaintext2 = await privateKey.decrypt(ciphertext, { scheme });
       if (qualifiedShares.length >= threshold) {
+        const plaintext1 = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, { scheme });
         expect(plaintext1).toEqual(message);
+        const plaintext2 = await privateKey.decrypt(ciphertext, { scheme });
         expect(plaintext1).toEqual(plaintext2);
       } else {
-        expect(plaintext1).not.toEqual(message);
-        expect(plaintext1).not.toEqual(plaintext2);
+        await expect(thresholdDecrypt(ctx, ciphertext, qualifiedShares, { scheme })).rejects.toThrow(
+          'Could not decrypt: AES decryption failure'
+        );
       }
     });
   });
@@ -123,9 +159,7 @@ describe('Threshold decryption', () => {
       ).rejects.toThrow(ErrorMessages.INSUFFICIENT_NR_SHARES);
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const plaintext = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, {
-        scheme, threshold
-      });
+      const plaintext = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, { scheme, threshold });
       expect(plaintext).toEqual(message);
     });
   });

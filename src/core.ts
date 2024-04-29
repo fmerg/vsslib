@@ -1,28 +1,115 @@
 import { Point, Group } from './backend/abstract';
-import { initGroup } from './backend';
 import { leInt2Buff } from './crypto/bitwise';
 import { ElgamalCiphertext } from './crypto/elgamal';
 import { NizkProof } from './nizk';
-import { BaseShare } from './base';
+import { BaseShare, BaseSharing } from './base';
+import { SecretShare } from './shamir';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
-import { PrivateShare, PublicShare, PartialDecryptor, KeySharing } from './sharing';
 import { ElgamalSchemes, AesModes, Algorithms } from './enums';
-import { ElgamalScheme, AesMode, Algorithm, System } from './types';
+import { ElgamalScheme, AesMode, Algorithm } from './types';
 
 const shamir = require('./shamir');
 const elgamal = require('./crypto/elgamal');
-const backend = require('./backend');
 
 
-type KeyPair<P extends Point> = { privateKey: PrivateKey<P>, publicKey: PublicKey<P>, ctx: Group<P> };
+export class PrivateShare<P extends Point> extends PrivateKey<P> implements BaseShare<bigint>{
+  value: bigint;
+  index: number;
 
-export async function generateKey(system: System): Promise<KeyPair<Point>> {
-  const ctx = initGroup(system);
-  const privateKey = new PrivateKey(ctx, await ctx.randomBytes());
-  const publicKey = await privateKey.publicKey();
-  return { privateKey, publicKey, ctx };
+  constructor(ctx: Group<P>, secret: bigint, index: number) {
+    super(ctx, leInt2Buff(secret));
+    this.value = this.secret;
+    this.index = index;
+  }
+
+  async publicShare(): Promise<PublicShare<P>> {
+    const { ctx, index } = this;
+    const pub = await ctx.operate(this.secret, ctx.generator);
+    return new PublicShare(ctx, pub, index);
+  }
+
+  async generatePartialDecryptor(
+    ciphertext: ElgamalCiphertext<P>,
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array
+    },
+  ): Promise<PartialDecryptor<P>> {
+    const { decryptor, proof } = await this.generateDecryptor(
+      ciphertext, opts
+    );
+    return { value: decryptor, index: this.index, proof };
+  }
+};
+
+
+export class PublicShare<P extends Point> extends PublicKey<P> {
+  value: P;
+  index: number;
+
+  constructor(ctx: Group<P>, pub: P, index: number) {
+    super(ctx, pub);
+    this.value = pub;
+    this.index = index;
+  }
+
+  async verifyPartialDecryptor<A>(
+    ciphertext: ElgamalCiphertext<P>,
+    partialDecryptor: PartialDecryptor<P>,
+    opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean },
+  ): Promise<boolean> {
+    const { ctx, index } = this;
+    const { value: decryptor, proof } = partialDecryptor;
+    const nonce = opts ? opts.nonce : undefined;
+    const verified = await this.verifyDecryptor(
+      ciphertext, decryptor, proof, { nonce, raiseOnInvalid: false }
+    );
+    const raiseOnInvalid = opts ?
+      (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
+      true;
+    if (!verified && raiseOnInvalid) throw new Error(
+      ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
+    return verified;
+  }
+};
+
+export class KeySharing<P extends Point> extends BaseSharing<
+  bigint, P, PrivateShare<P>, PublicShare<P>
+> {
+  getSecretShares = async (): Promise<PrivateShare<P>[]> => {
+    const { ctx, polynomial, nrShares } = this;
+    const shares = [];
+    for (let index = 1; index <= nrShares; index++) {
+      const value = polynomial.evaluate(index);
+      shares.push(new PrivateShare(ctx, value, index));
+    }
+    return shares;
+  }
+
+  getPublicShares = async (): Promise<PublicShare<P>[]> => {
+    const { nrShares, polynomial: { evaluate }, ctx: { operate, generator } } = this;
+    const shares = [];
+    for (let index = 1; index <= nrShares; index++) {
+      const value = await operate(evaluate(index), generator);
+      shares.push(new PublicShare(this.ctx, value, index));
+    }
+    return shares;
+  }
 }
+
+
+export class PartialDecryptor<P extends Point> implements BaseShare<P> {
+  value: P;
+  index: number;
+  proof: NizkProof<P>;
+
+  constructor(value: P, index: number, proof: NizkProof<P>) {
+    this.value = value;
+    this.index = index;
+    this.proof = proof;
+  }
+};
 
 
 export async function distributeKey<P extends Point>(
@@ -35,6 +122,34 @@ export async function distributeKey<P extends Point>(
     ctx, nrShares, threshold, privateKey.secret
   );
   return new KeySharing(ctx, nrShares, threshold, polynomial);
+}
+
+export async function verifyFeldmann<P extends Point>(
+  ctx: Group<P>,
+  share: PrivateShare<P>,
+  commitments: P[]
+): Promise<boolean> {
+  const secretShare = new SecretShare(share.value, share.index);
+  const verified = await shamir.verifyFeldmann(
+    ctx, secretShare, commitments
+  );
+  if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
+  return verified;
+}
+
+export async function verifyPedersen<P extends Point>(
+  ctx: Group<P>,
+  share: PrivateShare<P>,
+  binding: bigint,
+  pub: P,
+  commitments: P[]
+): Promise<boolean> {
+  const secretShare = new SecretShare(share.value, share.index);
+  const verified = await shamir.verifyPedersen(
+    ctx, secretShare, binding, pub, commitments
+  );
+  if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
+  return verified;
 }
 
 export async function reconstructKey<P extends Point>(

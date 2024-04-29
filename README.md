@@ -49,45 +49,77 @@ const { flag, indexes } = await combiner.verifyPartialDecryptors(ciphertext, pub
 const plaintext = await combiner.plainDecrypt(ciphertext, partialDecryptors);
 ```
 
+## Verifiable identity (Schnorr identification scheme)
+
+```js
+const proof = await privateKey.proveIdentity({ algorithm: 'sha256'});
+```
+
+```js
+await publicKey.verifyIdentity(proof);
+```
+
+## Verifiable key sharing (Shamir scheme)
+
+```js
+const sharing = vss.distributeKey(5, 3, privateKey);
+
+const { nrShares, threshold, polynomial } = sharing;
+```
+
+```js
+const privateShares = await sharing.getSecretShares();
+```
+
+```js
+const publicShares = await sharing.getPublicShares();
+```
+
+### Feldmann verification scheme
+
+```js
+const { commitments } = await sharing.proveFeldmann();
+```
+
+```js
+await verifyFeldmann(ctx, privateShare, commitments);
+```
+
+### Pedersen verification scheme
+
+```js
+const hPub = await ctx.randomPoint();
+```
+
+```js
+const { bindings, commitments } = await sharing.provePedersen(hPub);
+```
+
+```js
+const { bindings, commitments } = await sharing.provePedersen(hPub);
+const binding = bindings[share.index];
+```
+
+```js
+const verified = await verifyPedersen(ctx, share, binding, hPub, commitments);
+```
+
+### Verifiable partial decryptors
+
+```js
+const partialDecryptor = await privateShare.generatePartialDecryptor(ciphertext);
+```
+
+```js
+await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
+```
+
+
 ### Verification
 
 ## Feldmann commitments
 
-```js
-const { commitments } = await polynomial.proveFeldmann();
-```
-
-```js
-const secret = await polynomial.evaluate(index);
-```
-
-```js
-import { verifyFeldmann } from 'vsslib/vss';
-
-const verified = await verifyFeldmann(ctx, secret, index, commitments);
-```
-
-
 ## Pedersen commitments
-
-```js
-const hPub = await ctx.randomPoint();
-const nr = 7;
-
-const { commitments, bindings } = await polynomial.provePedersen(nr, hPub);
-```
-
-```js
-const secret = await polynomial.evaluate(index);
-
-const binding = bindings[index];
-```
-
-```js
-import { verifyPedersen } from 'vsslib/vss';
-
-const verified = await verifyPedersen(ctx, secret, binding, index, hPub, commitments);
-```
 
 ## Modules
 

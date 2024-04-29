@@ -1,6 +1,6 @@
 import { Encodings } from '../src/enums';
-import { generateKey } from '../src/core';
-import { PrivateShare, PublicShare } from '../src/sharing';
+import { generateKey } from '../src';
+import { PrivateShare, PublicShare } from '../src/core';
 import { initGroup } from '../src/backend';
 import { cartesian } from './helpers';
 import { resolveTestConfig } from './environ';

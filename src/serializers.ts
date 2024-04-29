@@ -2,7 +2,7 @@ import { Group, Point } from './backend/abstract';
 import { Encodings } from './enums';
 import { System, Encoding } from './types';
 import { PrivateKey, PublicKey } from './keys';
-import { PrivateShare, PublicShare } from './sharing';
+import { PrivateShare, PublicShare } from './core';
 import { initGroup } from './backend';
 
 

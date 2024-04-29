@@ -1,6 +1,5 @@
 import { Group, Point } from './backend/abstract';
 import { FieldPolynomial, randomPolynomial } from './lagrange';
-import { mod } from './crypto/arith';
 
 
 export interface BaseShare<T> {
@@ -9,7 +8,9 @@ export interface BaseShare<T> {
 }
 
 
-export abstract class BaseSharing<S, P extends Point, Q extends BaseShare<S>, R extends BaseShare<P>> {
+export abstract class BaseSharing<
+  S, P extends Point, Q extends BaseShare<S>, R extends BaseShare<P>
+> {
   ctx: Group<P>;
   nrShares: number;
   threshold: number;
@@ -46,56 +47,19 @@ export abstract class BaseSharing<S, P extends Point, Q extends BaseShare<S>, R 
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     const commitments = new Array(degree + 1);
     const bindings = new Array(degree + 1);
-    const h = hPub || await this.ctx.randomPoint();
+    hPub = hPub || await this.ctx.randomPoint();
     for (const [i, a] of coeffs.entries()) {
       const a = coeffs[i];
       const b = bindingPolynomial.coeffs[i];
       commitments[i] = await combine(
         await operate(a, g),
-        await operate(b, h),
+        await operate(b, hPub),
       );
       bindings[i] = await bindingPolynomial.evaluate(i);
     }
     for (let j = coeffs.length; j <= this.nrShares; j++) {
       bindings[j] = await bindingPolynomial.evaluate(j);
     }
-    return { bindings, hPub: h, commitments };
+    return { bindings, hPub, commitments };
   }
-}
-
-
-export async function verifyFeldmann<P extends Point>(
-  ctx: Group<P>,
-  secret: bigint,
-  index: number,
-  commitments: P[],
-): Promise<boolean> {
-  const { order, generator, neutral, operate, combine } = ctx;
-  const lhs = await operate(secret, generator);
-  let rhs = neutral;
-  const i = index;
-  for (const [j, c] of commitments.entries()) {
-    const curr = await operate(mod(BigInt(i ** j), order), c);
-    rhs = await combine(rhs, curr);
-  }
-  return await lhs.equals(rhs);
-}
-
-
-export async function verifyPedersen<P extends Point>(
-  ctx: Group<P>,
-  secret: bigint,
-  binding: bigint,
-  index: number,
-  pub: P,
-  commitments: P[],
-): Promise<boolean> {
-  const { order, generator: g, neutral, operate, combine } = ctx;
-  const lhs = await combine(await operate(secret, g), await operate(binding, pub));
-  let rhs = neutral;
-  const i = index;
-  for (const [j, c] of commitments.entries()) {
-    rhs = await combine(rhs, await operate(BigInt(i ** j), c));
-  }
-  return await lhs.equals(rhs);
 }

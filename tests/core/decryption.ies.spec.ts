@@ -6,14 +6,48 @@ import {
   thresholdDecrypt,
 } from '../../src/core';
 import { partialPermutations } from '../helpers';
-import { createThresholdDecryptionSetup } from './helpers';
+import { createThresholdDecryptionSetup, selectShare } from './helpers';
 import { resolveTestConfig } from '../environ';
 
 const { system, nrShares, threshold } = resolveTestConfig();
 
 const scheme = ElgamalSchemes.IES;
 
-describe(`Partial decryptors validation over ${system}`, () => {
+describe(`Single partial decryptor verification over ${system}`, () => {
+  let setup: any;
+  beforeAll(async () => {
+    setup = await createThresholdDecryptionSetup({
+      scheme, system, nrShares, threshold, invalidIndexes: [2, 3]
+    });
+  });
+
+  test('Partial decryptor verification - success', async () => {
+    const { ctx, publicShares, ciphertext, partialDecryptors } = setup
+    for (const share of partialDecryptors) {
+      const publicShare = selectShare(share.index, publicShares);
+      const verified = await publicShare.verifyPartialDecryptor(
+        ciphertext, share
+      );
+      expect(verified).toBe(true);
+    }
+  });
+  test('Partial decryptor verification - failure', async () => {
+    const { ctx, publicShares, ciphertext, partialDecryptors } = setup
+    const forgedCiphertext = {
+      alpha: ciphertext.alpha, beta: await ctx.randomPoint()
+    };
+    for (const share of partialDecryptors) {
+      const publicShare = selectShare(share.index, publicShares);
+      await expect(
+        publicShare.verifyPartialDecryptor(forgedCiphertext, share)
+      ).rejects.toThrow(
+        ErrorMessages.INVALID_PARTIAL_DECRYPTOR
+      );
+    }
+  });
+})
+
+describe(`Partial decryptors verification over ${system}`, () => {
   let setup: any;
 
   beforeAll(async () => {

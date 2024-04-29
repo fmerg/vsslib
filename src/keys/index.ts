@@ -1,11 +1,12 @@
 import { Group, Point } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
+import { initGroup } from '../backend';
 import { leInt2Buff } from '../crypto/bitwise';
 import { dlog, ddh, NizkProof } from '../nizk';
 import { Signature } from '../crypto/signer/base';
 import { SchnorrSignature } from '../crypto/signer/schnorr';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
-import { Algorithm, AesMode, ElgamalScheme } from '../types';
+import { Algorithm, AesMode, ElgamalScheme, System } from '../types';
 import { ElgamalCiphertext } from '../crypto/elgamal';
 import signer from '../crypto/signer';
 
@@ -246,7 +247,20 @@ class PublicKey<P extends Point> {
 }
 
 
+type KeyPair<P extends Point> = {
+  privateKey: PrivateKey<P>, publicKey: PublicKey<P>, ctx: Group<P>
+};
+
+async function generateKey(system: System): Promise<KeyPair<Point>> {
+  const ctx = initGroup(system);
+  const privateKey = new PrivateKey(ctx, await ctx.randomBytes());
+  const publicKey = await privateKey.publicKey();
+  return { privateKey, publicKey, ctx };
+}
+
+
 export {
+  generateKey,
   PrivateKey,
   PublicKey,
 }
