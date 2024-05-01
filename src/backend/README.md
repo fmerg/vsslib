@@ -1,9 +1,9 @@
 # `vsslib.backend`
 
 ```js
-const { backend } = require('vsslib');
+import { initGroup }  from 'vsslib/backend';
 
-const ctx = backend.initGroup('ed25519');
+const ctx = initGroup('ed25519');
 ```
 
 ```js
@@ -40,7 +40,7 @@ await ctx.validateBytes(b);
 ```
 
 
-### Keypair generation (discrete logarithm)
+### Keypair generation
 
 ```js
 const { secret, pub } = await ctx.generateKeypair();

@@ -4,10 +4,11 @@ import {
   Algorithms,
   AesModes,
   ElgamalSchemes,
+  SignatureSchemes,
   Encodings,
 } from './enums';
 
-export type Label =
+export type System =
   | Modular.BITS_2048
   | Modular.BITS_4096
   | Elliptic.ED25519
@@ -35,6 +36,9 @@ export type ElgamalScheme =
   | ElgamalSchemes.PLAIN
   | ElgamalSchemes.KEM
   | ElgamalSchemes.IES;
+
+export type SignatureScheme =
+  | SignatureSchemes.SCHNORR;
 
 export type Encoding =
   | Encodings.HEX

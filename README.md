@@ -7,23 +7,83 @@
 ## Usage
 
 ```js
-import { key } from 'vsslib';
+import { generateKey } from 'vsslib';
 
-const { privateKey, publicKey, ctx } = await key.generate('ed25519');
+const { privateKey, publicKey, ctx } = await generateKey('ed25519');
+```
+
+### Sharing
+
+```js
+import { distributeKey } from 'vsslib';
+
+const sharing = distributeKey(5, 3, privateKey);
 ```
 
 ```js
-import { core } from 'vsslib';
-
-const combiner = await core.initCombiner({ label: 'ed25519', threshold: 3 })
+const { nrShares, threshold, polynomial } = sharing;
 ```
 
-### Key sharing
+```js
+const privateShares = await sharing.getPrivateShares();
+```
 
 ```js
-const sharing = privateKey.distribute(5, 3);
-
 const publicShares = await sharing.getPublicShares();
+```
+
+### Verification
+
+
+#### Feldmann VSS scheme
+
+```js
+const { commitments } = await sharing.proveFeldmann();
+```
+
+```js
+import { verifyFeldmann } from 'vsslib';
+
+await verifyFeldmann(ctx, privateShare, commitments);
+```
+
+#### Pedersen VSS scheme
+
+```js
+const hPub = await ctx.randomPoint();
+```
+
+```js
+const { bindings, commitments } = await sharing.provePedersen(hPub);
+```
+
+```js
+const { bindings, commitments } = await sharing.provePedersen(hPub);
+
+const binding = bindings[share.index];
+```
+
+```js
+import { verifyPedersen } from 'vsslib';
+
+await verifyPedersen(ctx, share, binding, hPub, commitments);
+```
+
+### Reconstruction
+
+```js
+import { reconstructKey, reconstructPublic } from 'vsslib';
+```
+
+
+### Serialization
+
+```js
+import { serializePublicKey, deserializePublicKey } from 'vsslib/serializers';
+```
+
+```
+import { serializePrivateShare, deserializePrivateShare } from 'vsslib/serializers';
 ```
 
 ### Threshold decryption
@@ -41,28 +101,31 @@ await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
 ```
 
 ```js
-const { flag, indexes } = await combiner.verifyPartialDecryptors(ciphertext, publicShares, partialDecryptors);
+import { verifyPartialDecryptors } from 'vsslib';
+
+const { flag, indexes } = await verifyPartialDecryptors(
+  ctx, ciphertext, publicShares, partialDecryptors
+);
 ```
 
 ```js
-const plaintext = await combiner.plainDecrypt(ciphertext, partialDecryptors);
+await verifyPartialDecryptors(
+  ctx, ciphertext, publicShares, partialDecryptors, { raiseOnInvalid: True }
+);
+```
+
+```js
+const plaintext = await thresholdDecrypt(ciphertext, partialDecryptors);
 ```
 
 ## Modules
 
-- [`vsslib.aes`](./src/aes)
-- [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.backend`](./src/backend)
-- [`vsslib.core`](./src/core)
-- [`vsslib.plain`](./src/elgamal)
-- [`vsslib.ies`](./src/elgamal)
-- [`vsslib.kem`](./src/elgamal)
-- [`vsslib.key`](./src/key)
-- [`vsslib.polynomials`](./src/polynomials)
-- [`vsslib.schnorr`](./src/schnorr)
+- [`vsslib.crypto`](./src/crypto)
+- [`vsslib.keys`](./src/keys)
+- [`vsslib.lagrange`](./src/lagrange)
+- [`vsslib.nizk`](./src/nizk)
 - [`vsslib.shamir`](./src/shamir)
-- [`vsslib.sigma`](./src/sigma)
-- [`vsslib.utils`](./src/utils)
 
 ## Development
 

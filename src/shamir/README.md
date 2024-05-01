@@ -1,10 +1,5 @@
 # `vsslib.shamir`
 
-```js
-const { shamir, backend } = require('vsslib');
-
-const ctx = backend.initGroup('ed25519');
-```
 
 ```js
 const secret = await ctx.randomScalar();
@@ -13,7 +8,7 @@ const secret = await ctx.randomScalar();
 ## Secret sharing
 
 ```js
-const sharing = await shamir.distribute(ctx, secret, 5, 3);
+const sharing = await shareSecret(ctx, 5, 3, secret);
 ```
 
 ```js
@@ -30,24 +25,24 @@ const publicShares = await sharing.getPublicShares();
 
 ## Share verification
 
-### Feldmann VSS scheme
+### Feldmann scheme
 
 ```js
-const commitments = await sharing.getFeldmann();
+const commitments = await sharing.proveFeldmann();
 ```
 
 ```js
-const verified = await shamir.verifySecretShare(ctx, secretShare, commitments);
+const verified = await verifyFelmann(ctx, secretShare, commitments);
 ```
 
-### Pedersen VSS scheme
+### Pedersen scheme
 
 ```js
 const hPub = await ctx.randomPoint();
 ```
 
 ```js
-const { bindings, commitments } = await sharing.getPedersen(hPub);
+const { bindings, commitments } = await sharing.provePedersen(hPub);
 ```
 
 ```js
@@ -56,7 +51,7 @@ const binding = bindings[index];
 ```
 
 ```js
-const verified = await shamir.verifySecretShare(ctx, secretShare, commitments, { binding, hPub });
+const verified = await verifyPedersen(ctx, secretShare, binding, hPub, commitments);
 ```
 
 ## Reconstruction
@@ -64,11 +59,11 @@ const verified = await shamir.verifySecretShare(ctx, secretShare, commitments, {
 ```js
 const qualifiedShares = secretShares.slice(0, threshold);
 
-const reconstructed = await shamir.reconstructSecret(ctx, qualifiedShares);
+const reconstructed = await reconstructSecret(ctx, qualifiedShares);
 ```
 
 ```js
 const qualifiedShares = publicShares.slice(0, threshold);
 
-const reconstructed = await shamir.reconstructPublic(ctx, qualifiedShares);
+const reconstructed = await reconstructPublic(ctx, qualifiedShares);
 ```

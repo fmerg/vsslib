@@ -1,31 +1,42 @@
-import { PrivateKey, PublicKey, PrivateShare, PublicShare } from './key';
-import { plain, kem, ies } from './elgamal';
-import schnorr from './schnorr';
+import { generateKey } from './keys';
+import {
+  distributeKey,
+  verifyFeldmann,
+  verifyPedersen,
+  reconstructKey,
+  reconstructPublic,
+  verifyPartialDecryptors,
+  reconstructDecryptor,
+  thresholdDecrypt
+} from './core';
 
-const aes = require('./aes');
+
 const backend = require('./backend');
-const core = require('./core');
-const key = require('./key');
-const polynomials = require('./polynomials');
+const crypto = require('./crypto');
+const enums = require('./enums');
+const keys = require('./keys');
+const lagrange = require('./lagrange');
+const nizk = require('./nizk');
 const shamir = require('./shamir');
-const sigma = require('./sigma');
-const utils = require('./utils');
+const serializers = require('./serializers');
+
 
 export {
-  PrivateKey,
-  PublicKey,
-  PrivateShare,
-  PublicShare,
-  aes,
+  generateKey,
+  distributeKey,
+  verifyFeldmann,
+  verifyPedersen,
+  reconstructKey,
+  reconstructPublic,
+  reconstructDecryptor,
+  verifyPartialDecryptors,
+  thresholdDecrypt,
   backend,
-  core,
-  plain,
-  ies,
-  kem,
-  key,
-  polynomials,
-  schnorr,
+  crypto,
+  enums,
+  keys,
+  lagrange,
+  nizk,
   shamir,
-  sigma,
-  utils,
+  serializers,
 }

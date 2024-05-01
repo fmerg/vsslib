@@ -1,39 +1,45 @@
-import { shamir, backend } from '../../src';
-import { ScalarShare, PointShare } from '../../src/shamir';
+import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
+import {
+  shareSecret,
+  reconstructSecret,
+  reconstructPublic,
+  SecretShare,
+  PubShare,
+} from '../../src/shamir';
+
 import { partialPermutations } from '../helpers';
+import { resolveTestConfig } from '../environ';
 
+let { system, nrShares, threshold } = resolveTestConfig();
 
-describe('Reconstruction from shares', () => {
-  const label = 'ed25519';
-  const ctx = backend.initGroup(label);
-  const nrShares = 5;
-  const threshold = 3;
+describe(`Reconstruction from shares over ${system}`, () => {
+  const ctx = initGroup(system);
 
   let secret: bigint;
   let pub: Point;
-  let secretShares: ScalarShare<Point>[];
-  let publicShares: PointShare<Point>[];
+  let secretShares: SecretShare<Point>[];
+  let publicShares: PubShare<Point>[];
 
   beforeAll(async () => {
     secret = await ctx.randomScalar();
     pub = await ctx.operate(secret, ctx.generator);
-    const sharing = await shamir.distribute(ctx, secret, nrShares, threshold);
+    const sharing = await shareSecret(ctx, nrShares, threshold, secret);
     secretShares = await sharing.getSecretShares();
     publicShares = await sharing.getPublicShares();
   })
 
   test('Secret scalar reconstruction', async () => {
-    partialPermutations(secretShares).forEach(async (qualifiedSet) => {
-      let reconstructed = shamir.reconstructSecret(ctx, qualifiedSet);
-      expect(reconstructed == secret).toBe(qualifiedSet.length >= threshold);
+    partialPermutations(secretShares).forEach(async (qualifiedShares) => {
+      let reconstructed = reconstructSecret(ctx, qualifiedShares);
+      expect(reconstructed == secret).toBe(qualifiedShares.length >= threshold);
     });
   });
 
   test('Public point reconstruction', async () => {
-    partialPermutations(publicShares).forEach(async (qualifiedSet) => {
-      let reconstructed = await shamir.reconstructPublic(ctx, qualifiedSet);
-      expect(await reconstructed.equals(pub)).toBe(qualifiedSet.length >= threshold);
+    partialPermutations(publicShares).forEach(async (qualifiedShares) => {
+      let reconstructed = await reconstructPublic(ctx, qualifiedShares);
+      expect(await reconstructed.equals(pub)).toBe(qualifiedShares.length >= threshold);
     });
   });
 })

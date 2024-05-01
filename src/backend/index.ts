@@ -1,14 +1,12 @@
 import { Modular } from '../enums';
-import { Label } from '../types';
-import { assertLabel } from '../utils/checkers';
-import { Point, Group } from './abstract';
-import { default as initModular } from './modular';
-import { default as initElliptic } from './elliptic';
+import { System } from '../types';
+import { initModular } from './modular';
+import { initElliptic } from './elliptic';
 
-const __modular   = Object.values(Modular);
+const sanitize  = (system: System | string) => system as System;
+const isModular = (system: System | string) => Object.values(Modular).includes(sanitize(system));
+const initGroup = (system: System | string) => isModular(system) ?
+    initModular(sanitize(system)) :
+    initElliptic(sanitize(system));
 
-
-export function initGroup(label: Label): Group<Point> {
-  assertLabel(label);
-  return __modular.includes(label) ? initModular(label) : initElliptic(label);
-}
+export { initGroup };
