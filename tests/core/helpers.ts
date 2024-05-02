@@ -71,7 +71,7 @@ export const createThresholdDecryptionSetup = async (opts: {
   if (invalidIndexes) {
     for (const share of partialDecryptors) {
       invalidDecryptors.push(!(invalidIndexes.includes(share.index)) ? share : {
-        value: await privateKey.ctx.randomPoint(),
+        value: (await ctx.randomPoint()).toBytes(),
         index: share.index,
         proof: share.proof,
       });

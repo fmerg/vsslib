@@ -1,7 +1,7 @@
 import { Algorithms } from '../../enums';
 import { Algorithm, AesMode } from '../../types';
 import { Point, Group } from '../../backend/abstract';
-import { BaseCipher, Ciphertext } from './base';
+import { BaseCipher } from './base';
 import { ErrorMessages } from '../../errors';
 
 import aes from '../aes';
@@ -14,9 +14,6 @@ type A = {
   iv: Uint8Array,
   mac: Uint8Array,
   tag?: Uint8Array,
-}
-
-export class IesCiphertext<P extends Point> extends Ciphertext<A, P> {
 }
 
 export class IesCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {

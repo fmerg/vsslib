@@ -1,9 +1,6 @@
 import { Group, Point } from '../../backend/abstract';
-import { BaseCipher, Ciphertext } from './base';
+import { BaseCipher } from './base';
 
-
-export class PlainCiphertext<P extends Point> extends Ciphertext<P, P> {
-}
 
 export class PlainCipher<P extends Point> extends BaseCipher<Uint8Array, P, P> {
   constructor(ctx: Group<P>) {

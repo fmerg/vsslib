@@ -1,7 +1,7 @@
 import { Algorithms, AesModes } from '../../enums';
 import { Algorithm, AesMode } from '../../types';
 import { Point, Group } from '../../backend/abstract';
-import { BaseCipher, Ciphertext } from './base';
+import { BaseCipher } from './base';
 
 
 import hash from '../hash';
@@ -13,9 +13,6 @@ type A = {
   iv: Uint8Array,
   tag?: Uint8Array,
 };
-
-export class KemCiphertext<P extends Point> extends Ciphertext<A, P> {
-}
 
 
 export class KemCipher<P extends Point> extends BaseCipher<Uint8Array, A, P> {

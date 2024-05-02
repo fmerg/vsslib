@@ -5,13 +5,14 @@ import {
   reconstructDecryptor,
   thresholdDecrypt,
 } from '../../src/core';
-import { partialPermutations } from '../helpers';
+import { partialPermutations, isEqualBuffer } from '../helpers';
 import { createThresholdDecryptionSetup, selectShare } from './helpers';
 import { resolveTestConfig } from '../environ';
 
 const { system, nrShares, threshold } = resolveTestConfig();
 
 const scheme = ElgamalSchemes.IES;
+
 
 describe(`Single partial decryptor verification over ${system}`, () => {
   let setup: any;
@@ -34,7 +35,8 @@ describe(`Single partial decryptor verification over ${system}`, () => {
   test('Partial decryptor verification - failure', async () => {
     const { ctx, publicShares, ciphertext, partialDecryptors } = setup
     const forgedCiphertext = {
-      alpha: ciphertext.alpha, beta: await ctx.randomPoint()
+      alpha: ciphertext.alpha,
+      beta: (await ctx.randomPoint()).toBytes(),
     };
     for (const share of partialDecryptors) {
       const publicShare = selectShare(share.index, publicShares);
@@ -110,7 +112,9 @@ describe(`Decryptor reconstruction over ${system}`, () => {
     const { ctx, ciphertext, decryptor: targetDecryptor, partialDecryptors } = setup;
     partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
       const decryptor = await reconstructDecryptor(ctx, qualifiedShares);
-      expect(await decryptor.equals(targetDecryptor)).toBe(qualifiedShares.length >= threshold);
+      expect(isEqualBuffer(decryptor, targetDecryptor)).toBe(
+        qualifiedShares.length >= threshold
+      );
     });
   });
   test('With threshold check', async () => {
@@ -122,7 +126,7 @@ describe(`Decryptor reconstruction over ${system}`, () => {
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
       const decryptor = await reconstructDecryptor(ctx, qualifiedShares, { threshold });
-      expect(await decryptor.equals(targetDecryptor)).toBe(true);
+      expect(isEqualBuffer(decryptor, targetDecryptor)).toBe(true);
     });
   });
 });
@@ -158,7 +162,9 @@ describe(`Threshold decryption over ${system}`, () => {
       ).rejects.toThrow(ErrorMessages.INSUFFICIENT_NR_SHARES);
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const plaintext = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, { scheme, threshold });
+      const plaintext = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, {
+        scheme, threshold
+      });
       expect(plaintext).toEqual(message);
     });
   });

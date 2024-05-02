@@ -1,6 +1,6 @@
 import { Point, Group } from './backend/abstract';
-import { leInt2Buff } from './crypto/bitwise';
 import { ElgamalCiphertext } from './crypto/elgamal';
+import { leInt2Buff } from './crypto/bitwise';
 import { NizkProof } from './nizk';
 import { BaseShare, BaseSharing } from './base';
 import { SecretShare } from './shamir';
@@ -9,8 +9,8 @@ import { ErrorMessages } from './errors';
 import { ElgamalSchemes, AesModes, Algorithms } from './enums';
 import { ElgamalScheme, AesMode, Algorithm } from './types';
 
+import elgamal from './crypto/elgamal';
 const shamir = require('./shamir');
-const elgamal = require('./crypto/elgamal');
 
 
 export class PrivateShare<P extends Point> extends PrivateKey<P> implements BaseShare<bigint>{
@@ -30,14 +30,16 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   }
 
   async generatePartialDecryptor(
-    ciphertext: ElgamalCiphertext<P>,
+    ciphertext: ElgamalCiphertext,
     opts?: {
       algorithm?: Algorithm,
       nonce?: Uint8Array
     },
   ): Promise<PartialDecryptor<P>> {
+    const { alpha, beta } = ciphertext;
     const { decryptor, proof } = await this.generateDecryptor(
-      ciphertext, opts
+      ciphertext,
+      opts,
     );
     return { value: decryptor, index: this.index, proof };
   }
@@ -55,15 +57,22 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   }
 
   async verifyPartialDecryptor<A>(
-    ciphertext: ElgamalCiphertext<P>,
+    ciphertext: ElgamalCiphertext,
     partialDecryptor: PartialDecryptor<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean },
   ): Promise<boolean> {
     const { ctx, index } = this;
     const { value: decryptor, proof } = partialDecryptor;
     const nonce = opts ? opts.nonce : undefined;
+    const { alpha, beta } = ciphertext;
     const verified = await this.verifyDecryptor(
-      ciphertext, decryptor, proof, { nonce, raiseOnInvalid: false }
+      ciphertext,
+      decryptor,
+      proof,
+      {
+        nonce,
+        raiseOnInvalid: false
+      }
     );
     const raiseOnInvalid = opts ?
       (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
@@ -99,12 +108,12 @@ export class KeySharing<P extends Point> extends BaseSharing<
 }
 
 
-export class PartialDecryptor<P extends Point> implements BaseShare<P> {
-  value: P;
+export class PartialDecryptor<P extends Point>{
+  value: Uint8Array;
   index: number;
   proof: NizkProof<P>;
 
-  constructor(value: P, index: number, proof: NizkProof<P>) {
+  constructor(value: Uint8Array, index: number, proof: NizkProof<P>) {
     this.value = value;
     this.index = index;
     this.proof = proof;
@@ -181,7 +190,7 @@ export async function reconstructPublic<P extends Point>(
 // TODO: Include indexed nonces option?
 export async function verifyPartialDecryptors<P extends Point>(
   ctx: Group<P>,
-  ciphertext: ElgamalCiphertext<P>,
+  ciphertext: ElgamalCiphertext,
   publicShares: PublicShare<P>[],
   shares: PartialDecryptor<P>[],
   opts?: { threshold?: number, raiseOnInvalid?: boolean },
@@ -200,9 +209,13 @@ export async function verifyPartialDecryptors<P extends Point>(
   const raiseOnInvalid = opts ? (opts.raiseOnInvalid || false) : false;
   for (const partialDecryptor of shares) {
     const publicShare = selectPublicShare(partialDecryptor.index, publicShares);
-    const verified = await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor, {
-      raiseOnInvalid: false,
-    });
+    const verified = await publicShare.verifyPartialDecryptor(
+      ciphertext,
+      partialDecryptor,
+      {
+        raiseOnInvalid: false,
+      }
+    );
     if (!verified && raiseOnInvalid)
       throw new Error(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
     flag &&= verified;
@@ -215,27 +228,28 @@ export async function reconstructDecryptor<P extends Point>(
   ctx: Group<P>,
   shares: PartialDecryptor<P>[],
   opts?: { threshold?: number, publicShares?: PublicShare<P>[] }
-): Promise<P> {
+): Promise<Uint8Array> {
   // TODO: Include validation
   const threshold = opts ? opts.threshold : undefined;
   if (threshold && shares.length < threshold) throw new Error(
     ErrorMessages.INSUFFICIENT_NR_SHARES
   );
-  const { order, neutral, operate, combine } = ctx;
+  const { order, neutral, operate, combine, unpack } = ctx;
   const qualifiedIndexes = shares.map(share => share.index);
   let acc = neutral;
   for (const share of shares) {
     const { value, index } = share;
     const lambda = shamir.computeLambda(ctx, index, qualifiedIndexes);
-    const curr = await operate(lambda, value);
+    const curr = await operate(lambda, unpack(value));
     acc = await combine(acc, curr);
   }
-  return acc;
+  return acc.toBytes();
 }
+
 
 export async function thresholdDecrypt<P extends Point>(
   ctx: Group<P>,
-  ciphertext: ElgamalCiphertext<P>,
+  ciphertext: ElgamalCiphertext,
   shares: PartialDecryptor<P>[],
   opts: {
     scheme: ElgamalScheme,
@@ -247,21 +261,10 @@ export async function thresholdDecrypt<P extends Point>(
   let { scheme, mode, algorithm, threshold } = opts;
   // TODO: Include public schares option for validation?
   const decryptor = await reconstructDecryptor(ctx, shares, { threshold });
-  switch (scheme) {
-    case ElgamalSchemes.IES:
-      mode = mode || AesModes.DEFAULT;
-      algorithm = algorithm || Algorithms.DEFAULT;
-      return elgamal[ElgamalSchemes.IES](ctx, mode, algorithm).decryptWithDecryptor(
-        ciphertext, decryptor,
-      );
-    case ElgamalSchemes.KEM:
-      mode = mode || AesModes.DEFAULT;
-      return elgamal[ElgamalSchemes.KEM](ctx, mode).decryptWithDecryptor(
-        ciphertext, decryptor,
-      );
-    case ElgamalSchemes.PLAIN:
-      return elgamal[ElgamalSchemes.PLAIN](ctx).decryptWithDecryptor(
-        ciphertext, decryptor
-      );
-  }
+  algorithm = algorithm || Algorithms.DEFAULT;
+  mode = mode || AesModes.DEFAULT;
+  return elgamal(ctx, scheme, algorithm, mode).decryptWithDecryptor(
+    ciphertext,
+    decryptor,
+  );
 }

@@ -1,16 +1,16 @@
 import { Group, Point } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
 import { initGroup } from '../backend';
+import { ElgamalCiphertext } from '../crypto/elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
 import { dlog, ddh, NizkProof } from '../nizk';
 import { Signature } from '../crypto/signer/base';
 import { SchnorrSignature } from '../crypto/signer/schnorr';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, System } from '../types';
-import { ElgamalCiphertext } from '../crypto/elgamal';
-import signer from '../crypto/signer';
 
-const elgamal = require('../crypto/elgamal');
+import signer from '../crypto/signer';
+import elgamal from '../crypto/elgamal';
 
 
 class PrivateKey<P extends Point> {
@@ -76,63 +76,89 @@ class PrivateKey<P extends Point> {
   }
 
   async decrypt(
-    ciphertext: ElgamalCiphertext<P>,
-    opts: { scheme: ElgamalScheme, mode?: AesMode, algorithm?: Algorithm }
+    ciphertext: ElgamalCiphertext,
+    opts: {
+      scheme: ElgamalScheme,
+      algorithm?: Algorithm
+      mode?: AesMode,
+    }
   ): Promise<Uint8Array> {
     let { scheme, mode, algorithm } = opts;
-    switch (scheme) {
-      case ElgamalSchemes.IES:
-        mode = mode || AesModes.DEFAULT;
-        algorithm = algorithm || Algorithms.DEFAULT;
-        return elgamal[ElgamalSchemes.IES](this.ctx, mode, algorithm).decrypt(
-          ciphertext, this.secret,
-        );
-      case ElgamalSchemes.KEM:
-        mode = mode || AesModes.DEFAULT;
-        return elgamal[ElgamalSchemes.KEM](this.ctx, mode).decrypt(
-          ciphertext, this.secret,
-        );
-      case ElgamalSchemes.PLAIN:
-        return elgamal[ElgamalSchemes.PLAIN](this.ctx).decrypt(
-          ciphertext, this.secret
-        );
-    }
+    algorithm = algorithm || Algorithms.DEFAULT;
+    mode = mode || AesModes.DEFAULT;
+    return elgamal(this.ctx, scheme, algorithm, mode).decrypt(
+      ciphertext, this.secret
+    );
   }
 
-  async verifyEncryption(
-    ciphertext: ElgamalCiphertext<P>,
+  verifyEncryption = async (
+    ciphertext: ElgamalCiphertext,
     proof: NizkProof<P>,
-    opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
-  ): Promise<boolean> {
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array,
+    },
+  ): Promise<boolean> => {
     const { ctx } = this;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
+      Algorithms.DEFAULT;
     const nonce = opts ? opts.nonce : undefined;
     const verified = await dlog(ctx, algorithm).verify(
-      { u: ctx.generator, v: ciphertext.beta }, proof, nonce
+      {
+        u: ctx.generator,
+        v: ctx.unpack(ciphertext.beta),
+      },
+      proof,
+      nonce,
     );
-    if (!verified) throw new Error(ErrorMessages.INVALID_ENCRYPTION);
+    if (!verified) throw new Error(
+      ErrorMessages.INVALID_ENCRYPTION
+    );
     return verified;
   }
 
   async proveDecryptor(
-    ciphertext: ElgamalCiphertext<P>,
-    decryptor: P,
-    opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
+    ciphertext: ElgamalCiphertext,
+    decryptor: Uint8Array,
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
   ): Promise<NizkProof<P>> {
     const { ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
+      Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    return ddh(ctx, algorithm).prove(secret, { u: ciphertext.beta, v: pub, w: decryptor }, nonce);
+    return ddh(ctx, algorithm).prove(
+      secret,
+      {
+        u: ctx.unpack(ciphertext.beta),
+        v: pub,
+        w: ctx.unpack(decryptor),
+      },
+      nonce
+    );
   }
 
   async generateDecryptor(
-    ciphertext: ElgamalCiphertext<P>,
+    ciphertext: ElgamalCiphertext,
     opts?: { algorithm?: Algorithm },
-  ): Promise<{ decryptor: P, proof: NizkProof<P> }> {
+  ): Promise<{
+    decryptor: Uint8Array,
+    proof: NizkProof<P>
+  }> {
     const { ctx, secret } = this;
-    const decryptor = await ctx.operate(secret, ciphertext.beta);
-    const proof = await this.proveDecryptor(ciphertext, decryptor, opts);
+    const decryptorPoint = await ctx.operate(
+      secret,
+      ctx.unpack(ciphertext.beta),
+    );
+    const decryptor = decryptorPoint.toBytes();
+    const proof = await this.proveDecryptor(
+      ciphertext,
+      decryptor,
+      opts
+    );
     return { decryptor, proof };
   }
 }
@@ -188,55 +214,62 @@ class PublicKey<P extends Point> {
 
   async encrypt(
     message: Uint8Array,
-    opts: { scheme: ElgamalScheme, mode?: AesMode, algorithm?: Algorithm }
+    opts: {
+      scheme: ElgamalScheme,
+      algorithm?: Algorithm
+      mode?: AesMode,
+    }
   ): Promise<{
-    ciphertext: ElgamalCiphertext<P>,
-    randomness: bigint,
-    decryptor: P,
+    ciphertext: ElgamalCiphertext,
+    randomness: Uint8Array,
+    decryptor: Uint8Array,
   }> {
     let { scheme, mode, algorithm } = opts;
-    switch (scheme) {
-      case ElgamalSchemes.IES:
-        mode = mode || AesModes.DEFAULT;
-        algorithm = algorithm || Algorithms.DEFAULT;
-        return elgamal[ElgamalSchemes.IES](this.ctx, mode, algorithm).encrypt(
-          message, this.pub
-        );
-      case ElgamalSchemes.KEM:
-        mode = mode || AesModes.DEFAULT;
-        return elgamal[ElgamalSchemes.KEM](this.ctx, mode).encrypt(
-          message, this.pub
-        );
-      case ElgamalSchemes.PLAIN:
-        return elgamal[ElgamalSchemes.PLAIN](this.ctx).encrypt(
-          message, this.pub
-      );
-    }
+    algorithm = algorithm || Algorithms.DEFAULT;
+    mode = mode || AesModes.DEFAULT;
+    return elgamal(this.ctx, scheme, algorithm, mode).encrypt(
+      message, this.pub
+    );
   }
 
-  async proveEncryption(
-    ciphertext: ElgamalCiphertext<P>,
-    randomness: bigint,
-    opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
-  ): Promise<NizkProof<P>> {
+  proveEncryption = async (
+    ciphertext: ElgamalCiphertext,
+    randomness: Uint8Array,
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
+  ): Promise<NizkProof<P>> => {
     const { ctx } = this;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
+      Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
     return dlog(ctx, algorithm).prove(
-      randomness, { u: ctx.generator, v: ciphertext.beta }, nonce
+      ctx.leBuff2Scalar(randomness),
+      {
+        u: ctx.generator,
+        v: ctx.unpack(ciphertext.beta),
+      },
+      nonce
     );
   }
 
   async verifyDecryptor(
-    ciphertext: ElgamalCiphertext<P>,
-    decryptor: P,
+    ciphertext: ElgamalCiphertext,
+    decryptor: Uint8Array,
     proof: NizkProof<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
   ): Promise<boolean> {
     const { ctx, pub } = this;
     const nonce = opts ? (opts.nonce) : undefined;
     const verified = await ddh(ctx, Algorithms.DEFAULT).verify(
-      { u: ciphertext.beta, v: pub, w: decryptor }, proof, nonce
+      {
+        u: ctx.unpack(ciphertext.beta),
+        v: pub,
+        w: ctx.unpack(decryptor)
+      },
+      proof,
+      nonce
     );
     const raiseOnInvalid = opts ?
       (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
