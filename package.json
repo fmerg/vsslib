@@ -24,6 +24,8 @@
     "test-keys-signature:reload": "jest tests/keys/signature --watch --maxWorkers=1 --verbose",
     "test-core": "jest tests/core --maxWorkers=1 --verbose",
     "test-core:reload": "jest tests/core --watch --maxWorkers=1 --verbose",
+    "test-decryption": "jest tests/core/decryption --maxWorkers=1 --verbose",
+    "test-decryption:reload": "jest tests/core/decryption --watch --maxWorkers=1 --verbose",
     "test-core-plain:reload": "jest tests/core/decryption.plain --watch --maxWorkers=1 --verbose",
     "test-core-ies:reload": "jest tests/core/decryption.ies --watch --maxWorkers=1 --verbose",
     "test-core-kem:reload": "jest tests/core/decryption.kem --watch --maxWorkers=1 --verbose",
