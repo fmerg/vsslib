@@ -3,13 +3,14 @@ import { ErrorMessages } from '../errors';
 import { initGroup } from '../backend';
 import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
-import { dlog, ddh, NizkProof } from '../nizk';
+import { NizkProof } from '../nizk';
 import { Signature } from '../crypto/signer/base';
 import { SchnorrSignature } from '../crypto/signer/schnorr';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, System } from '../types';
 
 import elgamal from '../elgamal';
+import nizk from '../nizk';
 import signer from '../crypto/signer';
 
 
@@ -73,7 +74,7 @@ class PrivateKey<P extends Point> {
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
-    return dlog(ctx, algorithm).prove(secret, { u: ctx.generator, v: pub }, nonce);
+    return nizk(ctx, algorithm).proveDlog(secret, { u: ctx.generator, v: pub }, nonce);
   }
 
   async decrypt(
@@ -104,7 +105,7 @@ class PrivateKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
     const nonce = opts ? opts.nonce : undefined;
-    const verified = await dlog(ctx, algorithm).verify(
+    const verified = await nizk(ctx, algorithm).verifyDlog(
       {
         u: ctx.generator,
         v: ctx.unpack(ciphertext.beta),
@@ -131,7 +132,7 @@ class PrivateKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    return ddh(ctx, algorithm).prove(
+    return nizk(ctx, algorithm).proveDDH(
       secret,
       {
         u: ctx.unpack(ciphertext.beta),
@@ -217,7 +218,7 @@ class PublicKey<P extends Point> {
   async verifyIdentity(proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> {
     const { ctx } = this;
     const pub = ctx.unpack(this.bytes);
-    const verified = await dlog(ctx, Algorithms.DEFAULT).verify(
+    const verified = await nizk(ctx, Algorithms.DEFAULT).verifyDlog(
       { u: ctx.generator, v: pub }, proof, nonce
     );
     if (!verified) throw new Error(ErrorMessages.INVALID_SECRET);
@@ -256,7 +257,7 @@ class PublicKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    return dlog(ctx, algorithm).prove(
+    return nizk(ctx, algorithm).proveDlog(
       ctx.leBuff2Scalar(randomness),
       {
         u: ctx.generator,
@@ -274,7 +275,7 @@ class PublicKey<P extends Point> {
   ): Promise<boolean> {
     const { ctx } = this;
     const nonce = opts ? (opts.nonce) : undefined;
-    const verified = await ddh(ctx, Algorithms.DEFAULT).verify(
+    const verified = await nizk(ctx, Algorithms.DEFAULT).verifyDDH(
       {
         u: ctx.unpack(ciphertext.beta),
         v: ctx.unpack(this.bytes),

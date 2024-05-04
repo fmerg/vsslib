@@ -1,7 +1,7 @@
 import { Algorithm } from '../../src/types';
 import { Point, Group } from '../../src/backend/abstract';
 import { leInt2Buff, leBuff2Int } from '../../src/crypto/bitwise';
-import { DlogLinear, DlogPair, DDHTuple } from '../../src/nizk';
+import { LinearRelation, DlogPair, DDHTuple } from '../../src/nizk';
 import hash from '../../src/crypto/hash';
 
 
@@ -35,7 +35,7 @@ export async function computeFiatShamir<P extends Point>(
 export async function createLinearRelation<P extends Point>(
   ctx: Group<P>,
   opts: { m: number, n: number },
-): Promise<[bigint[], DlogLinear<P>]>{
+): Promise<[bigint[], LinearRelation<P>]>{
   const { randomScalar, randomPoint, neutral, operate, combine } = ctx;
   const { m, n } = opts;
   const witnesses = new Array(n);

@@ -2,8 +2,7 @@
 import { Algorithms } from '../../enums';
 import { Algorithm } from '../../types';
 import { Point, Group } from '../../backend/abstract';
-import { DlogProtocol } from '../../nizk/dlog';
-import { NizkProof } from '../../nizk/base';
+import { NizkProof, NizkProtocol } from '../../nizk';
 import { Signature, Signer } from './base';
 
 
@@ -18,17 +17,17 @@ export class SchnorrSignature<P extends Point> implements Signature<P> {
 }
 
 export class SchnorrSigner<P extends Point> extends Signer<P, SchnorrSignature<P>> {
-  protocol: DlogProtocol<P>;
+  protocol: NizkProtocol<P>;
 
   constructor(ctx: Group<P>, algorithm: Algorithm) {
     super(ctx, algorithm);
-    this.protocol = new DlogProtocol(ctx, algorithm);
+    this.protocol = new NizkProtocol(ctx, algorithm);
   }
 
   signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<SchnorrSignature<P>> => {
     const { generator: g, operate } = this.ctx;
     const pub = await operate(secret, g);
-    const { commitments, response } = await this.protocol.proveLinearRelation(
+    const { commitments, response } = await this.protocol._proveLinearRelation(
       [secret], { us: [[g]], vs: [pub] }, [message], nonce
     );
     return { commitment: commitments[0], response: response[0] };
@@ -42,6 +41,6 @@ export class SchnorrSigner<P extends Point> extends Signer<P, SchnorrSignature<P
       response: [response],
       algorithm: this.algorithm,
     }
-    return this.protocol.verifyLinearRelation({ us: [[g]], vs: [pub] }, proof, [message], nonce);
+    return this.protocol._verifyLinearRelation({ us: [[g]], vs: [pub] }, proof, [message], nonce);
   }
 }
