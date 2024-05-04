@@ -122,6 +122,7 @@ const plaintext = await thresholdDecrypt(ciphertext, partialDecryptors);
 
 - [`vsslib.backend`](./src/backend)
 - [`vsslib.crypto`](./src/crypto)
+- [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.keys`](./src/keys)
 - [`vsslib.lagrange`](./src/lagrange)
 - [`vsslib.nizk`](./src/nizk)

@@ -1,14 +1,10 @@
-import { Point, Group } from '../../backend/abstract';
-import { ElgamalScheme, AesMode, Algorithm } from '../../types';
+import { Point, Group } from '../backend/abstract';
+import { ElgamalScheme, AesMode, Algorithm } from '../types';
+
 import { plain, kem, ies } from './ciphers';
 import { Ciphertext, ElgamalDriver } from './driver';
 
-export {
-  plain,
-  kem,
-  ies,
-  Ciphertext,
-};
+export { Ciphertext };
 
 export default function<P extends Point>(
   ctx: Group<P>,

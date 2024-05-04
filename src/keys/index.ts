@@ -1,7 +1,7 @@
 import { Group, Point } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
 import { initGroup } from '../backend';
-import { Ciphertext } from '../crypto/elgamal';
+import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
 import { dlog, ddh, NizkProof } from '../nizk';
 import { Signature } from '../crypto/signer/base';
@@ -9,8 +9,8 @@ import { SchnorrSignature } from '../crypto/signer/schnorr';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, System } from '../types';
 
+import elgamal from '../elgamal';
 import signer from '../crypto/signer';
-import elgamal from '../crypto/elgamal';
 
 
 class PrivateKey<P extends Point> {

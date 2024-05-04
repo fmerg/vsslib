@@ -1,11 +1,10 @@
-import { Algorithms, AesModes } from '../../enums';
-import { Algorithm, AesMode } from '../../types';
-import { Point, Group } from '../../backend/abstract';
-import { ErrorMessages } from '../../errors';
+import { Point, Group } from '../backend/abstract';
+import { Algorithms, AesModes } from '../enums';
+import { Algorithm, AesMode } from '../types';
+import { ErrorMessages } from '../errors';
 
-import hash from '../hash';
-import hmac from '../hmac';
-import aes from '../aes';
+import { hash, hmac, aes } from '../crypto';
+// const { hash, hmac, aes } = require('../crypto');
 
 
 /** Generic ElGamal functionality; abstracts away encapsulation details */

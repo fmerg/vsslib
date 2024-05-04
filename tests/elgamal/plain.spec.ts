@@ -1,8 +1,9 @@
-import { Systems } from '../../../src/enums';
-import { plain } from '../../../src/crypto/elgamal';
-import { initGroup } from '../../../src/backend';
-import { cartesian } from '../../helpers';
-import { resolveTestConfig } from '../../environ';
+import { Systems } from '../../src/enums';
+import { initGroup } from '../../src/backend';
+import { plain } from '../../src/elgamal/ciphers';
+
+import { cartesian } from '../helpers';
+import { resolveTestConfig } from '../environ';
 
 const { systems, aesModes } = resolveTestConfig();
 

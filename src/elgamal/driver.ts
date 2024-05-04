@@ -1,9 +1,9 @@
-import { Point, Group } from '../../backend/abstract';
-import { ElgamalScheme, AesMode, Algorithm } from '../../types';
-import { ElgamalSchemes } from '../../enums';
-import { leInt2Buff } from '../bitwise';
-import { IesAlpha, KemAlpha } from './ciphers';
-import { plain, kem, ies } from './ciphers';
+import { Point, Group } from '../backend/abstract';
+import { leInt2Buff } from '../crypto/bitwise';
+import { ElgamalScheme, AesMode, Algorithm } from '../types';
+import { ElgamalSchemes } from '../enums';
+
+import { IesAlpha, KemAlpha, plain, ies, kem } from './ciphers';
 
 
 type IesCiphertext    = { alpha: IesAlpha, beta: Uint8Array };

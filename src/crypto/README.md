@@ -39,5 +39,3 @@ const { ciphered, iv, tag } = aes('aes-256-gcm').encrypt(key, message);
 ```js
 const deciphered = aes('aes-256-gcm').decrypt(key, ciphered, iv, tag);
 ```
-
-## Elgamal encryption

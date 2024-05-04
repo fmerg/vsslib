@@ -1,5 +1,5 @@
 import { Point, Group } from './backend/abstract';
-import { Ciphertext } from './crypto/elgamal';
+import { Ciphertext } from './elgamal';
 import { leInt2Buff } from './crypto/bitwise';
 import { NizkProof } from './nizk';
 import { BaseShare, BaseSharing } from './base';
@@ -9,7 +9,7 @@ import { ErrorMessages } from './errors';
 import { ElgamalSchemes, AesModes, Algorithms } from './enums';
 import { ElgamalScheme, AesMode, Algorithm } from './types';
 
-import elgamal from './crypto/elgamal';
+import elgamal from './elgamal';
 const shamir = require('./shamir');
 
 

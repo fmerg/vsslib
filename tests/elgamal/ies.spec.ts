@@ -1,9 +1,10 @@
-import { Algorithms, AesModes } from '../../../src/enums';
-import { randomBytes } from '../../../src/crypto/random';
-import { initGroup } from '../../../src/backend';
-import { ies } from '../../../src/crypto/elgamal';
-import { cartesian } from '../../helpers';
-import { resolveTestConfig } from '../../environ';
+import { Algorithms, AesModes } from '../../src/enums';
+import { randomBytes } from '../../src/crypto/random';
+import { initGroup } from '../../src/backend';
+import { ies } from '../../src/elgamal/ciphers';
+
+import { cartesian } from '../helpers';
+import { resolveTestConfig } from '../environ';
 
 
 const { systems, aesModes, algorithms } = resolveTestConfig();
