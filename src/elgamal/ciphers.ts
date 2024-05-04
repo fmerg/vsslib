@@ -4,11 +4,10 @@ import { Algorithm, AesMode } from '../types';
 import { ErrorMessages } from '../errors';
 
 import { hash, hmac, aes } from '../crypto';
-// const { hash, hmac, aes } = require('../crypto');
 
 
 /** Generic ElGamal functionality; abstracts away encapsulation details */
-export abstract class BaseCipher<A, P extends Point> {
+abstract class BaseCipher<A, P extends Point> {
   ctx: Group<P>;
 
   constructor(ctx: Group<P>) {
@@ -191,14 +190,14 @@ export class IesCipher<P extends Point> extends BaseCipher<IesAlpha, P> {
 }
 
 
-export function plain<P extends Point>(ctx: Group<P>) {
+export function plainElgamal<P extends Point>(ctx: Group<P>) {
   return new PlainCipher(ctx);
 }
 
-export function kem<P extends Point>(ctx: Group<P>, mode: AesMode) {
+export function kemElgamal<P extends Point>(ctx: Group<P>, mode: AesMode) {
   return new KemCipher(ctx, mode);
 }
 
-export function ies<P extends Point>(ctx: Group<P>, mode: AesMode, algorithm: Algorithm) {
+export function iesElgamal<P extends Point>(ctx: Group<P>, mode: AesMode, algorithm: Algorithm) {
   return new IesCipher(ctx, mode, algorithm);
 }

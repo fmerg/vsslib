@@ -3,7 +3,7 @@ import { leInt2Buff } from '../crypto/bitwise';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { ElgamalSchemes } from '../enums';
 
-import { IesAlpha, KemAlpha, plain, ies, kem } from './ciphers';
+import { IesAlpha, KemAlpha, plainElgamal, iesElgamal, kemElgamal } from './ciphers';
 
 
 type IesCiphertext    = { alpha: IesAlpha, beta: Uint8Array };
@@ -102,7 +102,7 @@ export class ElgamalDriver<P extends Point>{
     const ctx = this.ctx;
     const pub = ctx.unpack(pubBytes);
     await ctx.validatePoint(pub);
-    const { ciphertext, randomness, decryptor } = await plain(ctx).encrypt(
+    const { ciphertext, randomness, decryptor } = await plainElgamal(ctx).encrypt(
       message, pub
     );
     const { alpha, beta } = ciphertext;
@@ -121,7 +121,7 @@ export class ElgamalDriver<P extends Point>{
   > => {
     const ctx = this.ctx;
     const { alpha, beta } = ciphertext;
-    return plain(ctx).decrypt(
+    return plainElgamal(ctx).decrypt(
       {
         alpha: ctx.unpack(alpha),
         beta: ctx.unpack(beta),
@@ -136,7 +136,7 @@ export class ElgamalDriver<P extends Point>{
   ): Promise<Uint8Array> => {
     const ctx = this.ctx;
     const { alpha, beta } = ciphertext;
-    return plain(ctx).decryptWithDecryptor(
+    return plainElgamal(ctx).decryptWithDecryptor(
       {
         alpha: ctx.unpack(alpha),
         beta: ctx.unpack(beta),
@@ -153,7 +153,7 @@ export class ElgamalDriver<P extends Point>{
     const { ctx, mode } = this;
     const pub = ctx.unpack(pubBytes);
     await ctx.validatePoint(pub);
-    const { ciphertext, randomness, decryptor } = await kem(ctx, mode).encrypt(
+    const { ciphertext, randomness, decryptor } = await kemElgamal(ctx, mode).encrypt(
       message, pub
     );
     const { alpha, beta } = ciphertext;
@@ -171,7 +171,7 @@ export class ElgamalDriver<P extends Point>{
   > => {
     const { ctx, mode } = this;
     const { alpha, beta } = ciphertext;
-    return kem(ctx, mode).decrypt(
+    return kemElgamal(ctx, mode).decrypt(
       {
         alpha, beta: ctx.unpack(beta)
       },
@@ -185,7 +185,7 @@ export class ElgamalDriver<P extends Point>{
   ): Promise<Uint8Array> => {
     const { ctx, mode } = this;
     const { alpha, beta } = ciphertext;
-    return kem(ctx, mode).decryptWithDecryptor(
+    return kemElgamal(ctx, mode).decryptWithDecryptor(
       {
         alpha, beta: ctx.unpack(beta),
       },
@@ -201,7 +201,7 @@ export class ElgamalDriver<P extends Point>{
     const { ctx, mode, algorithm } = this;
     const pub = ctx.unpack(pubBytes);
     await ctx.validatePoint(pub);
-    const { ciphertext, randomness, decryptor } = await ies(ctx, mode, algorithm).encrypt(
+    const { ciphertext, randomness, decryptor } = await iesElgamal(ctx, mode, algorithm).encrypt(
       message, pub
     );
     const { alpha, beta } = ciphertext;
@@ -220,7 +220,7 @@ export class ElgamalDriver<P extends Point>{
   ): Promise<Uint8Array> => {
     const { ctx, mode, algorithm } = this;
     const { alpha, beta } = ciphertext;
-    return ies(ctx, mode, algorithm).decrypt(
+    return iesElgamal(ctx, mode, algorithm).decrypt(
       {
         alpha, beta: ctx.unpack(beta)
       },
@@ -234,7 +234,7 @@ export class ElgamalDriver<P extends Point>{
   ): Promise<Uint8Array> => {
     const { ctx, mode, algorithm } = this;
     const { alpha, beta } = ciphertext;
-    return ies(ctx, mode, algorithm).decryptWithDecryptor(
+    return iesElgamal(ctx, mode, algorithm).decryptWithDecryptor(
       {
         alpha, beta: ctx.unpack(beta),
       },
