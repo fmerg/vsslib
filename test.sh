@@ -3,6 +3,7 @@
 DEFAULT_MODULE=""
 DEFAULT_RELOAD=""
 DEFAULT_SYSTEM=""
+DEFAULT_SCHEME=""
 DEFAULT_ALGORITHM=""
 DEFAULT_AES_MODE=""
 DEFAULT_NR_SHARES="3"
@@ -14,6 +15,7 @@ TODO
 
 Options
   -s, --system GROUP      TODO
+  -a, --scheme SCHEME     TODO
   -a, --algorithm HASH    TODO
   -n, --nr-shares NR      TODO
   -t, --threshold THRES   TODO
@@ -35,8 +37,9 @@ usage() { echo -n "$usage_string" 1>&2; }
 MODULE="$DEFAULT_MODULE"
 RELOAD="$DEFAULT_RELOAD"
 SYSTEM="$DEFAULT_SYSTEM"
-AES_MODE="$DEFAULT_AES_MODE"
+SCHEME="$DEFAULT_SCHEME"
 ALGORITHM="$DEFAULT_ALGORITHM"
+AES_MODE="$DEFAULT_AES_MODE"
 NR_SHARES="$DEFAULT_NR_SHARES"
 THRESHOLD="$DEFAULT_THRESHOLD"
 
@@ -45,7 +48,7 @@ while [[ $# -gt 0 ]]
 do
     arg="$1"
     case $arg in
-        hash|hmac|aes|elgamal|core|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|fiatShamir|linearRelation|okamoto|nizk|crypto|lagrange|keys|backend|arith|bitwise|serializers)
+        hash|hmac|aes|elgamal|core|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|fiatShamir|linearRelation|okamoto|nizk|crypto|lagrange|keys|backend|arith|bitwise|serializers|decryption)
             MODULE="$arg"
             shift
             ;;
@@ -56,21 +59,31 @@ do
         --aes-mode)
             AES_MODE="$2"
             shift
+
+            ;;
+        --scheme)
+            SCHEME="$2"
+            shift
+            shift
             ;;
         -a|--algorithm)
             ALGORITHM="$2"
+            shift
             shift
             ;;
         -s|--system)
             SYSTEM="$2"
             shift
+            shift
             ;;
         -n|--nr-shares)
             NR_SHARES="$2"
             shift
+            shift
             ;;
         -t|--threshold)
             TRHESHOLD="$2"
+            shift
             shift
             ;;
         -h|--help)
@@ -84,6 +97,7 @@ do
     esac
 done
 
+
 TARGET="test";
 if [ ! -z $MODULE ]; then
   TARGET="${TARGET}-${MODULE}"
@@ -94,6 +108,7 @@ fi
 
 
 export AES_MODE="${AES_MODE}"
+export SCHEME="${SCHEME}"
 export ALGORITHM="${ALGORITHM}"
 export SYSTEM="${SYSTEM}"
 export NR_SHARES="${NR_SHARES}"

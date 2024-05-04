@@ -65,7 +65,8 @@ describe('Private share serialization roundtrip', () => {
 describe('Public share serialization roundtrip', () => {
   it.each(cartesian([systems, encodings]))('over %s/%s', async (system, encoding) => {
     const ctx = initGroup(system);
-    const publicShare = new PublicShare(ctx, await ctx.randomPoint(), 999);
+    const somePoint = await ctx.randomPoint();
+    const publicShare = new PublicShare(ctx, somePoint.toBytes(), 999);
     const data = serializePublicShare(publicShare, encoding);
     expect(data).toEqual({
       value: Buffer.from(publicShare.bytes).toString(encoding),

@@ -1,16 +1,16 @@
 import { Group, Point } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
 import { initGroup } from '../backend';
+import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
 import { dlog, ddh, NizkProof } from '../nizk';
 import { Signature } from '../crypto/signer/base';
 import { SchnorrSignature } from '../crypto/signer/schnorr';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, System } from '../types';
-import { ElgamalCiphertext } from '../crypto/elgamal';
-import signer from '../crypto/signer';
 
-const elgamal = require('../crypto/elgamal');
+import elgamal from '../elgamal';
+import signer from '../crypto/signer';
 
 
 class PrivateKey<P extends Point> {
@@ -43,15 +43,16 @@ class PrivateKey<P extends Point> {
   }
 
   async publicKey(): Promise<PublicKey<P>> {
-    const { ctx, secret } = this;
-    const pub = await ctx.operate(secret, ctx.generator);
-    return new PublicKey(ctx, pub);
+    const { ctx: { operate, generator } } = this;
+    const pubPoint = await operate(this.secret, generator);
+    return new PublicKey(this.ctx, pubPoint.toBytes());
   }
 
   async diffieHellman(publicKey: PublicKey<P>): Promise<P> {
-    const { ctx, secret } = this;
-    await ctx.validatePoint(publicKey.pub);
-    return ctx.operate(secret, publicKey.pub);
+    const { ctx } = this;
+    const pubPoint = publicKey.toPoint();
+    await ctx.validatePoint(pubPoint);
+    return ctx.operate(this.secret, pubPoint);
   }
 
   async sign(
@@ -76,63 +77,89 @@ class PrivateKey<P extends Point> {
   }
 
   async decrypt(
-    ciphertext: ElgamalCiphertext<P>,
-    opts: { scheme: ElgamalScheme, mode?: AesMode, algorithm?: Algorithm }
+    ciphertext: Ciphertext,
+    opts: {
+      scheme: ElgamalScheme,
+      algorithm?: Algorithm
+      mode?: AesMode,
+    }
   ): Promise<Uint8Array> {
     let { scheme, mode, algorithm } = opts;
-    switch (scheme) {
-      case ElgamalSchemes.IES:
-        mode = mode || AesModes.DEFAULT;
-        algorithm = algorithm || Algorithms.DEFAULT;
-        return elgamal[ElgamalSchemes.IES](this.ctx, mode, algorithm).decrypt(
-          ciphertext, this.secret,
-        );
-      case ElgamalSchemes.KEM:
-        mode = mode || AesModes.DEFAULT;
-        return elgamal[ElgamalSchemes.KEM](this.ctx, mode).decrypt(
-          ciphertext, this.secret,
-        );
-      case ElgamalSchemes.PLAIN:
-        return elgamal[ElgamalSchemes.PLAIN](this.ctx).decrypt(
-          ciphertext, this.secret
-        );
-    }
+    algorithm = algorithm || Algorithms.DEFAULT;
+    mode = mode || AesModes.DEFAULT;
+    return elgamal(this.ctx, scheme, algorithm, mode).decrypt(
+      ciphertext, this.secret
+    );
   }
 
-  async verifyEncryption(
-    ciphertext: ElgamalCiphertext<P>,
+  verifyEncryption = async (
+    ciphertext: Ciphertext,
     proof: NizkProof<P>,
-    opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
-  ): Promise<boolean> {
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array,
+    },
+  ): Promise<boolean> => {
     const { ctx } = this;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
+      Algorithms.DEFAULT;
     const nonce = opts ? opts.nonce : undefined;
     const verified = await dlog(ctx, algorithm).verify(
-      { u: ctx.generator, v: ciphertext.beta }, proof, nonce
+      {
+        u: ctx.generator,
+        v: ctx.unpack(ciphertext.beta),
+      },
+      proof,
+      nonce,
     );
-    if (!verified) throw new Error(ErrorMessages.INVALID_ENCRYPTION);
+    if (!verified) throw new Error(
+      ErrorMessages.INVALID_ENCRYPTION
+    );
     return verified;
   }
 
   async proveDecryptor(
-    ciphertext: ElgamalCiphertext<P>,
-    decryptor: P,
-    opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
+    ciphertext: Ciphertext,
+    decryptor: Uint8Array,
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
   ): Promise<NizkProof<P>> {
     const { ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
+      Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    return ddh(ctx, algorithm).prove(secret, { u: ciphertext.beta, v: pub, w: decryptor }, nonce);
+    return ddh(ctx, algorithm).prove(
+      secret,
+      {
+        u: ctx.unpack(ciphertext.beta),
+        v: pub,
+        w: ctx.unpack(decryptor),
+      },
+      nonce
+    );
   }
 
   async generateDecryptor(
-    ciphertext: ElgamalCiphertext<P>,
+    ciphertext: Ciphertext,
     opts?: { algorithm?: Algorithm },
-  ): Promise<{ decryptor: P, proof: NizkProof<P> }> {
+  ): Promise<{
+    decryptor: Uint8Array,
+    proof: NizkProof<P>
+  }> {
     const { ctx, secret } = this;
-    const decryptor = await ctx.operate(secret, ciphertext.beta);
-    const proof = await this.proveDecryptor(ciphertext, decryptor, opts);
+    const decryptorPoint = await ctx.operate(
+      secret,
+      ctx.unpack(ciphertext.beta),
+    );
+    const decryptor = decryptorPoint.toBytes();
+    const proof = await this.proveDecryptor(
+      ciphertext,
+      decryptor,
+      opts
+    );
     return { decryptor, proof };
   }
 }
@@ -141,24 +168,33 @@ class PrivateKey<P extends Point> {
 class PublicKey<P extends Point> {
   ctx: Group<P>;
   bytes: Uint8Array;
-  pub: P;
 
-  constructor(ctx: Group<P>, pub: P) {
+  constructor(ctx: Group<P>, bytes: Uint8Array) {
     this.ctx = ctx;
-    this.bytes = pub.toBytes();
-    this.pub = pub;
+    // TODO: point validation
+    this.bytes = bytes;
   }
 
-  static async fromPoint(ctx: Group<Point>, pub: Point): Promise<PublicKey<Point>> {
-    await ctx.validatePoint(pub);
-    return new PublicKey(ctx, pub);
+  toPoint(): P {
+    return this.ctx.unpack(this.bytes);
+  }
+
+  static async fromPoint(ctx: Group<Point>, pubPoint: Point): Promise<PublicKey<Point>> {
+    await ctx.validatePoint(pubPoint);
+    return new PublicKey(ctx, pubPoint.toBytes());
   }
 
   async equals<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
+    // TODO: Secure constant time bytes comparison
+    const isEqualBuffer = (a: Uint8Array, b: Uint8Array) => {
+      if (a.length != b.length) return false;
+      for (let i = 0; i < a.length; i++)
+        if (a[i] != b[i]) return false;
+      return true;
+    }
     return (
       (await this.ctx.equals(other.ctx)) &&
-      // TODO: Constant time bytes comparison
-      (await this.pub.equals(other.pub))
+      isEqualBuffer(this.bytes, other.bytes)
     );
   }
 
@@ -167,9 +203,10 @@ class PublicKey<P extends Point> {
     signature: Signature<P>,
     opts: { nonce?: Uint8Array, algorithm?: Algorithm },
   ): Promise<boolean> {
-    const { ctx, pub } = this;
+    const { ctx } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
+    const pub = ctx.unpack(this.bytes);
     const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
       pub, message, signature as SchnorrSignature<P>, nonce
     );
@@ -178,7 +215,8 @@ class PublicKey<P extends Point> {
   }
 
   async verifyIdentity(proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> {
-    const { ctx, pub } = this;
+    const { ctx } = this;
+    const pub = ctx.unpack(this.bytes);
     const verified = await dlog(ctx, Algorithms.DEFAULT).verify(
       { u: ctx.generator, v: pub }, proof, nonce
     );
@@ -188,55 +226,62 @@ class PublicKey<P extends Point> {
 
   async encrypt(
     message: Uint8Array,
-    opts: { scheme: ElgamalScheme, mode?: AesMode, algorithm?: Algorithm }
+    opts: {
+      scheme: ElgamalScheme,
+      algorithm?: Algorithm
+      mode?: AesMode,
+    }
   ): Promise<{
-    ciphertext: ElgamalCiphertext<P>,
-    randomness: bigint,
-    decryptor: P,
+    ciphertext: Ciphertext,
+    randomness: Uint8Array,
+    decryptor: Uint8Array,
   }> {
     let { scheme, mode, algorithm } = opts;
-    switch (scheme) {
-      case ElgamalSchemes.IES:
-        mode = mode || AesModes.DEFAULT;
-        algorithm = algorithm || Algorithms.DEFAULT;
-        return elgamal[ElgamalSchemes.IES](this.ctx, mode, algorithm).encrypt(
-          message, this.pub
-        );
-      case ElgamalSchemes.KEM:
-        mode = mode || AesModes.DEFAULT;
-        return elgamal[ElgamalSchemes.KEM](this.ctx, mode).encrypt(
-          message, this.pub
-        );
-      case ElgamalSchemes.PLAIN:
-        return elgamal[ElgamalSchemes.PLAIN](this.ctx).encrypt(
-          message, this.pub
-      );
-    }
+    algorithm = algorithm || Algorithms.DEFAULT;
+    mode = mode || AesModes.DEFAULT;
+    return elgamal(this.ctx, scheme, algorithm, mode).encrypt(
+      message, this.bytes
+    );
   }
 
-  async proveEncryption(
-    ciphertext: ElgamalCiphertext<P>,
-    randomness: bigint,
-    opts?: { algorithm?: Algorithm, nonce?: Uint8Array }
-  ): Promise<NizkProof<P>> {
+  proveEncryption = async (
+    ciphertext: Ciphertext,
+    randomness: Uint8Array,
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
+  ): Promise<NizkProof<P>> => {
     const { ctx } = this;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
+      Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
     return dlog(ctx, algorithm).prove(
-      randomness, { u: ctx.generator, v: ciphertext.beta }, nonce
+      ctx.leBuff2Scalar(randomness),
+      {
+        u: ctx.generator,
+        v: ctx.unpack(ciphertext.beta),
+      },
+      nonce
     );
   }
 
   async verifyDecryptor(
-    ciphertext: ElgamalCiphertext<P>,
-    decryptor: P,
+    ciphertext: Ciphertext,
+    decryptor: Uint8Array,
     proof: NizkProof<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
   ): Promise<boolean> {
-    const { ctx, pub } = this;
+    const { ctx } = this;
     const nonce = opts ? (opts.nonce) : undefined;
     const verified = await ddh(ctx, Algorithms.DEFAULT).verify(
-      { u: ciphertext.beta, v: pub, w: decryptor }, proof, nonce
+      {
+        u: ctx.unpack(ciphertext.beta),
+        v: ctx.unpack(this.bytes),
+        w: ctx.unpack(decryptor)
+      },
+      proof,
+      nonce
     );
     const raiseOnInvalid = opts ?
       (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :

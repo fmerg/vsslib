@@ -13,6 +13,7 @@ import {
 
 const backend = require('./backend');
 const crypto = require('./crypto');
+const elgamal = require('./elgamal');
 const enums = require('./enums');
 const keys = require('./keys');
 const lagrange = require('./lagrange');
@@ -33,6 +34,7 @@ export {
   thresholdDecrypt,
   backend,
   crypto,
+  elgamal,
   enums,
   keys,
   lagrange,

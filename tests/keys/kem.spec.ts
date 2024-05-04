@@ -131,7 +131,7 @@ describe('Decryptor generation', () => {
       scheme: ElgamalSchemes.KEM
     });
     const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext);
-    expect(await decryptor.equals(targetDecryptor)).toBe(true);
+    expect(decryptor).toEqual(targetDecryptor);
     expect(await publicKey.verifyDecryptor(ciphertext, decryptor, proof)).toBe(true);
   });
 });
