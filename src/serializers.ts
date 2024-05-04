@@ -29,9 +29,8 @@ export const deserializePrivateKey = async (
 
 export const serializePublicKey = (
   publicKey: PublicKey<Point>, encoding: Encoding): SerializedPublicKey => {
-  const { ctx, pub } = publicKey;
-  const value = encoding == Encodings.HEX ? pub.toHex() :
-    Buffer.from(pub.toBytes()).toString(Encodings.BASE64);
+  const { ctx, bytes } = publicKey;
+  const value = Buffer.from(bytes).toString(encoding);
   const system = ctx.system;
   return { value, system, encoding };
 }
@@ -62,9 +61,8 @@ export const deserializePrivateShare = async (
 
 export const serializePublicShare = (
   publicShare: PublicShare<Point>, encoding: Encoding): SerializedPublicShare => {
-  const { ctx, pub, index } = publicShare;
-  const value = encoding == Encodings.HEX ? pub.toHex() :
-    Buffer.from(pub.toBytes()).toString(Encodings.BASE64);
+  const { ctx, bytes, index } = publicShare;
+  const value = Buffer.from(bytes).toString(encoding);
   const system = ctx.system;
   return { value, system, encoding, index };
 }

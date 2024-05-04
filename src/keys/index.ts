@@ -43,15 +43,16 @@ class PrivateKey<P extends Point> {
   }
 
   async publicKey(): Promise<PublicKey<P>> {
-    const { ctx, secret } = this;
-    const pub = await ctx.operate(secret, ctx.generator);
-    return new PublicKey(ctx, pub);
+    const { ctx: { operate, generator } } = this;
+    const pubPoint = await operate(this.secret, generator);
+    return new PublicKey(this.ctx, pubPoint.toBytes());
   }
 
   async diffieHellman(publicKey: PublicKey<P>): Promise<P> {
-    const { ctx, secret } = this;
-    await ctx.validatePoint(publicKey.pub);
-    return ctx.operate(secret, publicKey.pub);
+    const { ctx } = this;
+    const pubPoint = publicKey.toPoint();
+    await ctx.validatePoint(pubPoint);
+    return ctx.operate(this.secret, pubPoint);
   }
 
   async sign(
@@ -167,24 +168,33 @@ class PrivateKey<P extends Point> {
 class PublicKey<P extends Point> {
   ctx: Group<P>;
   bytes: Uint8Array;
-  pub: P;
 
-  constructor(ctx: Group<P>, pub: P) {
+  constructor(ctx: Group<P>, bytes: Uint8Array) {
     this.ctx = ctx;
-    this.bytes = pub.toBytes();
-    this.pub = pub;
+    // TODO: point validation
+    this.bytes = bytes;
   }
 
-  static async fromPoint(ctx: Group<Point>, pub: Point): Promise<PublicKey<Point>> {
-    await ctx.validatePoint(pub);
-    return new PublicKey(ctx, pub);
+  toPoint(): P {
+    return this.ctx.unpack(this.bytes);
+  }
+
+  static async fromPoint(ctx: Group<Point>, pubPoint: Point): Promise<PublicKey<Point>> {
+    await ctx.validatePoint(pubPoint);
+    return new PublicKey(ctx, pubPoint.toBytes());
   }
 
   async equals<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
+    // TODO: Secure constant time bytes comparison
+    const isEqualBuffer = (a: Uint8Array, b: Uint8Array) => {
+      if (a.length != b.length) return false;
+      for (let i = 0; i < a.length; i++)
+        if (a[i] != b[i]) return false;
+      return true;
+    }
     return (
       (await this.ctx.equals(other.ctx)) &&
-      // TODO: Constant time bytes comparison
-      (await this.pub.equals(other.pub))
+      isEqualBuffer(this.bytes, other.bytes)
     );
   }
 
@@ -193,9 +203,10 @@ class PublicKey<P extends Point> {
     signature: Signature<P>,
     opts: { nonce?: Uint8Array, algorithm?: Algorithm },
   ): Promise<boolean> {
-    const { ctx, pub } = this;
+    const { ctx } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
+    const pub = ctx.unpack(this.bytes);
     const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
       pub, message, signature as SchnorrSignature<P>, nonce
     );
@@ -204,7 +215,8 @@ class PublicKey<P extends Point> {
   }
 
   async verifyIdentity(proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> {
-    const { ctx, pub } = this;
+    const { ctx } = this;
+    const pub = ctx.unpack(this.bytes);
     const verified = await dlog(ctx, Algorithms.DEFAULT).verify(
       { u: ctx.generator, v: pub }, proof, nonce
     );
@@ -260,12 +272,12 @@ class PublicKey<P extends Point> {
     proof: NizkProof<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
   ): Promise<boolean> {
-    const { ctx, pub } = this;
+    const { ctx } = this;
     const nonce = opts ? (opts.nonce) : undefined;
     const verified = await ddh(ctx, Algorithms.DEFAULT).verify(
       {
         u: ctx.unpack(ciphertext.beta),
-        v: pub,
+        v: ctx.unpack(this.bytes),
         w: ctx.unpack(decryptor)
       },
       proof,

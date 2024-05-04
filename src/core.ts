@@ -51,7 +51,9 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   index: number;
 
   constructor(ctx: Group<P>, pub: P, index: number) {
-    super(ctx, pub);
+    // TODO: Validations
+    const bytes = pub.toBytes();
+    super(ctx, bytes);
     this.value = pub;
     this.index = index;
   }
@@ -182,9 +184,9 @@ export async function reconstructPublic<P extends Point>(
   if (threshold && shares.length < threshold) throw new Error(
     ErrorMessages.INSUFFICIENT_NR_SHARES
   );
-  const pubShares = shares.map(({ pub: value, index }) => { return { value, index } });
-  const pub = await shamir.reconstructPublic(ctx, pubShares);
-  return new PublicKey(ctx, pub);
+  const pubShares = shares.map(({ value, index }) => { return { value, index } });
+  const pubPoint = await shamir.reconstructPublic(ctx, pubShares);
+  return new PublicKey(ctx, pubPoint.toBytes());
 }
 
 // TODO: Include indexed nonces option?
