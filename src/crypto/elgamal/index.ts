@@ -1,17 +1,13 @@
 import { Point, Group } from '../../backend/abstract';
 import { ElgamalScheme, AesMode, Algorithm } from '../../types';
-
-import plain from './plain';
-import kem from './kem';
-import ies from './ies';
-
-import { ElgamalCiphertext, ElgamalDriver } from './driver';
+import { plain, kem, ies } from './ciphers';
+import { Ciphertext, ElgamalDriver } from './driver';
 
 export {
   plain,
   kem,
   ies,
-  ElgamalCiphertext,
+  Ciphertext,
 };
 
 export default function<P extends Point>(

@@ -2,18 +2,15 @@ import { Point, Group } from '../../backend/abstract';
 import { ElgamalScheme, AesMode, Algorithm } from '../../types';
 import { ElgamalSchemes } from '../../enums';
 import { leInt2Buff } from '../bitwise';
-import {
-  IesCiphertext,
-  KemCiphertext,
-  PlainCiphertext,
-} from './types'
-
-import plain from './plain';
-import kem from './kem';
-import ies from './ies';
+import { IesAlpha, KemAlpha } from './ciphers';
+import { plain, kem, ies } from './ciphers';
 
 
-export type ElgamalCiphertext =
+type IesCiphertext    = { alpha: IesAlpha, beta: Uint8Array };
+type KemCiphertext    = { alpha: KemAlpha, beta: Uint8Array };
+type PlainCiphertext  = { alpha: Uint8Array, beta: Uint8Array };
+
+export type Ciphertext =
   IesCiphertext |
   KemCiphertext |
   PlainCiphertext;
@@ -38,7 +35,7 @@ export class ElgamalDriver<P extends Point>{
   }
 
   encrypt = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
-    ciphertext: ElgamalCiphertext
+    ciphertext: Ciphertext
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
@@ -52,7 +49,7 @@ export class ElgamalDriver<P extends Point>{
     }
   }
 
-  decrypt = async (ciphertext: ElgamalCiphertext, secret: bigint): Promise<
+  decrypt = async (ciphertext: Ciphertext, secret: bigint): Promise<
     Uint8Array
   > => {
     switch (this.scheme) {
@@ -75,7 +72,7 @@ export class ElgamalDriver<P extends Point>{
   }
 
   decryptWithDecryptor = async (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     decryptor: Uint8Array,
   ): Promise<Uint8Array> => {
     switch (this.scheme) {

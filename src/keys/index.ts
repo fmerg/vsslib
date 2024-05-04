@@ -1,7 +1,7 @@
 import { Group, Point } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
 import { initGroup } from '../backend';
-import { ElgamalCiphertext } from '../crypto/elgamal';
+import { Ciphertext } from '../crypto/elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
 import { dlog, ddh, NizkProof } from '../nizk';
 import { Signature } from '../crypto/signer/base';
@@ -77,7 +77,7 @@ class PrivateKey<P extends Point> {
   }
 
   async decrypt(
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     opts: {
       scheme: ElgamalScheme,
       algorithm?: Algorithm
@@ -93,7 +93,7 @@ class PrivateKey<P extends Point> {
   }
 
   verifyEncryption = async (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     proof: NizkProof<P>,
     opts?: {
       algorithm?: Algorithm,
@@ -119,7 +119,7 @@ class PrivateKey<P extends Point> {
   }
 
   async proveDecryptor(
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     decryptor: Uint8Array,
     opts?: {
       algorithm?: Algorithm,
@@ -143,7 +143,7 @@ class PrivateKey<P extends Point> {
   }
 
   async generateDecryptor(
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     opts?: { algorithm?: Algorithm },
   ): Promise<{
     decryptor: Uint8Array,
@@ -232,7 +232,7 @@ class PublicKey<P extends Point> {
       mode?: AesMode,
     }
   ): Promise<{
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> {
@@ -245,7 +245,7 @@ class PublicKey<P extends Point> {
   }
 
   proveEncryption = async (
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     randomness: Uint8Array,
     opts?: {
       algorithm?: Algorithm,
@@ -267,7 +267,7 @@ class PublicKey<P extends Point> {
   }
 
   async verifyDecryptor(
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     decryptor: Uint8Array,
     proof: NizkProof<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }

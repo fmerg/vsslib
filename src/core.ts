@@ -1,5 +1,5 @@
 import { Point, Group } from './backend/abstract';
-import { ElgamalCiphertext } from './crypto/elgamal';
+import { Ciphertext } from './crypto/elgamal';
 import { leInt2Buff } from './crypto/bitwise';
 import { NizkProof } from './nizk';
 import { BaseShare, BaseSharing } from './base';
@@ -30,7 +30,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   }
 
   async generatePartialDecryptor(
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     opts?: {
       algorithm?: Algorithm,
       nonce?: Uint8Array
@@ -57,7 +57,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   }
 
   async verifyPartialDecryptor<A>(
-    ciphertext: ElgamalCiphertext,
+    ciphertext: Ciphertext,
     partialDecryptor: PartialDecryptor<P>,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean },
   ): Promise<boolean> {
@@ -191,7 +191,7 @@ export async function reconstructPublic<P extends Point>(
 // TODO: Include indexed nonces option?
 export async function verifyPartialDecryptors<P extends Point>(
   ctx: Group<P>,
-  ciphertext: ElgamalCiphertext,
+  ciphertext: Ciphertext,
   publicShares: PublicShare<P>[],
   shares: PartialDecryptor<P>[],
   opts?: { threshold?: number, raiseOnInvalid?: boolean },
@@ -250,7 +250,7 @@ export async function reconstructDecryptor<P extends Point>(
 
 export async function thresholdDecrypt<P extends Point>(
   ctx: Group<P>,
-  ciphertext: ElgamalCiphertext,
+  ciphertext: Ciphertext,
   shares: PartialDecryptor<P>[],
   opts: {
     scheme: ElgamalScheme,
