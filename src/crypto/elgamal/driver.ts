@@ -6,12 +6,17 @@ import {
   IesCiphertext,
   KemCiphertext,
   PlainCiphertext,
-  ElgamalCiphertext,
 } from './types'
 
 import plain from './plain';
 import kem from './kem';
 import ies from './ies';
+
+
+export type ElgamalCiphertext =
+  IesCiphertext |
+  KemCiphertext |
+  PlainCiphertext;
 
 
 export class ElgamalDriver<P extends Point>{
@@ -37,23 +42,20 @@ export class ElgamalDriver<P extends Point>{
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
-    const { ctx, scheme, algorithm, mode } = this;
-    const pub = ctx.unpack(pubBytes);
-    switch (scheme) {
+    switch (this.scheme) {
       case ElgamalSchemes.PLAIN:
-        return this.encrypt_PLAIN(message, pub);
+        return this.encrypt_PLAIN(message, pubBytes);
       case ElgamalSchemes.KEM:
-        return this.encrypt_KEM(message, pub);
+        return this.encrypt_KEM(message, pubBytes);
       case ElgamalSchemes.IES:
-        return this.encrypt_IES(message, pub);
+        return this.encrypt_IES(message, pubBytes);
     }
   }
 
   decrypt = async (ciphertext: ElgamalCiphertext, secret: bigint): Promise<
     Uint8Array
   > => {
-    const { ctx, scheme, algorithm, mode } = this;
-    switch (scheme) {
+    switch (this.scheme) {
       case ElgamalSchemes.IES:
         return this.decrypt_IES(
           ciphertext as IesCiphertext,
@@ -75,11 +77,8 @@ export class ElgamalDriver<P extends Point>{
   decryptWithDecryptor = async (
     ciphertext: ElgamalCiphertext,
     decryptor: Uint8Array,
-  ): Promise<
-    Uint8Array
-  > => {
-    const { ctx, scheme, algorithm, mode } = this;
-    switch (scheme) {
+  ): Promise<Uint8Array> => {
+    switch (this.scheme) {
       case ElgamalSchemes.IES:
         return this.decryptWithDecryptor_IES(
           ciphertext as IesCiphertext,
@@ -98,22 +97,18 @@ export class ElgamalDriver<P extends Point>{
       }
   }
 
-  encrypt_PLAIN = async (
-    message: Uint8Array,
-    pub: P,
-  ): Promise<{
+  encrypt_PLAIN = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
     ciphertext: PlainCiphertext,
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
-    const {
-      ciphertext: {
-        alpha,
-        beta
-      },
-      randomness,
-      decryptor
-    } = await plain(this.ctx).encrypt(message, pub);
+    const ctx = this.ctx;
+    const pub = ctx.unpack(pubBytes);
+    await ctx.validatePoint(pub);
+    const { ciphertext, randomness, decryptor } = await plain(ctx).encrypt(
+      message, pub
+    );
+    const { alpha, beta } = ciphertext;
     return {
       ciphertext: {
         alpha: alpha.toBytes(),
@@ -124,15 +119,17 @@ export class ElgamalDriver<P extends Point>{
     }
   }
 
-  decrypt_PLAIN = async (
-    ciphertext: PlainCiphertext,
-    secret: bigint
-  ): Promise<Uint8Array> => {
-    const { alpha: alphaBytes, beta: betaBytes } = ciphertext;
-    const alpha = this.ctx.unpack(alphaBytes);
-    const beta = this.ctx.unpack(betaBytes);
-    return plain(this.ctx).decrypt(
-      { alpha, beta }, secret
+  decrypt_PLAIN = async (ciphertext: PlainCiphertext, secret: bigint): Promise<
+    Uint8Array
+  > => {
+    const ctx = this.ctx;
+    const { alpha, beta } = ciphertext;
+    return plain(ctx).decrypt(
+      {
+        alpha: ctx.unpack(alpha),
+        beta: ctx.unpack(beta),
+      },
+      secret
     );
   }
 
@@ -140,47 +137,48 @@ export class ElgamalDriver<P extends Point>{
     ciphertext: PlainCiphertext,
     decryptor: Uint8Array,
   ): Promise<Uint8Array> => {
+    const ctx = this.ctx;
     const { alpha, beta } = ciphertext;
-    return plain(this.ctx).decryptWithDecryptor(
+    return plain(ctx).decryptWithDecryptor(
       {
-        alpha: this.ctx.unpack(alpha),
-        beta: this.ctx.unpack(beta),
+        alpha: ctx.unpack(alpha),
+        beta: ctx.unpack(beta),
       },
-      this.ctx.unpack(decryptor),
+      ctx.unpack(decryptor),
     );
   }
 
-  encrypt_KEM = async (
-    message: Uint8Array,
-    pub: P,
-  ): Promise<{
+  encrypt_KEM = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
     ciphertext: KemCiphertext,
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
-    const {
-      ciphertext: {
-        alpha,
-        beta
-      },
-      randomness,
-      decryptor,
-    } = await kem(this.ctx, this.mode).encrypt(message, pub);
+    const { ctx, mode } = this;
+    const pub = ctx.unpack(pubBytes);
+    await ctx.validatePoint(pub);
+    const { ciphertext, randomness, decryptor } = await kem(ctx, mode).encrypt(
+      message, pub
+    );
+    const { alpha, beta } = ciphertext;
     return {
-      ciphertext: { alpha, beta: beta.toBytes() },
+      ciphertext: {
+        alpha, beta: beta.toBytes()
+      },
       randomness: leInt2Buff(randomness),
       decryptor: decryptor.toBytes(),
     }
   }
 
-  decrypt_KEM = async (
-    ciphertext: KemCiphertext,
-    secret: bigint
-  ): Promise<Uint8Array> => {
-    const { alpha, beta: betaBytes } = ciphertext;
-    const beta = this.ctx.unpack(betaBytes);
-    return kem(this.ctx, this.mode).decrypt(
-      { alpha, beta }, secret
+  decrypt_KEM = async (ciphertext: KemCiphertext, secret: bigint): Promise<
+    Uint8Array
+  > => {
+    const { ctx, mode } = this;
+    const { alpha, beta } = ciphertext;
+    return kem(ctx, mode).decrypt(
+      {
+        alpha, beta: ctx.unpack(beta)
+      },
+      secret
     );
   }
 
@@ -188,31 +186,32 @@ export class ElgamalDriver<P extends Point>{
     ciphertext: KemCiphertext,
     decryptor: Uint8Array,
   ): Promise<Uint8Array> => {
+    const { ctx, mode } = this;
     const { alpha, beta } = ciphertext;
-    return kem(this.ctx, this.mode).decryptWithDecryptor(
+    return kem(ctx, mode).decryptWithDecryptor(
       {
-        alpha: alpha,
-        beta: this.ctx.unpack(beta),
+        alpha, beta: ctx.unpack(beta),
       },
-      this.ctx.unpack(decryptor),
+      ctx.unpack(decryptor),
     );
   }
 
-  encrypt_IES = async (
-    message: Uint8Array,
-    pub: P,
-  ): Promise<{
+  encrypt_IES = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
     ciphertext: IesCiphertext,
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
-    const {
-      ciphertext: { alpha, beta },
-      randomness,
-      decryptor,
-    } = await ies(this.ctx, this.mode, this.algorithm).encrypt(message, pub);
+    const { ctx, mode, algorithm } = this;
+    const pub = ctx.unpack(pubBytes);
+    await ctx.validatePoint(pub);
+    const { ciphertext, randomness, decryptor } = await ies(ctx, mode, algorithm).encrypt(
+      message, pub
+    );
+    const { alpha, beta } = ciphertext;
     return {
-      ciphertext: { alpha, beta: beta.toBytes() },
+      ciphertext: {
+        alpha, beta: beta.toBytes()
+      },
       randomness: leInt2Buff(randomness),
       decryptor: decryptor.toBytes(),
     }
@@ -222,10 +221,13 @@ export class ElgamalDriver<P extends Point>{
     ciphertext: IesCiphertext,
     secret: bigint
   ): Promise<Uint8Array> => {
-    const { alpha, beta: betaBytes } = ciphertext;
-    const beta = this.ctx.unpack(betaBytes);
-    return ies(this.ctx, this.mode, this.algorithm).decrypt(
-      { alpha, beta }, secret
+    const { ctx, mode, algorithm } = this;
+    const { alpha, beta } = ciphertext;
+    return ies(ctx, mode, algorithm).decrypt(
+      {
+        alpha, beta: ctx.unpack(beta)
+      },
+      secret
     );
   }
 
@@ -233,13 +235,13 @@ export class ElgamalDriver<P extends Point>{
     ciphertext: IesCiphertext,
     decryptor: Uint8Array,
   ): Promise<Uint8Array> => {
+    const { ctx, mode, algorithm } = this;
     const { alpha, beta } = ciphertext;
-    return ies(this.ctx, this.mode, this.algorithm).decryptWithDecryptor(
+    return ies(ctx, mode, algorithm).decryptWithDecryptor(
       {
-        alpha: alpha,
-        beta: this.ctx.unpack(beta),
+        alpha, beta: ctx.unpack(beta),
       },
-      this.ctx.unpack(decryptor),
+      ctx.unpack(decryptor),
     );
   }
 }

@@ -5,8 +5,7 @@ import plain from './plain';
 import kem from './kem';
 import ies from './ies';
 
-import { ElgamalDriver } from './driver';
-import { ElgamalCiphertext } from './types'
+import { ElgamalCiphertext, ElgamalDriver } from './driver';
 
 export {
   plain,

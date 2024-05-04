@@ -21,8 +21,3 @@ export type PlainCiphertext = {
   alpha: Uint8Array,
   beta: Uint8Array,
 }
-
-export type ElgamalCiphertext =
-  IesCiphertext |
-  KemCiphertext |
-  PlainCiphertext;
