@@ -12,7 +12,8 @@ export interface SerializedPrivateShare extends SerializedPrivateKey { index: nu
 export interface SerializedPublicShare extends SerializedPublicKey { index: number }
 
 export const serializePrivateKey = (
-  privateKey: PrivateKey<Point>, encoding: Encoding
+  privateKey: PrivateKey<Point>,
+  encoding: Encoding
 ): SerializedPrivateKey => {
   const { ctx, bytes } = privateKey;
   const value = Buffer.from(bytes).toString(encoding);
@@ -21,14 +22,17 @@ export const serializePrivateKey = (
 }
 
 export const deserializePrivateKey = async (
-  data: SerializedPrivateKey): Promise<PrivateKey<Point>>=> {
+  data: SerializedPrivateKey
+): Promise<PrivateKey<Point>>=> {
   const ctx = initGroup(data.system);
   const bytes = Uint8Array.from(Buffer.from(data.value, data.encoding));
   return PrivateKey.fromBytes(ctx, bytes);
 }
 
 export const serializePublicKey = (
-  publicKey: PublicKey<Point>, encoding: Encoding): SerializedPublicKey => {
+  publicKey: PublicKey<Point>,
+  encoding: Encoding
+): SerializedPublicKey => {
   const { ctx, bytes } = publicKey;
   const value = Buffer.from(bytes).toString(encoding);
   const system = ctx.system;
@@ -36,15 +40,17 @@ export const serializePublicKey = (
 }
 
 export const deserializePublicKey = async (
-  data: SerializedPublicKey): Promise<PublicKey<Point>> => {
+  data: SerializedPublicKey
+): Promise<PublicKey<Point>> => {
   const ctx = initGroup(data.system);
-  const pub = data.encoding == Encodings.HEX ? ctx.unhexify(data.value) :
-    ctx.unpack(Buffer.from(data.value, Encodings.BASE64));
-  return PublicKey.fromPoint(ctx, pub);
+  const bytes = Uint8Array.from(Buffer.from(data.value, data.encoding));
+  return new PublicKey(ctx, bytes);
 }
 
 export const serializePrivateShare = (
-  privateShare: PrivateShare<Point>, encoding: Encoding): SerializedPrivateShare => {
+  privateShare: PrivateShare<Point>,
+  encoding: Encoding
+): SerializedPrivateShare => {
   const { ctx, bytes, index } = privateShare;
   const value = Buffer.from(bytes).toString(encoding);
   const system = ctx.system;
@@ -52,7 +58,8 @@ export const serializePrivateShare = (
 }
 
 export const deserializePrivateShare = async (
-  data: SerializedPrivateShare): Promise<PrivateShare<Point>> => {
+  data: SerializedPrivateShare
+): Promise<PrivateShare<Point>> => {
   const ctx = initGroup(data.system);
   const bytes = Uint8Array.from(Buffer.from(data.value, data.encoding));
   await ctx.validateBytes(bytes);
@@ -60,7 +67,9 @@ export const deserializePrivateShare = async (
 }
 
 export const serializePublicShare = (
-  publicShare: PublicShare<Point>, encoding: Encoding): SerializedPublicShare => {
+  publicShare: PublicShare<Point>,
+  encoding: Encoding
+): SerializedPublicShare => {
   const { ctx, bytes, index } = publicShare;
   const value = Buffer.from(bytes).toString(encoding);
   const system = ctx.system;
@@ -68,9 +77,9 @@ export const serializePublicShare = (
 }
 
 export const deserializePublicShare = async (
-  data: SerializedPublicShare): Promise<PublicShare<Point>> => {
+  data: SerializedPublicShare
+): Promise<PublicShare<Point>> => {
   const ctx = initGroup(data.system);
-  const pub = data.encoding == Encodings.HEX ? ctx.unhexify(data.value) :
-    ctx.unpack(Buffer.from(data.value, Encodings.BASE64));
-  return new PublicShare(ctx, pub, data.index);
+  const bytes = Uint8Array.from(Buffer.from(data.value, data.encoding));
+  return new PublicShare(ctx, bytes, data.index);
 }

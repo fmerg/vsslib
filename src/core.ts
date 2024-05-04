@@ -24,9 +24,9 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   }
 
   async publicShare(): Promise<PublicShare<P>> {
-    const { ctx, index } = this;
-    const pub = await ctx.operate(this.secret, ctx.generator);
-    return new PublicShare(ctx, pub, index);
+    const { ctx } = this;
+    const pubPoint = await ctx.operate(this.secret, ctx.generator);
+    return new PublicShare(ctx, pubPoint.toBytes(), this.index);
   }
 
   async generatePartialDecryptor(
@@ -50,11 +50,9 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   value: P;
   index: number;
 
-  constructor(ctx: Group<P>, pub: P, index: number) {
-    // TODO: Validations
-    const bytes = pub.toBytes();
+  constructor(ctx: Group<P>, bytes: Uint8Array, index: number) {
     super(ctx, bytes);
-    this.value = pub;
+    this.value = this.ctx.unpack(this.bytes);
     this.index = index;
   }
 
@@ -102,8 +100,9 @@ export class KeySharing<P extends Point> extends BaseSharing<
     const { nrShares, polynomial: { evaluate }, ctx: { operate, generator } } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
-      const value = await operate(evaluate(index), generator);
-      shares.push(new PublicShare(this.ctx, value, index));
+      const pubPoint = await operate(evaluate(index), generator);
+      const newShare = new PublicShare(this.ctx, pubPoint.toBytes(), index);
+      shares.push(newShare);
     }
     return shares;
   }
@@ -185,8 +184,8 @@ export async function reconstructPublic<P extends Point>(
     ErrorMessages.INSUFFICIENT_NR_SHARES
   );
   const pubShares = shares.map(({ value, index }) => { return { value, index } });
-  const pubPoint = await shamir.reconstructPublic(ctx, pubShares);
-  return new PublicKey(ctx, pubPoint.toBytes());
+  const combined = await shamir.reconstructPublic(ctx, pubShares);
+  return new PublicKey(ctx, combined.toBytes());
 }
 
 // TODO: Include indexed nonces option?
