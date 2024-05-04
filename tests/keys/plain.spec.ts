@@ -6,8 +6,7 @@ import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
-let { systems, algorithms } = resolveTestConfig();
-algorithms  = [...algorithms, undefined];
+const { systems, algorithms } = resolveTestConfig();
 
 
 describe('plain encryption and decryption', () => {
@@ -41,8 +40,7 @@ describe('plain encryption proof - success without nonce', () => {
       scheme: ElgamalSchemes.PLAIN
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const verified = await privateKey.verifyEncryption(ciphertext, proof);
+    const verified = await privateKey.verifyEncryption(ciphertext, proof, { algorithm });
     expect(verified).toBe(true);
   });
 });
@@ -57,8 +55,7 @@ describe('plain encryption proof - success with nonce', () => {
     });
     const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const verified = await privateKey.verifyEncryption(ciphertext, proof, { nonce });
+    const verified = await privateKey.verifyEncryption(ciphertext, proof, { algorithm, nonce });
     expect(verified).toBe(true);
   });
 });
@@ -88,10 +85,13 @@ describe('plain encryption proof - failure if wrong algorithm', () => {
       scheme: ElgamalSchemes.PLAIN
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
-      Algorithms.SHA512 :
-      Algorithms.SHA256;
-    await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
+    await expect(
+      privateKey.verifyEncryption(ciphertext, proof, {
+        algorithm: algorithm == Algorithms.SHA256 ?
+          Algorithms.SHA512 :
+          Algorithms.SHA256
+      })
+    ).rejects.toThrow(
       ErrorMessages.INVALID_ENCRYPTION
     );
   });
@@ -107,7 +107,7 @@ describe('plain encryption proof - failure if missing nonce', () => {
     });
     const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
-    await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
+    await expect(privateKey.verifyEncryption(ciphertext, proof, { algorithm })).rejects.toThrow(
       ErrorMessages.INVALID_ENCRYPTION
     );
   });
@@ -169,8 +169,7 @@ describe('Decryptor proof - success with nonce', () => {
     });
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce });
+    const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm, nonce });
     expect(verified).toBe(true);
   });
 });
@@ -200,10 +199,13 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
       scheme: ElgamalSchemes.PLAIN
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
-    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
-      Algorithms.SHA512 :
-      Algorithms.SHA256;
-    await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
+    await expect(
+      publicKey.verifyDecryptor(ciphertext, decryptor, proof, {
+        algorithm: algorithm == Algorithms.SHA256 ?
+          Algorithms.SHA512 :
+          Algorithms.SHA256
+      })
+    ).rejects.toThrow(
       ErrorMessages.INVALID_DECRYPTOR
     );
   });

@@ -14,7 +14,6 @@ describe('Success - without nonce', () => {
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const proof = await nizk(ctx, algorithm).proveRepresentation({ s, t }, { h, u });
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const valid = await nizk(ctx, algorithm).verifyRepresentation({ h, u }, proof);
     expect(valid).toBe(true);
   });
@@ -54,21 +53,6 @@ describe('Failure - if tampered proof', () => {
     const proof = await nizk(ctx, Algorithms.SHA256).proveRepresentation({ s, t }, { h, u });
     proof.response[0] = await ctx.randomScalar();
     const valid = await nizk(ctx, Algorithms.SHA256).verifyRepresentation({ h, u }, proof);
-    expect(valid).toBe(false);
-  });
-});
-
-
-describe('Failure - if wrong algorithm', () => {
-  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
-    const ctx = initGroup(system);
-    const h = await ctx.randomPoint();
-    const [{ s, t }, { u }] = await createRepresentation(ctx, h);
-    const proof = await nizk(ctx, algorithm).proveRepresentation({ s, t }, { h, u });
-    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
-      Algorithms.SHA512 :
-      Algorithms.SHA256;
-    const valid = await nizk(ctx, algorithm).verifyRepresentation({ h, u }, proof);
     expect(valid).toBe(false);
   });
 });

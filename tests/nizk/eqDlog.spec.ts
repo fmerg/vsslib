@@ -13,7 +13,6 @@ describe('Success - without nonce', () => {
     const ctx = initGroup(system);
     const [x, pairs] = await createEqDlogPairs(ctx, 3);
     const proof = await nizk(ctx, algorithm).proveEqDlog(x, pairs);
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const valid = await nizk(ctx, algorithm).verifyEqDlog(pairs, proof);
     expect(valid).toBe(true);
   });
@@ -39,20 +38,6 @@ describe('Failure - forged proof', () => {
     const proof = await nizk(ctx, Algorithms.SHA256).proveEqDlog(x, pairs);
     pairs[2].v = await ctx.randomPoint();
     const valid = await nizk(ctx, Algorithms.SHA256).verifyEqDlog(pairs, proof);
-    expect(valid).toBe(false);
-  });
-});
-
-
-describe('Failure - wrong algorithm', () => {
-  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
-    const ctx = initGroup(system);
-    const [x, pairs] = await createEqDlogPairs(ctx, 3);
-    const proof = await nizk(ctx, algorithm).proveEqDlog(x, pairs);
-    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
-      Algorithms.SHA512 :
-      Algorithms.SHA256;
-    const valid = await nizk(ctx, algorithm).verifyEqDlog(pairs, proof);
     expect(valid).toBe(false);
   });
 });

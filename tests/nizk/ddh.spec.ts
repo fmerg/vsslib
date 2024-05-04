@@ -15,7 +15,6 @@ describe('Success - without nonce', () => {
     const ctx = initGroup(system);
     const [z, { u, v, w }] = await createDDHTuple(ctx);
     const proof = await nizk(ctx, algorithm).proveDDH(z, { u, v, w });
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const valid = await nizk(ctx, algorithm).verifyDDH({ u, v, w }, proof);
     expect(valid).toBe(true);
   });
@@ -44,20 +43,6 @@ describe('Failure - forged proof', () => {
     expect(valid).toBe(false);
   });
 });
-
-
-describe('Failure - wrong algorithm', () => {
-  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
-    const ctx = initGroup(system);
-    const [z, { u, v, w }] = await createDDHTuple(ctx);
-    const proof = await nizk(ctx, algorithm).proveDDH(z, { u, v, w })
-    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
-      Algorithms.SHA512 :
-      Algorithms.SHA256;
-    const valid = await nizk(ctx, algorithm).verifyDDH({ u, v, w }, proof);
-    expect(valid).toBe(false);
-  });
-})
 
 
 describe('Failure - missing nonce', () => {

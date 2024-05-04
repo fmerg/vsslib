@@ -1,4 +1,3 @@
-import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
 import { mod } from '../crypto/arith';
@@ -28,7 +27,6 @@ export function fillMatrix<P extends Point>(point: P, m: number, n: number): P[]
 export type NizkProof<P extends Point> = {
   commitments: P[],
   response: bigint[],
-  algorithm: Algorithm,
 }
 
 export class NizkProtocol<P extends Point>{
@@ -54,8 +52,7 @@ export class NizkProtocol<P extends Point>{
     const extrasBuff = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
     nonce = nonce || Uint8Array.from([]);
     const bytes = Uint8Array.from([...configBuff, ...pointsBuff, ...scalarsBuff, ...extrasBuff, ...nonce]);
-    algorithm = algorithm || this.algorithm;
-    const digest = await hash(algorithm).digest(bytes);
+    const digest = await hash(this.algorithm).digest(bytes);
     return leBuff2Scalar(digest);
   }
 
@@ -91,13 +88,13 @@ export class NizkProtocol<P extends Point>{
     for (const [j, x] of witnesses.entries()) {
       response[j] = mod(rs[j] + x * challenge, order);
     }
-    return { commitments, response, algorithm };
+    return { commitments, response  };
   }
 
   async _verifyLinearRelation(relation: LinearRelation<P>, proof: NizkProof<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<boolean> {
     const { neutral, operate, combine } = this.ctx;
     const { us, vs } = relation;
-    const { commitments, response, algorithm } = proof;
+    const { commitments, response  } = proof;
     if (vs.length !== commitments.length) throw new Error('Invalid dimensions');
     const challenge = await this.computeChallenge(
       [
@@ -108,7 +105,6 @@ export class NizkProtocol<P extends Point>{
       [],
       extras,
       nonce,
-      algorithm,
     );
     let flag = true;
     for (const [i, v] of vs.entries()) {

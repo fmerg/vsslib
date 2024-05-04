@@ -12,7 +12,6 @@ describe('Success - without nonce', () => {
     const ctx = initGroup(system);
     const [witnesses, pairs] = await createAndDlogPairs(ctx, 5);
     const proof = await nizk(ctx, algorithm).proveAndDlog(witnesses, pairs);
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
     const valid = await nizk(ctx, algorithm).verifyAndDlog(pairs, proof);
     expect(valid).toBe(true);
   });
@@ -38,20 +37,6 @@ describe('Failure - forged proof', () => {
     const proof = await nizk(ctx, Algorithms.SHA256).proveAndDlog(witnesses, pairs);
     proof.response[0] = await ctx.randomScalar();
     const valid = await nizk(ctx, Algorithms.SHA256).verifyAndDlog(pairs, proof);
-    expect(valid).toBe(false);
-  });
-});
-
-
-describe('Failure - wrong algorithm', () => {
-  it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
-    const ctx = initGroup(system);
-    const [witnesses, pairs] = await createAndDlogPairs(ctx, 5);
-    const proof = await nizk(ctx, algorithm).proveAndDlog(witnesses, pairs);
-    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
-      Algorithms.SHA512 :
-      Algorithms.SHA256;
-    const valid = await nizk(ctx, algorithm).verifyAndDlog(pairs, proof);
     expect(valid).toBe(false);
   });
 });

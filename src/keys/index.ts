@@ -69,7 +69,11 @@ class PrivateKey<P extends Point> {
     return signature;
   }
 
-  async proveIdentity(opts?: { algorithm?: Algorithm, nonce?: Uint8Array }): Promise<NizkProof<P>> {
+  async proveIdentity(
+    opts?: {
+      nonce?: Uint8Array
+      algorithm?: Algorithm,
+    }): Promise<NizkProof<P>> {
     const { ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
@@ -127,7 +131,7 @@ class PrivateKey<P extends Point> {
       nonce?: Uint8Array,
     }
   ): Promise<NizkProof<P>> {
-    const { ctx, secret: secret } = this;
+    const { ctx, secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
@@ -215,10 +219,19 @@ class PublicKey<P extends Point> {
     return verified;
   }
 
-  async verifyIdentity(proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> {
+  async verifyIdentity(
+    proof: NizkProof<P>,
+    opts?: {
+      nonce?: Uint8Array,
+      algorithm?: Algorithm,
+    },
+  ): Promise<boolean> {
     const { ctx } = this;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
+      Algorithms.DEFAULT;
+    const nonce = opts ? (opts.nonce || undefined) : undefined;
     const pub = ctx.unpack(this.bytes);
-    const verified = await nizk(ctx, Algorithms.DEFAULT).verifyDlog(
+    const verified = await nizk(ctx, algorithm).verifyDlog(
       { u: ctx.generator, v: pub }, proof, nonce
     );
     if (!verified) throw new Error(ErrorMessages.INVALID_SECRET);
@@ -271,11 +284,17 @@ class PublicKey<P extends Point> {
     ciphertext: Ciphertext,
     decryptor: Uint8Array,
     proof: NizkProof<P>,
-    opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean }
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array,
+      raiseOnInvalid?: boolean
+    }
   ): Promise<boolean> {
     const { ctx } = this;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
+      Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    const verified = await nizk(ctx, Algorithms.DEFAULT).verifyDDH(
+    const verified = await nizk(ctx, algorithm).verifyDDH(
       {
         u: ctx.unpack(ciphertext.beta),
         v: ctx.unpack(this.bytes),
