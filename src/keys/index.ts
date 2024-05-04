@@ -228,7 +228,7 @@ class PublicKey<P extends Point> {
     algorithm = algorithm || Algorithms.DEFAULT;
     mode = mode || AesModes.DEFAULT;
     return elgamal(this.ctx, scheme, algorithm, mode).encrypt(
-      message, this.pub
+      message, this.bytes
     );
   }
 

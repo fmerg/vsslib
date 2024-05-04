@@ -32,12 +32,13 @@ export class ElgamalDriver<P extends Point>{
     this.mode = mode;
   }
 
-  encrypt = async (message: Uint8Array, pub: P): Promise<{
+  encrypt = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
     ciphertext: ElgamalCiphertext
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
     const { ctx, scheme, algorithm, mode } = this;
+    const pub = ctx.unpack(pubBytes);
     switch (scheme) {
       case ElgamalSchemes.PLAIN:
         return this.encrypt_PLAIN(message, pub);
