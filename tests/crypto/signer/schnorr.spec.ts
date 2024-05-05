@@ -82,7 +82,7 @@ describe('Signature verification - failure if forged signature', () => {
     const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
       secret, message
     );
-    signature.commitment = await ctx.randomPoint();
+    signature.commitment = (await ctx.randomPoint()).toBytes();
     const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
       pub, message, signature
     );

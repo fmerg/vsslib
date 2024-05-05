@@ -1,8 +1,8 @@
 import { Algorithm } from '../../types';
 import { Point, Group } from '../../backend/abstract';
 
-export interface Signature<P> {
-  commitment: P;
+export interface Signature {
+  commitment: Uint8Array,
   response: bigint;
 }
 

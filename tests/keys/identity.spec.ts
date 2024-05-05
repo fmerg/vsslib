@@ -34,7 +34,7 @@ describe('Identity proof - failure if forged proof', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const proof = await privateKey.proveIdentity();
-    proof.commitments[0] = await ctx.randomPoint();
+    proof.commitments[0] = (await ctx.randomPoint()).toBytes();
     await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
       ErrorMessages.INVALID_SECRET
     );

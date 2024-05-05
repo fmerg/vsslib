@@ -24,7 +24,12 @@ export function fillMatrix<P extends Point>(point: P, m: number, n: number): P[]
   return Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, i) => point));
 }
 
-export type NizkProof<P extends Point> = {
+export type NizkProof = {
+  commitments: Uint8Array[],
+  response: bigint[],
+}
+
+type InnerProof<P extends Point> = {
   commitments: P[],
   response: bigint[],
 }
@@ -56,7 +61,28 @@ export class NizkProtocol<P extends Point>{
     return leBuff2Scalar(digest);
   }
 
-  async _proveLinearRelation(witnesses: bigint[], relation: LinearRelation<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<NizkProof<P>> {
+  async toInner(proof: NizkProof): Promise<InnerProof<P>> {
+    const { commitments: buffers, response } = proof;
+    const m = buffers.length;
+    const commitments = new Array(m);
+    const { unpack, validatePoint } = this.ctx;
+    for (let i = 0; i < m; i++) {
+      const c = unpack(buffers[i]);
+      await validatePoint(c);
+      commitments[i] = c;
+    }
+    return { commitments, response };
+  }
+
+  async toOuter(proof: InnerProof<P>): Promise<NizkProof> {
+    const { commitments, response } = proof;
+    return {
+      commitments: commitments.map(c => c.toBytes()),
+      response
+    }
+  }
+
+  async _proveLinearRelation(witnesses: bigint[], relation: LinearRelation<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<NizkProof> {
     const { ctx: { order, randomScalar, neutral, operate, combine }, algorithm } = this;
     const { us, vs } = relation;
     const m = vs.length;
@@ -88,13 +114,13 @@ export class NizkProtocol<P extends Point>{
     for (const [j, x] of witnesses.entries()) {
       response[j] = mod(rs[j] + x * challenge, order);
     }
-    return { commitments, response  };
+    return this.toOuter({ commitments, response });
   }
 
-  async _verifyLinearRelation(relation: LinearRelation<P>, proof: NizkProof<P>, extras: Uint8Array[], nonce?: Uint8Array): Promise<boolean> {
+  async _verifyLinearRelation(relation: LinearRelation<P>, proof: NizkProof, extras: Uint8Array[], nonce?: Uint8Array): Promise<boolean> {
     const { neutral, operate, combine } = this.ctx;
     const { us, vs } = relation;
-    const { commitments, response  } = proof;
+    const { commitments, response } = await this.toInner(proof);
     if (vs.length !== commitments.length) throw new Error('Invalid dimensions');
     const challenge = await this.computeChallenge(
       [
@@ -119,23 +145,23 @@ export class NizkProtocol<P extends Point>{
     return flag;
   }
 
-  proveLinearRelation = async (witnesses: bigint[], relation: LinearRelation<P>, nonce?: Uint8Array): Promise<NizkProof<P>> => {
+  proveLinearRelation = async (witnesses: bigint[], relation: LinearRelation<P>, nonce?: Uint8Array): Promise<NizkProof> => {
     return this._proveLinearRelation(witnesses, relation, [], nonce);
   }
 
-  verifyLinearRelation = async (relation: LinearRelation<P>, proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
+  verifyLinearRelation = async (relation: LinearRelation<P>, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     return this._verifyLinearRelation(relation, proof, [], nonce);
   }
 
-  proveDlog = async (x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array): Promise<NizkProof<P>> => {
+  proveDlog = async (x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array): Promise<NizkProof> => {
     return this._proveLinearRelation([x], { us: [[u]], vs: [v] }, [], nonce);
   }
 
-  verifyDlog = async ({ u, v }: DlogPair<P>, proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
+  verifyDlog = async ({ u, v }: DlogPair<P>, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     return this._verifyLinearRelation({ us: [[u]], vs: [v] }, proof, [], nonce);
   }
 
-  proveAndDlog = async (witnesses: bigint[], pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<NizkProof<P>> => {
+  proveAndDlog = async (witnesses: bigint[], pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<NizkProof> => {
     const { neutral } = this.ctx;
     const m = pairs.length;
     const us = fillMatrix(neutral, m, m);
@@ -146,7 +172,7 @@ export class NizkProtocol<P extends Point>{
     return this._proveLinearRelation(witnesses, { us, vs }, [], nonce);
   }
 
-  verifyAndDlog = async (pairs: DlogPair<P>[], proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
+  verifyAndDlog = async (pairs: DlogPair<P>[], proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     const { neutral } = this.ctx;
     const m = pairs.length;
     const us = fillMatrix(neutral, m, m)
@@ -157,7 +183,7 @@ export class NizkProtocol<P extends Point>{
     return this._verifyLinearRelation({ us, vs }, proof, [], nonce);
   }
 
-  proveEqDlog = async (x: bigint, pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<NizkProof<P>> => {
+  proveEqDlog = async (x: bigint, pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<NizkProof> => {
     const { neutral } = this.ctx;
     const m = pairs.length;
     const witnesses = Array.from({ length: m }, (_, i) => x);
@@ -169,7 +195,7 @@ export class NizkProtocol<P extends Point>{
     return this._proveLinearRelation(witnesses, { us, vs }, [], nonce);
   }
 
-  verifyEqDlog = async (pairs: DlogPair<P>[], proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
+  verifyEqDlog = async (pairs: DlogPair<P>[], proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     const { neutral } = this.ctx;
     const m = pairs.length;
     const us = fillMatrix(neutral, m, m);
@@ -180,24 +206,24 @@ export class NizkProtocol<P extends Point>{
     return this._verifyLinearRelation({ us, vs }, proof, [], nonce);
   }
 
-  proveDDH = async (z: bigint, { u, v, w }: DDHTuple<P>, nonce?: Uint8Array): Promise<NizkProof<P>> => {
+  proveDDH = async (z: bigint, { u, v, w }: DDHTuple<P>, nonce?: Uint8Array): Promise<NizkProof> => {
     const { generator: g, neutral: n } = this.ctx;
     return this._proveLinearRelation([z, z], { us: [[g, n], [n, u]], vs: [v, w] }, [], nonce);
   }
 
-  verifyDDH = async ({ u, v, w }: DDHTuple<P>, proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
+  verifyDDH = async ({ u, v, w }: DDHTuple<P>, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     const { generator: g, neutral: n } = this.ctx;
     return this._verifyLinearRelation({ us: [[g, n], [n, u]], vs: [v, w] }, proof, [], nonce);
   }
 
-  proveRepresentation = async (witnesses: { s: bigint, t: bigint }, commitment: { h: P, u: P }, nonce?: Uint8Array): Promise<NizkProof<P>> => {
+  proveRepresentation = async (witnesses: { s: bigint, t: bigint }, commitment: { h: P, u: P }, nonce?: Uint8Array): Promise<NizkProof> => {
     const { s, t } = witnesses;
     const { h, u } = commitment;
     const { generator: g } = this.ctx;
     return this._proveLinearRelation([s, t], { us: [[g, h]], vs: [u]}, [], nonce);
   }
 
-  verifyRepresentation = async (commitment: { h: P, u: P }, proof: NizkProof<P>, nonce?: Uint8Array): Promise<boolean> => {
+  verifyRepresentation = async (commitment: { h: P, u: P }, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     const { h, u } = commitment;
     const { generator: g } = this.ctx;
     return this._verifyLinearRelation({ us: [[g, h]], vs: [u] }, proof, [], nonce);

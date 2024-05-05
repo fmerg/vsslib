@@ -59,7 +59,7 @@ class PrivateKey<P extends Point> {
   async sign(
     message: Uint8Array,
     opts?: { nonce?: Uint8Array, algorithm?: Algorithm }
-  ): Promise<Signature<P>> {
+  ): Promise<Signature> {
     const { ctx, secret: secret } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
@@ -73,7 +73,7 @@ class PrivateKey<P extends Point> {
     opts?: {
       nonce?: Uint8Array
       algorithm?: Algorithm,
-    }): Promise<NizkProof<P>> {
+    }): Promise<NizkProof> {
     const { ctx, secret: secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
@@ -99,7 +99,7 @@ class PrivateKey<P extends Point> {
 
   verifyEncryption = async (
     ciphertext: Ciphertext,
-    proof: NizkProof<P>,
+    proof: NizkProof,
     opts?: {
       algorithm?: Algorithm,
       nonce?: Uint8Array,
@@ -130,7 +130,7 @@ class PrivateKey<P extends Point> {
       algorithm?: Algorithm,
       nonce?: Uint8Array,
     }
-  ): Promise<NizkProof<P>> {
+  ): Promise<NizkProof> {
     const { ctx, secret } = this;
     const pub = await ctx.operate(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
@@ -152,7 +152,7 @@ class PrivateKey<P extends Point> {
     opts?: { algorithm?: Algorithm },
   ): Promise<{
     decryptor: Uint8Array,
-    proof: NizkProof<P>
+    proof: NizkProof
   }> {
     const { ctx, secret } = this;
     const decryptorPoint = await ctx.operate(
@@ -205,7 +205,7 @@ class PublicKey<P extends Point> {
 
   async verifySignature(
     message: Uint8Array,
-    signature: Signature<P>,
+    signature: Signature,
     opts: { nonce?: Uint8Array, algorithm?: Algorithm },
   ): Promise<boolean> {
     const { ctx } = this;
@@ -213,14 +213,14 @@ class PublicKey<P extends Point> {
     const nonce = opts ? (opts.nonce || undefined) : undefined;
     const pub = ctx.unpack(this.bytes);
     const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
-      pub, message, signature as SchnorrSignature<P>, nonce
+      pub, message, signature as SchnorrSignature, nonce
     );
     if (!verified) throw new Error(ErrorMessages.INVALID_SIGNATURE);
     return verified;
   }
 
   async verifyIdentity(
-    proof: NizkProof<P>,
+    proof: NizkProof,
     opts?: {
       nonce?: Uint8Array,
       algorithm?: Algorithm,
@@ -265,7 +265,7 @@ class PublicKey<P extends Point> {
       algorithm?: Algorithm,
       nonce?: Uint8Array,
     }
-  ): Promise<NizkProof<P>> => {
+  ): Promise<NizkProof> => {
     const { ctx } = this;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
@@ -283,7 +283,7 @@ class PublicKey<P extends Point> {
   async verifyDecryptor(
     ciphertext: Ciphertext,
     decryptor: Uint8Array,
-    proof: NizkProof<P>,
+    proof: NizkProof,
     opts?: {
       algorithm?: Algorithm,
       nonce?: Uint8Array,
