@@ -10,7 +10,7 @@ const __1n = BigInt(1);
 
 
 /** Reproduce externally the Fiat-Shamir computation */
-export async function computeFiatShamir<P extends Point>(
+export async function computeChallenge<P extends Point>(
   ctx: Group<P>,
   algorithm: Algorithm,
   points: Point[],
