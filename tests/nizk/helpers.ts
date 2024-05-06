@@ -9,28 +9,6 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-/** Reproduce externally the Fiat-Shamir computation */
-export async function computeChallenge<P extends Point>(
-  ctx: Group<P>,
-  algorithm: Algorithm,
-  points: Point[],
-  scalars: bigint[],
-  extras: Uint8Array[],
-  nonce?: Uint8Array,
-): Promise<bigint> {
-  nonce = nonce || Uint8Array.from([]);
-  const { modulus, order, generator } = ctx;
-  const fixedBuff = [...leInt2Buff(modulus), ...leInt2Buff(order), ...generator.toBytes()];
-  const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
-  const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
-  const extrasBuff = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
-  const digest = await hash(algorithm).digest(
-    Uint8Array.from([...fixedBuff, ...pointsBuff, ...scalarsBuff, ...extrasBuff, ...nonce]),
-  ) as Uint8Array;
-  return (leBuff2Int(digest)) % order;
-}
-
-
 /** Create generic linear relation with given dimensions */
 export async function createGenericLinear<P extends Point>(
   ctx: Group<P>,

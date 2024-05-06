@@ -57,8 +57,6 @@
     "test-arith:reload": "jest tests/crypto/arith --watch --maxWorkers=1 --verbose",
     "test-bitwise": "jest tests/crypto/bitwise --maxWorkers=1 --verbose",
     "test-bitwise:reload": "jest tests/crypto/bitwise --watch --maxWorkers=1 --verbose",
-    "test-fiatShamir": "jest tests/nizk/fiatShamir --maxWorkers=1 --verbose",
-    "test-fiatShamir:reload": "jest tests/nizk/fiatShamir --watch --maxWorkers=1 --verbose",
     "test-genericLinear": "jest tests/nizk/genericLinear --maxWorkers=1 --verbose",
     "test-genericLinear:reload": "jest tests/nizk/genericLinear --watch --maxWorkers=1 --verbose",
     "test-andDlog": "jest tests/nizk/andDlog --maxWorkers=1 --verbose",
