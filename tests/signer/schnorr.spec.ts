@@ -1,8 +1,8 @@
-import { Systems, Algorithms, SignatureSchemes } from '../../../src/enums';
-import { initGroup } from '../../../src/backend';
-import { cartesian } from '../../helpers';
-import { resolveTestConfig } from '../../environ';
-import signer from '../../../src/crypto/signer';
+import { Systems, Algorithms, SignatureSchemes } from '../../src/enums';
+import { initGroup } from '../../src/backend';
+import { cartesian } from '../helpers';
+import { resolveTestConfig } from '../environ';
+import signer from '../../src/signer';
 
 const { systems, algorithms } = resolveTestConfig();
 

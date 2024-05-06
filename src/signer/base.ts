@@ -1,5 +1,5 @@
-import { Algorithm } from '../../types';
-import { Point, Group } from '../../backend/abstract';
+import { Algorithm } from '../types';
+import { Point, Group } from '../backend/abstract';
 
 export interface Signature {
   c: Uint8Array,

@@ -4,14 +4,14 @@ import { initGroup } from '../backend';
 import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
 import { NizkProof } from '../nizk';
-import { Signature } from '../crypto/signer/base';
-import { SchnorrSignature } from '../crypto/signer/schnorr';
+import { Signature } from '../signer/base';
+import { SchnorrSignature } from '../signer/schnorr';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, System } from '../types';
 
 import elgamal from '../elgamal';
 import nizk from '../nizk';
-import signer from '../crypto/signer';
+import signer from '../signer';
 
 
 class PrivateKey<P extends Point> {

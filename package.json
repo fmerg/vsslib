@@ -47,6 +47,8 @@
     "test-nizk:reload": "jest tests/nizk --watch --maxWorkers=1 --verbose",
     "test-serializers": "jest tests/serializers --maxWorkers=1 --verbose",
     "test-serializers:reload": "jest tests/serializers --watch --maxWorkers=1 --verbose",
+    "test-signer": "jest tests/signer --maxWorkers=1 --verbose",
+    "test-signer:reload": "jest tests/signer --watch --maxWorkers=1 --verbose",
     "test-crypto": "jest tests/crypto --maxWorkers=1 --verbose",
     "test-crypto:reload": "jest tests/crypto --watch --maxWorkers=1 --verbose",
     "test-aes": "jest tests/crypto/aes --maxWorkers=1 --verbose",
@@ -71,8 +73,6 @@
     "test-ddh:reload": "jest tests/nizk/ddh --watch --maxWorkers=1 --verbose",
     "test-okamoto": "jest tests/nizk/okamoto --maxWorkers=1 --verbose",
     "test-okamoto:reload": "jest tests/nizk/okamoto --watch --maxWorkers=1 --verbose",
-    "test-signer": "jest tests/crypto/signer --maxWorkers=1 --verbose",
-    "test-signer:reload": "jest tests/crypto/signer --watch --maxWorkers=1 --verbose",
     "build": "rm -rf ./build && tsc",
     "docs": "typedoc --out docs src/*.ts"
   },

@@ -1,8 +1,8 @@
 // TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
-import { Algorithms } from '../../enums';
-import { Algorithm } from '../../types';
-import { Point, Group } from '../../backend/abstract';
-import { NizkProtocol } from '../../nizk';
+import { Algorithms } from '../enums';
+import { Algorithm } from '../types';
+import { Point, Group } from '../backend/abstract';
+import { NizkProtocol } from '../nizk';
 import { Signature, Signer } from './base';
 
 
