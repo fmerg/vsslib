@@ -9,7 +9,7 @@ export interface BaseShare<T> {
 
 
 export abstract class BaseSharing<
-  S, P extends Point, Q extends BaseShare<S>, R extends BaseShare<P>
+  S, Q extends BaseShare<S>, P extends Point, R extends BaseShare<P>
 > {
   ctx: Group<P>;
   nrShares: number;

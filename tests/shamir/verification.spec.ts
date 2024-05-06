@@ -11,7 +11,7 @@ describe(`Secret share verification over ${system}`, () => {
   const ctx = initGroup(system);
 
   let sharing: SecretSharing<Point>;
-  let secretShares: SecretShare<Point>[];
+  let secretShares: SecretShare[];
 
   beforeAll(async () => {
     const secret = await ctx.randomScalar();
@@ -21,7 +21,7 @@ describe(`Secret share verification over ${system}`, () => {
 
   test('Feldmann - success', async () => {
     const { commitments } = await sharing.proveFeldmann();
-    secretShares.forEach(async (share: SecretShare<Point>) => {
+    secretShares.forEach(async (share: SecretShare) => {
       const { value: secret, index } = share;
       const verified = await verifyFeldmann(ctx, share, commitments);
       expect(verified).toBe(true);
@@ -31,7 +31,7 @@ describe(`Secret share verification over ${system}`, () => {
   test('Feldmann - failure', async () => {
     const { commitments } = await sharing.proveFeldmann();
     const forgedCommitmnets = [...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()];
-    secretShares.forEach(async (share: SecretShare<Point>) => {
+    secretShares.forEach(async (share: SecretShare) => {
       const verified = await verifyFeldmann(ctx, share, forgedCommitmnets);
       expect(verified).toBe(false);
     });
@@ -40,7 +40,7 @@ describe(`Secret share verification over ${system}`, () => {
   test('Pedersen - success', async () => {
     const hPub = await ctx.randomPoint();
     const { bindings, commitments } = await sharing.provePedersen(hPub);
-    secretShares.forEach(async (share: SecretShare<Point>) => {
+    secretShares.forEach(async (share: SecretShare) => {
       const binding = bindings[share.index];
       const verified = await verifyPedersen(ctx, share, binding, hPub, commitments);
       expect(verified).toBe(true);
@@ -50,7 +50,7 @@ describe(`Secret share verification over ${system}`, () => {
   test('Pedersen - failure', async () => {
     const hPub = await ctx.randomPoint();
     const { bindings, commitments } = await sharing.provePedersen(hPub);
-    secretShares.forEach(async (share: SecretShare<Point>) => {
+    secretShares.forEach(async (share: SecretShare) => {
       const forgedBinding = await ctx.randomScalar();
       const verified = await verifyPedersen(ctx, share, forgedBinding, hPub, commitments);
       expect(verified).toBe(false);

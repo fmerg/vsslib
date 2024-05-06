@@ -18,7 +18,7 @@ describe(`Reconstruction from shares over ${system}`, () => {
 
   let secret: bigint;
   let pub: Point;
-  let secretShares: SecretShare<Point>[];
+  let secretShares: SecretShare[];
   let publicShares: PubShare<Point>[];
 
   beforeAll(async () => {

@@ -84,7 +84,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
 };
 
 export class KeySharing<P extends Point> extends BaseSharing<
-  bigint, P, PrivateShare<P>, PublicShare<P>
+  bigint, PrivateShare<P>, P, PublicShare<P>
 > {
   getSecretShares = async (): Promise<PrivateShare<P>[]> => {
     const { ctx, polynomial, nrShares } = this;

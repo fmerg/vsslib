@@ -9,7 +9,7 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-export class SecretShare<P extends Point> implements BaseShare<bigint> {
+export class SecretShare implements BaseShare<bigint> {
   value: bigint;
   index: number;
 
@@ -32,10 +32,10 @@ export class PubShare<P extends Point> implements BaseShare<P> {
 
 
 export class SecretSharing<P extends Point> extends BaseSharing<
-  bigint, P, SecretShare<P>, PubShare<P>
+  bigint, SecretShare, P, PubShare<P>
 > {
 
-  getSecretShares = async (): Promise<SecretShare<P>[]> => {
+  getSecretShares = async (): Promise<SecretShare[]> => {
     const { polynomial, nrShares } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
@@ -99,7 +99,7 @@ export async function shareSecret<P extends Point>(
 
 export async function verifyFeldmann<P extends Point>(
   ctx: Group<P>,
-  share: SecretShare<P>,
+  share: SecretShare,
   commitments: P[]
 ): Promise<boolean> {
   const { value: secret, index } = share;
@@ -117,7 +117,7 @@ export async function verifyFeldmann<P extends Point>(
 
 export async function verifyPedersen<P extends Point>(
   ctx: Group<P>,
-  share: SecretShare<P>,
+  share: SecretShare,
   binding: bigint,
   pub: P,
   commitments: P[],
@@ -154,7 +154,7 @@ export function computeLambda<P extends Point>(
 
 export function reconstructSecret<P extends Point>(
   ctx: Group<P>,
-  qualifiedShares: SecretShare<P>[]
+  qualifiedShares: SecretShare[]
 ): bigint {
   const { order } = ctx;
   const indexes = qualifiedShares.map(share => share.index);
