@@ -60,7 +60,7 @@ describe('IES encryption proof - failure if forged proof', () => {
       scheme: ElgamalSchemes.IES
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    proof.commitments[0] = (await ctx.randomPoint()).toBytes();
+    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       ErrorMessages.INVALID_ENCRYPTION
     );
@@ -174,7 +174,7 @@ describe('Decryptor proof - failure if forged proof', () => {
       scheme: ElgamalSchemes.IES
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
-    proof.commitments[0] = (await ctx.randomPoint()).toBytes();
+    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       ErrorMessages.INVALID_DECRYPTOR
     );

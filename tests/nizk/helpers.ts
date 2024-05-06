@@ -16,7 +16,7 @@ export async function createGenericLinear<P extends Point>(
 ): Promise<[bigint[], GenericLinear<P>]>{
   const { randomScalar, randomPoint, neutral, operate, combine } = ctx;
   const { m, n } = opts;
-  const witnesses = new Array(n);
+  const witness = new Array(n);
   const vs = Array.from({ length: m }, (_, i) => neutral);
   const us = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => neutral));
   for (let j = 0; j < n; j++) {
@@ -26,9 +26,9 @@ export async function createGenericLinear<P extends Point>(
       vs[i] = await combine(vs[i], await operate(xj, uij));
       us[i][j] = uij;
     }
-    witnesses[j] = xj;
+    witness[j] = xj;
   }
-  return [witnesses, { us, vs }];
+  return [witness, { us, vs }];
 }
 
 
@@ -38,16 +38,16 @@ export async function createAndDlogPairs<P extends Point>(
   nrPairs: number,
 ): Promise<[bigint[], DlogPair<P>[]]>{
   const { randomScalar, randomPoint, operate } = ctx;
-  const witnesses = new Array(nrPairs);
+  const witness = new Array(nrPairs);
   const pairs = new Array(nrPairs);
   for (let i = 0; i < nrPairs; i++) {
     const x = await randomScalar();
     const u = await randomPoint();
     const v = await operate(x, u);
-    witnesses[i] = x;
+    witness[i] = x;
     pairs[i] = { u, v };
   }
-  return [witnesses, pairs];
+  return [witness, pairs];
 }
 
 

@@ -23,12 +23,12 @@ export type GenericLinear<P extends Point> = {
 }
 
 export type NizkProof = {
-  commitments: Uint8Array[],
+  commitment: Uint8Array[],
   response: bigint[],
 }
 
 type InnerProof<P extends Point> = {
-  commitments: P[],
+  commitment: P[],
   response: bigint[],
 }
 
@@ -47,22 +47,22 @@ export class NizkProtocol<P extends Point>{
   )
 
   toInner = async (proof: NizkProof): Promise<InnerProof<P>> => {
-    const { commitments: buffers, response } = proof;
+    const { commitment: buffers, response } = proof;
     const m = buffers.length;
-    const commitments = new Array(m);
+    const commitment = new Array(m);
     const { unpack, validatePoint } = this.ctx;
     for (let i = 0; i < m; i++) {
       const c = unpack(buffers[i]);
       await validatePoint(c);
-      commitments[i] = c;
+      commitment[i] = c;
     }
-    return { commitments, response };
+    return { commitment, response };
   }
 
   toOuter = async (proof: InnerProof<P>): Promise<NizkProof> => {
-    const { commitments, response } = proof;
+    const { commitment, response } = proof;
     return {
-      commitments: commitments.map(c => c.toBytes()),
+      commitment: commitment.map(c => c.toBytes()),
       response
     }
   }
@@ -86,17 +86,17 @@ export class NizkProtocol<P extends Point>{
   }
 
    _proveLinear = async (
-    witnesses: bigint[], relation: GenericLinear<P>, extras: Uint8Array[], nonce?: Uint8Array
+    witness: bigint[], relation: GenericLinear<P>, extras: Uint8Array[], nonce?: Uint8Array
   ): Promise<NizkProof> => {
     const { order, randomScalar, neutral, operate, combine } = this.ctx;
     const { us, vs } = relation;
     const m = vs.length;
-    const n = witnesses.length;
+    const n = witness.length;
     const rs = new Array(n);
     for (let j = 0; j < n; j ++) {
       rs[j] = await randomScalar();
     }
-    const commitments = new Array(m);
+    const commitment = new Array(m);
     for (let i = 0; i < m; i++) {
       if (us[i].length !== n)
         throw new Error('Incompatible lengths');
@@ -107,22 +107,22 @@ export class NizkProtocol<P extends Point>{
           await operate(rs[j], us[i][j])
         );
       }
-      commitments[i] = ci;
+      commitment[i] = ci;
     }
     const challenge = await this.computeChallenge(
       [
         ...us.reduce((acc, ui) => [...acc, ...ui], []),
         ...vs,
-        ...commitments,
+        ...commitment,
       ],
       extras,
       nonce,
     );
     const response = new Array(n);
-    for (const [j, x] of witnesses.entries()) {
+    for (const [j, x] of witness.entries()) {
       response[j] = mod(rs[j] + x * challenge, order);
     }
-    return this.toOuter({ commitments, response });
+    return this.toOuter({ commitment, response });
   }
 
   _verifyLinear = async (
@@ -130,14 +130,14 @@ export class NizkProtocol<P extends Point>{
   ): Promise<boolean> => {
     const { neutral, operate, combine } = this.ctx;
     const { us, vs } = relation;
-    const { commitments, response } = await this.toInner(proof);
-    if (vs.length !== commitments.length)
+    const { commitment, response } = await this.toInner(proof);
+    if (vs.length !== commitment.length)
       throw new Error('Incompatible lengths');
     const challenge = await this.computeChallenge(
       [
         ...us.reduce((acc, ui) => [...acc, ...ui], []),
         ...vs,
-        ...commitments,
+        ...commitment,
       ],
       extras,
       nonce,
@@ -147,7 +147,7 @@ export class NizkProtocol<P extends Point>{
       if (us[i].length !== response.length)
         throw new Error('Incompatible lengths');
       const rhs = await combine(
-        commitments[i],
+        commitment[i],
         await operate(challenge, v)
       );
       let lhs = neutral;
@@ -163,10 +163,10 @@ export class NizkProtocol<P extends Point>{
   }
 
   proveLinear = async (
-    witnesses: bigint[], relation: GenericLinear<P>, nonce?: Uint8Array, extras?: Uint8Array[]
+    witness: bigint[], relation: GenericLinear<P>, nonce?: Uint8Array, extras?: Uint8Array[]
   ): Promise<NizkProof> => {
     return this._proveLinear(
-      witnesses,
+      witness,
       relation,
       extras || [],
       nonce
@@ -212,7 +212,7 @@ export class NizkProtocol<P extends Point>{
     );
   }
 
-  proveAndDlog = async (witnesses: bigint[], pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<
+  proveAndDlog = async (witness: bigint[], pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<
     NizkProof
   > => {
     const m = pairs.length;
@@ -221,7 +221,7 @@ export class NizkProtocol<P extends Point>{
       us[i][i] = pairs[i].u;
     }
     return this._proveLinear(
-      witnesses,
+      witness,
       {
         us,
         vs: pairs.map(({ v }) => v),
@@ -252,13 +252,13 @@ export class NizkProtocol<P extends Point>{
 
   proveEqDlog = async (x: bigint, pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<NizkProof> => {
     const m = pairs.length;
-    const witnesses = Array.from({ length: m }, (_, i) => x);
+    const witness = Array.from({ length: m }, (_, i) => x);
     const us = this.fillMatrix(m, m, this.ctx.neutral);
     for (let i = 0; i < m; i++) {
       us[i][i] = pairs[i].u;
     }
     return this._proveLinear(
-      witnesses,
+      witness,
       {
         us,
         vs: pairs.map(({ v }) => v),
@@ -318,9 +318,9 @@ export class NizkProtocol<P extends Point>{
   }
 
   proveRepresentation = async (
-    witnesses: { s: bigint, t: bigint }, commitment: { h: P, u: P }, nonce?: Uint8Array
+    witness: { s: bigint, t: bigint }, commitment: { h: P, u: P }, nonce?: Uint8Array
   ): Promise<NizkProof> => {
-    const { s, t } = witnesses;
+    const { s, t } = witness;
     const { h, u } = commitment;
     const { generator: g } = this.ctx;
     return this._proveLinear(

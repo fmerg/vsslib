@@ -7,12 +7,12 @@ import { Signature, Signer } from './base';
 
 
 export class SchnorrSignature implements Signature {
-  commitment: Uint8Array;
-  response: bigint;
+  c: Uint8Array;
+  r: bigint;
 
-  constructor(commitment: Uint8Array, response: bigint) {
-    this.commitment = commitment;
-    this.response = response;
+  constructor(c: Uint8Array, r: bigint) {
+    this.c = c;
+    this.r = r;
   }
 }
 
@@ -24,23 +24,39 @@ export class SchnorrSigner<P extends Point> extends Signer<P, SchnorrSignature> 
     this.protocol = new NizkProtocol(ctx, algorithm);
   }
 
-  signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<SchnorrSignature> => {
+  signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<
+    SchnorrSignature
+  > => {
     const { generator: g, operate } = this.ctx;
     const pub = await operate(secret, g);
-    const { commitments, response } = await this.protocol._proveLinear(
-      [secret], { us: [[g]], vs: [pub] }, [message], nonce
+    const { commitment, response } = await this.protocol.proveLinear(
+      [secret],
+      {
+        us: [[g]],
+        vs: [pub]
+      },
+      nonce,
+      [message],
     );
-    return { commitment: commitments[0], response: response[0] };
+    return { c: commitment[0], r: response[0] };
   }
 
-  verifyBytes = async (pub: P, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array): Promise<boolean> => {
+  verifyBytes = async (
+    pub: P, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array
+  ): Promise<boolean> => {
     const { generator: g } = this.ctx;
-    const { commitment, response } = signature;
-    const proof = {
-      commitments: [commitment],
-      response: [response],
-      algorithm: this.algorithm,
-    }
-    return this.protocol._verifyLinear({ us: [[g]], vs: [pub] }, proof, [message], nonce);
+    const { c, r } = signature;
+    return this.protocol.verifyLinear(
+      {
+        us: [[g]],
+        vs: [pub]
+      },
+      {
+        commitment: [c],
+        response: [r],
+      },
+      nonce,
+      [message],
+    );
   }
 }
