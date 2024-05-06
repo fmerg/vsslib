@@ -6,13 +6,10 @@ import { ErrorMessages } from '../../src/errors';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
-let { systems, aesModes, algorithms } = resolveTestConfig();
-
-algorithms  = [...algorithms, undefined];
-aesModes    = [...aesModes, undefined];
+const { systems, aesModes, algorithms } = resolveTestConfig();
 
 
-describe('KEM hybrid encryption and decryption', () => {
+describe('KEM encryption and decryption', () => {
   it.each(cartesian([systems, aesModes]))('over %s/%s', async (system, mode) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -24,7 +21,7 @@ describe('KEM hybrid encryption and decryption', () => {
 });
 
 
-describe('KEM hybrid encryption proof - success without nonce', () => {
+describe('KEM encryption proof - success without nonce', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -32,14 +29,13 @@ describe('KEM hybrid encryption proof - success without nonce', () => {
       scheme: ElgamalSchemes.KEM
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const verified = await privateKey.verifyEncryption(ciphertext, proof);
+    const verified = await privateKey.verifyEncryption(ciphertext, proof, { algorithm });
     expect(verified).toBe(true);
   });
 });
 
 
-describe('KEM hybrid encryption proof - success with nonce', () => {
+describe('KEM encryption proof - success with nonce', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -48,14 +44,13 @@ describe('KEM hybrid encryption proof - success with nonce', () => {
     });
     const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const verified = await privateKey.verifyEncryption(ciphertext, proof, { nonce });
+    const verified = await privateKey.verifyEncryption(ciphertext, proof, { algorithm, nonce });
     expect(verified).toBe(true);
   });
 });
 
 
-describe('KEM hybrid encryption proof - failure if forged proof', () => {
+describe('KEM encryption proof - failure if forged proof', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -63,7 +58,7 @@ describe('KEM hybrid encryption proof - failure if forged proof', () => {
       scheme: ElgamalSchemes.KEM
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    proof.commitments[0] = await ctx.randomPoint();
+    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       ErrorMessages.INVALID_ENCRYPTION
     );
@@ -71,7 +66,7 @@ describe('KEM hybrid encryption proof - failure if forged proof', () => {
 });
 
 
-describe('KEM hybrid encryption proof - failure if wrong algorithm', () => {
+describe('KEM encryption proof - failure if wrong algorithm', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -79,17 +74,20 @@ describe('KEM hybrid encryption proof - failure if wrong algorithm', () => {
       scheme: ElgamalSchemes.KEM
     });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
-      Algorithms.SHA512 :
-      Algorithms.SHA256;
-    await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
+    await expect(
+      privateKey.verifyEncryption(ciphertext, proof, {
+        algorithm: algorithm == Algorithms.SHA256 ?
+          Algorithms.SHA512 :
+          Algorithms.SHA256
+      })
+    ).rejects.toThrow(
       ErrorMessages.INVALID_ENCRYPTION
     );
   });
 });
 
 
-describe('KEM hybrid encryption proof - failure if missing nonce', () => {
+describe('KEM encryption proof - failure if missing nonce', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -98,14 +96,14 @@ describe('KEM hybrid encryption proof - failure if missing nonce', () => {
     });
     const nonce = await ctx.randomBytes();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
-    await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
+    await expect(privateKey.verifyEncryption(ciphertext, proof, { algorithm })).rejects.toThrow(
       ErrorMessages.INVALID_ENCRYPTION
     );
   });
 });
 
 
-describe('KEM hybrid encryption proof - failure if forged nonce', () => {
+describe('KEM encryption proof - failure if forged nonce', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -160,8 +158,7 @@ describe('Decryptor proof - success with nonce', () => {
     });
     const nonce = await ctx.randomBytes();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
-    expect(proof.algorithm).toBe(algorithm || Algorithms.DEFAULT);
-    const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce });
+    const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm, nonce });
     expect(verified).toBe(true);
   });
 });
@@ -175,7 +172,7 @@ describe('Decryptor proof - failure if forged proof', () => {
       scheme: ElgamalSchemes.KEM
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
-    proof.commitments[0] = await ctx.randomPoint();
+    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       ErrorMessages.INVALID_DECRYPTOR
     );
@@ -191,10 +188,13 @@ describe('Decryptor proof - failure if wrong algorithm', () => {
       scheme: ElgamalSchemes.KEM
     });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
-    proof.algorithm = (proof.algorithm == Algorithms.SHA256) ?
-      Algorithms.SHA512 :
-      Algorithms.SHA256;
-    await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
+    await expect(
+      publicKey.verifyDecryptor(ciphertext, decryptor, proof, {
+        algorithm: algorithm == Algorithms.SHA256 ?
+          Algorithms.SHA512 :
+          Algorithms.SHA256
+        })
+    ).rejects.toThrow(
       ErrorMessages.INVALID_DECRYPTOR
     );
   });

@@ -35,7 +35,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
       algorithm?: Algorithm,
       nonce?: Uint8Array
     },
-  ): Promise<PartialDecryptor<P>> {
+  ): Promise<PartialDecryptor> {
     const { alpha, beta } = ciphertext;
     const { decryptor, proof } = await this.generateDecryptor(
       ciphertext,
@@ -58,7 +58,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
 
   async verifyPartialDecryptor<A>(
     ciphertext: Ciphertext,
-    partialDecryptor: PartialDecryptor<P>,
+    partialDecryptor: PartialDecryptor,
     opts?: { nonce?: Uint8Array, raiseOnInvalid?: boolean },
   ): Promise<boolean> {
     const { ctx, index } = this;
@@ -109,15 +109,15 @@ export class KeySharing<P extends Point> extends BaseSharing<
 }
 
 
-export class PartialDecryptor<P extends Point>{
+export class PartialDecryptor{
   value: Uint8Array;
+  proof: NizkProof;
   index: number;
-  proof: NizkProof<P>;
 
-  constructor(value: Uint8Array, index: number, proof: NizkProof<P>) {
+  constructor(value: Uint8Array, index: number, proof: NizkProof) {
     this.value = value;
-    this.index = index;
     this.proof = proof;
+    this.index = index;
   }
 };
 
@@ -193,7 +193,7 @@ export async function verifyPartialDecryptors<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext,
   publicShares: PublicShare<P>[],
-  shares: PartialDecryptor<P>[],
+  shares: PartialDecryptor[],
   opts?: { threshold?: number, raiseOnInvalid?: boolean },
 ): Promise<{ flag: boolean, indexes: number[]}> {
   const threshold = opts ? opts.threshold : undefined;
@@ -227,7 +227,7 @@ export async function verifyPartialDecryptors<P extends Point>(
 
 export async function reconstructDecryptor<P extends Point>(
   ctx: Group<P>,
-  shares: PartialDecryptor<P>[],
+  shares: PartialDecryptor[],
   opts?: { threshold?: number, publicShares?: PublicShare<P>[] }
 ): Promise<Uint8Array> {
   // TODO: Include validation
@@ -251,7 +251,7 @@ export async function reconstructDecryptor<P extends Point>(
 export async function thresholdDecrypt<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext,
-  shares: PartialDecryptor<P>[],
+  shares: PartialDecryptor[],
   opts: {
     scheme: ElgamalScheme,
     mode?: AesMode,

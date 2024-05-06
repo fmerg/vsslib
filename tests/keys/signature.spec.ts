@@ -55,7 +55,7 @@ describe('Schnorr signature scheme - failure if forged signature', () => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.sign(message, { algorithm });
-    signature.commitment! = await ctx.randomPoint();
+    signature.c! = (await ctx.randomPoint()).toBytes();
     await expect(publicKey.verifySignature(message, signature, { algorithm })).rejects.toThrow(
       'Invalid signature'
     );

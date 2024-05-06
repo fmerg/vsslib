@@ -1,9 +1,9 @@
 import { Algorithm } from '../../types';
 import { Point, Group } from '../../backend/abstract';
 
-export interface Signature<P> {
-  commitment: P;
-  response: bigint;
+export interface Signature {
+  c: Uint8Array,
+  r: bigint;
 }
 
 export abstract class Signer<P extends Point, S> {

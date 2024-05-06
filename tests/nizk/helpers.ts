@@ -1,7 +1,7 @@
 import { Algorithm } from '../../src/types';
 import { Point, Group } from '../../src/backend/abstract';
 import { leInt2Buff, leBuff2Int } from '../../src/crypto/bitwise';
-import { DlogLinear, DlogPair, DDHTuple } from '../../src/nizk';
+import { DlogPair, DDHTuple, GenericLinear } from '../../src/nizk';
 import hash from '../../src/crypto/hash';
 
 
@@ -9,36 +9,14 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-/** Reproduce externally the Fiat-Shamir computation */
-export async function computeFiatShamir<P extends Point>(
-  ctx: Group<P>,
-  algorithm: Algorithm,
-  points: Point[],
-  scalars: bigint[],
-  extras: Uint8Array[],
-  nonce?: Uint8Array,
-): Promise<bigint> {
-  nonce = nonce || Uint8Array.from([]);
-  const { modulus, order, generator } = ctx;
-  const fixedBuff = [...leInt2Buff(modulus), ...leInt2Buff(order), ...generator.toBytes()];
-  const pointsBuff = points.reduce((acc: number[], p: Point) => [...acc, ...p.toBytes()], []);
-  const scalarsBuff = scalars.reduce((acc: number[], s: bigint) => [...acc, ...leInt2Buff(s)], []);
-  const extrasBuff = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
-  const digest = await hash(algorithm).digest(
-    Uint8Array.from([...fixedBuff, ...pointsBuff, ...scalarsBuff, ...extrasBuff, ...nonce]),
-  ) as Uint8Array;
-  return (leBuff2Int(digest)) % order;
-}
-
-
-/** Create generic linearRelation relation with given dimensions */
-export async function createLinearRelation<P extends Point>(
+/** Create generic linear relation with given dimensions */
+export async function createGenericLinear<P extends Point>(
   ctx: Group<P>,
   opts: { m: number, n: number },
-): Promise<[bigint[], DlogLinear<P>]>{
+): Promise<[bigint[], GenericLinear<P>]>{
   const { randomScalar, randomPoint, neutral, operate, combine } = ctx;
   const { m, n } = opts;
-  const witnesses = new Array(n);
+  const witness = new Array(n);
   const vs = Array.from({ length: m }, (_, i) => neutral);
   const us = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => neutral));
   for (let j = 0; j < n; j++) {
@@ -48,9 +26,9 @@ export async function createLinearRelation<P extends Point>(
       vs[i] = await combine(vs[i], await operate(xj, uij));
       us[i][j] = uij;
     }
-    witnesses[j] = xj;
+    witness[j] = xj;
   }
-  return [witnesses, { us, vs }];
+  return [witness, { us, vs }];
 }
 
 
@@ -60,16 +38,16 @@ export async function createAndDlogPairs<P extends Point>(
   nrPairs: number,
 ): Promise<[bigint[], DlogPair<P>[]]>{
   const { randomScalar, randomPoint, operate } = ctx;
-  const witnesses = new Array(nrPairs);
+  const witness = new Array(nrPairs);
   const pairs = new Array(nrPairs);
   for (let i = 0; i < nrPairs; i++) {
     const x = await randomScalar();
     const u = await randomPoint();
     const v = await operate(x, u);
-    witnesses[i] = x;
+    witness[i] = x;
     pairs[i] = { u, v };
   }
-  return [witnesses, pairs];
+  return [witness, pairs];
 }
 
 
