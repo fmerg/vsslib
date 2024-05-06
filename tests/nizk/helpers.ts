@@ -1,7 +1,7 @@
 import { Algorithm } from '../../src/types';
 import { Point, Group } from '../../src/backend/abstract';
 import { leInt2Buff, leBuff2Int } from '../../src/crypto/bitwise';
-import { LinearRelation, DlogPair, DDHTuple } from '../../src/nizk';
+import { DlogPair, DDHTuple, GenericLinear } from '../../src/nizk';
 import hash from '../../src/crypto/hash';
 
 
@@ -31,11 +31,11 @@ export async function computeChallenge<P extends Point>(
 }
 
 
-/** Create generic linearRelation relation with given dimensions */
-export async function createLinearRelation<P extends Point>(
+/** Create generic linear relation with given dimensions */
+export async function createGenericLinear<P extends Point>(
   ctx: Group<P>,
   opts: { m: number, n: number },
-): Promise<[bigint[], LinearRelation<P>]>{
+): Promise<[bigint[], GenericLinear<P>]>{
   const { randomScalar, randomPoint, neutral, operate, combine } = ctx;
   const { m, n } = opts;
   const witnesses = new Array(n);

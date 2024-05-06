@@ -88,12 +88,12 @@ await sigma.verifyRepresentation({ h, u }, proof);
 Prove and verify knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` as follows:
 
 ```js
-const proof = await sigma.proveLinearRelation([x1, x2, ...], {
+const proof = await sigma.proveLinear([x1, x2, ...], {
   us: [[u_11, u_12, ...], [u_21, u_22, ...], ...],
   vs: [v_1, v_2, ...]
 });
 
-await sigma.verifyLinearRelation({
+await sigma.verifyLinear({
   us: [[u_11, u_12, ...], [u_21, u_22, ...], ...],
   vs: [v_1, v_2, ...]
 }, proof);
