@@ -9,7 +9,7 @@ export interface BaseShare<T> {
 
 
 export abstract class BaseSharing<
-  S, Q extends BaseShare<S>, P extends Point, R extends BaseShare<P>
+  C, S, Q extends BaseShare<S>, P extends Point, R extends BaseShare<P>
 > {
   ctx: Group<P>;
   nrShares: number;
@@ -28,5 +28,5 @@ export abstract class BaseSharing<
   abstract getSecretShares: () => Promise<Q[]>;
   abstract getPublicShares: () => Promise<R[]>;
   abstract proveFeldmann: () => Promise<{ commitments: P[] }>;
-  abstract provePedersen: (hPub: P) => Promise<{ bindings: bigint[], commitments: P[] }>;
+  abstract provePedersen: (hPub: C) => Promise<{ bindings: bigint[], commitments: C[] }>;
 }

@@ -33,7 +33,7 @@ export class PubShare<P extends Point> implements BaseShare<P> {
 
 
 export class SecretSharing<P extends Point> extends BaseSharing<
-  bigint, SecretShare, P, PubShare<P>
+  P, bigint, SecretShare, P, PubShare<P>
 > {
 
   getSecretShares = async (): Promise<SecretShare[]> => {

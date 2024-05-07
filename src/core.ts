@@ -85,7 +85,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
 };
 
 export class KeySharing<P extends Point> extends BaseSharing<
-  bigint, PrivateShare<P>, P, PublicShare<P>
+  P, bigint, PrivateShare<P>, P, PublicShare<P>
 >{
   _sharing: SecretSharing<P>;
 
