@@ -15,6 +15,7 @@ const shamir = require('./shamir');
 
 
 export class PrivateShare<P extends Point> extends PrivateKey<P> implements BaseShare<bigint>{
+  _share: SecretShare<P>;
   value: bigint;
   index: number;
 
@@ -22,12 +23,22 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     super(ctx, leInt2Buff(secret));
     this.value = this.secret;
     this.index = index;
+    this._share = new SecretShare(ctx, this.value, this.index);
+  }
+
+  toInner = async (commitments: Uint8Array[]) => {
+    const innerCommitments = new Array(commitments.length);
+    const ctx = this.ctx;
+    for (const [i, cBytes] of commitments.entries()) {
+      const cPoint = ctx.unpack(cBytes);
+      await ctx.validatePoint(cPoint);
+      innerCommitments[i] = cPoint
+    }
+    return innerCommitments;
   }
 
   verifyFeldmann = async (commitments: Uint8Array[]): Promise<boolean> => {
-    const { ctx, value, index } = this;
-    const secretShare = new SecretShare(ctx, value, index);
-    const verified = await secretShare.verifyFeldmann(commitments.map(c => ctx.unpack(c)));
+    const verified = await this._share.verifyFeldmann(await this.toInner(commitments));
     if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
     return verified;
   }
@@ -35,12 +46,10 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
   verifyPedersen = async (
     binding: bigint, commitments: Uint8Array[], publicBytes: Uint8Array
   ): Promise<boolean> => {
-    const { ctx, value, index } = this;
-    const secretShare = new SecretShare(ctx, value, index);
-    const pub = ctx.unpack(publicBytes);
-    await ctx.validatePoint(pub);
-    const verified = await secretShare.verifyPedersen(
-      binding, commitments.map(c => ctx.unpack(c)), pub
+    const pub = this.ctx.unpack(publicBytes);
+    await this.ctx.validatePoint(pub);
+    const verified = await this._share.verifyPedersen(
+      binding, await this.toInner(commitments), pub
     );
     if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
     return verified;
