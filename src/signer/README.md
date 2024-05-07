@@ -1,7 +1,7 @@
 # `vsslib.schnorr`
 
 ```js
-import { backend, signer } from 'vsslib';
+import { backend } from 'vsslib';
 
 const ctx = initGroup('ed25519');
 
@@ -9,15 +9,17 @@ const { secret, pub } = await ctx.generateKepair();
 ```
 
 ```js
-const message = Uint8Array.from(Buffer.from('destroy earth'));
+import signer from 'vsslib/signer';
 
-const signature = await signer(ctx, SignatureSchemes.SCHNORR, Algorithms.SHA256).signBytes(
-  secret, message
-);
+const sig = signer(ctx, SignatureSchemes.SCHNORR, Algorithms.SHA256);
 ```
 
 ```js
-const verified = await signer(ctx, SignatureSchemes.SCHNORR, Algorithms.SHA256).verifyBytes(
-  pub, message, signature
-);
+const message = Uint8Array.from(Buffer.from('destroy earth'));
+
+const signature = await sig.signBytes(secret, message);
+```
+
+```js
+await sig.verifyBytes(pub.toBytes(), message, signature);
 ```
