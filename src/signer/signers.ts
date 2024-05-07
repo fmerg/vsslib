@@ -1,9 +1,26 @@
-// TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
+import { Point, Group } from '../backend/abstract';
 import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
-import { Point, Group } from '../backend/abstract';
 import { NizkProtocol } from '../nizk';
-import { Signature, Signer } from './base';
+
+export interface Signature {
+  c: Uint8Array,
+  r: bigint;
+}
+
+
+abstract class BaseSigner<P extends Point, S> {
+  ctx: Group<P>;
+  algorithm: Algorithm;
+
+  constructor(ctx: Group<P>, algorithm: Algorithm) {
+    this.ctx = ctx;
+    this.algorithm = algorithm;
+  }
+
+  abstract signBytes: (secret: bigint, message: Uint8Array, nonce?: Uint8Array) => Promise<S>;
+  abstract verifyBytes: (pub: P, message: Uint8Array, signature: S, nonce?: Uint8Array) => Promise<boolean>;
+}
 
 
 export class SchnorrSignature implements Signature {
@@ -16,7 +33,8 @@ export class SchnorrSignature implements Signature {
   }
 }
 
-export class SchnorrSigner<P extends Point> extends Signer<P, SchnorrSignature> {
+// TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
+export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignature> {
   protocol: NizkProtocol<P>;
 
   constructor(ctx: Group<P>, algorithm: Algorithm) {

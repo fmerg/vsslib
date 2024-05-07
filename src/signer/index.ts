@@ -1,8 +1,7 @@
 import { SignatureSchemes } from '../enums';
 import { Algorithm, SignatureScheme } from '../types';
 import { Point, Group } from '../backend/abstract';
-import { Signer } from './base';
-import { SchnorrSigner } from './schnorr';
+import { SchnorrSigner } from './signers';
 
 export default function<P extends Point, S>(
   ctx: Group<P>,

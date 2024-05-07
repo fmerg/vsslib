@@ -4,8 +4,7 @@ import { initGroup } from '../backend';
 import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
 import { NizkProof } from '../nizk';
-import { Signature } from '../signer/base';
-import { SchnorrSignature } from '../signer/schnorr';
+import { Signature, SchnorrSignature } from '../signer/signers';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, SignatureScheme, System } from '../types';
 
