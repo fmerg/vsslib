@@ -4,10 +4,7 @@ import { cartesian } from './helpers';
 import { resolveTestConfig } from './environ';
 import signer from '../src/signer';
 
-const { systems, algorithms } = resolveTestConfig();
-
-const schemes = [SignatureSchemes.SCHNORR];
-
+const { systems, algorithms, signatureSchemes: schemes} = resolveTestConfig();
 
 describe('Signature verification - success without nonce', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
