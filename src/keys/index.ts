@@ -4,8 +4,7 @@ import { initGroup } from '../backend';
 import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
 import { NizkProof } from '../nizk';
-import { SchnorrSignature } from '../signer/signers';
-import { Signature } from '../signer/driver';
+import { Signature } from '../signer';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, SignatureScheme, System } from '../types';
 
@@ -217,9 +216,8 @@ class PublicKey<P extends Point> {
   ): Promise<boolean> {
     let { scheme, algorithm, nonce } = opts;
     algorithm = algorithm || Algorithms.DEFAULT;
-    const pub = this.ctx.unpack(this.bytes);
     const verified = await signer(this.ctx, scheme, algorithm).verifyBytes(
-      pub, message, signature as SchnorrSignature, nonce
+      this.bytes, message, signature, nonce
     );
     if (!verified) throw new Error(ErrorMessages.INVALID_SIGNATURE);
     return verified;
