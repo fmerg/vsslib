@@ -2,6 +2,7 @@ import { Point, Group } from '../backend/abstract';
 import { mod, modInv } from '../crypto/arith';
 import { BaseShare, BaseSharing } from '../base';
 import { ErrorMessages } from '../errors';
+import { randomPolynomial } from '../lagrange';
 
 const lagrange = require('../lagrange');
 
@@ -36,10 +37,10 @@ export class SecretSharing<P extends Point> extends BaseSharing<
 > {
 
   getSecretShares = async (): Promise<SecretShare[]> => {
-    const { polynomial, nrShares } = this;
+    const { polynomial: { evaluate }, nrShares } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
-      const value = polynomial.evaluate(index);
+      const value = evaluate(index);
       shares.push({ value, index });
     }
     return shares;
@@ -53,6 +54,39 @@ export class SecretSharing<P extends Point> extends BaseSharing<
       shares.push({ value, index });
     }
     return shares;
+  }
+
+  proveFeldmann = async (): Promise<{ commitments: P[] }> => {
+    const { coeffs, degree, ctx: { operate, generator }} = this.polynomial;
+    const commitments = new Array(degree + 1);
+    for (const [index, coeff] of coeffs.entries()) {
+      commitments[index] = await operate(coeff, generator);
+    }
+    return { commitments };
+  }
+
+  provePedersen = async (hPub: P): Promise<{
+    bindings: bigint[],
+    commitments: P[],
+  }> => {
+    const { generator: g, combine, operate } = this.ctx;
+    const { coeffs, degree } = this.polynomial;
+    const bindingPolynomial = await randomPolynomial(this.ctx, degree);
+    const commitments = new Array(degree + 1);
+    const bindings = new Array(degree + 1);
+    for (const [i, a] of coeffs.entries()) {
+      const a = coeffs[i];
+      const b = bindingPolynomial.coeffs[i];
+      commitments[i] = await combine(
+        await operate(a, g),
+        await operate(b, hPub),
+      );
+      bindings[i] = await bindingPolynomial.evaluate(i);
+    }
+    for (let j = coeffs.length; j <= this.nrShares; j++) {
+      bindings[j] = await bindingPolynomial.evaluate(j);
+    }
+    return { bindings, commitments };
   }
 };
 

@@ -3,11 +3,12 @@ import { Ciphertext } from './elgamal';
 import { leInt2Buff } from './crypto/bitwise';
 import { NizkProof } from './nizk';
 import { BaseShare, BaseSharing } from './base';
-import { SecretShare } from './shamir';
+import { SecretShare, SecretSharing } from './shamir';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
 import { ElgamalSchemes, AesModes, Algorithms } from './enums';
 import { ElgamalScheme, AesMode, Algorithm } from './types';
+import { randomPolynomial } from './lagrange';
 
 import elgamal from './elgamal';
 const shamir = require('./shamir');
@@ -85,26 +86,41 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
 
 export class KeySharing<P extends Point> extends BaseSharing<
   bigint, PrivateShare<P>, P, PublicShare<P>
-> {
+>{
+  _sharing: SecretSharing<P>;
+
+  constructor(sharing: SecretSharing<P>) {
+    const { ctx, threshold, nrShares, polynomial } = sharing;
+    super(ctx, nrShares, threshold, polynomial);
+    this._sharing = sharing;
+  }
+
   getSecretShares = async (): Promise<PrivateShare<P>[]> => {
-    const { ctx, polynomial, nrShares } = this;
-    const shares = [];
-    for (let index = 1; index <= nrShares; index++) {
-      const value = polynomial.evaluate(index);
-      shares.push(new PrivateShare(ctx, value, index));
-    }
-    return shares;
+    const secretShares = await this._sharing.getSecretShares();
+    return secretShares.map(
+      ({ index, value }) => new PrivateShare(this.ctx, value, index)
+    );
   }
 
   getPublicShares = async (): Promise<PublicShare<P>[]> => {
-    const { nrShares, polynomial: { evaluate }, ctx: { operate, generator } } = this;
-    const shares = [];
-    for (let index = 1; index <= nrShares; index++) {
-      const pubPoint = await operate(evaluate(index), generator);
-      const newShare = new PublicShare(this.ctx, pubPoint.toBytes(), index);
-      shares.push(newShare);
-    }
-    return shares;
+    const publicShares = await this._sharing.getPublicShares();
+    return publicShares.map(
+      ({ index, value }) => new PublicShare(this.ctx, value.toBytes(), index)
+    );
+  }
+
+  proveFeldmann = async (): Promise<{ commitments: P[] }> => {
+    const { commitments } = await this._sharing.proveFeldmann();
+    return { commitments };
+  }
+
+  provePedersen = async (hPub: P): Promise<{
+    bindings: bigint[],
+    commitments: P[],
+  }> => {
+    const { bindings, commitments } = await this._sharing.provePedersen(hPub);
+    return { bindings, commitments };
+
   }
 }
 
@@ -128,10 +144,11 @@ export async function distributeKey<P extends Point>(
   threshold: number,
   privateKey: PrivateKey<P>
 ): Promise<KeySharing<P>> {
-  const { polynomial } = await shamir.shareSecret(
-    ctx, nrShares, threshold, privateKey.secret
+  const { secret } = privateKey;
+  const sharing = await shamir.shareSecret(
+    ctx, nrShares, threshold, secret
   );
-  return new KeySharing(ctx, nrShares, threshold, polynomial);
+  return new KeySharing(sharing);
 }
 
 export async function verifyFeldmann<P extends Point>(
