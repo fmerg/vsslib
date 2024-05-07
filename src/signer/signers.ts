@@ -3,11 +3,6 @@ import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
 import nizk from '../nizk';
 
-export interface Signature {
-  c: Uint8Array,
-  r: bigint;
-}
-
 
 abstract class BaseSigner<P extends Point, S> {
   ctx: Group<P>;
@@ -23,7 +18,7 @@ abstract class BaseSigner<P extends Point, S> {
 }
 
 
-export class SchnorrSignature implements Signature {
+export class SchnorrSignature {
   c: Uint8Array;
   r: bigint;
 
