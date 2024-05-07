@@ -1,7 +1,7 @@
 import { Point, Group } from '../backend/abstract';
 import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
-import { NizkProtocol } from '../nizk';
+import nizk from '../nizk';
 
 export interface Signature {
   c: Uint8Array,
@@ -35,11 +35,8 @@ export class SchnorrSignature implements Signature {
 
 // TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
 export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignature> {
-  protocol: NizkProtocol<P>;
-
   constructor(ctx: Group<P>, algorithm: Algorithm) {
     super(ctx, algorithm);
-    this.protocol = new NizkProtocol(ctx, algorithm);
   }
 
   signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<
@@ -47,7 +44,7 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
   > => {
     const { generator: g, operate } = this.ctx;
     const pub = await operate(secret, g);
-    const { commitment, response } = await this.protocol.proveLinear(
+    const { commitment, response } = await nizk(this.ctx, this.algorithm).proveLinear(
       [secret],
       {
         us: [[g]],
@@ -64,7 +61,7 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
   ): Promise<boolean> => {
     const { generator: g } = this.ctx;
     const { c, r } = signature;
-    return this.protocol.verifyLinear(
+    return nizk(this.ctx, this.algorithm).verifyLinear(
       {
         us: [[g]],
         vs: [pub]
