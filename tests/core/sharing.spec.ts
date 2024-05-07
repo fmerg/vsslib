@@ -1,7 +1,6 @@
 import { Point, Group } from '../../src/backend/abstract'
 import { ErrorMessages } from '../../src/errors';
 import { reconstructKey, reconstructPublic } from '../../src/core';
-import { verifyFeldmann, verifyPedersen } from '../../src/core';
 import { PrivateShare, PublicShare } from '../../src/core';
 import { partialPermutations } from '../helpers';
 import { resolveTestConfig } from '../environ';
@@ -28,7 +27,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     const { ctx, sharing, privateShares } = setup;
     const { commitments } = await sharing.proveFeldmann();
     privateShares.forEach(async (share: PrivateShare<Point>) => {
-      const verified = await verifyFeldmann(ctx, share, commitments);
+      const verified = await share.verifyFeldmann(commitments);
       expect(verified).toBe(true);
     });
   });
@@ -41,7 +40,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     ];
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       await expect(
-        verifyFeldmann(ctx, share, forgedCommitmnets)
+        share.verifyFeldmann(forgedCommitmnets)
       ).rejects.toThrow(ErrorMessages.INVALID_SHARE);
     });
   });
@@ -51,9 +50,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     const { commitments, bindings } = await sharing.provePedersen(publicBytes);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const binding = bindings[share.index];
-      const verified = await verifyPedersen(
-        ctx, share, binding, publicBytes, commitments
-      );
+      const verified = await share.verifyPedersen(binding, commitments, publicBytes);
       expect(verified).toBe(true);
     });
   });
@@ -64,7 +61,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const forgedBinding = await ctx.randomScalar();
       await expect(
-        verifyPedersen(ctx, share, forgedBinding, publicBytes, commitments)
+        share.verifyPedersen(forgedBinding, commitments, publicBytes)
       ).rejects.toThrow(ErrorMessages.INVALID_SHARE);
     });
   });

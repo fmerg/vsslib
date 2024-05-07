@@ -24,6 +24,28 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     this.index = index;
   }
 
+  verifyFeldmann = async (commitments: Uint8Array[]): Promise<boolean> => {
+    const { ctx, value, index } = this;
+    const secretShare = new SecretShare(ctx, value, index);
+    const verified = await secretShare.verifyFeldmann(commitments.map(c => ctx.unpack(c)));
+    if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
+    return verified;
+  }
+
+  verifyPedersen = async (
+    binding: bigint, commitments: Uint8Array[], publicBytes: Uint8Array
+  ): Promise<boolean> => {
+    const { ctx, value, index } = this;
+    const secretShare = new SecretShare(ctx, value, index);
+    const pub = ctx.unpack(publicBytes);
+    await ctx.validatePoint(pub);
+    const verified = await secretShare.verifyPedersen(
+      binding, commitments.map(c => ctx.unpack(c)), pub
+    );
+    if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
+    return verified;
+  }
+
   async publicShare(): Promise<PublicShare<P>> {
     const ctx = this.ctx;
     const pubPoint = await ctx.operate(this.secret, ctx.generator);
@@ -154,37 +176,6 @@ export async function distributeKey<P extends Point>(
     ctx, nrShares, threshold, secret
   );
   return new KeySharing(sharing);
-}
-
-export async function verifyFeldmann<P extends Point>(
-  ctx: Group<P>,
-  share: PrivateShare<P>,
-  commitments: Uint8Array[],
-): Promise<boolean> {
-  const secretShare = new SecretShare(share.value, share.index);
-  const commitmentPoints = commitments.map(c => ctx.unpack(c));
-  const verified = await shamir.verifyFeldmann(
-    ctx, secretShare, commitmentPoints
-  );
-  if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
-  return verified;
-}
-
-export async function verifyPedersen<P extends Point>(
-  ctx: Group<P>,
-  share: PrivateShare<P>,
-  binding: bigint,
-  hPub: Uint8Array,
-  commitments: Uint8Array[],
-): Promise<boolean> {
-  const secretShare = new SecretShare(share.value, share.index);
-  const commitmentPoints = commitments.map(c => ctx.unpack(c));
-  const hPubPoint = ctx.unpack(hPub);
-  const verified = await shamir.verifyPedersen(
-    ctx, secretShare, binding, hPubPoint, commitmentPoints
-  );
-  if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
-  return verified;
 }
 
 export async function reconstructKey<P extends Point>(

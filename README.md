@@ -42,31 +42,27 @@ const { commitments } = await sharing.proveFeldmann();
 ```
 
 ```js
-import { verifyFeldmann } from 'vsslib';
-
-await verifyFeldmann(ctx, privateShare, commitments);
+await privateShare.verifyFeldmann(commitments);
 ```
 
 #### Pedersen VSS scheme
 
 ```js
-const hPub = await ctx.randomPoint();
+const publicBytes = (await ctx.randomPoint()).toBytes();
 ```
 
 ```js
-const { bindings, commitments } = await sharing.provePedersen(hPub);
+const { bindings, commitments } = await sharing.provePedersen(publicBytes);
 ```
 
 ```js
-const { bindings, commitments } = await sharing.provePedersen(hPub);
+const { bindings, commitments } = await sharing.provePedersen(publicBytes);
 
-const binding = bindings[share.index];
+const binding = bindings[privateShare.index];
 ```
 
 ```js
-import { verifyPedersen } from 'vsslib';
-
-await verifyPedersen(ctx, share, binding, hPub, commitments);
+await privateShare.verifyPedersen(binding, commitments, publicBytes);
 ```
 
 ### Reconstruction

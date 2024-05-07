@@ -10,13 +10,43 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-export class SecretShare implements BaseShare<bigint> {
+export class SecretShare<P extends Point> implements BaseShare<bigint> {
+  ctx: Group<P>;
   value: bigint;
   index: number;
 
-  constructor(value: bigint, index: number) {
+  constructor(ctx: Group<P>, value: bigint, index: number) {
+    this.ctx = ctx;
     this.value = value;
     this.index = index;
+  }
+
+  verifyFeldmann = async (commitments: P[]): Promise<boolean> => {
+    const { value: secret, index } = this;
+    const { order, generator, neutral, operate, combine } = this.ctx;
+    const lhs = await operate(secret, generator);
+    let rhs = neutral;
+    for (const [j, c] of commitments.entries()) {
+      const curr = await operate(mod(BigInt(index ** j), order), c);
+      rhs = await combine(rhs, curr);
+    }
+    return lhs.equals(rhs);
+  }
+
+  verifyPedersen = async (binding: bigint, commitments: P[], pub: P): Promise<boolean> => {
+    await this.ctx.validatePoint(pub);
+    const h = pub;
+    const { value: secret, index } = this;
+    const { order, generator: g, neutral, operate, combine } = this.ctx;
+    const lhs = await combine(
+      await operate(secret, g),
+      await operate(binding, h)
+    );
+    let rhs = neutral;
+    for (const [j, c] of commitments.entries()) {
+      rhs = await combine(rhs, await operate(BigInt(index ** j), c));
+    }
+    return lhs.equals(rhs);
   }
 };
 
@@ -33,15 +63,14 @@ export class PubShare<P extends Point> implements BaseShare<P> {
 
 
 export class SecretSharing<P extends Point> extends BaseSharing<
-  P, bigint, SecretShare, P, PubShare<P>
+  P, bigint, SecretShare<P>, P, PubShare<P>
 > {
 
-  getSecretShares = async (): Promise<SecretShare[]> => {
+  getSecretShares = async (): Promise<SecretShare<P>[]> => {
     const { polynomial: { evaluate }, nrShares } = this;
-    const shares = [];
+    const shares = new Array(nrShares);
     for (let index = 1; index <= nrShares; index++) {
-      const value = evaluate(index);
-      shares.push({ value, index });
+      shares[index - 1] = new SecretShare(this.ctx, evaluate(index), index);
     }
     return shares;
   }
@@ -133,48 +162,6 @@ export async function shareSecret<P extends Point>(
 }
 
 
-export async function verifyFeldmann<P extends Point>(
-  ctx: Group<P>,
-  share: SecretShare,
-  commitments: P[]
-): Promise<boolean> {
-  const { value: secret, index } = share;
-  const { order, generator, neutral, operate, combine } = ctx;
-  const lhs = await operate(secret, generator);
-  let rhs = neutral;
-  const i = index;
-  for (const [j, c] of commitments.entries()) {
-    const curr = await operate(mod(BigInt(i ** j), order), c);
-    rhs = await combine(rhs, curr);
-  }
-  return lhs.equals(rhs);
-}
-
-
-export async function verifyPedersen<P extends Point>(
-  ctx: Group<P>,
-  share: SecretShare,
-  binding: bigint,
-  pub: P,
-  commitments: P[],
-): Promise<boolean> {
-  await ctx.validatePoint(pub);
-  const h = pub;
-  const { value: secret, index } = share;
-  const { order, generator: g, neutral, operate, combine } = ctx;
-  const lhs = await combine(
-    await operate(secret, g),
-    await operate(binding, h)
-  );
-  let rhs = neutral;
-  const i = index;
-  for (const [j, c] of commitments.entries()) {
-    rhs = await combine(rhs, await operate(BigInt(i ** j), c));
-  }
-  return lhs.equals(rhs);
-}
-
-
 export function computeLambda<P extends Point>(
   ctx: Group<P>,
   index: number,
@@ -195,7 +182,7 @@ export function computeLambda<P extends Point>(
 
 export function reconstructSecret<P extends Point>(
   ctx: Group<P>,
-  qualifiedShares: SecretShare[]
+  qualifiedShares: SecretShare<P>[]
 ): bigint {
   const { order } = ctx;
   const indexes = qualifiedShares.map(share => share.index);

@@ -1,8 +1,6 @@
 import { generateKey } from './keys';
 import {
   distributeKey,
-  verifyFeldmann,
-  verifyPedersen,
   reconstructKey,
   reconstructPublic,
   verifyPartialDecryptors,
@@ -26,8 +24,6 @@ const serializers = require('./serializers');
 export {
   generateKey,
   distributeKey,
-  verifyFeldmann,
-  verifyPedersen,
   reconstructKey,
   reconstructPublic,
   reconstructDecryptor,

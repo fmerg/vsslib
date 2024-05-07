@@ -32,26 +32,27 @@ const commitments = await sharing.proveFeldmann();
 ```
 
 ```js
-const verified = await verifyFelmann(ctx, secretShare, commitments);
+await secretShare.verifyFelmann(commitments);
 ```
 
 ### Pedersen scheme
 
 ```js
-const hPub = await ctx.randomPoint();
+const pub = await ctx.randomPoint();
 ```
 
 ```js
-const { bindings, commitments } = await sharing.provePedersen(hPub);
+const { bindings, commitments } = await sharing.provePedersen(pub);
 ```
 
 ```js
 const index = { secretShare };
+
 const binding = bindings[index];
 ```
 
 ```js
-const verified = await verifyPedersen(ctx, secretShare, binding, hPub, commitments);
+await secretShare.verifyPedersen(binding, commitments, pub);
 ```
 
 ## Reconstruction
