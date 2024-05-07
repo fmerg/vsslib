@@ -2,8 +2,8 @@ import { Point, Group } from './backend/abstract';
 import { Ciphertext } from './elgamal';
 import { leInt2Buff } from './crypto/bitwise';
 import { NizkProof } from './nizk';
-import { BaseShare, BaseSharing } from './base';
-import { SecretShare, SecretSharing } from './shamir';
+import { SecretShare, PubShare, BaseSharing } from './base';
+import { ScalarShare, ShamirSharing } from './shamir';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
 import { ElgamalSchemes, AesModes, Algorithms } from './enums';
@@ -14,8 +14,10 @@ import elgamal from './elgamal';
 const shamir = require('./shamir');
 
 
-export class PrivateShare<P extends Point> extends PrivateKey<P> implements BaseShare<bigint>{
-  _share: SecretShare<P>;
+export class PrivateShare<P extends Point> extends PrivateKey<P> implements SecretShare<
+  P, bigint, Uint8Array
+>{
+  _share: ScalarShare<P>;
   value: bigint;
   index: number;
 
@@ -23,7 +25,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     super(ctx, leInt2Buff(secret));
     this.value = this.secret;
     this.index = index;
-    this._share = new SecretShare(ctx, this.value, this.index);
+    this._share = new ScalarShare(ctx, this.value, this.index);
   }
 
   toInner = async (commitments: Uint8Array[]) => {
@@ -77,7 +79,9 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
 };
 
 
-export class PublicShare<P extends Point> extends PublicKey<P> {
+export class PublicShare<P extends Point> extends PublicKey<P> implements PubShare<
+  P, P
+> {
   value: P;
   index: number;
 
@@ -114,12 +118,13 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   }
 };
 
+// P, Uint8Array, bigint, P, PrivateShare<P>,  PublicShare<P>
 export class KeySharing<P extends Point> extends BaseSharing<
-  Uint8Array, bigint, PrivateShare<P>, P, PublicShare<P>
+  P, Uint8Array, PrivateShare<P>,  PublicShare<P>
 >{
-  _sharing: SecretSharing<P>;
+  _sharing: ShamirSharing<P>;
 
-  constructor(sharing: SecretSharing<P>) {
+  constructor(sharing: ShamirSharing<P>) {
     const { ctx, threshold, nrShares, polynomial } = sharing;
     super(ctx, nrShares, threshold, polynomial);
     this._sharing = sharing;

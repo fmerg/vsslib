@@ -4,8 +4,8 @@ import {
   shareSecret,
   reconstructSecret,
   reconstructPublic,
-  SecretShare,
-  PubShare,
+  ScalarShare,
+  PointShare,
 } from '../../src/shamir';
 
 import { partialPermutations } from '../helpers';
@@ -18,8 +18,8 @@ describe(`Reconstruction from shares over ${system}`, () => {
 
   let secret: bigint;
   let pub: Point;
-  let secretShares: SecretShare<Point>[];
-  let publicShares: PubShare<Point>[];
+  let secretShares: ScalarShare<Point>[];
+  let publicShares: PointShare<Point>[];
 
   beforeAll(async () => {
     secret = await ctx.randomScalar();

@@ -1,15 +1,36 @@
 import { Group, Point } from './backend/abstract';
-import { FieldPolynomial, randomPolynomial } from './lagrange';
+import { FieldPolynomial } from './lagrange';
 
 
-export interface BaseShare<T> {
-  value: T;
+export interface BaseShare<V> {
+  value: V;
   index: number;
 }
 
 
+export interface SecretShare<
+  P extends Point,
+  V,
+  C,
+> extends BaseShare<V>{
+  ctx: Group<P>;
+  verifyFeldmann: (commitments: C[]) => Promise<boolean>;
+  verifyPedersen: (binding: bigint, commitments: C[], h: C) => Promise<boolean>;
+}
+
+
+export interface PubShare<
+  P extends Point,
+  V,
+> extends BaseShare<V> {
+}
+
+
 export abstract class BaseSharing<
-  C, S, Q extends BaseShare<S>, P extends Point, R extends BaseShare<P>
+  P extends Point,
+  C,
+  S,
+  R,
 > {
   ctx: Group<P>;
   nrShares: number;
@@ -25,7 +46,7 @@ export abstract class BaseSharing<
     this.polynomial = polynomial;
   }
 
-  abstract getSecretShares: () => Promise<Q[]>;
+  abstract getSecretShares: () => Promise<S[]>;
   abstract getPublicShares: () => Promise<R[]>;
   abstract proveFeldmann: () => Promise<{ commitments: C[] }>;
   abstract provePedersen: (h: C) => Promise<{ commitments: C[], bindings: bigint[] }>;
