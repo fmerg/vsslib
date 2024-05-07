@@ -4,14 +4,13 @@ import { initGroup } from '../backend';
 import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../crypto/bitwise';
 import { NizkProof } from '../nizk';
-import { Signature } from '../crypto/signer/base';
-import { SchnorrSignature } from '../crypto/signer/schnorr';
+import { Signature } from '../signer';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
-import { Algorithm, AesMode, ElgamalScheme, System } from '../types';
+import { Algorithm, AesMode, ElgamalScheme, SignatureScheme, System } from '../types';
 
 import elgamal from '../elgamal';
 import nizk from '../nizk';
-import signer from '../crypto/signer';
+import signer from '../signer';
 
 
 class PrivateKey<P extends Point> {
@@ -58,13 +57,16 @@ class PrivateKey<P extends Point> {
 
   async sign(
     message: Uint8Array,
-    opts?: { nonce?: Uint8Array, algorithm?: Algorithm }
+    opts: {
+      scheme: SignatureScheme,
+      algorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
   ): Promise<Signature> {
-    const { ctx, secret: secret } = this;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-    const nonce = opts ? (opts.nonce || undefined) : undefined;
-    const signature = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).signBytes(
-      secret, message, nonce
+    let { scheme, algorithm, nonce } = opts;
+    algorithm = algorithm || Algorithms.DEFAULT;
+    const signature = await signer(this.ctx, scheme, algorithm).signBytes(
+      this.secret, message, nonce
     );
     return signature;
   }
@@ -206,14 +208,16 @@ class PublicKey<P extends Point> {
   async verifySignature(
     message: Uint8Array,
     signature: Signature,
-    opts: { nonce?: Uint8Array, algorithm?: Algorithm },
+    opts: {
+      scheme: SignatureScheme,
+      algorithm?: Algorithm
+      nonce?: Uint8Array,
+    },
   ): Promise<boolean> {
-    const { ctx } = this;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-    const nonce = opts ? (opts.nonce || undefined) : undefined;
-    const pub = ctx.unpack(this.bytes);
-    const verified = await signer(ctx, SignatureSchemes.SCHNORR, algorithm).verifyBytes(
-      pub, message, signature as SchnorrSignature, nonce
+    let { scheme, algorithm, nonce } = opts;
+    algorithm = algorithm || Algorithms.DEFAULT;
+    const verified = await signer(this.ctx, scheme, algorithm).verifyBytes(
+      this.bytes, message, signature, nonce
     );
     if (!verified) throw new Error(ErrorMessages.INVALID_SIGNATURE);
     return verified;

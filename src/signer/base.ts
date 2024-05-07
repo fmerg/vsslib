@@ -1,12 +1,8 @@
-import { Algorithm } from '../../types';
-import { Point, Group } from '../../backend/abstract';
+import { Point, Group } from '../backend/abstract';
+import { Algorithm } from '../types';
 
-export interface Signature {
-  c: Uint8Array,
-  r: bigint;
-}
 
-export abstract class Signer<P extends Point, S> {
+export abstract class BaseSigner<P extends Point, S> {
   ctx: Group<P>;
   algorithm: Algorithm;
 

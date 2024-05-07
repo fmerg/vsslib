@@ -3,7 +3,8 @@
 DEFAULT_MODULE=""
 DEFAULT_RELOAD=""
 DEFAULT_SYSTEM=""
-DEFAULT_SCHEME=""
+DEFAULT_ELGAMAL_SCHEME=""
+DEFAULT_SIGNATURE_SCHEME=""
 DEFAULT_ALGORITHM=""
 DEFAULT_AES_MODE=""
 DEFAULT_NR_SHARES="3"
@@ -14,13 +15,14 @@ usage_string="usage: ./$(basename "$0") [options]
 TODO
 
 Options
-  -s, --system GROUP      TODO
-  -a, --scheme SCHEME     TODO
-  -a, --algorithm HASH    TODO
-  -n, --nr-shares NR      TODO
-  -t, --threshold THRES   TODO
-  -r, --reload            Reload and run tests when saving changes
-  -h, --help              Display help message and exit
+  -s, --system GROUP              TODO
+  -es, --elgamal-scheme SCHEME    TODO
+  -ss, --signature-scheme SCHEME  TODO
+  -a, --algorithm HASH            TODO
+  -n, --nr-shares NR              TODO
+  -t, --threshold THRES           TODO
+  -r, --reload                    Reload and run tests when saving changes
+  -h, --help                      Display help message and exit
 
 Examples:
   ./$(basename "$0") --system ed25519 --algorithm sha256
@@ -37,7 +39,8 @@ usage() { echo -n "$usage_string" 1>&2; }
 MODULE="$DEFAULT_MODULE"
 RELOAD="$DEFAULT_RELOAD"
 SYSTEM="$DEFAULT_SYSTEM"
-SCHEME="$DEFAULT_SCHEME"
+ELGAMAL_SCHEME="$DEFAULT_ELGAMAL_SCHEME"
+SIGNATURE_SCHEME="$DEFAULT_SIGNATURE_SCHEME"
 ALGORITHM="$DEFAULT_ALGORITHM"
 AES_MODE="$DEFAULT_AES_MODE"
 NR_SHARES="$DEFAULT_NR_SHARES"
@@ -59,10 +62,15 @@ do
         --aes-mode)
             AES_MODE="$2"
             shift
-
+            shift
             ;;
-        --scheme)
-            SCHEME="$2"
+        -es|--elgamal-scheme)
+            ELGAMAL_SCHEME="$2"
+            shift
+            shift
+            ;;
+        -ss|--signature-scheme)
+            SIGNATURE_SCHEME="$2"
             shift
             shift
             ;;
@@ -108,7 +116,8 @@ fi
 
 
 export AES_MODE="${AES_MODE}"
-export SCHEME="${SCHEME}"
+export ELGAMAL_SCHEME="${ELGAMAL_SCHEME}"
+export SIGNATURE_SCHEME="${SIGNATURE_SCHEME}"
 export ALGORITHM="${ALGORITHM}"
 export SYSTEM="${SYSTEM}"
 export NR_SHARES="${NR_SHARES}"

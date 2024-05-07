@@ -19,6 +19,7 @@ const keys = require('./keys');
 const lagrange = require('./lagrange');
 const nizk = require('./nizk');
 const shamir = require('./shamir');
+const signer = require('./signer');
 const serializers = require('./serializers');
 
 
@@ -40,5 +41,6 @@ export {
   lagrange,
   nizk,
   shamir,
+  signer,
   serializers,
 }

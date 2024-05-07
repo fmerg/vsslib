@@ -50,6 +50,7 @@ export enum ElgamalSchemes {
 }
 
 export enum SignatureSchemes {
+  DEFAULT   = 'schnorr',
   SCHNORR   = 'schnorr',
 }
 

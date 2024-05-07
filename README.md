@@ -127,6 +127,7 @@ const plaintext = await thresholdDecrypt(ciphertext, partialDecryptors);
 - [`vsslib.lagrange`](./src/lagrange)
 - [`vsslib.nizk`](./src/nizk)
 - [`vsslib.shamir`](./src/shamir)
+- [`vsslib.signer`](./src/signer)
 
 ## Development
 
