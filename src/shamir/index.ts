@@ -65,10 +65,12 @@ export class SecretSharing<P extends Point> extends BaseSharing<
     return { commitments };
   }
 
-  provePedersen = async (hPub: P): Promise<{
-    bindings: bigint[],
+  provePedersen = async (pub: P): Promise<{
     commitments: P[],
+    bindings: bigint[],
   }> => {
+    await this.ctx.validatePoint(pub);
+    const h = pub;
     const { generator: g, combine, operate } = this.ctx;
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
@@ -79,14 +81,14 @@ export class SecretSharing<P extends Point> extends BaseSharing<
       const b = bindingPolynomial.coeffs[i];
       commitments[i] = await combine(
         await operate(a, g),
-        await operate(b, hPub),
+        await operate(b, h),
       );
       bindings[i] = await bindingPolynomial.evaluate(i);
     }
     for (let j = coeffs.length; j <= this.nrShares; j++) {
       bindings[j] = await bindingPolynomial.evaluate(j);
     }
-    return { bindings, commitments };
+    return { commitments, bindings };
   }
 };
 
@@ -156,9 +158,14 @@ export async function verifyPedersen<P extends Point>(
   pub: P,
   commitments: P[],
 ): Promise<boolean> {
+  await ctx.validatePoint(pub);
+  const h = pub;
   const { value: secret, index } = share;
   const { order, generator: g, neutral, operate, combine } = ctx;
-  const lhs = await combine(await operate(secret, g), await operate(binding, pub));
+  const lhs = await combine(
+    await operate(secret, g),
+    await operate(binding, h)
+  );
   let rhs = neutral;
   const i = index;
   for (const [j, c] of commitments.entries()) {

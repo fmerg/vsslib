@@ -38,21 +38,21 @@ describe(`Secret share verification over ${system}`, () => {
   });
 
   test('Pedersen - success', async () => {
-    const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.provePedersen(hPub);
+    const pub = await ctx.randomPoint();
+    const { commitments, bindings } = await sharing.provePedersen(pub);
     secretShares.forEach(async (share: SecretShare) => {
       const binding = bindings[share.index];
-      const verified = await verifyPedersen(ctx, share, binding, hPub, commitments);
+      const verified = await verifyPedersen(ctx, share, binding, pub, commitments);
       expect(verified).toBe(true);
     });
   });
 
   test('Pedersen - failure', async () => {
-    const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.provePedersen(hPub);
+    const pub = await ctx.randomPoint();
+    const { commitments, bindings } = await sharing.provePedersen(pub);
     secretShares.forEach(async (share: SecretShare) => {
       const forgedBinding = await ctx.randomScalar();
-      const verified = await verifyPedersen(ctx, share, forgedBinding, hPub, commitments);
+      const verified = await verifyPedersen(ctx, share, forgedBinding, pub, commitments);
       expect(verified).toBe(false);
     });
   });

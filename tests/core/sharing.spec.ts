@@ -36,7 +36,8 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     const { ctx, sharing, privateShares } = setup;
     const { commitments } = await sharing.proveFeldmann();
     const forgedCommitmnets = [
-      ...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()
+      ...commitments.slice(0, commitments.length - 1),
+      (await ctx.randomPoint()).toBytes()
     ];
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       await expect(
@@ -46,24 +47,24 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
   });
   test('Pedersen verification scheme - success', async () => {
     const { ctx, sharing, privateShares } = setup;
-    const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.provePedersen(hPub);
+    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const { commitments, bindings } = await sharing.provePedersen(publicBytes);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const binding = bindings[share.index];
       const verified = await verifyPedersen(
-        ctx, share, binding, hPub, commitments
+        ctx, share, binding, publicBytes, commitments
       );
       expect(verified).toBe(true);
     });
   });
   test('Pedersen verification scheme - failure', async () => {
     const { ctx, sharing, privateShares } = setup;
-    const hPub = await ctx.randomPoint();
-    const { bindings, commitments } = await sharing.provePedersen(hPub);
+    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const { commitments, bindings } = await sharing.provePedersen(publicBytes);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const forgedBinding = await ctx.randomScalar();
       await expect(
-        verifyPedersen(ctx, share, forgedBinding, hPub, commitments)
+        verifyPedersen(ctx, share, forgedBinding, publicBytes, commitments)
       ).rejects.toThrow(ErrorMessages.INVALID_SHARE);
     });
   });

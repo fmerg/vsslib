@@ -27,6 +27,6 @@ export abstract class BaseSharing<
 
   abstract getSecretShares: () => Promise<Q[]>;
   abstract getPublicShares: () => Promise<R[]>;
-  abstract proveFeldmann: () => Promise<{ commitments: P[] }>;
-  abstract provePedersen: (hPub: C) => Promise<{ bindings: bigint[], commitments: C[] }>;
+  abstract proveFeldmann: () => Promise<{ commitments: C[] }>;
+  abstract provePedersen: (h: C) => Promise<{ commitments: C[], bindings: bigint[] }>;
 }
