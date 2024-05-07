@@ -1,15 +1,36 @@
 import { Group, Point } from './backend/abstract';
-import { FieldPolynomial, randomPolynomial } from './lagrange';
+import { FieldPolynomial } from './lagrange';
 
 
-export interface BaseShare<T> {
-  value: T;
+export interface BaseShare<V> {
+  value: V;
   index: number;
 }
 
 
+export interface SecretShare<
+  P extends Point,
+  V,
+  C,
+> extends BaseShare<V>{
+  ctx: Group<P>;
+  verifyFeldmann: (commitments: C[]) => Promise<boolean>;
+  verifyPedersen: (binding: bigint, commitments: C[], h: C) => Promise<boolean>;
+}
+
+
+export interface PubShare<
+  P extends Point,
+  V,
+> extends BaseShare<V> {
+}
+
+
 export abstract class BaseSharing<
-  S, P extends Point, Q extends BaseShare<S>, R extends BaseShare<P>
+  P extends Point,
+  C,
+  S,
+  R,
 > {
   ctx: Group<P>;
   nrShares: number;
@@ -25,41 +46,8 @@ export abstract class BaseSharing<
     this.polynomial = polynomial;
   }
 
-  abstract getSecretShares: () => Promise<Q[]>;
+  abstract getSecretShares: () => Promise<S[]>;
   abstract getPublicShares: () => Promise<R[]>;
-
-  proveFeldmann = async (): Promise<{ commitments: P[] }> => {
-    const { coeffs, degree, ctx: { operate, generator }} = this.polynomial;
-    const commitments = new Array(degree + 1);
-    for (const [index, coeff] of coeffs.entries()) {
-      commitments[index] = await operate(coeff, generator);
-    }
-    return { commitments };
-  }
-
-  provePedersen = async (hPub?: P): Promise<{
-    bindings: bigint[],
-    hPub: P,
-    commitments: P[],
-  }> => {
-    const { generator: g, combine, operate } = this.ctx;
-    const { coeffs, degree } = this.polynomial;
-    const bindingPolynomial = await randomPolynomial(this.ctx, degree);
-    const commitments = new Array(degree + 1);
-    const bindings = new Array(degree + 1);
-    hPub = hPub || await this.ctx.randomPoint();
-    for (const [i, a] of coeffs.entries()) {
-      const a = coeffs[i];
-      const b = bindingPolynomial.coeffs[i];
-      commitments[i] = await combine(
-        await operate(a, g),
-        await operate(b, hPub),
-      );
-      bindings[i] = await bindingPolynomial.evaluate(i);
-    }
-    for (let j = coeffs.length; j <= this.nrShares; j++) {
-      bindings[j] = await bindingPolynomial.evaluate(j);
-    }
-    return { bindings, hPub, commitments };
-  }
+  abstract proveFeldmann: () => Promise<{ commitments: C[] }>;
+  abstract provePedersen: (h: C) => Promise<{ commitments: C[], bindings: bigint[] }>;
 }

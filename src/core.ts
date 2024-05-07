@@ -2,18 +2,22 @@ import { Point, Group } from './backend/abstract';
 import { Ciphertext } from './elgamal';
 import { leInt2Buff } from './crypto/bitwise';
 import { NizkProof } from './nizk';
-import { BaseShare, BaseSharing } from './base';
-import { SecretShare } from './shamir';
+import { SecretShare, PubShare, BaseSharing } from './base';
+import { ScalarShare, ShamirSharing } from './shamir';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
 import { ElgamalSchemes, AesModes, Algorithms } from './enums';
 import { ElgamalScheme, AesMode, Algorithm } from './types';
+import { randomPolynomial } from './lagrange';
 
 import elgamal from './elgamal';
 const shamir = require('./shamir');
 
 
-export class PrivateShare<P extends Point> extends PrivateKey<P> implements BaseShare<bigint>{
+export class PrivateShare<P extends Point> extends PrivateKey<P> implements SecretShare<
+  P, bigint, Uint8Array
+>{
+  _share: ScalarShare<P>;
   value: bigint;
   index: number;
 
@@ -21,10 +25,40 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
     super(ctx, leInt2Buff(secret));
     this.value = this.secret;
     this.index = index;
+    this._share = new ScalarShare(ctx, this.value, this.index);
+  }
+
+  toInner = async (commitments: Uint8Array[]) => {
+    const innerCommitments = new Array(commitments.length);
+    const ctx = this.ctx;
+    for (const [i, cBytes] of commitments.entries()) {
+      const cPoint = ctx.unpack(cBytes);
+      await ctx.validatePoint(cPoint);
+      innerCommitments[i] = cPoint
+    }
+    return innerCommitments;
+  }
+
+  verifyFeldmann = async (commitments: Uint8Array[]): Promise<boolean> => {
+    const verified = await this._share.verifyFeldmann(await this.toInner(commitments));
+    if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
+    return verified;
+  }
+
+  verifyPedersen = async (
+    binding: bigint, commitments: Uint8Array[], publicBytes: Uint8Array
+  ): Promise<boolean> => {
+    const pub = this.ctx.unpack(publicBytes);
+    await this.ctx.validatePoint(pub);
+    const verified = await this._share.verifyPedersen(
+      binding, await this.toInner(commitments), pub
+    );
+    if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
+    return verified;
   }
 
   async publicShare(): Promise<PublicShare<P>> {
-    const { ctx } = this;
+    const ctx = this.ctx;
     const pubPoint = await ctx.operate(this.secret, ctx.generator);
     return new PublicShare(ctx, pubPoint.toBytes(), this.index);
   }
@@ -36,17 +70,18 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Base
       nonce?: Uint8Array
     },
   ): Promise<PartialDecryptor> {
-    const { alpha, beta } = ciphertext;
-    const { decryptor, proof } = await this.generateDecryptor(
+    const { decryptor: value, proof } = await this.generateDecryptor(
       ciphertext,
       opts,
     );
-    return { value: decryptor, index: this.index, proof };
+    return { value, proof, index: this.index };
   }
 };
 
 
-export class PublicShare<P extends Point> extends PublicKey<P> {
+export class PublicShare<P extends Point> extends PublicKey<P> implements PubShare<
+  P, P
+> {
   value: P;
   index: number;
 
@@ -83,28 +118,50 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   }
 };
 
+// P, Uint8Array, bigint, P, PrivateShare<P>,  PublicShare<P>
 export class KeySharing<P extends Point> extends BaseSharing<
-  bigint, P, PrivateShare<P>, PublicShare<P>
-> {
+  P, Uint8Array, PrivateShare<P>,  PublicShare<P>
+>{
+  _sharing: ShamirSharing<P>;
+
+  constructor(sharing: ShamirSharing<P>) {
+    const { ctx, threshold, nrShares, polynomial } = sharing;
+    super(ctx, nrShares, threshold, polynomial);
+    this._sharing = sharing;
+  }
+
   getSecretShares = async (): Promise<PrivateShare<P>[]> => {
-    const { ctx, polynomial, nrShares } = this;
-    const shares = [];
-    for (let index = 1; index <= nrShares; index++) {
-      const value = polynomial.evaluate(index);
-      shares.push(new PrivateShare(ctx, value, index));
-    }
-    return shares;
+    const secretShares = await this._sharing.getSecretShares();
+    return secretShares.map(
+      ({ index, value }) => new PrivateShare(this.ctx, value, index)
+    );
   }
 
   getPublicShares = async (): Promise<PublicShare<P>[]> => {
-    const { nrShares, polynomial: { evaluate }, ctx: { operate, generator } } = this;
-    const shares = [];
-    for (let index = 1; index <= nrShares; index++) {
-      const pubPoint = await operate(evaluate(index), generator);
-      const newShare = new PublicShare(this.ctx, pubPoint.toBytes(), index);
-      shares.push(newShare);
+    const publicShares = await this._sharing.getPublicShares();
+    return publicShares.map(
+      ({ index, value }) => new PublicShare(this.ctx, value.toBytes(), index)
+    );
+  }
+
+  proveFeldmann = async (): Promise<{ commitments: Uint8Array[] }> => {
+    const { commitments } = await this._sharing.proveFeldmann();
+    return {
+      commitments: commitments.map(c => c.toBytes())
     }
-    return shares;
+  }
+
+  provePedersen = async (publicBytes: Uint8Array): Promise<{
+    commitments: Uint8Array[],
+    bindings: bigint[],
+  }> => {
+    const pub = this.ctx.unpack(publicBytes)
+    await this.ctx.validatePoint(pub);
+    const { commitments, bindings } = await this._sharing.provePedersen(pub);
+    return {
+      commitments: commitments.map(c => c.toBytes()),
+      bindings,
+    }
   }
 }
 
@@ -128,38 +185,11 @@ export async function distributeKey<P extends Point>(
   threshold: number,
   privateKey: PrivateKey<P>
 ): Promise<KeySharing<P>> {
-  const { polynomial } = await shamir.shareSecret(
-    ctx, nrShares, threshold, privateKey.secret
+  const { secret } = privateKey;
+  const sharing = await shamir.shareSecret(
+    ctx, nrShares, threshold, secret
   );
-  return new KeySharing(ctx, nrShares, threshold, polynomial);
-}
-
-export async function verifyFeldmann<P extends Point>(
-  ctx: Group<P>,
-  share: PrivateShare<P>,
-  commitments: P[]
-): Promise<boolean> {
-  const secretShare = new SecretShare(share.value, share.index);
-  const verified = await shamir.verifyFeldmann(
-    ctx, secretShare, commitments
-  );
-  if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
-  return verified;
-}
-
-export async function verifyPedersen<P extends Point>(
-  ctx: Group<P>,
-  share: PrivateShare<P>,
-  binding: bigint,
-  pub: P,
-  commitments: P[]
-): Promise<boolean> {
-  const secretShare = new SecretShare(share.value, share.index);
-  const verified = await shamir.verifyPedersen(
-    ctx, secretShare, binding, pub, commitments
-  );
-  if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
-  return verified;
+  return new KeySharing(sharing);
 }
 
 export async function reconstructKey<P extends Point>(
