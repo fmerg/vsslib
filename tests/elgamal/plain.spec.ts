@@ -53,7 +53,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await plainElgamal(ctx).encrypt(message, pub);
-    const forgedDecryptor = await ctx.randomPoint();
+    const forgedDecryptor = (await ctx.randomPoint()).toBytes();
     const plaintext = await plainElgamal(ctx).decryptWithDecryptor(
       ciphertext, forgedDecryptor
     );

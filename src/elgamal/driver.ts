@@ -108,11 +108,11 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return {
       ciphertext: {
-        alpha: alpha.toBytes(),
-        beta: beta.toBytes(),
+        alpha,
+        beta,
       },
       randomness: leInt2Buff(randomness),
-      decryptor: decryptor.toBytes(),
+      decryptor,
     }
   }
 
@@ -123,8 +123,8 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return plainElgamal(ctx).decrypt(
       {
-        alpha: ctx.unpack(alpha),
-        beta: ctx.unpack(beta),
+        alpha,
+        beta,
       },
       secret
     );
@@ -138,10 +138,10 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return plainElgamal(ctx).decryptWithDecryptor(
       {
-        alpha: ctx.unpack(alpha),
-        beta: ctx.unpack(beta),
+        alpha,
+        beta,
       },
-      ctx.unpack(decryptor),
+      decryptor,
     );
   }
 
@@ -159,10 +159,11 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return {
       ciphertext: {
-        alpha, beta: beta.toBytes()
+        alpha,
+        beta,
       },
       randomness: leInt2Buff(randomness),
-      decryptor: decryptor.toBytes(),
+      decryptor,
     }
   }
 
@@ -173,7 +174,8 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return kemElgamal(ctx, mode).decrypt(
       {
-        alpha, beta: ctx.unpack(beta)
+        alpha,
+        beta,
       },
       secret
     );
@@ -187,9 +189,10 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return kemElgamal(ctx, mode).decryptWithDecryptor(
       {
-        alpha, beta: ctx.unpack(beta),
+        alpha,
+        beta,
       },
-      ctx.unpack(decryptor),
+      decryptor,
     );
   }
 
@@ -207,10 +210,11 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return {
       ciphertext: {
-        alpha, beta: beta.toBytes()
+        alpha,
+        beta,
       },
       randomness: leInt2Buff(randomness),
-      decryptor: decryptor.toBytes(),
+      decryptor,
     }
   }
 
@@ -222,7 +226,8 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return iesElgamal(ctx, mode, algorithm).decrypt(
       {
-        alpha, beta: ctx.unpack(beta)
+        alpha,
+        beta,
       },
       secret
     );
@@ -236,9 +241,10 @@ export class ElgamalDriver<P extends Point>{
     const { alpha, beta } = ciphertext;
     return iesElgamal(ctx, mode, algorithm).decryptWithDecryptor(
       {
-        alpha, beta: ctx.unpack(beta),
+        alpha,
+        beta,
       },
-      ctx.unpack(decryptor),
+      decryptor,
     );
   }
 }

@@ -69,7 +69,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const { ciphertext, decryptor } = await iesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, pub
     );
-    const forgedDecryptor = await ctx.randomPoint();
+    const forgedDecryptor = (await ctx.randomPoint()).toBytes();
     await expect(
       iesElgamal(ctx, mode, Algorithms.SHA256).decryptWithDecryptor(ciphertext, forgedDecryptor)
     ).rejects.toThrow(

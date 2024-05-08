@@ -78,7 +78,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await kemElgamal(ctx, mode).encrypt(message, pub);
-    const forgedDecryptor = await ctx.randomPoint();
+    const forgedDecryptor = (await ctx.randomPoint()).toBytes();
     if (!mode || [AesModes.AES_256_CBC, AesModes.AES_256_GCM].includes(mode)) {
       await expect(
         kemElgamal(ctx, mode).decryptWithDecryptor(ciphertext, forgedDecryptor)
