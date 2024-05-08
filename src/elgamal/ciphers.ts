@@ -1,4 +1,5 @@
 import { Point, Group } from '../backend/abstract';
+import { leInt2Buff } from '../crypto/bitwise';
 import { Algorithms, AesModes } from '../enums';
 import { Algorithm, AesMode } from '../types';
 import { ErrorMessages } from '../errors';
@@ -7,7 +8,7 @@ import { hash, hmac, aes } from '../crypto';
 
 
 /** Generic ElGamal functionality; abstracts away encapsulation details */
-abstract class BaseCipher<A, P extends Point> {
+abstract class BaseCipher<P extends Point, A> {
   ctx: Group<P>;
 
   constructor(ctx: Group<P>) {
@@ -23,20 +24,28 @@ abstract class BaseCipher<A, P extends Point> {
   async encrypt(message: Uint8Array, pub: P): Promise<{
     ciphertext: {
       alpha: A,
-      beta: P
+      beta: Uint8Array,
     },
-    decryptor: P,
-    randomness: bigint
+    decryptor: Uint8Array,
+    randomness: Uint8Array,
   }> {
     const { ctx: { generator, randomScalar, operate }, encapsulate } = this;
     const randomness = await randomScalar();
     const { alpha, decryptor } = await encapsulate(pub, randomness, message);
     const beta = await operate(randomness, generator);
-    return { ciphertext: { alpha, beta }, decryptor, randomness };
+    return {
+      ciphertext: {
+        alpha,
+        beta: beta.toBytes(),
+      },
+      decryptor: decryptor.toBytes(),
+      randomness: leInt2Buff(randomness)
+    };
   }
 
-  async decrypt(ciphertext: { alpha: A, beta: P }, secret: bigint): Promise<Uint8Array> {
-    const { alpha, beta } = ciphertext;
+  async decrypt(ciphertext: { alpha: A, beta: Uint8Array}, secret: bigint): Promise<Uint8Array> {
+    const { alpha, beta: betaBytes} = ciphertext;
+    const beta = this.ctx.unpack(betaBytes);
     const isBetaValid = await this.ctx.validatePoint(beta, { raiseOnInvalid: false });
     if(!isBetaValid) throw new Error('Could not decrypt: Point not in subgroup');
     const decryptor = await this.ctx.operate(secret, beta);
@@ -49,20 +58,31 @@ abstract class BaseCipher<A, P extends Point> {
     return plaintext;
   }
 
-  async decryptWithDecryptor(ciphertext: { alpha: A, beta: P }, decryptor: P): Promise<Uint8Array> {
+  async decryptWithDecryptor(
+    ciphertext: {
+      alpha: A,
+      beta: Uint8Array,
+    },
+    decryptor: Uint8Array
+  ): Promise<Uint8Array> {
     let plaintext;
     try {
-      plaintext = await this.decapsulate(ciphertext.alpha, decryptor);
+      plaintext = await this.decapsulate(ciphertext.alpha, this.ctx.unpack(decryptor));
     } catch (err: any) {
       throw new Error('Could not decrypt: ' + err.message);
     }
     return plaintext;
   }
 
-  async decryptWithRandomness(ciphertext: { alpha: A, beta: P }, pub: P, randomness: bigint): Promise<
-    Uint8Array
-  > {
-    const decryptor = await this.ctx.operate(randomness, pub);
+  async decryptWithRandomness(
+    ciphertext: {
+      alpha: A,
+      beta: Uint8Array
+    },
+    pub: P,
+    randomness: Uint8Array
+  ): Promise<Uint8Array> {
+    const decryptor = await this.ctx.operate(this.ctx.leBuff2Scalar(randomness), pub);
     let plaintext;
     try {
       plaintext = await this.decapsulate(ciphertext.alpha, decryptor);
@@ -77,13 +97,13 @@ abstract class BaseCipher<A, P extends Point> {
 /** Plain Elgamal encryption, assuming messages to be valid byte representations
  * of group elements. This not CCA-secure; do *not* use it directly, unless you
  * know what you do. */
-export class PlainCipher<P extends Point> extends BaseCipher<P, P> {
+export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
   constructor(ctx: Group<P>) {
     super(ctx);
   }
 
   encapsulate = async (pub: P, randomness: bigint, message: Uint8Array): Promise<{
-    alpha: P,
+    alpha: Uint8Array,
     decryptor: P
   }> => {
     let messagePoint;
@@ -94,12 +114,14 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, P> {
     }
     const decryptor = await this.ctx.operate(randomness, pub);
     const alpha = await this.ctx.combine(decryptor, messagePoint);
-    return { alpha, decryptor };
+    return { alpha: alpha.toBytes(), decryptor };
   }
 
-  decapsulate = async (alpha: P, decryptor: P): Promise<Uint8Array> => {
+  decapsulate = async (alpha: Uint8Array, decryptor: P): Promise<Uint8Array> => {
+    const alphaUnpacked = this.ctx.unpack(alpha);
+    await this.ctx.validatePoint(alphaUnpacked);
     const decryptorInverse = await this.ctx.invert(decryptor);
-    const plaintext = await this.ctx.combine(alpha, decryptorInverse);
+    const plaintext = await this.ctx.combine(alphaUnpacked, decryptorInverse);
     return plaintext.toBytes();
   }
 }
@@ -113,7 +135,7 @@ export type KemAlpha = {
 };
 
 /** KEM-Elgamal encryption (DH-based Key Encapsulation Mechanism) */
-export class KemCipher<P extends Point> extends BaseCipher<KemAlpha, P> {
+export class KemCipher<P extends Point> extends BaseCipher<P, KemAlpha> {
   mode: AesMode;
 
   constructor(ctx: Group<P>, mode: AesMode) {
@@ -148,7 +170,7 @@ export type IesAlpha = {
 }
 
 /** IES-Elgamal encryption (DH-based Integrated Encryption Scheme) */
-export class IesCipher<P extends Point> extends BaseCipher<IesAlpha, P> {
+export class IesCipher<P extends Point> extends BaseCipher<P, IesAlpha> {
   mode: AesMode;
   algorithm: Algorithm;
 

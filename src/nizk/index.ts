@@ -24,7 +24,7 @@ export type GenericLinear<P extends Point> = {
 
 export type NizkProof = {
   commitment: Uint8Array[],
-  response: bigint[],
+  response: Uint8Array[],
 }
 
 type InnerProof<P extends Point> = {
@@ -47,14 +47,19 @@ export class NizkProtocol<P extends Point>{
   )
 
   toInner = async (proof: NizkProof): Promise<InnerProof<P>> => {
-    const { commitment: buffers, response } = proof;
-    const m = buffers.length;
+    const { unpack, validatePoint, leBuff2Scalar } = this.ctx;
+    const { commitment: commitmentBuffers, response: responseBuffers } = proof;
+    const m = commitmentBuffers.length;
     const commitment = new Array(m);
-    const { unpack, validatePoint } = this.ctx;
     for (let i = 0; i < m; i++) {
-      const c = unpack(buffers[i]);
+      const c = unpack(commitmentBuffers[i]);
       await validatePoint(c);
       commitment[i] = c;
+    }
+    const n = responseBuffers.length;
+    const response = new Array(n);
+    for (let i = 0; i < n; i++) {
+      response[i] = leBuff2Scalar(responseBuffers[i])
     }
     return { commitment, response };
   }
@@ -63,7 +68,7 @@ export class NizkProtocol<P extends Point>{
     const { commitment, response } = proof;
     return {
       commitment: commitment.map(c => c.toBytes()),
-      response
+      response: response.map(r => leInt2Buff(r)),
     }
   }
 

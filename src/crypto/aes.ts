@@ -16,7 +16,7 @@ class AesCipher {
   encrypt = (key: Uint8Array, message: Uint8Array, iv?: Uint8Array): {
     ciphered: Uint8Array,
     iv: Uint8Array,
-    tag?: Uint8Array
+    tag: Uint8Array
   } => {
     if (key.length !== 32) throw new Error(ErrorMessages.INVALID_KEY_LENGTH);
     const ivLength = (this.mode == AesModes.AES_256_GCM) ? 12 : 16;
@@ -26,9 +26,9 @@ class AesCipher {
     const ciphered = Uint8Array.from(
       Buffer.from(cipher.update(message, 'binary', 'binary') + cipher.final('binary'))
     );
-    const tag = (this.mode == AesModes.AES_256_GCM) ?
-      Uint8Array.from(cipher.getAuthTag()) :
-      undefined;
+    const tag = Uint8Array.from(
+      this.mode == AesModes.AES_256_GCM ? cipher.getAuthTag() : []
+    );
     return { ciphered, iv, tag };
   }
 
@@ -40,7 +40,8 @@ class AesCipher {
       throw new Error(ErrorMessages.INVALID_IV_LENGTH);
     const decipher = createDecipheriv(this.mode, key, iv);
     if (this.mode == AesModes.AES_256_GCM) {
-      if (tag === undefined) throw new Error(ErrorMessages.MISSING_AUTHENTICATION_TAG);
+      if (tag === undefined || tag.length == 0)
+        throw new Error(ErrorMessages.MISSING_AUTHENTICATION_TAG);
       decipher.setAuthTag(tag);
     }
     let deciphered;

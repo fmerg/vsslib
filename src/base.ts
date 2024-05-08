@@ -12,10 +12,11 @@ export interface SecretShare<
   P extends Point,
   V,
   C,
+  B,
 > extends BaseShare<V>{
   ctx: Group<P>;
   verifyFeldmann: (commitments: C[]) => Promise<boolean>;
-  verifyPedersen: (binding: bigint, commitments: C[], h: C) => Promise<boolean>;
+  verifyPedersen: (binding: B, commitments: C[], h: C) => Promise<boolean>;
 }
 
 
@@ -29,6 +30,7 @@ export interface PubShare<
 export abstract class BaseSharing<
   P extends Point,
   C,
+  B,
   S,
   R,
 > {
@@ -49,5 +51,5 @@ export abstract class BaseSharing<
   abstract getSecretShares: () => Promise<S[]>;
   abstract getPublicShares: () => Promise<R[]>;
   abstract proveFeldmann: () => Promise<{ commitments: C[] }>;
-  abstract provePedersen: (h: C) => Promise<{ commitments: C[], bindings: bigint[] }>;
+  abstract provePedersen: (h: C) => Promise<{ commitments: C[], bindings: B[] }>;
 }

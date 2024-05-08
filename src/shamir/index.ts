@@ -11,7 +11,7 @@ const __1n = BigInt(1);
 
 
 export class ScalarShare<P extends Point> implements SecretShare<
-  P, bigint, P
+  P, bigint, P, bigint
 > {
   ctx: Group<P>;
   value: bigint;
@@ -64,9 +64,8 @@ export class PointShare<P extends Point> implements PubShare<P, P> {
 };
 
 
-// P, P, bigint, P, ScalarShare<P>, PointShare<P>
 export class ShamirSharing<P extends Point> extends BaseSharing<
-  P, P, ScalarShare<P>, PointShare<P>
+  P, P, bigint, ScalarShare<P>, PointShare<P>
 > {
 
   getSecretShares = async (): Promise<ScalarShare<P>[]> => {

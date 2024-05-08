@@ -1,4 +1,5 @@
 import { Point, Group } from '../../src/backend/abstract'
+import { leInt2Buff } from '../../src/crypto/bitwise';
 import { ErrorMessages } from '../../src/errors';
 import { reconstructKey, reconstructPublic } from '../../src/core';
 import { PrivateShare, PublicShare } from '../../src/core';
@@ -59,7 +60,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     const publicBytes = (await ctx.randomPoint()).toBytes();
     const { commitments, bindings } = await sharing.provePedersen(publicBytes);
     privateShares.forEach(async (share: PrivateShare<Point>) => {
-      const forgedBinding = await ctx.randomScalar();
+      const forgedBinding = leInt2Buff(await ctx.randomScalar());
       await expect(
         share.verifyPedersen(forgedBinding, commitments, publicBytes)
       ).rejects.toThrow(ErrorMessages.INVALID_SHARE);

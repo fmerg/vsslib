@@ -9,9 +9,9 @@ import nizk from '../nizk';
 
 export class SchnorrSignature {
   c: Uint8Array;
-  r: bigint;
+  r: Uint8Array;
 
-  constructor(c: Uint8Array, r: bigint) {
+  constructor(c: Uint8Array, r: Uint8Array) {
     this.c = c;
     this.r = r;
   }

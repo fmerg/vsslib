@@ -45,13 +45,13 @@ describe('Failure - if swaped scalar factors', () => {
 });
 
 
-describe('Failure - if tampered proof', () => {
+describe('Failure - if forged proof', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
     const proof = await nizk(ctx, Algorithms.SHA256).proveRepresentation({ s, t }, { h, u });
-    proof.response[0] = await ctx.randomScalar();
+    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     const valid = await nizk(ctx, Algorithms.SHA256).verifyRepresentation({ h, u }, proof);
     expect(valid).toBe(false);
   });

@@ -1,4 +1,5 @@
 import { Systems } from '../../src/enums';
+import { leInt2Buff } from '../../src/crypto/bitwise';
 import { initGroup } from '../../src/backend';
 import { plainElgamal } from '../../src/elgamal/ciphers';
 
@@ -53,7 +54,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, decryptor } = await plainElgamal(ctx).encrypt(message, pub);
-    const forgedDecryptor = await ctx.randomPoint();
+    const forgedDecryptor = (await ctx.randomPoint()).toBytes();
     const plaintext = await plainElgamal(ctx).decryptWithDecryptor(
       ciphertext, forgedDecryptor
     );
@@ -82,7 +83,7 @@ describe('Decryption with randomness - failure if forged randomness', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = (await ctx.randomPoint()).toBytes();
     const { ciphertext, randomness } = await plainElgamal(ctx).encrypt(message, pub);
-    const forgedRandomnes = await ctx.randomScalar();
+    const forgedRandomnes = leInt2Buff(await ctx.randomScalar());
     const plaintext = await plainElgamal(ctx).decryptWithRandomness(
       ciphertext, pub, forgedRandomnes
     );

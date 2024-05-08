@@ -36,7 +36,7 @@ describe('Failure - forged proof', () => {
     const ctx = initGroup(system);
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
     const proof = await nizk(ctx, Algorithms.SHA256).proveLinear(witness, relation);
-    proof.response[0] = await ctx.randomScalar();
+    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     const valid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof);
     expect(valid).toBe(false);
   });

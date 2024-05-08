@@ -1,4 +1,5 @@
 import { Algorithms, AesModes } from '../../src/enums';
+import { leInt2Buff } from '../../src/crypto/bitwise';
 import { randomBytes } from '../../src/crypto/random';
 import { initGroup } from '../../src/backend';
 import { kemElgamal } from '../../src/elgamal/ciphers';
@@ -78,7 +79,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await kemElgamal(ctx, mode).encrypt(message, pub);
-    const forgedDecryptor = await ctx.randomPoint();
+    const forgedDecryptor = (await ctx.randomPoint()).toBytes();
     if (!mode || [AesModes.AES_256_CBC, AesModes.AES_256_GCM].includes(mode)) {
       await expect(
         kemElgamal(ctx, mode).decryptWithDecryptor(ciphertext, forgedDecryptor)
@@ -115,7 +116,7 @@ describe('Decryption with decryptor - failure if forged randomness', () => {
     const { secret, pub } = await ctx.generateKeypair();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await kemElgamal(ctx, mode).encrypt(message, pub);
-    const forgedRandomnes = await ctx.randomScalar();
+    const forgedRandomnes = leInt2Buff(await ctx.randomScalar());
     if (!mode || [AesModes.AES_256_CBC, AesModes.AES_256_GCM].includes(mode)) {
       await expect(
         kemElgamal(ctx, mode).decryptWithRandomness(ciphertext, pub, forgedRandomnes)
