@@ -15,7 +15,7 @@ const shamir = require('./shamir');
 
 
 export class PrivateShare<P extends Point> extends PrivateKey<P> implements SecretShare<
-  P, bigint, Uint8Array
+  P, bigint, Uint8Array, bigint
 >{
   _share: ScalarShare<P>;
   value: bigint;
@@ -118,9 +118,8 @@ export class PublicShare<P extends Point> extends PublicKey<P> implements PubSha
   }
 };
 
-// P, Uint8Array, bigint, P, PrivateShare<P>,  PublicShare<P>
 export class KeySharing<P extends Point> extends BaseSharing<
-  P, Uint8Array, PrivateShare<P>,  PublicShare<P>
+  P, Uint8Array, bigint, PrivateShare<P>,  PublicShare<P>
 >{
   _sharing: ShamirSharing<P>;
 
