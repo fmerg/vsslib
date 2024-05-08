@@ -15,7 +15,7 @@ const shamir = require('./shamir');
 
 
 export class PrivateShare<P extends Point> extends PrivateKey<P> implements SecretShare<
-  P, bigint, Uint8Array, bigint
+  P, bigint, Uint8Array, Uint8Array
 >{
   _share: ScalarShare<P>;
   value: bigint;
@@ -28,30 +28,38 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Secr
     this._share = new ScalarShare(ctx, this.value, this.index);
   }
 
-  toInner = async (commitments: Uint8Array[]) => {
-    const innerCommitments = new Array(commitments.length);
+  toInner = async (payload: { commitments: Uint8Array[], binding?: Uint8Array }) => {
+    const { commitments: outerCommitment, binding: outerBinding } = payload;
+    const commitments = new Array(outerCommitment.length);
     const ctx = this.ctx;
-    for (const [i, cBytes] of commitments.entries()) {
+    for (const [i, cBytes] of outerCommitment.entries()) {
       const cPoint = ctx.unpack(cBytes);
       await ctx.validatePoint(cPoint);
-      innerCommitments[i] = cPoint
+      commitments[i] = cPoint
     }
-    return innerCommitments;
+    const binding = outerBinding ? ctx.leBuff2Scalar(outerBinding) :
+      BigInt(0);  // bogus value for uniform interface; TODO:
+    return { commitments, binding }
   }
 
   verifyFeldmann = async (commitments: Uint8Array[]): Promise<boolean> => {
-    const verified = await this._share.verifyFeldmann(await this.toInner(commitments));
+    const { commitments: innerCommitments } = await this.toInner({ commitments });
+    const verified = await this._share.verifyFeldmann(innerCommitments);
     if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
     return verified;
   }
 
   verifyPedersen = async (
-    binding: bigint, commitments: Uint8Array[], publicBytes: Uint8Array
+    binding: Uint8Array, commitments: Uint8Array[], publicBytes: Uint8Array
   ): Promise<boolean> => {
     const pub = this.ctx.unpack(publicBytes);
     await this.ctx.validatePoint(pub);
+    const { commitments: innerCommitments, binding: innerBinding} = await this.toInner({
+      commitments,
+      binding,
+    });
     const verified = await this._share.verifyPedersen(
-      binding, await this.toInner(commitments), pub
+      innerBinding, innerCommitments, pub
     );
     if (!verified) throw new Error(ErrorMessages.INVALID_SHARE);
     return verified;
@@ -119,7 +127,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> implements PubSha
 };
 
 export class KeySharing<P extends Point> extends BaseSharing<
-  P, Uint8Array, bigint, PrivateShare<P>,  PublicShare<P>
+  P, Uint8Array, Uint8Array, PrivateShare<P>,  PublicShare<P>
 >{
   _sharing: ShamirSharing<P>;
 
@@ -152,14 +160,14 @@ export class KeySharing<P extends Point> extends BaseSharing<
 
   provePedersen = async (publicBytes: Uint8Array): Promise<{
     commitments: Uint8Array[],
-    bindings: bigint[],
+    bindings: Uint8Array[],
   }> => {
     const pub = this.ctx.unpack(publicBytes)
     await this.ctx.validatePoint(pub);
     const { commitments, bindings } = await this._sharing.provePedersen(pub);
     return {
       commitments: commitments.map(c => c.toBytes()),
-      bindings,
+      bindings: bindings.map(b => leInt2Buff(b)),
     }
   }
 }
