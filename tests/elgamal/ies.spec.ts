@@ -1,5 +1,6 @@
 import { Algorithms, AesModes } from '../../src/enums';
 import { randomBytes } from '../../src/crypto/random';
+import { leInt2Buff } from '../../src/crypto/bitwise';
 import { initGroup } from '../../src/backend';
 import { iesElgamal } from '../../src/elgamal/ciphers';
 
@@ -103,7 +104,7 @@ describe('Decryption with decryptor - failure if forged randomness', () => {
     const { ciphertext, randomness } = await iesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, pub
     );
-    const forgedRandomnes = await ctx.randomScalar();
+    const forgedRandomnes = leInt2Buff(await ctx.randomScalar());
     await expect(
       iesElgamal(ctx, mode, Algorithms.SHA256).decryptWithRandomness(ciphertext, pub, forgedRandomnes)
     ).rejects.toThrow(

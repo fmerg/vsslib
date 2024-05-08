@@ -111,7 +111,7 @@ export class ElgamalDriver<P extends Point>{
         alpha,
         beta,
       },
-      randomness: leInt2Buff(randomness),
+      randomness,
       decryptor,
     }
   }
@@ -162,7 +162,7 @@ export class ElgamalDriver<P extends Point>{
         alpha,
         beta,
       },
-      randomness: leInt2Buff(randomness),
+      randomness,
       decryptor,
     }
   }
@@ -213,7 +213,7 @@ export class ElgamalDriver<P extends Point>{
         alpha,
         beta,
       },
-      randomness: leInt2Buff(randomness),
+      randomness,
       decryptor,
     }
   }

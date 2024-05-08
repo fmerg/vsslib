@@ -1,4 +1,5 @@
 import { Point, Group } from '../backend/abstract';
+import { leInt2Buff } from '../crypto/bitwise';
 import { Algorithms, AesModes } from '../enums';
 import { Algorithm, AesMode } from '../types';
 import { ErrorMessages } from '../errors';
@@ -26,7 +27,7 @@ abstract class BaseCipher<P extends Point, A> {
       beta: Uint8Array,
     },
     decryptor: Uint8Array,
-    randomness: bigint
+    randomness: Uint8Array,
   }> {
     const { ctx: { generator, randomScalar, operate }, encapsulate } = this;
     const randomness = await randomScalar();
@@ -38,7 +39,7 @@ abstract class BaseCipher<P extends Point, A> {
         beta: beta.toBytes(),
       },
       decryptor: decryptor.toBytes(),
-      randomness
+      randomness: leInt2Buff(randomness)
     };
   }
 
@@ -79,9 +80,9 @@ abstract class BaseCipher<P extends Point, A> {
       beta: Uint8Array
     },
     pub: P,
-    randomness: bigint
+    randomness: Uint8Array
   ): Promise<Uint8Array> {
-    const decryptor = await this.ctx.operate(randomness, pub);
+    const decryptor = await this.ctx.operate(this.ctx.leBuff2Scalar(randomness), pub);
     let plaintext;
     try {
       plaintext = await this.decapsulate(ciphertext.alpha, decryptor);
