@@ -13,7 +13,7 @@ let {
   elgamalSchemes: encSchemes,
 } = resolveTestConfig();
 
-// algorithms  = [...algorithms, undefined];
+algorithms  = [...algorithms, undefined];
 
 // Signcryption is only defined for KEM and IES ElGamal encryption schemes
 encSchemes = removeItem(encSchemes, ElgamalSchemes.PLAIN);
@@ -30,7 +30,6 @@ const setupKeys = async (system: System) => {
 }
 
 
-
 describe('Signcryption - success without nonce', () => {
   it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
     system, encScheme, sigScheme, algorithm
@@ -38,7 +37,6 @@ describe('Signcryption - success without nonce', () => {
     const { senderPrivate, senderPublic, receiverPrivate, receiverPublic } = await setupKeys(
       system
     );
-
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, signature } = await senderPrivate.signEncrypt(
       message, receiverPublic, {
@@ -58,7 +56,6 @@ describe('Signcryption - success without nonce', () => {
   });
 });
 
-
 describe('Signcryption - success nonce', () => {
   it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
     system, encScheme, sigScheme, algorithm
@@ -66,7 +63,6 @@ describe('Signcryption - success nonce', () => {
     const { senderPrivate, senderPublic, receiverPrivate, receiverPublic } = await setupKeys(
       system
     );
-
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomBytes(16);
     const { ciphertext, signature } = await senderPrivate.signEncrypt(

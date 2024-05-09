@@ -215,24 +215,19 @@ class PrivateKey<P extends Point> {
     ciphertext: Ciphertext,
     signature: Signature,
   }> {
-    const { encScheme, sigScheme, algorithm, mode, nonce } = opts;
-    const innerSignature = await this.sign(message, {
-      scheme: sigScheme,
-      algorithm,
-      nonce,
-    });
-    const { ciphertext } = await receiverPublic.encrypt(toCanonical({ message, innerSignature }), {
-      scheme: encScheme,
-      algorithm,
-      mode,
-    });
     const receiver = receiverPublic.bytes;
-    const signature = await this.sign(toCanonical({ ciphertext, receiver }), {
-      scheme: sigScheme,
-      algorithm,
-      nonce,
-    });
-
+    const { encScheme, sigScheme, algorithm, mode, nonce } = opts;
+    const _signer = signer(this.ctx, sigScheme, algorithm || Algorithms.DEFAULT);
+    const _cipher = elgamal(
+      this.ctx, encScheme, algorithm || Algorithms.DEFAULT, mode || AesModes.DEFAULT
+    );
+    const innerSignature = await _signer.signBytes(this.secret, message, nonce);
+    const { ciphertext } = await _cipher.encrypt(
+      toCanonical({ message, innerSignature }), receiver
+    )
+    const signature = await _signer.signBytes(
+      this.secret, toCanonical({ ciphertext, receiver }), nonce
+    )
     return { ciphertext, signature };
   }
 
@@ -248,24 +243,22 @@ class PrivateKey<P extends Point> {
       nonce?: Uint8Array,
     },
   ): Promise<Uint8Array> {
-    const { encScheme, sigScheme, algorithm, mode, nonce } = opts;
     const receiver = (await this.publicKey()).bytes;  // TODO
-    await senderPublic.verifySignature(toCanonical({ ciphertext, receiver }), signature, {
-      scheme: sigScheme,
-      algorithm,
-      nonce,
-    });
-    const plaintext = await this.decrypt(ciphertext, {
-      scheme: encScheme,
-      algorithm,
-      mode
-    });
+    const { encScheme, sigScheme, algorithm, mode, nonce } = opts;
+    const _signer = signer(this.ctx, sigScheme, algorithm || Algorithms.DEFAULT);
+    const _cipher = elgamal(
+      this.ctx, encScheme, algorithm || Algorithms.DEFAULT, mode || AesModes.DEFAULT
+    );
+    const outerVerified = await _signer.verifyBytes(
+      senderPublic.bytes, toCanonical({ ciphertext, receiver }), signature, nonce
+    );
+    if (!outerVerified) throw new Error(ErrorMessages.INVALID_SIGNATURE); // TODO: Handle
+    const plaintext = await _cipher.decrypt(ciphertext, this.secret);     // TODO: Handle
     const { message, innerSignature } = fromCanonical(plaintext);
-    await senderPublic.verifySignature(message, innerSignature, {
-      scheme: sigScheme,
-      algorithm,
-      nonce,
-    });
+    const innerVerified = await _signer.verifyBytes(
+      senderPublic.bytes, message, innerSignature, nonce
+    );
+    if (!innerVerified) throw new Error(ErrorMessages.INVALID_SIGNATURE); // TODO: Handle
     return message;
   }
 }
