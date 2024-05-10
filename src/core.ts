@@ -8,7 +8,6 @@ import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
 import { ElgamalSchemes, AesModes, Algorithms } from './enums';
 import { ElgamalScheme, AesMode, Algorithm } from './types';
-import { randomPolynomial } from './lagrange';
 
 import elgamal from './elgamal';
 const shamir = require('./shamir');

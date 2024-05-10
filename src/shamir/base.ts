@@ -1,5 +1,5 @@
 import { Group, Point } from '../backend/abstract';
-import { FieldPolynomial } from '../lagrange';
+import { FieldPolynomial } from '../lagrange/utils';
 
 
 export interface BaseShare<V> {
