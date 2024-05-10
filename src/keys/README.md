@@ -199,7 +199,7 @@ const { ciphertext, signature } = await senderPrivate.signEncrypt(message, recei
 ```
 
 ```js
-const plaintext = await receiverPrivate.verifyDecrypt(ciphertext, signature, senderPublic, {
+const { plaintext } = await receiverPrivate.verifyDecrypt(ciphertext, signature, senderPublic, {
   encScheme: ElgamalSchemes.IES,
   sigScheme: SignatureSchemes.SCHNORR,
   algorithm: Algorithms.SHA256

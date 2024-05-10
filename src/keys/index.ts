@@ -22,7 +22,7 @@ import signer from '../signer';
  * 3. Dump with double quotes, no newlines and zero indentation
  * 4. Return bytes of dumped string
  */
-const toCanonical = (obj: Object): Uint8Array => Buffer.from(JSON.stringify(
+export const toCanonical = (obj: Object): Uint8Array => Buffer.from(JSON.stringify(
   obj, (key: string, value: any) => value instanceof Uint8Array ?
     Buffer.from(value).toString('base64') :
     Object.keys(value).sort().reduce(
@@ -35,7 +35,7 @@ const toCanonical = (obj: Object): Uint8Array => Buffer.from(JSON.stringify(
 )
 
 /** Recovers the original structure from its "canonical" byte representation */
-const fromCanonical = (repr: Uint8Array) => JSON.parse(
+export const fromCanonical = (repr: Uint8Array) => JSON.parse(
   Buffer.from(repr).toString(),
   (key: string, value: Object | string) =>
     typeof value === 'string' ?
@@ -242,7 +242,7 @@ class PrivateKey<P extends Point> {
       mode?: AesMode,
       nonce?: Uint8Array,
     },
-  ): Promise<Uint8Array> {
+  ): Promise<{ message: Uint8Array, innerSignature: Signature }> {
     const receiver = (await this.publicKey()).bytes;  // TODO
     const { encScheme, sigScheme, algorithm, mode, nonce } = opts;
     const _signer = signer(this.ctx, sigScheme, algorithm || Algorithms.DEFAULT);
@@ -259,7 +259,7 @@ class PrivateKey<P extends Point> {
       senderPublic.bytes, message, innerSignature, nonce
     );
     if (!innerVerified) throw new Error(ErrorMessages.INVALID_SIGNATURE); // TODO: Handle
-    return message;
+    return { message, innerSignature };
   }
 }
 
