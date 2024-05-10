@@ -2,7 +2,7 @@ import { Point, Group } from './backend/abstract';
 import { Ciphertext } from './elgamal';
 import { leInt2Buff } from './arith';
 import { NizkProof } from './nizk';
-import { SecretShare, PubShare, BaseSharing } from './base';
+import { SecretShare, PubShare, BaseSharing } from './shamir/base';
 import { ScalarShare, ShamirSharing } from './shamir';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';

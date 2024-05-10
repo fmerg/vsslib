@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { mod, modInv } from '../arith';
-import { SecretShare, PubShare, BaseSharing } from '../base';
+import { SecretShare, PubShare, BaseSharing } from './base';
 import { ErrorMessages } from '../errors';
 import { randomPolynomial } from '../lagrange';
 

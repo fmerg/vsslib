@@ -1,6 +1,6 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
-import { BaseShare } from '../../src/base';
+import { BaseShare } from '../../src/shamir/base';
 import { ErrorMessages } from '../../src/errors';
 import { shareSecret } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
