@@ -11,9 +11,10 @@ export class Hash {
     this.algorithm = algorithm;
   }
 
-  async digest(buffer: Uint8Array): Promise<Uint8Array> {
-    return new Uint8Array(_createHash(this.algorithm).update(buffer).digest());
-  }
+  digest = async (buff: Uint8Array): Promise<Uint8Array> =>
+    Uint8Array.from(
+      _createHash(this.algorithm).update(buff).digest()
+    );
 }
 
 export default function(algorithm: Algorithm): Hash {

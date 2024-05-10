@@ -1,5 +1,5 @@
-import hash from '../../src/crypto/hash';
 import { createHash } from 'node:crypto';
+import { hash } from '../../src/crypto';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 

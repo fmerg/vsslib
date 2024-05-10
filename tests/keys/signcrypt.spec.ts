@@ -3,7 +3,7 @@ import { System } from '../../src/types';
 import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
 import { toCanonical } from '../../src/keys';
-import { randomBytes } from '../../src/crypto/random';
+import { randomBytes } from '../../src/crypto';
 import { cartesian, removeItem } from '../helpers';
 import { resolveTestConfig } from '../environ';
 

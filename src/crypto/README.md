@@ -2,16 +2,25 @@
 
 ## Hash functions
 
+```js
+import { hash } from 'vsslib/crypto';
+
+const digest = await hash(Algorithms.SHA256).digest(buffer);
+```
+
 ## Hash-based Message Authentication (HMAC)
+
+```js
+import { hmac, randomBytes } from 'vsslib/crypto';
+
+const key = randomBytes(32);
+const digest = await hmac(Algorithms.SHA256, key).digest(buffer);
+```
 
 ## Symmetric (AES) encryption
 
 ```js
-import aes from 'vsslib/crypto/aes';
-```
-
-```js
-const { randomBytes } = require('vsslib/crypto/random');
+import { aes, randomBytes } from 'vsslib/crypto';
 
 const key = randomBytes(32);
 ```

@@ -1,8 +1,7 @@
 import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
 import { mod, leInt2Buff, leBuff2Int } from '../arith';
-
-import hash from '../crypto/hash';
+import { hash } from '../crypto';
 
 
 export type DlogPair<P extends Point> = {

@@ -1,6 +1,6 @@
 import { Algorithms, AesModes } from '../../src/enums';
 import { leInt2Buff } from '../../src/arith';
-import { randomBytes } from '../../src/crypto/random';
+import { randomBytes } from '../../src/crypto';
 import { initGroup } from '../../src/backend';
 import { kemElgamal } from '../../src/elgamal/ciphers';
 
