@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { FieldPolynomial, randomPolynomial } from './base';
-import { mod, modInv } from '../crypto/arith';
+import { mod, modInv } from '../arith';
 import { ErrorMessages } from '../errors';
 
 const __0n = BigInt(0);

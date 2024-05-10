@@ -1,4 +1,4 @@
-import { mod } from '../crypto/arith';
+import { mod } from '../arith';
 import { Point, Group } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
 

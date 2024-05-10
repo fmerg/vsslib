@@ -1,5 +1,5 @@
 import { Systems } from '../../src/enums';
-import { leInt2Buff } from '../../src/crypto/bitwise';
+import { leInt2Buff } from '../../src/arith';
 import { initGroup } from '../../src/backend';
 import { plainElgamal } from '../../src/elgamal/ciphers';
 

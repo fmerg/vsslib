@@ -1,5 +1,9 @@
-import { bitLen, byteLen, leBuff2Int, leInt2Buff } from '../../src/crypto/bitwise';
-
+import {
+  bitLen,
+  byteLen,
+  leBuff2Int,
+  leInt2Buff
+} from '../src/arith';
 
 describe('bits & bytes length', () => {
   it.each([

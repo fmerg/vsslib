@@ -7,8 +7,7 @@ import { Elliptic } from '../enums';
 import { System } from '../types';
 import { ErrorMessages } from '../errors';
 import { Point, Group } from './abstract';
-import { mod } from '../crypto/arith';
-import { leBuff2Int } from '../crypto/bitwise';
+import { mod, leBuff2Int } from '../arith';
 
 
 const __0n = BigInt(0);

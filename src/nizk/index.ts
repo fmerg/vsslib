@@ -1,7 +1,6 @@
 import { Algorithm } from '../types';
 import { Group, Point } from '../backend/abstract';
-import { mod } from '../crypto/arith';
-import { leInt2Buff, leBuff2Int } from '../crypto/bitwise';
+import { mod, leInt2Buff, leBuff2Int } from '../arith';
 
 import hash from '../crypto/hash';
 

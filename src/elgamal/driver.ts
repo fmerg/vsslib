@@ -1,5 +1,5 @@
 import { Point, Group } from '../backend/abstract';
-import { leInt2Buff } from '../crypto/bitwise';
+import { leInt2Buff } from '../arith';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { ElgamalSchemes } from '../enums';
 

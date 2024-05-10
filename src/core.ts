@@ -1,6 +1,6 @@
 import { Point, Group } from './backend/abstract';
 import { Ciphertext } from './elgamal';
-import { leInt2Buff } from './crypto/bitwise';
+import { leInt2Buff } from './arith';
 import { NizkProof } from './nizk';
 import { SecretShare, PubShare, BaseSharing } from './base';
 import { ScalarShare, ShamirSharing } from './shamir';

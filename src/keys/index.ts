@@ -2,7 +2,7 @@ import { Group, Point } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
 import { initGroup } from '../backend';
 import { Ciphertext } from '../elgamal';
-import { leInt2Buff } from '../crypto/bitwise';
+import { leInt2Buff } from '../arith';
 import { NizkProof } from '../nizk';
 import { Signature } from '../signer';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
