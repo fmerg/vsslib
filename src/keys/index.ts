@@ -13,6 +13,37 @@ import nizk from '../nizk';
 import signer from '../signer';
 
 
+/** Byte "canonical" representation of a nested structure with string keys and
+ * uint8 arrays as leaf values. Used in making structures of the above type
+ * amenable to cryptographic operations (e.g., signing ciphertexts). Equivalent
+ * to the following procedure:
+ * 1. Sort keys recursively
+ * 2. Encode leaf values as base64
+ * 3. Dump with double quotes, no newlines and zero indentation
+ * 4. Return bytes of dumped string
+ */
+export const toCanonical = (obj: Object): Uint8Array => Buffer.from(JSON.stringify(
+  obj, (key: string, value: any) => value instanceof Uint8Array ?
+    Buffer.from(value).toString('base64') :
+    Object.keys(value).sort().reduce(
+      (sorted: any, key: any) => {
+        sorted[key] = value[key];
+        return sorted
+      }, {}
+    )
+  )
+)
+
+/** Recovers the original structure from its "canonical" byte representation */
+export const fromCanonical = (repr: Uint8Array) => JSON.parse(
+  Buffer.from(repr).toString(),
+  (key: string, value: Object | string) =>
+    typeof value === 'string' ?
+    Uint8Array.from(Buffer.from(value, 'base64')) :
+    value
+)
+
+
 class PrivateKey<P extends Point> {
   ctx: Group<P>;
   bytes: Uint8Array;
@@ -168,6 +199,67 @@ class PrivateKey<P extends Point> {
       opts
     );
     return { decryptor, proof };
+  }
+
+  async signEncrypt<Q extends Point>(
+    message: Uint8Array,
+    receiverPublic: PublicKey<Q>,
+    opts: {
+      encScheme: ElgamalSchemes.IES | ElgamalSchemes.KEM,
+      sigScheme: SignatureScheme,
+      algorithm?: Algorithm,
+      mode?: AesMode,
+      nonce?: Uint8Array,
+    },
+  ): Promise<{
+    ciphertext: Ciphertext,
+    signature: Signature,
+  }> {
+    const receiver = receiverPublic.bytes;
+    const { encScheme, sigScheme, algorithm, mode, nonce } = opts;
+    const _signer = signer(this.ctx, sigScheme, algorithm || Algorithms.DEFAULT);
+    const _cipher = elgamal(
+      this.ctx, encScheme, algorithm || Algorithms.DEFAULT, mode || AesModes.DEFAULT
+    );
+    const innerSignature = await _signer.signBytes(this.secret, message, nonce);
+    const { ciphertext } = await _cipher.encrypt(
+      toCanonical({ message, innerSignature }), receiver
+    )
+    const signature = await _signer.signBytes(
+      this.secret, toCanonical({ ciphertext, receiver }), nonce
+    )
+    return { ciphertext, signature };
+  }
+
+  async verifyDecrypt<Q extends Point>(
+    ciphertext: Ciphertext,
+    signature: Signature,
+    senderPublic: PublicKey<Q>,
+    opts: {
+      encScheme: ElgamalSchemes.IES | ElgamalSchemes.KEM,
+      sigScheme: SignatureScheme,
+      algorithm?: Algorithm,
+      mode?: AesMode,
+      nonce?: Uint8Array,
+    },
+  ): Promise<{ message: Uint8Array, innerSignature: Signature }> {
+    const receiver = (await this.publicKey()).bytes;  // TODO
+    const { encScheme, sigScheme, algorithm, mode, nonce } = opts;
+    const _signer = signer(this.ctx, sigScheme, algorithm || Algorithms.DEFAULT);
+    const _cipher = elgamal(
+      this.ctx, encScheme, algorithm || Algorithms.DEFAULT, mode || AesModes.DEFAULT
+    );
+    const outerVerified = await _signer.verifyBytes(
+      senderPublic.bytes, toCanonical({ ciphertext, receiver }), signature, nonce
+    );
+    if (!outerVerified) throw new Error(ErrorMessages.INVALID_SIGNATURE); // TODO: Handle
+    const plaintext = await _cipher.decrypt(ciphertext, this.secret);     // TODO: Handle
+    const { message, innerSignature } = fromCanonical(plaintext);
+    const innerVerified = await _signer.verifyBytes(
+      senderPublic.bytes, message, innerSignature, nonce
+    );
+    if (!innerVerified) throw new Error(ErrorMessages.INVALID_SIGNATURE); // TODO: Handle
+    return { message, innerSignature };
   }
 }
 

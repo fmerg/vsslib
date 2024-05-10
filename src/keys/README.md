@@ -1,12 +1,14 @@
 # `vsslib.key`
 
-## Generalities
+## Basic opreations
 
 ### Key generation
 
 ```js
 import { generateKey } from 'vsslib';
+```
 
+```js
 const { privateKey, publicKey, ctx } = await generateKey('ed25519');
 ```
 
@@ -14,7 +16,13 @@ const { privateKey, publicKey, ctx } = await generateKey('ed25519');
 const publicKey = await privateKey.publicKey();
 ```
 
-## Verifiable identity (Schnorr Identification)
+### Diffie-Hellman handshake
+
+```js
+const secret = await alicePrivateKey.diffieHellman(bobPublicKey);
+```
+
+### Schnorr identification
 
 ```js
 const proof = await privateKey.proveIdentity({
@@ -44,6 +52,7 @@ const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
 });
 ```
 
+
 #### KEM-Encryption (Key Encapsulation Mechanism)
 
 ```js
@@ -71,6 +80,17 @@ const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
 
 ### Decryption
 
+```js
+const plaintext = privateKey.decrypt(ciphertext, {
+  scheme: ...,
+  ...
+});
+```
+
+#### Decryption with decryptor
+
+#### Decryption with randomness
+
 ### Verifiable encryption
 
 ```js
@@ -85,7 +105,9 @@ await privateKey.verifyEncryption(ciphertext, proof, {
 });
 ```
 
-### Verifiable decryptors
+### Decryptors
+
+#### Verification
 
 ```js
 const proof = await privateKey.proveDecryptor(ciphertext, decryptor, {
@@ -99,7 +121,7 @@ await publicKey.verifyDecryptor(ciphertext, decryptor, proof, {
 });
 ```
 
-#### Standalone decryptor generation
+#### Generation
 
 ```js
 const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, {
@@ -117,7 +139,9 @@ await publicKey.verifyDecryptor(ciphertext, decryptor, proof, {
 
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
+```
 
+```js
 const signature = await privateKey.sign(message, {
   scheme: SignatureSchemes.SCHNORR,
   algorithm: Algorithms.SHA256,
@@ -129,4 +153,36 @@ await publicKey.verifySignature(message, signature, {
   scheme: SignatureSchemes.SCHNORR,
   algorithm: Algorithms.SHA256,
 });
+```
+
+## Signcryption
+
+```js
+const { privateKey: senderPrivate, publicKey: senderPublic } = await generateKey('ed25519');
+```
+
+```js
+const { privateKey: receiverPrivate, publicKey: receiverPublic } = await generateKey('ed25519');
+```
+
+```js
+const message = Uint8Array.from(Buffer.from('destroy earth'));
+```
+
+```js
+const { ciphertext, signature } = await senderPrivate.signEncrypt(
+  message, receiverPublic, {
+    encScheme: ElgamalSchemes.IES,
+    sigScheme: SignatureSchemes.SCHNORR,
+  }
+);
+```
+
+```js
+const { plaintext } = await receiverPrivate.verifyDecrypt(
+  ciphertext, signature, senderPublic, {
+    encScheme: ElgamalSchemes.IES,
+    sigScheme: SignatureSchemes.SCHNORR,
+  }
+);
 ```

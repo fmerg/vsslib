@@ -24,6 +24,8 @@
     "test-keys-kem:reload": "jest tests/keys/encryption.kem --watch --maxWorkers=1 --verbose",
     "test-keys-plain:reload": "jest tests/keys/encryption.plain --watch --maxWorkers=1 --verbose",
     "test-keys-signature:reload": "jest tests/keys/signature --watch --maxWorkers=1 --verbose",
+    "test-signcrypt": "jest tests/keys/signcrypt --maxWorkers=1 --verbose",
+    "test-signcrypt:reload": "jest tests/keys/signcrypt --watch --maxWorkers=1 --verbose",
     "test-elgamal": "jest tests/elgamal --maxWorkers=1 --verbose",
     "test-elgamal:reload": "jest tests/elgamal --watch --maxWorkers=1 --verbose",
     "test-ies": "jest tests/elgamal/ies --maxWorkers=1 --verbose",
