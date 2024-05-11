@@ -12,8 +12,8 @@ const { systems, algorithms } = resolveTestConfig();
 describe('Identity proof - success without nonce', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const proof = await privateKey.proveIdentity({ algorithm });
-    const verified = await publicKey.verifyIdentity(proof, { algorithm });
+    const proof = await privateKey.proveSecret({ algorithm });
+    const verified = await publicKey.verifySecret(proof, { algorithm });
     expect(verified).toBe(true);
   });
 });
@@ -23,8 +23,8 @@ describe('Identity proof - success with nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const nonce = await ctx.randomBytes();
-    const proof = await privateKey.proveIdentity({ nonce });
-    const verified = await publicKey.verifyIdentity(proof, { nonce });
+    const proof = await privateKey.proveSecret({ nonce });
+    const verified = await publicKey.verifySecret(proof, { nonce });
     expect(verified).toBe(true);
   });
 });
@@ -33,9 +33,9 @@ describe('Identity proof - success with nonce', () => {
 describe('Identity proof - failure if forged proof', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const proof = await privateKey.proveIdentity();
+    const proof = await privateKey.proveSecret();
     proof.commitment[0] = (await ctx.randomPoint()).toBytes();
-    await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
+    await expect(publicKey.verifySecret(proof)).rejects.toThrow(
       ErrorMessages.INVALID_SECRET
     );
   });
@@ -45,9 +45,9 @@ describe('Identity proof - failure if forged proof', () => {
 describe('Identity proof - failure if wrong algorithm', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const proof = await privateKey.proveIdentity({ algorithm });
+    const proof = await privateKey.proveSecret({ algorithm });
     await expect(
-      publicKey.verifyIdentity(proof, {
+      publicKey.verifySecret(proof, {
         algorithm: algorithm == Algorithms.SHA256 ?
           Algorithms.SHA512 :
           Algorithms.SHA256
@@ -63,8 +63,8 @@ describe('Identity proof - failure if missing nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const nonce = await ctx.randomBytes();
-    const proof = await privateKey.proveIdentity({ nonce });
-    await expect(publicKey.verifyIdentity(proof)).rejects.toThrow(
+    const proof = await privateKey.proveSecret({ nonce });
+    await expect(publicKey.verifySecret(proof)).rejects.toThrow(
       ErrorMessages.INVALID_SECRET
     );
   });
@@ -75,9 +75,9 @@ describe('Identity proof - failure if forged nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const nonce = await ctx.randomBytes();
-    const proof = await privateKey.proveIdentity({ nonce });
+    const proof = await privateKey.proveSecret({ nonce });
     await expect(
-      publicKey.verifyIdentity(proof, { nonce: await ctx.randomBytes() })
+      publicKey.verifySecret(proof, { nonce: await ctx.randomBytes() })
     ).rejects.toThrow(
       ErrorMessages.INVALID_SECRET
     );

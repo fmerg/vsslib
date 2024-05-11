@@ -2,7 +2,7 @@ import { Algorithms, ElgamalSchemes, SignatureSchemes } from '../../src/enums';
 import { System } from '../../src/types';
 import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
-import { toCanonical } from '../../src/keys';
+import { toCanonical } from '../../src/keys/utils';
 import { randomBytes } from '../../src/crypto';
 import { cartesian, removeItem } from '../helpers';
 import { resolveTestConfig } from '../environ';
