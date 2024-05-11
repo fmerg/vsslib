@@ -4,31 +4,10 @@ import { mod, leInt2Buff, leBuff2Int } from '../arith';
 import { hash } from '../crypto';
 
 
-export type DlogPair<P extends Point> = {
-  u: P,
-  v: P,
-};
-
-export type DDHTuple<P extends Point> = {
-  u: P,
-  v: P,
-  w: P,
-}
-
-export type GenericLinear<P extends Point> = {
-  us: P[][],
-  vs: P[],
-}
-
-export type NizkProof = {
-  commitment: Uint8Array[],
-  response: Uint8Array[],
-}
-
-type InnerProof<P extends Point> = {
-  commitment: P[],
-  response: bigint[],
-}
+export type DlogPair<P extends Point> = { u: P, v: P };
+export type DDHTuple<P extends Point> = { u: P, v: P, w: P };
+export type GenericLinear<P extends Point> = { us: P[][], vs: P[] };
+export type NizkProof = { commitment: Uint8Array[], response: Uint8Array[] };
 
 
 export class NizkProtocol<P extends Point>{
@@ -44,7 +23,10 @@ export class NizkProtocol<P extends Point>{
     Array.from({ length: n }, (_, i) => pt)
   )
 
-  toInner = async (proof: NizkProof): Promise<InnerProof<P>> => {
+  toInner = async (proof: NizkProof): Promise<{
+    commitment: P[],
+    response: bigint[]
+  }> => {
     const { unpack, validatePoint, leBuff2Scalar } = this.ctx;
     const { commitment: commitmentBuffers, response: responseBuffers } = proof;
     const m = commitmentBuffers.length;
@@ -62,7 +44,9 @@ export class NizkProtocol<P extends Point>{
     return { commitment, response };
   }
 
-  toOuter = async (proof: InnerProof<P>): Promise<NizkProof> => {
+  toOuter = async (proof: { commitment: P[], response: bigint[] }): Promise<
+    NizkProof
+  > => {
     const { commitment, response } = proof;
     return {
       commitment: commitment.map(c => c.toBytes()),
