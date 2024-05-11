@@ -7,15 +7,7 @@ import { BaseSigner } from './base';
 import nizk from '../nizk';
 
 
-export class SchnorrSignature {
-  c: Uint8Array;
-  r: Uint8Array;
-
-  constructor(c: Uint8Array, r: Uint8Array) {
-    this.c = c;
-    this.r = r;
-  }
-}
+export type SchnorrSignature = { c: Uint8Array, r: Uint8Array };
 
 export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignature> {
   constructor(ctx: Group<P>, algorithm: Algorithm) {
