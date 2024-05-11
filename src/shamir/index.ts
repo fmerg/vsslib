@@ -124,22 +124,6 @@ export class ShamirSharing<P extends Point> extends BaseSharing<
 };
 
 
-export function validateThresholdParams<P extends Point>(
-  ctx: Group<P>,
-  nrShares: number,
-  predefined: [bigint, bigint][],
-  threshold: number
-) {
-  if (nrShares < 1) throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
-  if (threshold < 1) throw new Error(ErrorMessages.THRESHOLD_BELOW_ONE);
-  if (threshold > nrShares) throw new Error(ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES);
-  if (!(nrShares < ctx.order)) throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
-  if (!(predefined.length < threshold)) throw new Error(
-    ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD
-  );
-}
-
-
 export async function shareSecret<P extends Point>(
   ctx: Group<P>,
   nrShares: number,
@@ -148,7 +132,13 @@ export async function shareSecret<P extends Point>(
   predefined?: [bigint, bigint][]
 ): Promise<ShamirSharing<P>> {
   predefined = predefined || [];
-  validateThresholdParams(ctx, nrShares, predefined, threshold);
+  if (nrShares < 1) throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
+  if (threshold < 1) throw new Error(ErrorMessages.THRESHOLD_BELOW_ONE);
+  if (threshold > nrShares) throw new Error(ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES);
+  if (!(nrShares < ctx.order)) throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
+  if (!(predefined.length < threshold)) throw new Error(
+    ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD
+  );
   const xyPoints = new Array(threshold);
   xyPoints[0] = [__0n, secret];
   let index = 1;
