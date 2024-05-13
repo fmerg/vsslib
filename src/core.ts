@@ -32,8 +32,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Secr
     const commitments = new Array(outerCommitment.length);
     const ctx = this.ctx;
     for (const [i, cBytes] of outerCommitment.entries()) {
-      const cPoint = ctx.unpack(cBytes);
-      await ctx.validatePoint(cPoint);
+      const cPoint = await ctx.unpackValid(cBytes);
       commitments[i] = cPoint
     }
     const binding = outerBinding ? ctx.leBuff2Scalar(outerBinding) :
@@ -51,8 +50,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Secr
   verifyPedersen = async (
     binding: Uint8Array, commitments: Uint8Array[], publicBytes: Uint8Array
   ): Promise<boolean> => {
-    const pub = this.ctx.unpack(publicBytes);
-    await this.ctx.validatePoint(pub);
+    const pub = await this.ctx.unpackValid(publicBytes);
     const { commitments: innerCommitments, binding: innerBinding} = await this.toInner({
       commitments,
       binding,
@@ -161,8 +159,7 @@ export class KeySharing<P extends Point> extends BaseSharing<
     commitments: Uint8Array[],
     bindings: Uint8Array[],
   }> => {
-    const pub = this.ctx.unpack(publicBytes)
-    await this.ctx.validatePoint(pub);
+    const pub = await this.ctx.unpackValid(publicBytes)
     const { commitments, bindings } = await this._sharing.provePedersen(pub);
     return {
       commitments: commitments.map(c => c.toBytes()),
@@ -271,13 +268,13 @@ export async function reconstructDecryptor<P extends Point>(
   if (threshold && shares.length < threshold) throw new Error(
     ErrorMessages.INSUFFICIENT_NR_SHARES
   );
-  const { order, neutral, operate, combine, unpack } = ctx;
+  const { order, neutral, operate, combine, unpackValid } = ctx;
   const qualifiedIndexes = shares.map(share => share.index);
   let acc = neutral;
   for (const share of shares) {
     const { value, index } = share;
     const lambda = shamir.computeLambda(ctx, index, qualifiedIndexes);
-    const curr = await operate(lambda, unpack(value));
+    const curr = await operate(lambda, await unpackValid(value));
     acc = await combine(acc, curr);
   }
   return acc.toBytes();

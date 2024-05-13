@@ -26,7 +26,7 @@ describe('plain encryption - invalid point encoding', () => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = new Uint8Array([0, 1, 666, 999]);
     expect(publicKey.encrypt(message, { scheme: ElgamalSchemes.PLAIN })).rejects.toThrow(
-      'Invalid point encoding'
+      'bad encoding:'
     );
   });
 });

@@ -27,14 +27,12 @@ export class NizkProtocol<P extends Point>{
     commitment: P[],
     response: bigint[]
   }> => {
-    const { unpack, validatePoint, leBuff2Scalar } = this.ctx;
+    const { unpackValid, leBuff2Scalar } = this.ctx;
     const { commitment: commitmentBuffers, response: responseBuffers } = proof;
     const m = commitmentBuffers.length;
     const commitment = new Array(m);
     for (let i = 0; i < m; i++) {
-      const c = unpack(commitmentBuffers[i]);
-      await validatePoint(c);
-      commitment[i] = c;
+      commitment[i] = await unpackValid(commitmentBuffers[i]);
     }
     const n = responseBuffers.length;
     const response = new Array(n);

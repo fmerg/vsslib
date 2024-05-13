@@ -73,10 +73,5 @@ const pBack = ctx.unpack(pBytes);
 ```
 
 ```js
-const pHex = p.toHex();
+const pBack = ctx.unpackValid(pBytes);
 ```
-
-```js
-const pBack = ctx.unhexify(pHex);
-```
-

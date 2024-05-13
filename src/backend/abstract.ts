@@ -4,7 +4,6 @@ import { mod, leInt2Buff, leBuff2Int } from '../arith';
 export interface Point {
   equals: (other: Point) => Promise<boolean>;
   toBytes: () => Uint8Array;
-  toHex: () => string;
 }
 
 export abstract class Group<P extends Point> {
@@ -43,7 +42,7 @@ export abstract class Group<P extends Point> {
   abstract combine: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;
   abstract unpack: (bytes: Uint8Array) => P;
-  abstract unhexify: (hexnum: string) => P;
+  abstract unpackValid: (bytes: Uint8Array) => Promise<P>;
   abstract generateKeypair: (secret?: bigint) => Promise<{ secret: bigint, pub: Point }>;
 }
 

@@ -67,7 +67,9 @@ abstract class BaseCipher<P extends Point, A> {
   ): Promise<Uint8Array> {
     let plaintext;
     try {
-      plaintext = await this.decapsulate(ciphertext.alpha, this.ctx.unpack(decryptor));
+      plaintext = await this.decapsulate(
+        ciphertext.alpha, await this.ctx.unpackValid(decryptor)
+      );
     } catch (err: any) {
       throw new Error('Could not decrypt: ' + err.message);
     }
@@ -106,20 +108,14 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
     alpha: Uint8Array,
     decryptor: P
   }> => {
-    let messagePoint;
-    try {
-      messagePoint = this.ctx.unpack(message);
-    } catch (err: any) {
-      throw new Error('Invalid point encoding: ' + err.message);
-    }
+    const messageUnpacked = await this.ctx.unpackValid(message);
     const decryptor = await this.ctx.operate(randomness, pub);
-    const alpha = await this.ctx.combine(decryptor, messagePoint);
+    const alpha = await this.ctx.combine(decryptor, messageUnpacked);
     return { alpha: alpha.toBytes(), decryptor };
   }
 
   decapsulate = async (alpha: Uint8Array, decryptor: P): Promise<Uint8Array> => {
-    const alphaUnpacked = this.ctx.unpack(alpha);
-    await this.ctx.validatePoint(alphaUnpacked);
+    const alphaUnpacked = await this.ctx.unpackValid(alpha);
     const decryptorInverse = await this.ctx.invert(decryptor);
     const plaintext = await this.ctx.combine(alphaUnpacked, decryptorInverse);
     return plaintext.toBytes();

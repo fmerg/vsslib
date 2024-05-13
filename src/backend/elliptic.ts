@@ -15,7 +15,6 @@ const __0n = BigInt(0);
 
 interface NoblePoint extends ExtPointType {
   toRawBytes?: Function;
-  toHex?: Function;
 };
 
 
@@ -36,10 +35,6 @@ class EcPoint implements Point {
 
   toBytes = (): Uint8Array => {
     return this._wrapped.toRawBytes!();
-  }
-
-  toHex = (): string => {
-    return this._wrapped.toHex!();
   }
 }
 
@@ -127,11 +122,19 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   unpack = (bytes: Uint8Array): EcPoint => {
-    return new EcPoint(this._curve.ExtendedPoint.fromHex(bytes));
+    let unpacked;
+    try {
+      unpacked = new EcPoint(this._curve.ExtendedPoint.fromHex(bytes));
+    } catch (err: any) {
+      throw new Error(`bad encoding: ${err.message}`)
+    }
+    return unpacked;
   }
 
-  unhexify = (hexnum: string): EcPoint => {
-    return new EcPoint(this._curve.ExtendedPoint.fromHex(hexnum));
+  unpackValid = async (bytes: Uint8Array): Promise<EcPoint> => {
+    const unpacked = this.unpack(bytes);
+    await this.validatePoint(unpacked);
+    return unpacked;
   }
 
   generateKeypair = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {

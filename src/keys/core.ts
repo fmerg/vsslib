@@ -108,7 +108,7 @@ export class PrivateKey<P extends Point> {
     const verified = await nizk(ctx, algorithm).verifyDlog(
       {
         u: ctx.generator,
-        v: ctx.unpack(ciphertext.beta),
+        v: await ctx.unpackValid(ciphertext.beta),
       },
       proof,
       nonce,
@@ -135,9 +135,9 @@ export class PrivateKey<P extends Point> {
     return nizk(ctx, algorithm).proveDDH(
       secret,
       {
-        u: ctx.unpack(ciphertext.beta),
+        u: await ctx.unpackValid(ciphertext.beta),
         v: pub,
-        w: ctx.unpack(decryptor),
+        w: await ctx.unpackValid(decryptor),
       },
       nonce
     );
@@ -152,7 +152,7 @@ export class PrivateKey<P extends Point> {
     const { ctx, secret } = this;
     const decryptorPoint = await ctx.operate(
       secret,
-      ctx.unpack(ciphertext.beta),
+      await ctx.unpackValid(ciphertext.beta),
     );
     const decryptor = decryptorPoint.toBytes();
     const proof = await this.proveDecryptor(
@@ -237,7 +237,7 @@ export class PublicKey<P extends Point> {
     this.bytes = bytes;
   }
 
-  asPoint = (): P => this.ctx.unpack(this.bytes);
+  asPoint = async (): Promise<P> => this.ctx.unpackValid(this.bytes);
   asBytes = (): Uint8Array => this.bytes;
 
   async equals<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
@@ -258,7 +258,7 @@ export class PublicKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
-    const pub = this.asPoint();
+    const pub = await this.asPoint();
     const verified = await nizk(this.ctx, algorithm).verifyDlog(
       { u: g, v: pub }, proof, nonce
     );
@@ -322,7 +322,7 @@ export class PublicKey<P extends Point> {
       ctx.leBuff2Scalar(randomness),
       {
         u: ctx.generator,
-        v: ctx.unpack(ciphertext.beta),
+        v: await ctx.unpackValid(ciphertext.beta),
       },
       nonce
     );
@@ -338,15 +338,15 @@ export class PublicKey<P extends Point> {
       raiseOnInvalid?: boolean
     }
   ): Promise<boolean> => {
-    const { unpack } = this.ctx;
+    const { unpackValid } = this.ctx;
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
     const verified = await nizk(this.ctx, algorithm).verifyDDH(
       {
-        u: unpack(ciphertext.beta),
-        v: unpack(this.bytes),
-        w: unpack(decryptor),
+        u: await unpackValid(ciphertext.beta),
+        v: await unpackValid(this.bytes),
+        w: await unpackValid(decryptor),
       },
       proof,
       nonce

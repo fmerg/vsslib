@@ -54,8 +54,7 @@ export class SigDriver<P extends Point> {
     pubBytes: Uint8Array, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array
   ): Promise<boolean> => {
     const ctx = this.ctx;
-    const pub = ctx.unpack(pubBytes);
-    await ctx.validatePoint(pub);
+    const pub = await ctx.unpackValid(pubBytes);
     return schnorr(this.ctx, this.algorithm).verifyBytes(
       pub, message, signature, nonce
     );

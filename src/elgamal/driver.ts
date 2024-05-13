@@ -100,8 +100,7 @@ export class ElgamalDriver<P extends Point>{
     decryptor: Uint8Array,
   }> => {
     const ctx = this.ctx;
-    const pub = ctx.unpack(pubBytes);
-    await ctx.validatePoint(pub);
+    const pub = await ctx.unpackValid(pubBytes);
     const { ciphertext, randomness, decryptor } = await plainElgamal(ctx).encrypt(
       message, pub
     );
@@ -151,8 +150,7 @@ export class ElgamalDriver<P extends Point>{
     decryptor: Uint8Array,
   }> => {
     const { ctx, mode } = this;
-    const pub = ctx.unpack(pubBytes);
-    await ctx.validatePoint(pub);
+    const pub = await ctx.unpackValid(pubBytes);
     const { ciphertext, randomness, decryptor } = await kemElgamal(ctx, mode).encrypt(
       message, pub
     );
@@ -202,8 +200,7 @@ export class ElgamalDriver<P extends Point>{
     decryptor: Uint8Array,
   }> => {
     const { ctx, mode, algorithm } = this;
-    const pub = ctx.unpack(pubBytes);
-    await ctx.validatePoint(pub);
+    const pub = await ctx.unpackValid(pubBytes);
     const { ciphertext, randomness, decryptor } = await iesElgamal(ctx, mode, algorithm).encrypt(
       message, pub
     );

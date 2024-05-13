@@ -36,7 +36,6 @@ export class ScalarShare<P extends Point> implements SecretShare<
   }
 
   verifyPedersen = async (binding: bigint, commitments: P[], pub: P): Promise<boolean> => {
-    await this.ctx.validatePoint(pub);
     const h = pub;
     const { value: secret, index } = this;
     const { order, generator: g, neutral, operate, combine } = this.ctx;
@@ -100,7 +99,6 @@ export class ShamirSharing<P extends Point> extends BaseSharing<
     commitments: P[],
     bindings: bigint[],
   }> => {
-    await this.ctx.validatePoint(pub);
     const h = pub;
     const { generator: g, combine, operate } = this.ctx;
     const { coeffs, degree } = this.polynomial;

@@ -195,23 +195,17 @@ describe('scalar operation on random point', () => {
 
 
 describe('point to bytes and back', () => {
-  it.each(systems)('over %s', async (system) => {
+  it.each(systems)('success over %s', async (system) => {
     const ctx = initGroup(system);
     const p = await ctx.randomPoint();
     const pBytes = p.toBytes();
-    const pBack = ctx.unpack(pBytes);
+    const pBack = await ctx.unpackValid(pBytes);
     expect(await pBack.equals(p)).toBe(true);
   })
-});
-
-
-describe('point to hex and back', () => {
-  it.each(systems)('over %s', async (system) => {
+  it.each(systems)('failure over %s', async (system) => {
     const ctx = initGroup(system);
-    const p = await ctx.randomPoint();
-    const pHex = p.toHex();
-    const pBack = ctx.unhexify(pHex);
-    expect(await pBack.equals(p)).toBe(true);
+    const pBytes = Uint8Array.from(Buffer.from('foo'));
+    expect(() => ctx.unpack(pBytes)).toThrow('bad encoding:');
   })
 });
 
