@@ -65,21 +65,20 @@ export class EcGroup extends Group<EcPoint> {
     return (other instanceof EcGroup) && (this._curve == other.curve);
   }
 
-  randomBytes = async (): Promise<Uint8Array> => {
-    const { randomBytes, Fp } = this.curve.CURVE;
-    return randomBytes(Fp.BYTES);
-  }
+  randomScalarBuff = async (): Promise<Uint8Array> =>
+    this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
 
-  randomScalar = async (): Promise<bigint> => {
-    const { randomBytes, Fp } = this.curve.CURVE;
-    return mod(leBuff2Int(randomBytes(Fp.BYTES)), this.order);
-  }
+  randomScalar = async (): Promise<bigint> => mod(
+    leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+    this.order
+  );
 
-  randomPoint = async (): Promise<EcPoint> => {
-    const { randomBytes, Fp } = this.curve.CURVE;
-    const scalar = mod(leBuff2Int(randomBytes(Fp.BYTES)), this.order);
-    return new EcPoint(this._base.multiply(scalar));
-  }
+  randomPoint = async (): Promise<EcPoint> => new EcPoint(
+    this._base.multiply(mod(
+      leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+      this.order
+    ))
+  );
 
   validateScalar = async (scalar: bigint, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
@@ -130,7 +129,7 @@ export class EcGroup extends Group<EcPoint> {
     return unpacked;
   }
 
-  generateKeypair = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {
+  generateSecret = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {
     const { randomScalar, operate, generator } = this;
     secret = secret || await randomScalar();
     const pub = await operate(secret, generator);

@@ -3,6 +3,7 @@ import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { ErrorMessages } from '../../src/errors';
+import { randomBytes } from '../../src/crypto';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
@@ -22,7 +23,7 @@ describe('Identity proof - success without nonce', () => {
 describe('Identity proof - success with nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomBytes(16);
     const proof = await privateKey.proveSecret({ nonce });
     const verified = await publicKey.verifySecret(proof, { nonce });
     expect(verified).toBe(true);
@@ -62,7 +63,7 @@ describe('Identity proof - failure if wrong algorithm', () => {
 describe('Identity proof - failure if missing nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomBytes(16);
     const proof = await privateKey.proveSecret({ nonce });
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
       ErrorMessages.INVALID_SECRET
@@ -74,10 +75,10 @@ describe('Identity proof - failure if missing nonce', () => {
 describe('Identity proof - failure if forged nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomBytes(16);
     const proof = await privateKey.proveSecret({ nonce });
     await expect(
-      publicKey.verifySecret(proof, { nonce: await ctx.randomBytes() })
+      publicKey.verifySecret(proof, { nonce: await randomBytes(16) })
     ).rejects.toThrow(
       ErrorMessages.INVALID_SECRET
     );

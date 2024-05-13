@@ -16,7 +16,7 @@ describe('Decryption - success', () => {
     system, mode, algorithm,
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, pub } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await iesElgamal(ctx, mode, algorithm).encrypt(message, pub);
     const plaintext = await iesElgamal(ctx, mode, algorithm).decrypt(ciphertext, secret);
@@ -30,7 +30,7 @@ describe('Decryption - failure if forged secret', () => {
     system, mode, algorithm,
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, pub } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await iesElgamal(ctx, mode, algorithm).encrypt(message, pub);
     const forgedSecret = await ctx.randomScalar();
@@ -46,7 +46,7 @@ describe('Decryption - failure if forged iv', () => {
     system, mode, algorithm
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, pub } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await iesElgamal(ctx, mode, algorithm).encrypt(message, pub);
     ciphertext.alpha.iv = await randomBytes(mode == AesModes.AES_256_GCM ? 12 : 16);
@@ -65,7 +65,7 @@ describe('Decryption - failure if forged iv', () => {
 describe('Decryption with decryptor - failure if forged decryptor', () => {
   it.each(cartesian([systems, aesModes]))('over %s/%s', async (system, mode) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, pub } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await iesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, pub
@@ -83,7 +83,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
 describe('Decryption with randomness - success', () => {
   it.each(cartesian([systems, aesModes]))('over %s/%s', async (system, mode) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, pub } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await iesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, pub
@@ -99,7 +99,7 @@ describe('Decryption with randomness - success', () => {
 describe('Decryption with decryptor - failure if forged randomness', () => {
   it.each(cartesian([systems, aesModes]))('over %s/%s', async (system, mode) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, pub } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await iesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, pub

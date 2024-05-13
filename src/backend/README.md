@@ -32,14 +32,14 @@ await ctx.validateScalar(s);
 ```
 
 ```js
-const b = await ctx.randomBytes();
+const b = await ctx.randomScalarBuff();
 ```
 
 
-### Keypair generation
+### Secret generation
 
 ```js
-const { secret, pub } = await ctx.generateKeypair();
+const { secret, pub } = await ctx.generateSecret();
 ```
 
 

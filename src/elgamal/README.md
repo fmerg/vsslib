@@ -13,7 +13,7 @@ const ctx = initGroup('ed25519');
 ```
 
 ```js
-const { secret, pub } = await ctx.generateKeypair();
+const { secret, pub } = await ctx.generateSecret();
 
 const pubBytes = pub.toBytes();
 ```

@@ -4,7 +4,7 @@ import { PrivateKey, PublicKey } from './core'
 
 const generateKey = async (system: System) => {
   const ctx = initGroup(system);
-  const secretBytes = await ctx.randomBytes();
+  const secretBytes = await ctx.randomScalarBuff();
   const privateKey = new PrivateKey(ctx, secretBytes);
   const publicKey = await privateKey.getPublicKey();
   return { privateKey, publicKey, ctx };
