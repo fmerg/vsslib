@@ -1,5 +1,5 @@
 import { System } from '../types';
-import { mod, leInt2Buff, leBuff2Int } from '../arith';
+import { mod, leBuff2Int } from '../arith';
 
 export interface Point {
   equals: (other: Point) => Promise<boolean>;
@@ -12,9 +12,6 @@ export abstract class Group<P extends Point> {
   order: bigint;
   generator: P;
   neutral: P;
-  modBytes: Uint8Array;
-  ordBytes: Uint8Array;
-  genBytes: Uint8Array;
 
   constructor(system: System, modulus: bigint, order: bigint, generator: P, neutral: P) {
     this.system = system;
@@ -22,9 +19,6 @@ export abstract class Group<P extends Point> {
     this.order = order;
     this.generator = generator;;
     this.neutral = neutral;
-    this.modBytes = leInt2Buff(modulus);
-    this.ordBytes = leInt2Buff(order);
-    this.genBytes = generator.toBytes();
   }
 
   leBuff2Scalar = (bytes: Uint8Array): bigint => mod(leBuff2Int(bytes), this.order);

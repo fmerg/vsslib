@@ -55,8 +55,8 @@ export class NizkProtocol<P extends Point>{
   computeChallenge = async (points: P[], extras: Uint8Array[], nonce?: Uint8Array): Promise<
     bigint
   > => {
-    const { modBytes, ordBytes, genBytes, leBuff2Scalar } = this.ctx;
-    const configBuff = [...modBytes, ...ordBytes, ...genBytes];
+    const { modulus, order, generator: g } = this.ctx;
+    const configBuff = [...leInt2Buff(modulus), ...leInt2Buff(order), ...g.toBytes()];
     const pointsBuff = points.reduce(
       (acc: number[], p: P) => [...acc, ...p.toBytes()], []
     );
@@ -64,10 +64,12 @@ export class NizkProtocol<P extends Point>{
       (acc: number[], b: Uint8Array) => [...acc, ...b], []
     );
     nonce = nonce || Uint8Array.from([]);
-    const digest = await hash(this.algorithm).digest(Uint8Array.from([
-      ...configBuff, ...pointsBuff, ...extrasBuff, ...nonce
-    ]));
-    return leBuff2Scalar(digest);
+    const digest = await hash(this.algorithm).digest(
+      Uint8Array.from([
+        ...configBuff, ...pointsBuff, ...extrasBuff, ...nonce
+      ])
+    );
+    return this.ctx.leBuff2Scalar(digest);
   }
 
    _proveLinear = async (
