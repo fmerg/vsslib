@@ -34,24 +34,24 @@ export class PrivateKey<P extends Point> {
   }
 
   getPublicKey = async (): Promise<PublicKey<P>> => {
-    const { operate, generator: g } = this.ctx;
-    const pubPoint = await operate(this.secret, g);
+    const { exp, generator: g } = this.ctx;
+    const pubPoint = await exp(this.secret, g);
     return new PublicKey(this.ctx, pubPoint.toBytes());
   }
 
   getPublicBytes = async (): Promise<Uint8Array> => {
-    const { operate, generator } = this.ctx;
-    return (await operate(this.secret, generator)).toBytes();
+    const { exp, generator } = this.ctx;
+    return (await exp(this.secret, generator)).toBytes();
   }
 
   proveSecret = async (opts?: { nonce?: Uint8Array, algorithm?: Algorithm }): Promise<
     NizkProof
   > => {
-    const { operate, generator: g } = this.ctx
+    const { exp, generator: g } = this.ctx
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
-    const pub = await this.ctx.operate(this.secret, g);
+    const pub = await this.ctx.exp(this.secret, g);
     return nizk(this.ctx, algorithm).proveDlog(
       this.secret,
       {
@@ -128,7 +128,7 @@ export class PrivateKey<P extends Point> {
     }
   ): Promise<NizkProof> => {
     const { ctx, secret } = this;
-    const pub = await ctx.operate(secret, ctx.generator);
+    const pub = await ctx.exp(secret, ctx.generator);
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
       Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
@@ -150,7 +150,7 @@ export class PrivateKey<P extends Point> {
     proof: NizkProof
   }> => {
     const { ctx, secret } = this;
-    const decryptorPoint = await ctx.operate(
+    const decryptorPoint = await ctx.exp(
       secret,
       await ctx.unpackValid(ciphertext.beta),
     );

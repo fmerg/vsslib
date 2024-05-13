@@ -46,7 +46,7 @@ const { secret, pub } = await ctx.generateSecret();
 ### Group operations
 
 ```js
-const u = await ctx.combine(p, q);
+const u = await ctx.operate(p, q);
 ```
 
 ```js
@@ -54,7 +54,7 @@ const v = await ctx.invert(p);
 ```
 
 ```js
-const w = await ctx.operate(s, p);
+const w = await ctx.exp(s, p);
 ```
 
 

@@ -73,7 +73,7 @@ export class NizkProtocol<P extends Point>{
    _proveLinear = async (
     witness: bigint[], relation: GenericLinear<P>, extras: Uint8Array[], nonce?: Uint8Array
   ): Promise<NizkProof> => {
-    const { order, randomScalar, neutral, operate, combine } = this.ctx;
+    const { order, randomScalar, neutral, exp, operate } = this.ctx;
     const { us, vs } = relation;
     const m = vs.length;
     const n = witness.length;
@@ -87,9 +87,9 @@ export class NizkProtocol<P extends Point>{
         throw new Error('Incompatible lengths');
       let ci = neutral;
       for (let j = 0; j < n; j++) {
-        ci = await combine(
+        ci = await operate(
           ci,
-          await operate(rs[j], us[i][j])
+          await exp(rs[j], us[i][j])
         );
       }
       commitment[i] = ci;
@@ -113,7 +113,7 @@ export class NizkProtocol<P extends Point>{
   _verifyLinear = async (
     relation: GenericLinear<P>, proof: NizkProof, extras: Uint8Array[], nonce?: Uint8Array
   ): Promise<boolean> => {
-    const { neutral, operate, combine } = this.ctx;
+    const { neutral, exp, operate } = this.ctx;
     const { us, vs } = relation;
     const { commitment, response } = await this.toInner(proof);
     if (vs.length !== commitment.length)
@@ -131,15 +131,15 @@ export class NizkProtocol<P extends Point>{
     for (const [i, v] of vs.entries()) {
       if (us[i].length !== response.length)
         throw new Error('Incompatible lengths');
-      const rhs = await combine(
+      const rhs = await operate(
         commitment[i],
-        await operate(challenge, v)
+        await exp(challenge, v)
       );
       let lhs = neutral;
       for (const [j, s] of response.entries()) {
-        lhs = await combine(
+        lhs = await operate(
           lhs,
-          await operate(s, us[i][j])
+          await exp(s, us[i][j])
         );
       }
       flag &&= await lhs.equals(rhs);

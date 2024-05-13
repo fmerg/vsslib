@@ -64,7 +64,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Secr
 
   async publicShare(): Promise<PublicShare<P>> {
     const ctx = this.ctx;
-    const pubPoint = await ctx.operate(this.secret, ctx.generator);
+    const pubPoint = await ctx.exp(this.secret, ctx.generator);
     return new PublicShare(ctx, pubPoint.toBytes(), this.index);
   }
 
@@ -268,14 +268,14 @@ export async function reconstructDecryptor<P extends Point>(
   if (threshold && shares.length < threshold) throw new Error(
     ErrorMessages.INSUFFICIENT_NR_SHARES
   );
-  const { order, neutral, operate, combine, unpackValid } = ctx;
+  const { order, neutral, exp, operate, unpackValid } = ctx;
   const qualifiedIndexes = shares.map(share => share.index);
   let acc = neutral;
   for (const share of shares) {
     const { value, index } = share;
     const lambda = shamir.computeLambda(ctx, index, qualifiedIndexes);
-    const curr = await operate(lambda, await unpackValid(value));
-    acc = await combine(acc, curr);
+    const curr = await exp(lambda, await unpackValid(value));
+    acc = await operate(acc, curr);
   }
   return acc.toBytes();
 }

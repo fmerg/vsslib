@@ -29,10 +29,10 @@ abstract class BaseCipher<P extends Point, A> {
     decryptor: Uint8Array,
     randomness: Uint8Array,
   }> {
-    const { ctx: { generator, randomScalar, operate }, encapsulate } = this;
+    const { ctx: { generator, randomScalar, exp }, encapsulate } = this;
     const randomness = await randomScalar();
     const { alpha, decryptor } = await encapsulate(pub, randomness, message);
-    const beta = await operate(randomness, generator);
+    const beta = await exp(randomness, generator);
     return {
       ciphertext: {
         alpha,
@@ -48,7 +48,7 @@ abstract class BaseCipher<P extends Point, A> {
     const beta = this.ctx.unpack(betaBytes);
     const isBetaValid = await this.ctx.validatePoint(beta, { raiseOnInvalid: false });
     if(!isBetaValid) throw new Error('Could not decrypt: Point not in subgroup');
-    const decryptor = await this.ctx.operate(secret, beta);
+    const decryptor = await this.ctx.exp(secret, beta);
     let plaintext;
     try {
       plaintext = await this.decapsulate(alpha, decryptor);
@@ -84,7 +84,7 @@ abstract class BaseCipher<P extends Point, A> {
     pub: P,
     randomness: Uint8Array
   ): Promise<Uint8Array> {
-    const decryptor = await this.ctx.operate(this.ctx.leBuff2Scalar(randomness), pub);
+    const decryptor = await this.ctx.exp(this.ctx.leBuff2Scalar(randomness), pub);
     let plaintext;
     try {
       plaintext = await this.decapsulate(ciphertext.alpha, decryptor);
@@ -109,15 +109,15 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
     decryptor: P
   }> => {
     const messageUnpacked = await this.ctx.unpackValid(message);
-    const decryptor = await this.ctx.operate(randomness, pub);
-    const alpha = await this.ctx.combine(decryptor, messageUnpacked);
+    const decryptor = await this.ctx.exp(randomness, pub);
+    const alpha = await this.ctx.operate(decryptor, messageUnpacked);
     return { alpha: alpha.toBytes(), decryptor };
   }
 
   decapsulate = async (alpha: Uint8Array, decryptor: P): Promise<Uint8Array> => {
     const alphaUnpacked = await this.ctx.unpackValid(alpha);
     const decryptorInverse = await this.ctx.invert(decryptor);
-    const plaintext = await this.ctx.combine(alphaUnpacked, decryptorInverse);
+    const plaintext = await this.ctx.operate(alphaUnpacked, decryptorInverse);
     return plaintext.toBytes();
   }
 }
@@ -143,7 +143,7 @@ export class KemCipher<P extends Point> extends BaseCipher<P, KemAlpha> {
     alpha: KemAlpha,
     decryptor: P
   }> => {
-    const decryptor = await this.ctx.operate(randomness, pub);
+    const decryptor = await this.ctx.exp(randomness, pub);
     const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
     const { ciphered, iv, tag } = aes(this.mode).encrypt(key, message);
     return { alpha: { ciphered, iv, tag }, decryptor };
@@ -180,8 +180,8 @@ export class IesCipher<P extends Point> extends BaseCipher<P, IesAlpha> {
     alpha: IesAlpha,
     decryptor: P
   }> => {
-    const { ctx: { generator, randomScalar, operate } } = this;
-    const decryptor = await operate(randomness, pub);
+    const { ctx: { generator, randomScalar, exp } } = this;
+    const decryptor = await exp(randomness, pub);
     const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
     const keyMac = key.slice(32, 64);

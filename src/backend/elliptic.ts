@@ -101,11 +101,11 @@ export class EcGroup extends Group<EcPoint> {
     return flag;
   }
 
-  operate = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {
+  exp = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {
     return new EcPoint(scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero);
   }
 
-  combine = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => {
+  operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => {
     return new EcPoint(lhs.wrapped.add(rhs.wrapped));
   }
 
@@ -130,9 +130,9 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   generateSecret = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {
-    const { randomScalar, operate, generator } = this;
+    const { randomScalar, exp, generator } = this;
     secret = secret || await randomScalar();
-    const pub = await operate(secret, generator);
+    const pub = await exp(secret, generator);
     return { secret, pub };
   }
 }

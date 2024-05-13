@@ -25,12 +25,12 @@ export class ScalarShare<P extends Point> implements SecretShare<
 
   verifyFeldmann = async (commitments: P[]): Promise<boolean> => {
     const { value: secret, index } = this;
-    const { order, generator, neutral, operate, combine } = this.ctx;
-    const lhs = await operate(secret, generator);
+    const { order, generator, neutral, exp, operate } = this.ctx;
+    const lhs = await exp(secret, generator);
     let rhs = neutral;
     for (const [j, c] of commitments.entries()) {
-      const curr = await operate(mod(BigInt(index ** j), order), c);
-      rhs = await combine(rhs, curr);
+      const curr = await exp(mod(BigInt(index ** j), order), c);
+      rhs = await operate(rhs, curr);
     }
     return lhs.equals(rhs);
   }
@@ -38,14 +38,14 @@ export class ScalarShare<P extends Point> implements SecretShare<
   verifyPedersen = async (binding: bigint, commitments: P[], pub: P): Promise<boolean> => {
     const h = pub;
     const { value: secret, index } = this;
-    const { order, generator: g, neutral, operate, combine } = this.ctx;
-    const lhs = await combine(
-      await operate(secret, g),
-      await operate(binding, h)
+    const { order, generator: g, neutral, exp, operate } = this.ctx;
+    const lhs = await operate(
+      await exp(secret, g),
+      await exp(binding, h)
     );
     let rhs = neutral;
     for (const [j, c] of commitments.entries()) {
-      rhs = await combine(rhs, await operate(BigInt(index ** j), c));
+      rhs = await operate(rhs, await exp(BigInt(index ** j), c));
     }
     return lhs.equals(rhs);
   }
@@ -77,20 +77,20 @@ export class ShamirSharing<P extends Point> extends BaseSharing<
   }
 
   getPublicShares = async (): Promise<PointShare<P>[]> => {
-    const { nrShares, polynomial: { evaluate }, ctx: { operate, generator } } = this;
+    const { nrShares, polynomial: { evaluate }, ctx: { exp, generator } } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
-      const value = await operate(evaluate(index), generator);
+      const value = await exp(evaluate(index), generator);
       shares.push({ value, index });
     }
     return shares;
   }
 
   proveFeldmann = async (): Promise<{ commitments: P[] }> => {
-    const { coeffs, degree, ctx: { operate, generator }} = this.polynomial;
+    const { coeffs, degree, ctx: { exp, generator }} = this.polynomial;
     const commitments = new Array(degree + 1);
     for (const [index, coeff] of coeffs.entries()) {
-      commitments[index] = await operate(coeff, generator);
+      commitments[index] = await exp(coeff, generator);
     }
     return { commitments };
   }
@@ -100,7 +100,7 @@ export class ShamirSharing<P extends Point> extends BaseSharing<
     bindings: bigint[],
   }> => {
     const h = pub;
-    const { generator: g, combine, operate } = this.ctx;
+    const { generator: g, operate, exp } = this.ctx;
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     const commitments = new Array(degree + 1);
@@ -108,9 +108,9 @@ export class ShamirSharing<P extends Point> extends BaseSharing<
     for (const [i, a] of coeffs.entries()) {
       const a = coeffs[i];
       const b = bindingPolynomial.coeffs[i];
-      commitments[i] = await combine(
-        await operate(a, g),
-        await operate(b, h),
+      commitments[i] = await operate(
+        await exp(a, g),
+        await exp(b, h),
       );
       bindings[i] = await bindingPolynomial.evaluate(i);
     }
@@ -190,12 +190,12 @@ export async function reconstructPublic<P extends Point>(
   ctx: Group<P>,
   qualifiedShares: PointShare<P>[]
 ): Promise<P> {
-  const { order, combine, neutral, operate } = ctx;
+  const { order, operate, neutral, exp } = ctx;
   const indexes = qualifiedShares.map(share => share.index);
   let acc = neutral;
   for (const { index, value } of qualifiedShares) {
     const lambda = computeLambda(ctx, index, indexes);
-    acc = await combine(acc, await operate(lambda, value));
+    acc = await operate(acc, await exp(lambda, value));
   }
   return acc;
 }

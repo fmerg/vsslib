@@ -17,8 +17,8 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
   signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<
     SchnorrSignature
   > => {
-    const { generator: g, operate } = this.ctx;
-    const pub = await operate(secret, g);
+    const { generator: g, exp } = this.ctx;
+    const pub = await exp(secret, g);
     const { commitment, response } = await nizk(this.ctx, this.algorithm).proveLinear(
       [secret],
       {
