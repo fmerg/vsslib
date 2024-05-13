@@ -25,6 +25,8 @@ class EcPoint implements Point {
     this._wrapped = wrapped;
   }
 
+  toBytes = (): Uint8Array => this._wrapped.toRawBytes!();
+
   public get wrapped(): NoblePoint {
     return this._wrapped;
   }
@@ -33,9 +35,6 @@ class EcPoint implements Point {
     return (other instanceof EcPoint) && (this._wrapped.equals(other.wrapped));
   }
 
-  toBytes = (): Uint8Array => {
-    return this._wrapped.toRawBytes!();
-  }
 }
 
 
@@ -101,17 +100,17 @@ export class EcGroup extends Group<EcPoint> {
     return flag;
   }
 
-  exp = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {
-    return new EcPoint(scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero);
-  }
+  exp = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => new EcPoint(
+    scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero
+  );
 
-  operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => {
-    return new EcPoint(lhs.wrapped.add(rhs.wrapped));
-  }
+  operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => new EcPoint(
+    lhs.wrapped.add(rhs.wrapped)
+  );
 
-  invert = async (point: EcPoint): Promise<EcPoint> => {
-    return new EcPoint(point.wrapped.negate());
-  }
+  invert = async (point: EcPoint): Promise<EcPoint> => new EcPoint(
+    point.wrapped.negate()
+  );
 
   unpack = (bytes: Uint8Array): EcPoint => {
     let unpacked;
@@ -130,9 +129,8 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   generateSecret = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {
-    const { randomScalar, exp, generator } = this;
-    secret = secret || await randomScalar();
-    const pub = await exp(secret, generator);
+    secret = secret || await this.randomScalar();
+    const pub = await this.exp(secret, this.generator);
     return { secret, pub };
   }
 }

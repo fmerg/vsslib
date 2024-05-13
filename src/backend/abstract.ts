@@ -2,8 +2,8 @@ import { System } from '../types';
 import { mod, leBuff2Int } from '../arith';
 
 export interface Point {
-  equals: (other: Point) => Promise<boolean>;
   toBytes: () => Uint8Array;
+  equals: (other: Point) => Promise<boolean>;
 }
 
 export abstract class Group<P extends Point> {
