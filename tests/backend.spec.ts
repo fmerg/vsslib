@@ -224,20 +224,6 @@ describe('scalar validation', () => {
 });
 
 
-describe('bytes validation', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const b = await ctx.randomBytes();
-    const isValid = await ctx.validateBytes(b);
-    expect(isValid).toBe(true);
-    const c = Uint8Array.from([...b, 0]);
-    await expect(ctx.validateBytes(c)).rejects.toThrow(
-      ErrorMessages.INVALID_BYTELENGTH
-    );
-  })
-});
-
-
 describe('Keypair generation - no given secret', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);

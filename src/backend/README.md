@@ -35,10 +35,6 @@ await ctx.validateScalar(s);
 const b = await ctx.randomBytes();
 ```
 
-```js
-await ctx.validateBytes(b);
-```
-
 
 ### Keypair generation
 

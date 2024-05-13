@@ -81,13 +81,6 @@ export class EcGroup extends Group<EcPoint> {
     return new EcPoint(this._base.multiply(scalar));
   }
 
-  validateBytes = async (bytes: Uint8Array, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
-    const flag = bytes.length <= this.curve.CURVE.Fp.BYTES;
-    if (!flag && (opts ? opts.raiseOnInvalid : true))
-      throw new Error(ErrorMessages.INVALID_BYTELENGTH);
-    return flag;
-  }
-
   validateScalar = async (scalar: bigint, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
     if (!flag && (opts ? opts.raiseOnInvalid : true))

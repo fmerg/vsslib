@@ -27,15 +27,12 @@ export abstract class Group<P extends Point> {
     this.genBytes = generator.toBytes();
   }
 
-  leBuff2Scalar = (bytes: Uint8Array): bigint => {
-    return mod(leBuff2Int(bytes), this.order);
-  }
+  leBuff2Scalar = (bytes: Uint8Array): bigint => mod(leBuff2Int(bytes), this.order);
 
   abstract equals<Q extends Point>(other: Group<Q>): Promise<boolean>;
   abstract randomBytes: () => Promise<Uint8Array>;
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
-  abstract validateBytes: (bytes: Uint8Array, opts?: { raiseOnInvalid: boolean }) => Promise<boolean>;
   abstract validateScalar: (scalar: bigint, opts?: { raiseOnInvalid: boolean }) => Promise<boolean>;
   abstract validatePoint: (point: P, opts?: { raiseOnInvalid: boolean }) => Promise<boolean>;
   abstract operate: (scalar: bigint, point: P) => Promise<P>;

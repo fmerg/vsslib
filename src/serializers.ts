@@ -62,7 +62,6 @@ export const deserializePrivateShare = async (
 ): Promise<PrivateShare<Point>> => {
   const ctx = initGroup(data.system);
   const bytes = Uint8Array.from(Buffer.from(data.value, data.encoding));
-  await ctx.validateBytes(bytes);
   return new PrivateShare(ctx, ctx.leBuff2Scalar(bytes), data.index);
 }
 
