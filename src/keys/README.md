@@ -1,4 +1,4 @@
-# `vsslib.key`
+# `vsslib.keys`
 
 ## Key generation
 
@@ -23,7 +23,7 @@ const proof = await privateKey.proveSecret({
 ```
 
 ```js
-await publicKey.verifyIdentity(proof);
+await publicKey.verifySecret(proof);
 ```
 
 ## Encryption

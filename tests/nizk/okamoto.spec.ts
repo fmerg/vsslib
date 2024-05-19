@@ -1,7 +1,7 @@
 import { Algorithms } from '../../src/enums';
 import { initGroup } from '../../src/backend';
 import { cartesian } from '../helpers';
-import { randomBytes } from '../../src/crypto';
+import { randomNonce } from '../../src/crypto';
 import { createRepresentation } from './helpers';
 import { resolveTestConfig } from '../environ';
 import nizk from '../../src/nizk';
@@ -26,7 +26,7 @@ describe('Success - with nonce', () => {
     const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveRepresentation({ s, t }, { h, u }, nonce);
     const valid = await nizk(ctx, Algorithms.SHA256).verifyRepresentation({ h, u }, proof, nonce);
     expect(valid).toBe(true);
@@ -64,7 +64,7 @@ describe('Failure - if missing nonce', () => {
     const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveRepresentation({ s, t }, { h, u }, nonce);
     const valid = await nizk(ctx, Algorithms.SHA256).verifyRepresentation({ h, u }, proof);
     expect(valid).toBe(false);
@@ -77,9 +77,9 @@ describe('Failure - if forged nonce', () => {
     const ctx = initGroup(system);
     const h = await ctx.randomPoint();
     const [{ s, t }, { u }] = await createRepresentation(ctx, h);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveRepresentation({ s, t }, { h, u }, nonce);
-    const valid = await nizk(ctx, Algorithms.SHA256).verifyRepresentation({ h, u }, proof, await randomBytes(16));
+    const valid = await nizk(ctx, Algorithms.SHA256).verifyRepresentation({ h, u }, proof, await randomNonce());
     expect(valid).toBe(false);
   });
 });

@@ -1,6 +1,6 @@
 import { Algorithms } from '../../src/enums';
 import { initGroup } from '../../src/backend';
-import { randomBytes } from '../../src/crypto';
+import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../helpers';
 import { createAndDlogPairs } from './helpers';
 import { resolveTestConfig } from '../environ';
@@ -23,7 +23,7 @@ describe('Success - with nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
     const [witness, pairs] = await createAndDlogPairs(ctx, 5);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveAndDlog(witness, pairs, nonce);
     const valid = await nizk(ctx, Algorithms.SHA256).verifyAndDlog(pairs, proof, nonce);
     expect(valid).toBe(true);
@@ -47,7 +47,7 @@ describe('Failure - missing nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
     const [witness, pairs] = await createAndDlogPairs(ctx, 5);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveAndDlog(witness, pairs, nonce);
     const valid = await nizk(ctx, Algorithms.SHA256).verifyAndDlog(pairs, proof);
     expect(valid).toBe(false);
@@ -58,10 +58,10 @@ describe('Failure - missing nonce', () => {
 describe('Failure - forged nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const [witness, pairs] = await createAndDlogPairs(ctx, 5);
     const proof = await nizk(ctx, Algorithms.SHA256).proveAndDlog(witness, pairs, nonce);
-    const valid = await nizk(ctx, Algorithms.SHA256).verifyAndDlog(pairs, proof, await randomBytes(16));
+    const valid = await nizk(ctx, Algorithms.SHA256).verifyAndDlog(pairs, proof, await randomNonce());
     expect(valid).toBe(false);
   });
 });

@@ -3,14 +3,14 @@ import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { ErrorMessages } from '../../src/errors';
-import { randomBytes } from '../../src/crypto';
+import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const { systems, algorithms } = resolveTestConfig();
 
 
-describe('Identity proof - success without nonce', () => {
+describe('Schnorr identification - success without nonce', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const proof = await privateKey.proveSecret({ algorithm });
@@ -20,10 +20,10 @@ describe('Identity proof - success without nonce', () => {
 });
 
 
-describe('Identity proof - success with nonce', () => {
+describe('Schnorr identification - success with nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
     const verified = await publicKey.verifySecret(proof, { nonce });
     expect(verified).toBe(true);
@@ -31,7 +31,7 @@ describe('Identity proof - success with nonce', () => {
 });
 
 
-describe('Identity proof - failure if forged proof', () => {
+describe('Schnorr identification - failure if forged proof', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const proof = await privateKey.proveSecret();
@@ -43,7 +43,7 @@ describe('Identity proof - failure if forged proof', () => {
 });
 
 
-describe('Identity proof - failure if wrong algorithm', () => {
+describe('Schnorr identification - failure if wrong algorithm', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const proof = await privateKey.proveSecret({ algorithm });
@@ -60,10 +60,10 @@ describe('Identity proof - failure if wrong algorithm', () => {
 });
 
 
-describe('Identity proof - failure if missing nonce', () => {
+describe('Schnorr identification - failure if missing nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
       ErrorMessages.INVALID_SECRET
@@ -72,13 +72,13 @@ describe('Identity proof - failure if missing nonce', () => {
 });
 
 
-describe('Identity proof - failure if forged nonce', () => {
+describe('Schnorr identification - failure if forged nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
     await expect(
-      publicKey.verifySecret(proof, { nonce: await randomBytes(16) })
+      publicKey.verifySecret(proof, { nonce: await randomNonce() })
     ).rejects.toThrow(
       ErrorMessages.INVALID_SECRET
     );

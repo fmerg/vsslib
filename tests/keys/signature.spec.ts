@@ -1,7 +1,7 @@
 import { Algorithms, SignatureSchemes } from '../../src/enums';
 import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
-import { randomBytes } from '../../src/crypto';
+import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
@@ -34,7 +34,7 @@ describe('success with nonce', () => {
   ) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const signature = await privateKey.sign(message, { scheme, algorithm, nonce });
     const verified = await publicKey.verifySignature(
       message, signature, {
@@ -121,7 +121,7 @@ describe('failure if missing nonce', () => {
   ) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const signature = await privateKey.sign(message, { scheme, algorithm, nonce });
     await expect(
       publicKey.verifySignature(
@@ -143,9 +143,9 @@ describe('failure if forged nonce', () => {
   ) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const signature = await privateKey.sign(message, { scheme, algorithm, nonce });
-    const forgedNonce = await randomBytes(16);
+    const forgedNonce = await randomNonce();
     await expect(
       publicKey.verifySignature(
         message, signature, {
