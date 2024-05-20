@@ -227,8 +227,8 @@ describe('scalar validation', () => {
 describe('Keypair generation - no given secret', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateSecret();
-    expect(await pub.equals(await ctx.exp(secret, ctx.generator))).toBe(true);
+    const { secret, publicPoint } = await ctx.generateSecret();
+    expect(await publicPoint.equals(await ctx.exp(secret, ctx.generator))).toBe(true);
   })
 });
 
@@ -236,8 +236,8 @@ describe('Keypair generation - given secret', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
     const scalar = await ctx.randomScalar();
-    const { secret, pub } = await ctx.generateSecret(scalar);
+    const { secret, publicPoint } = await ctx.generateSecret(scalar);
     expect(secret).toEqual(scalar);
-    expect(await pub.equals(await ctx.exp(scalar, ctx.generator))).toBe(true);
+    expect(await publicPoint.equals(await ctx.exp(scalar, ctx.generator))).toBe(true);
   })
 });

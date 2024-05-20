@@ -34,6 +34,10 @@ export abstract class Group<P extends Point> {
   abstract invert: (point: P) => Promise<P>;
   abstract unpack: (bytes: Uint8Array) => P;
   abstract unpackValid: (bytes: Uint8Array) => Promise<P>;
-  abstract generateSecret: (secret?: bigint) => Promise<{ secret: bigint, pub: Point }>;
+  abstract generateSecret: (secret?: bigint) => Promise<{
+    secret: bigint,
+    publicPoint: Point,
+    publicBytes: Uint8Array
+  }>;
 }
 

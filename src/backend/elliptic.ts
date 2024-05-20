@@ -128,10 +128,13 @@ export class EcGroup extends Group<EcPoint> {
     return unpacked;
   }
 
-  generateSecret = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {
+  generateSecret = async (secret?: bigint): Promise<{
+    secret: bigint, publicPoint: EcPoint, publicBytes: Uint8Array
+  }> => {
     secret = secret || await this.randomScalar();
-    const pub = await this.exp(secret, this.generator);
-    return { secret, pub };
+    const publicPoint = await this.exp(secret, this.generator);
+    const publicBytes = publicPoint.toBytes();
+    return { secret, publicPoint, publicBytes };
   }
 }
 

@@ -39,7 +39,7 @@ const b = await ctx.randomScalarBuff();
 ### Secret generation
 
 ```js
-const { secret, pub } = await ctx.generateSecret();
+const { secret, publicPoint, publicBytes } = await ctx.generateSecret();
 ```
 
 

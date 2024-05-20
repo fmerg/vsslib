@@ -17,7 +17,7 @@ const key = randomBytes(32);
 const digest = await hmac(Algorithms.SHA256, key).digest(buffer);
 ```
 
-## Symmetric (AES) encryption
+## Symmetric encryption (AES)
 
 ```js
 import { aes, randomBytes } from 'vsslib/crypto';
@@ -25,16 +25,16 @@ import { aes, randomBytes } from 'vsslib/crypto';
 const key = randomBytes(32);
 ```
 
-### AES-256-CBC
+### AES-256-[CBC|CFB|OFB|CTR]
 
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphered, iv } = aes('aes-256-cbc').encrypt(key, message);
+const { ciphered, iv } = aes(AesModes.AES_256_CBC).encrypt(key, message);
 ```
 
 ```js
-const deciphered = aes('aes-256-cbc').decrypt(key, ciphered, iv);
+const deciphered = aes(AesModes.AES_256_CBC).decrypt(key, ciphered, iv);
 ```
 
 ### AES-256-GCM
@@ -42,9 +42,9 @@ const deciphered = aes('aes-256-cbc').decrypt(key, ciphered, iv);
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphered, iv, tag } = aes('aes-256-gcm').encrypt(key, message);
+const { ciphered, iv, tag } = aes(AesModes.AES_256_GCM).encrypt(key, message);
 ```
 
 ```js
-const deciphered = aes('aes-256-gcm').decrypt(key, ciphered, iv, tag);
+const deciphered = aes(AesModes.AES_256_GCM).decrypt(key, ciphered, iv, tag);
 ```

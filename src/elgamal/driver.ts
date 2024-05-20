@@ -3,7 +3,7 @@ import { leInt2Buff } from '../arith';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { ElgamalSchemes } from '../enums';
 
-import { IesAlpha, KemAlpha, plainElgamal, iesElgamal, kemElgamal } from './ciphers';
+import { IesAlpha, KemAlpha, plainElgamal, iesElgamal, kemElgamal } from './core';
 
 
 type IesCiphertext    = { alpha: IesAlpha, beta: Uint8Array };
