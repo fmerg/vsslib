@@ -52,21 +52,24 @@ export class NizkProtocol<P extends Point>{
     }
   }
 
-  computeChallenge = async (points: P[], extras: Uint8Array[], nonce?: Uint8Array): Promise<
-    bigint
-  > => {
+  computeChallenge = async (
+    relation: GenericLinear<P>, commitment: P[], extras: Uint8Array[], nonce?: Uint8Array
+  ): Promise<bigint> => {
     const { modulus, order, generator: g } = this.ctx;
-    const configBuff = [...leInt2Buff(modulus), ...leInt2Buff(order), ...g.toBytes()];
-    const pointsBuff = points.reduce(
+    const { us, vs } = relation;
+    const config = [...leInt2Buff(modulus), ...leInt2Buff(order), ...g.toBytes()];
+    const statement = [
+      ...us.reduce((acc, ui) => [...acc, ...ui], []),
+      ...vs,
+      ...commitment
+    ].reduce(
       (acc: number[], p: P) => [...acc, ...p.toBytes()], []
     );
-    const extrasBuff = extras.reduce(
-      (acc: number[], b: Uint8Array) => [...acc, ...b], []
-    );
+    const extrasBuff = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
     nonce = nonce || Uint8Array.from([]);
     const digest = await hash(this.algorithm).digest(
       Uint8Array.from([
-        ...configBuff, ...pointsBuff, ...extrasBuff, ...nonce
+        ...config, ...statement, ...extrasBuff, ...nonce
       ])
     );
     return this.ctx.leBuff2Scalar(digest);
@@ -83,7 +86,7 @@ export class NizkProtocol<P extends Point>{
     for (let j = 0; j < n; j ++) {
       rs[j] = await randomScalar();
     }
-    const commitment = new Array(m);
+    const commitment = new Array<P>(m);
     for (let i = 0; i < m; i++) {
       if (us[i].length !== n)
         throw new Error('Incompatible lengths');
@@ -96,15 +99,7 @@ export class NizkProtocol<P extends Point>{
       }
       commitment[i] = ci;
     }
-    const challenge = await this.computeChallenge(
-      [
-        ...us.reduce((acc, ui) => [...acc, ...ui], []),
-        ...vs,
-        ...commitment,
-      ],
-      extras,
-      nonce,
-    );
+    const challenge = await this.computeChallenge(relation, commitment, extras, nonce);
     const response = new Array(n);
     for (const [j, x] of witness.entries()) {
       response[j] = mod(rs[j] + x * challenge, order);
@@ -120,15 +115,7 @@ export class NizkProtocol<P extends Point>{
     const { commitment, response } = await this.toInner(proof);
     if (vs.length !== commitment.length)
       throw new Error('Incompatible lengths');
-    const challenge = await this.computeChallenge(
-      [
-        ...us.reduce((acc, ui) => [...acc, ...ui], []),
-        ...vs,
-        ...commitment,
-      ],
-      extras,
-      nonce,
-    );
+    const challenge = await this.computeChallenge(relation, commitment, extras, nonce);
     let flag = true;
     for (const [i, v] of vs.entries()) {
       if (us[i].length !== response.length)
@@ -204,14 +191,17 @@ export class NizkProtocol<P extends Point>{
   > => {
     const m = pairs.length;
     const us = this.fillMatrix(m, m, this.ctx.neutral);
+    const vs = new Array(m);
     for (let i = 0; i < m; i++) {
-      us[i][i] = pairs[i].u;
+      const { u, v } = pairs[i];
+      us[i][i] = u;
+      vs[i] = v;
     }
     return this._proveLinear(
       witness,
       {
         us,
-        vs: pairs.map(({ v }) => v),
+        vs,
       },
       [],
       nonce
@@ -223,13 +213,16 @@ export class NizkProtocol<P extends Point>{
   > => {
     const m = pairs.length;
     const us = this.fillMatrix(m, m, this.ctx.neutral);
+    const vs = new Array(m);
     for (let i = 0; i < m; i++) {
-      us[i][i] = pairs[i].u;
+      const { u, v } = pairs[i];
+      us[i][i] = u;
+      vs[i] = v;
     }
     return this._verifyLinear(
       {
         us,
-        vs: pairs.map(({ v }) => v),
+        vs,
       },
       proof,
       [],
@@ -241,14 +234,17 @@ export class NizkProtocol<P extends Point>{
     const m = pairs.length;
     const witness = Array.from({ length: m }, (_, i) => x);
     const us = this.fillMatrix(m, m, this.ctx.neutral);
+    const vs = new Array(m);
     for (let i = 0; i < m; i++) {
-      us[i][i] = pairs[i].u;
+      const { u, v } = pairs[i];
+      us[i][i] = u;
+      vs[i] = v;
     }
     return this._proveLinear(
       witness,
       {
         us,
-        vs: pairs.map(({ v }) => v),
+        vs,
       },
       [],
       nonce
@@ -260,13 +256,16 @@ export class NizkProtocol<P extends Point>{
   > => {
     const m = pairs.length;
     const us = this.fillMatrix(m, m, this.ctx.neutral);
+    const vs = new Array(m);
     for (let i = 0; i < m; i++) {
-      us[i][i] = pairs[i].u;
+      const { u, v } = pairs[i];
+      us[i][i] = u;
+      vs[i] = v;
     }
     return this._verifyLinear(
       {
         us,
-        vs: pairs.map(({ v }) => v),
+        vs,
       },
       proof,
       [],
