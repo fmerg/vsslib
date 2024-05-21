@@ -13,9 +13,7 @@ const ctx = initGroup('ed25519');
 ```
 
 ```js
-const { secret, pub } = await ctx.generateKeypair();
-
-const pubBytes = pub.toBytes();
+const { secret, publicBytes } = await ctx.generateSecret();
 ```
 
 ## Encryption schemes
@@ -30,7 +28,7 @@ const cipher = elgamal(ctx, ElgamalSchemes.IES, AesModes.AES_256_CBC, Algorithms
 ```js
 const message = Buffer.from('destroy earth');
 
-const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, pubBytes);
+const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, publicBytes);
 ```
 
 ### KEM-ElGamal Encryption (Key Encapsulation Mechanism)
@@ -42,7 +40,7 @@ const cipher = elgamal(ctx, ElgamalSchemes.KEM, AesModes.AES_256_CBC);
 ```js
 const message = Buffer.from('destroy earth');
 
-const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, pubBytes);
+const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, publicBytes);
 ```
 
 ### Plain ElGamal Encryption
@@ -56,7 +54,7 @@ const message = (await ctx.randomPoint()).toBytes();
 ```
 
 ```js
-const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, pubBytes);
+const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, publicBytes);
 ```
 
 ## Decryption methods
@@ -70,5 +68,5 @@ const plaintext = await cipher.decryptWithDecryptor(ciphertext, decryptor);
 ```
 
 ```js
-const plaintext = await cipher.decryptWithRandomness(ciphertext, pubBytes, randomness);
+const plaintext = await cipher.decryptWithRandomness(ciphertext, publicBytes, randomness);
 ```

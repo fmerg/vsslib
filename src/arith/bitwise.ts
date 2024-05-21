@@ -32,7 +32,6 @@ export const leBuff2Int = (buff: Uint8Array): bigint => {
   return num;
 }
 
-
 export const leInt2Buff = (num: BigInt | bigint) => {
   const len = byteLen(num);
   const buff = new Uint8Array(len);
@@ -55,6 +54,5 @@ export const leInt2Buff = (num: BigInt | bigint) => {
       r = r >> BigInt(8);
     }
   }
-
   return buff;
 }

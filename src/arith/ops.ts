@@ -45,4 +45,3 @@ export const modInv = (m: bigint, n: bigint): bigint => {
   if (g !== __1n) throw new Error(ErrorMessages.INVERSE_NOT_EXISTS);
   return mod(x, n);
 }
-

@@ -32,25 +32,21 @@ await ctx.validateScalar(s);
 ```
 
 ```js
-const b = await ctx.randomBytes();
-```
-
-```js
-await ctx.validateBytes(b);
+const b = await ctx.randomScalarBuff();
 ```
 
 
-### Keypair generation
+### Secret generation
 
 ```js
-const { secret, pub } = await ctx.generateKeypair();
+const { secret, publicPoint, publicBytes } = await ctx.generateSecret();
 ```
 
 
 ### Group operations
 
 ```js
-const u = await ctx.combine(p, q);
+const u = await ctx.operate(p, q);
 ```
 
 ```js
@@ -58,7 +54,7 @@ const v = await ctx.invert(p);
 ```
 
 ```js
-const w = await ctx.operate(s, p);
+const w = await ctx.exp(s, p);
 ```
 
 
@@ -73,10 +69,5 @@ const pBack = ctx.unpack(pBytes);
 ```
 
 ```js
-const pHex = p.toHex();
+const pBack = ctx.unpackValid(pBytes);
 ```
-
-```js
-const pBack = ctx.unhexify(pHex);
-```
-

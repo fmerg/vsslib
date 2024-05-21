@@ -2,30 +2,39 @@
 
 ## Hash functions
 
-## Hash-based Message Authentication (HMAC)
-
-## Symmetric (AES) encryption
-
 ```js
-import aes from 'vsslib/crypto/aes';
+import { hash } from 'vsslib/crypto';
+
+const digest = await hash(Algorithms.SHA256).digest(buffer);
 ```
 
+## Hash-based Message Authentication (HMAC)
+
 ```js
-const { randomBytes } = require('vsslib/crypto/random');
+import { hmac, randomBytes } from 'vsslib/crypto';
+
+const key = randomBytes(32);
+const digest = await hmac(Algorithms.SHA256, key).digest(buffer);
+```
+
+## Symmetric encryption (AES)
+
+```js
+import { aes, randomBytes } from 'vsslib/crypto';
 
 const key = randomBytes(32);
 ```
 
-### AES-256-CBC
+### AES-256-[CBC|CFB|OFB|CTR]
 
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphered, iv } = aes('aes-256-cbc').encrypt(key, message);
+const { ciphered, iv } = aes(AesModes.AES_256_CBC).encrypt(key, message);
 ```
 
 ```js
-const deciphered = aes('aes-256-cbc').decrypt(key, ciphered, iv);
+const deciphered = aes(AesModes.AES_256_CBC).decrypt(key, ciphered, iv);
 ```
 
 ### AES-256-GCM
@@ -33,9 +42,9 @@ const deciphered = aes('aes-256-cbc').decrypt(key, ciphered, iv);
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphered, iv, tag } = aes('aes-256-gcm').encrypt(key, message);
+const { ciphered, iv, tag } = aes(AesModes.AES_256_GCM).encrypt(key, message);
 ```
 
 ```js
-const deciphered = aes('aes-256-gcm').decrypt(key, ciphered, iv, tag);
+const deciphered = aes(AesModes.AES_256_GCM).decrypt(key, ciphered, iv, tag);
 ```

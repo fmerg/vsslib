@@ -1,6 +1,5 @@
 import { AesModes } from '../../src/enums';
-import { randomBytes } from '../../src/crypto/random';
-import aes from '../../src/crypto/aes';
+import { aes, randomBytes } from '../../src/crypto';
 
 import { resolveTestConfig } from '../environ';
 

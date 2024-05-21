@@ -2,8 +2,8 @@ import { Algorithms, ElgamalSchemes, SignatureSchemes } from '../../src/enums';
 import { System } from '../../src/types';
 import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
-import { toCanonical } from '../../src/keys';
-import { randomBytes } from '../../src/crypto/random';
+import { toCanonical } from '../../src/keys/utils';
+import { randomNonce } from '../../src/crypto';
 import { cartesian, removeItem } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
@@ -145,7 +145,7 @@ describe('Signcryption - success with nonce', () => {
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(system);
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const { ciphertext, signature } = await alicePrivate.signEncrypt(
       message, bobPublic, {
         encScheme,
@@ -174,7 +174,7 @@ describe('Signcryption - failure missing nonce', () => {
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(system);
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const { ciphertext, signature } = await alicePrivate.signEncrypt(
       message, bobPublic, {
         encScheme,
@@ -203,7 +203,7 @@ describe('Signcryption - failure forged nonce', () => {
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(system);
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const { ciphertext, signature } = await alicePrivate.signEncrypt(
       message, bobPublic, {
         encScheme,
@@ -218,7 +218,7 @@ describe('Signcryption - failure forged nonce', () => {
           encScheme,
           sigScheme,
           algorithm,
-          nonce: await randomBytes(16)
+          nonce: await randomNonce()
         }
       )
     ).rejects.toThrow('Invalid signature');
@@ -233,7 +233,7 @@ describe('Signcryption - failure wrong algorithm', () => {
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(system);
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await randomBytes(16);
+    const nonce = await randomNonce();
     const { ciphertext, signature } = await alicePrivate.signEncrypt(
       message, bobPublic, {
         encScheme,

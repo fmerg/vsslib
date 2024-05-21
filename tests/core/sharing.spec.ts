@@ -1,5 +1,5 @@
 import { Point, Group } from '../../src/backend/abstract'
-import { leInt2Buff } from '../../src/crypto/bitwise';
+import { leInt2Buff } from '../../src/arith';
 import { ErrorMessages } from '../../src/errors';
 import { reconstructKey, reconstructPublic } from '../../src/core';
 import { PrivateShare, PublicShare } from '../../src/core';

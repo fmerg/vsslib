@@ -7,8 +7,7 @@ import { Elliptic } from '../enums';
 import { System } from '../types';
 import { ErrorMessages } from '../errors';
 import { Point, Group } from './abstract';
-import { mod } from '../crypto/arith';
-import { leBuff2Int } from '../crypto/bitwise';
+import { mod, leBuff2Int } from '../arith';
 
 
 const __0n = BigInt(0);
@@ -16,7 +15,6 @@ const __0n = BigInt(0);
 
 interface NoblePoint extends ExtPointType {
   toRawBytes?: Function;
-  toHex?: Function;
 };
 
 
@@ -27,6 +25,8 @@ class EcPoint implements Point {
     this._wrapped = wrapped;
   }
 
+  toBytes = (): Uint8Array => this._wrapped.toRawBytes!();
+
   public get wrapped(): NoblePoint {
     return this._wrapped;
   }
@@ -35,13 +35,6 @@ class EcPoint implements Point {
     return (other instanceof EcPoint) && (this._wrapped.equals(other.wrapped));
   }
 
-  toBytes = (): Uint8Array => {
-    return this._wrapped.toRawBytes!();
-  }
-
-  toHex = (): string => {
-    return this._wrapped.toHex!();
-  }
 }
 
 
@@ -71,28 +64,20 @@ export class EcGroup extends Group<EcPoint> {
     return (other instanceof EcGroup) && (this._curve == other.curve);
   }
 
-  randomBytes = async (): Promise<Uint8Array> => {
-    const { randomBytes, Fp } = this.curve.CURVE;
-    return randomBytes(Fp.BYTES);
-  }
+  randomScalarBuff = async (): Promise<Uint8Array> =>
+    this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
 
-  randomScalar = async (): Promise<bigint> => {
-    const { randomBytes, Fp } = this.curve.CURVE;
-    return mod(leBuff2Int(randomBytes(Fp.BYTES)), this.order);
-  }
+  randomScalar = async (): Promise<bigint> => mod(
+    leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+    this.order
+  );
 
-  randomPoint = async (): Promise<EcPoint> => {
-    const { randomBytes, Fp } = this.curve.CURVE;
-    const scalar = mod(leBuff2Int(randomBytes(Fp.BYTES)), this.order);
-    return new EcPoint(this._base.multiply(scalar));
-  }
-
-  validateBytes = async (bytes: Uint8Array, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
-    const flag = bytes.length <= this.curve.CURVE.Fp.BYTES;
-    if (!flag && (opts ? opts.raiseOnInvalid : true))
-      throw new Error(ErrorMessages.INVALID_BYTELENGTH);
-    return flag;
-  }
+  randomPoint = async (): Promise<EcPoint> => new EcPoint(
+    this._base.multiply(mod(
+      leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+      this.order
+    ))
+  );
 
   validateScalar = async (scalar: bigint, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
@@ -115,31 +100,41 @@ export class EcGroup extends Group<EcPoint> {
     return flag;
   }
 
-  operate = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => {
-    return new EcPoint(scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero);
-  }
+  exp = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => new EcPoint(
+    scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero
+  );
 
-  combine = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => {
-    return new EcPoint(lhs.wrapped.add(rhs.wrapped));
-  }
+  operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => new EcPoint(
+    lhs.wrapped.add(rhs.wrapped)
+  );
 
-  invert = async (point: EcPoint): Promise<EcPoint> => {
-    return new EcPoint(point.wrapped.negate());
-  }
+  invert = async (point: EcPoint): Promise<EcPoint> => new EcPoint(
+    point.wrapped.negate()
+  );
 
   unpack = (bytes: Uint8Array): EcPoint => {
-    return new EcPoint(this._curve.ExtendedPoint.fromHex(bytes));
+    let unpacked;
+    try {
+      unpacked = new EcPoint(this._curve.ExtendedPoint.fromHex(bytes));
+    } catch (err: any) {
+      throw new Error(`bad encoding: ${err.message}`)
+    }
+    return unpacked;
   }
 
-  unhexify = (hexnum: string): EcPoint => {
-    return new EcPoint(this._curve.ExtendedPoint.fromHex(hexnum));
+  unpackValid = async (bytes: Uint8Array): Promise<EcPoint> => {
+    const unpacked = this.unpack(bytes);
+    await this.validatePoint(unpacked);
+    return unpacked;
   }
 
-  generateKeypair = async (secret?: bigint): Promise<{ secret: bigint, pub: EcPoint }> => {
-    const { randomScalar, operate, generator } = this;
-    secret = secret || await randomScalar();
-    const pub = await operate(secret, generator);
-    return { secret, pub };
+  generateSecret = async (secret?: bigint): Promise<{
+    secret: bigint, publicPoint: EcPoint, publicBytes: Uint8Array
+  }> => {
+    secret = secret || await this.randomScalar();
+    const publicPoint = await this.exp(secret, this.generator);
+    const publicBytes = publicPoint.toBytes();
+    return { secret, publicPoint, publicBytes };
   }
 }
 

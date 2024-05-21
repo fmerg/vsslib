@@ -1,5 +1,6 @@
 import { Systems, Algorithms, SignatureSchemes } from '../src/enums';
 import { initGroup } from '../src/backend';
+import { randomNonce } from '../src/crypto';
 import { cartesian } from './helpers';
 import { resolveTestConfig } from './environ';
 import signer from '../src/signer';
@@ -11,13 +12,13 @@ describe('Signature verification - success without nonce', () => {
     system, scheme, algorithm
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, publicBytes } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message
     );
     const verified = await signer(ctx, scheme, algorithm).verifyBytes(
-      pub.toBytes(), message, signature
+      publicBytes, message, signature
     );
     expect(verified).toBe(true);
   });
@@ -29,14 +30,14 @@ describe('Signature verification - success with nonce', () => {
     system, scheme, algorithm
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, publicBytes } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message, nonce
     );
     const verified = await signer(ctx, scheme, algorithm).verifyBytes(
-      pub.toBytes(), message, signature, nonce
+      publicBytes, message, signature, nonce
     );
     expect(verified).toBe(true);
   });
@@ -48,14 +49,14 @@ describe('Signature verification - failure if forged message', () => {
     system, scheme, algorithm
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, publicBytes } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message
     );
     const forgedMessage = Uint8Array.from(Buffer.from('don\' t destroy earth'));
     const verified = await signer(ctx, scheme, algorithm).verifyBytes(
-      pub.toBytes(), forgedMessage, signature
+      publicBytes, forgedMessage, signature
     );
     expect(verified).toBe(false);
   });
@@ -67,14 +68,14 @@ describe('Signature verification - failure if forged key', () => {
     system, scheme, algorithm
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, publicBytes } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const forgedSecret = await ctx.randomScalar();
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       forgedSecret, message
     );
     const verified = await signer(ctx, scheme, algorithm).verifyBytes(
-      pub.toBytes(), message, signature
+      publicBytes, message, signature
     );
     expect(verified).toBe(false);
   });
@@ -86,14 +87,14 @@ describe('Signature verification - failure if forged signature', () => {
     system, scheme, algorithm
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, publicBytes } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message
     );
     signature.c = (await ctx.randomPoint()).toBytes();
     const verified = await signer(ctx, scheme, algorithm).verifyBytes(
-      pub.toBytes(), message, signature
+      publicBytes, message, signature
     );
     expect(verified).toBe(false);
   });
@@ -105,15 +106,15 @@ describe('Signature verification - failure if forged nonce', () => {
     system, scheme, algorithm
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, publicBytes } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message, nonce
     );
-    const forgedNonce = await ctx.randomBytes();
+    const forgedNonce = await randomNonce();
     const verified = await signer(ctx, scheme, algorithm).verifyBytes(
-      pub.toBytes(), message, signature, forgedNonce
+      publicBytes, message, signature, forgedNonce
     );
     expect(verified).toBe(false);
   });
@@ -125,14 +126,14 @@ describe('Signature verification - failure if missing nonce', () => {
     system, scheme, algorithm
   ) => {
     const ctx = initGroup(system);
-    const { secret, pub } = await ctx.generateKeypair();
+    const { secret, publicBytes } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message, nonce
     );
     const verified = await signer(ctx, scheme, algorithm).verifyBytes(
-      pub.toBytes(), message, signature
+      publicBytes, message, signature
     );
     expect(verified).toBe(false);
   });

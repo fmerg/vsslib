@@ -1,8 +1,6 @@
-# `vsslib.key`
+# `vsslib.keys`
 
-## Basic opreations
-
-### Key generation
+## Key generation
 
 ```js
 import { generateKey } from 'vsslib';
@@ -16,22 +14,16 @@ const { privateKey, publicKey, ctx } = await generateKey('ed25519');
 const publicKey = await privateKey.publicKey();
 ```
 
-### Diffie-Hellman handshake
+## Schnorr identification
 
 ```js
-const secret = await alicePrivateKey.diffieHellman(bobPublicKey);
-```
-
-### Schnorr identification
-
-```js
-const proof = await privateKey.proveIdentity({
+const proof = await privateKey.proveSecret({
   algorithm: Algorithms.SHA256,
 });
 ```
 
 ```js
-await publicKey.verifyIdentity(proof);
+await publicKey.verifySecret(proof);
 ```
 
 ## Encryption

@@ -3,6 +3,7 @@ import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
 import { PrivateKey, PublicKey } from '../../src/keys';
 import { ErrorMessages } from '../../src/errors';
+import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
@@ -26,7 +27,7 @@ describe('plain encryption - invalid point encoding', () => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = new Uint8Array([0, 1, 666, 999]);
     expect(publicKey.encrypt(message, { scheme: ElgamalSchemes.PLAIN })).rejects.toThrow(
-      'Invalid point encoding'
+      'bad encoding:'
     );
   });
 });
@@ -53,7 +54,7 @@ describe('plain encryption proof - success with nonce', () => {
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     const verified = await privateKey.verifyEncryption(ciphertext, proof, { algorithm, nonce });
     expect(verified).toBe(true);
@@ -105,7 +106,7 @@ describe('plain encryption proof - failure if missing nonce', () => {
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     await expect(privateKey.verifyEncryption(ciphertext, proof, { algorithm })).rejects.toThrow(
       ErrorMessages.INVALID_ENCRYPTION
@@ -121,10 +122,10 @@ describe('plain encryption proof - failure if forged nonce', () => {
     const { ciphertext, randomness } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     await expect(
-      privateKey.verifyEncryption(ciphertext, proof, { nonce: await ctx.randomBytes() })
+      privateKey.verifyEncryption(ciphertext, proof, { nonce: await randomNonce() })
     ).rejects.toThrow(
       ErrorMessages.INVALID_ENCRYPTION
     );
@@ -167,7 +168,7 @@ describe('Decryptor proof - success with nonce', () => {
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
     const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm, nonce });
     expect(verified).toBe(true);
@@ -219,7 +220,7 @@ describe('Decryptor proof - failure if missing nonce', () => {
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       ErrorMessages.INVALID_DECRYPTOR
@@ -235,10 +236,10 @@ describe('Decryptor proof - failure if forged nonce', () => {
     const { ciphertext, decryptor } = await publicKey.encrypt(message, {
       scheme: ElgamalSchemes.PLAIN
     });
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
     await expect(
-      publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce: await ctx.randomBytes() })
+      publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce: await randomNonce() })
     ).rejects.toThrow(
       ErrorMessages.INVALID_DECRYPTOR
     );

@@ -7,15 +7,7 @@ import { BaseSigner } from './base';
 import nizk from '../nizk';
 
 
-export class SchnorrSignature {
-  c: Uint8Array;
-  r: Uint8Array;
-
-  constructor(c: Uint8Array, r: Uint8Array) {
-    this.c = c;
-    this.r = r;
-  }
-}
+export type SchnorrSignature = { c: Uint8Array, r: Uint8Array };
 
 export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignature> {
   constructor(ctx: Group<P>, algorithm: Algorithm) {
@@ -25,8 +17,8 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
   signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<
     SchnorrSignature
   > => {
-    const { generator: g, operate } = this.ctx;
-    const pub = await operate(secret, g);
+    const { generator: g, exp } = this.ctx;
+    const pub = await exp(secret, g);
     const { commitment, response } = await nizk(this.ctx, this.algorithm).proveLinear(
       [secret],
       {

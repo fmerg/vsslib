@@ -13,9 +13,10 @@ export class Hmac {
     this.key = key;
   }
 
-  async digest(buffer: Uint8Array): Promise<Uint8Array> {
-    return new Uint8Array(_createHmac(this.algorithm, this.key).update(buffer).digest());
-  }
+  digest = async (buff: Uint8Array): Promise<Uint8Array> =>
+    Uint8Array.from(
+      _createHmac(this.algorithm, this.key).update(buff).digest()
+    )
 }
 
 export default function(algorithm: Algorithm, key: Uint8Array): Hmac {

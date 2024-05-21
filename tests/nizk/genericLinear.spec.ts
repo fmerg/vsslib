@@ -1,5 +1,6 @@
 import { Algorithms } from '../../src/enums';
 import { initGroup } from '../../src/backend';
+import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../helpers';
 import { createGenericLinear } from './helpers';
 import { resolveTestConfig } from '../environ';
@@ -22,7 +23,7 @@ describe('Success - without nonce', () => {
 describe('Success - with nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
     const proof = await nizk(ctx, Algorithms.SHA256).proveLinear(witness, relation, nonce);
     const valid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof, nonce);
@@ -47,7 +48,7 @@ describe('Failure - missing nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveLinear(witness, relation, nonce);
     const valid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof);
     expect(valid).toBe(false);
@@ -59,9 +60,9 @@ describe('Failure - forged nonce', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
-    const nonce = await ctx.randomBytes();
+    const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveLinear(witness, relation, nonce);
-    const valid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof, await ctx.randomBytes());
+    const valid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof, await randomNonce());
     expect(valid).toBe(false);
   });
 });
