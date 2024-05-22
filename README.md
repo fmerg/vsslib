@@ -116,6 +116,7 @@ const plaintext = await thresholdDecrypt(ciphertext, partialDecryptors);
 
 ## Modules
 
+- [`vsslib.arith`](./src/arith)
 - [`vsslib.backend`](./src/backend)
 - [`vsslib.crypto`](./src/crypto)
 - [`vsslib.elgamal`](./src/elgamal)
@@ -138,6 +139,10 @@ $ npm run dev
 ```
 
 ### Tests
+
+```
+$ ./test.sh --help
+```
 
 ```
 $ npm run test[:reload]
