@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { mod, modInv } from '../arith';
-import { SecretShare, PubShare, BaseSharing } from './base';
+import { FieldPolynomial } from '../lagrange/utils';
 import { ErrorMessages } from '../errors';
 import { randomPolynomial } from '../lagrange/utils';
 
@@ -10,9 +10,9 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-export class ScalarShare<P extends Point> implements SecretShare<
-  P, bigint, P, bigint
-> {
+export type PointShare<P extends Point> = { value: P, index: number };
+
+export class ScalarShare<P extends Point> {
   ctx: Group<P>;
   value: bigint;
   index: number;
@@ -52,20 +52,20 @@ export class ScalarShare<P extends Point> implements SecretShare<
 };
 
 
-export class PointShare<P extends Point> implements PubShare<P, P> {
-  value: P;
-  index: number;
+export class ShamirSharing<P extends Point> {
+  ctx: Group<P>;
+  nrShares: number;
+  threshold: number;
+  polynomial: FieldPolynomial<P>;
 
-  constructor(value: P, index: number) {
-    this.value = value;
-    this.index = index;
+  constructor(
+    ctx: Group<P>, nrShares: number, threshold: number, polynomial: FieldPolynomial<P>
+  ) {
+    this.ctx = ctx;
+    this.threshold = threshold;
+    this.nrShares = nrShares;
+    this.polynomial = polynomial;
   }
-};
-
-
-export class ShamirSharing<P extends Point> extends BaseSharing<
-  P, P, bigint, ScalarShare<P>, PointShare<P>
-> {
 
   getSecretShares = async (): Promise<ScalarShare<P>[]> => {
     const { polynomial: { evaluate }, nrShares } = this;

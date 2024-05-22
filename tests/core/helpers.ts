@@ -23,7 +23,7 @@ export const createKeyDistributionSetup = async (opts: {
   const sharing = await distributeKey(ctx, nrShares, threshold, privateKey);
   const privateShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
-  const { polynomial } = sharing;
+  const polynomial = sharing._sharing.polynomial; // TODO
   return {
     privateKey,
     publicKey,

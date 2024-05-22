@@ -2,7 +2,6 @@ import { Point, Group } from './backend/abstract';
 import { Ciphertext } from './elgamal';
 import { leInt2Buff } from './arith';
 import { NizkProof } from './nizk';
-import { SecretShare, PubShare, BaseSharing } from './shamir/base';
 import { ScalarShare, ShamirSharing } from './shamir';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
@@ -13,9 +12,7 @@ import elgamal from './elgamal';
 const shamir = require('./shamir');
 
 
-export class PrivateShare<P extends Point> extends PrivateKey<P> implements SecretShare<
-  P, bigint, Uint8Array, Uint8Array
->{
+export class PrivateShare<P extends Point> extends PrivateKey<P> {
   _share: ScalarShare<P>;
   value: bigint;
   index: number;
@@ -28,10 +25,10 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Secr
   }
 
   toInner = async (payload: { commitments: Uint8Array[], binding?: Uint8Array }) => {
-    const { commitments: outerCommitment, binding: outerBinding } = payload;
-    const commitments = new Array(outerCommitment.length);
+    const { commitments: outerCommitments, binding: outerBinding } = payload;
+    const commitments = new Array(outerCommitments.length);
     const ctx = this.ctx;
-    for (const [i, cBytes] of outerCommitment.entries()) {
+    for (const [i, cBytes] of outerCommitments.entries()) {
       const cPoint = await ctx.unpackValid(cBytes);
       commitments[i] = cPoint
     }
@@ -84,9 +81,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> implements Secr
 };
 
 
-export class PublicShare<P extends Point> extends PublicKey<P> implements PubShare<
-  P, P
-> {
+export class PublicShare<P extends Point> extends PublicKey<P> {
   value: P;
   index: number;
 
@@ -123,15 +118,13 @@ export class PublicShare<P extends Point> extends PublicKey<P> implements PubSha
   }
 };
 
-export class KeySharing<P extends Point> extends BaseSharing<
-  P, Uint8Array, Uint8Array, PrivateShare<P>,  PublicShare<P>
->{
+export class KeySharing<P extends Point> {
+  ctx: Group<P>;
   _sharing: ShamirSharing<P>;
 
   constructor(sharing: ShamirSharing<P>) {
-    const { ctx, threshold, nrShares, polynomial } = sharing;
-    super(ctx, nrShares, threshold, polynomial);
     this._sharing = sharing;
+    this.ctx = this._sharing.ctx; // TODO
   }
 
   getSecretShares = async (): Promise<PrivateShare<P>[]> => {
