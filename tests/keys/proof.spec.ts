@@ -1,7 +1,5 @@
 import { Algorithms } from '../../src/enums';
-import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
-import { PrivateKey, PublicKey } from '../../src/keys';
 import { ErrorMessages } from '../../src/errors';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../helpers';

@@ -1,7 +1,8 @@
 #!/bin/bash
 
-DEFAULT_MODULE=""
-DEFAULT_RELOAD=""
+DEFAULT_MODULE="tests"
+DEFAULT_RELOAD=false
+DEFAULT_VERBOSE=false
 DEFAULT_SYSTEM=""
 DEFAULT_ELGAMAL_SCHEME=""
 DEFAULT_SIGNATURE_SCHEME=""
@@ -12,24 +13,55 @@ DEFAULT_NR_THRESHOLD="2"
 
 usage_string="usage: ./$(basename "$0") [options]
 
-TODO
+Run tests with control over the orthogonal parameters below. For example, in
+order to run key tests over ed25519 with encryption scheme IES against all
+AES modes with hash algorithm SHA256 and reload, do
+
+$ ./test.sh -m keys --elgamal-scheme ies --algorithm sha256 --reload
+
+Groups:
+  ed25519, ed448, jubjub
+
+ElGamal schemes:
+  ies, kem, plain
+
+AES modes:
+  aes-256-cbc, aes-256-cfb, aes-256-ofb, aes-256-ctr, aes-256-gcm
+
+Signature schemes:
+  schnorr
+
+Hash algorithms:
+  sha224, sha256, SHA384, sha512, sha3-224, sha3-256, sha3-384, sha3-512
 
 Options
-  -s, --system GROUP              TODO
-  -es, --elgamal-scheme SCHEME    TODO
-  -ss, --signature-scheme SCHEME  TODO
-  -a, --algorithm HASH            TODO
-  -n, --nr-shares NR              TODO
-  -t, --threshold THRES           TODO
-  -r, --reload                    Reload and run tests when saving changes
-  -h, --help                      Display help message and exit
+  -m, --module <MODULE>             Tests to run. Can be any subfolder or file inside
+                                    the ./tests folder. if not provided, all
+                                    tests run.
+  -s, --system <GROUP>              Underlying cryptosystem. If not provided, tests run
+                                    against all supported groups.
+  -es, --elgamal-scheme <SCHEME>    ElGamal encryption scheme to be used. If not
+                                    provided, tests run against all supported
+                                    ElGamal schemes.
+  -am, --aes-mode <MODE>            AES encryption mode to be used. This affects ElGamal
+                                    schemes with encapsulation (\"hybrid\"). If not
+                                    provided, related tests run against all
+                                    supported AES modes.
+  -ss, --signature-scheme <SCHEME>  Signature scheme to be used. If not provided,
+                                    related tests run against all supported
+                                    signature schemes.
+  -a, --algorithm <HASH>            Hash algorithm to be used. This affects challenge
+                                    computation for NIZK proofs (Fiat-Shamir transform).
+                                    If not provided, related tests run against all
+                                    supported hash algorithms.
+  -n, --nr-shares <NR>              Number of shareholders for tests involving
+                                    Shamir sharing (default: 3).
+  -t, --threshold <THRESHOLD>       Threshold parameter for tests involving
+                                    Shamir sharing (default: 2).
+  -r, --reload                      Reload and run tests when saving changes.
+  -v, --verbose                     Be verbose.
+  -h, --help                        Display this help message and exit.
 
-Examples:
-  ./$(basename "$0") --system ed25519 --algorithm sha256
-  ./$(basename "$0") backend --system ed25519
-  ./$(basename "$0") nizk --system ed25519 --algorithms sha256
-  ./$(basename "$0") keys --system ed25519 --algorithms sha256
-  ./$(basename "$0") hash --algorithm sha256 --reload
 "
 
 set -e
@@ -37,35 +69,38 @@ set -e
 usage() { echo -n "$usage_string" 1>&2; }
 
 MODULE="$DEFAULT_MODULE"
-RELOAD="$DEFAULT_RELOAD"
 SYSTEM="$DEFAULT_SYSTEM"
 ELGAMAL_SCHEME="$DEFAULT_ELGAMAL_SCHEME"
+AES_MODE="$DEFAULT_AES_MODE"
 SIGNATURE_SCHEME="$DEFAULT_SIGNATURE_SCHEME"
 ALGORITHM="$DEFAULT_ALGORITHM"
-AES_MODE="$DEFAULT_AES_MODE"
 NR_SHARES="$DEFAULT_NR_SHARES"
 THRESHOLD="$DEFAULT_THRESHOLD"
+RELOAD="$DEFAULT_RELOAD"
+VERBOSE="$DEFAULT_VERBOSE"
 
 opts=()
 while [[ $# -gt 0 ]]
 do
     arg="$1"
     case $arg in
-        hash|hmac|aes|elgamal|core|shamir|signer|plain|ies|kem|andDlog|eqDlog|ddh|dlog|genericLinear|okamoto|nizk|crypto|lagrange|keys|backend|arith|serializers|decryption|signcrypt)
-            MODULE="$arg"
+        -m|--module)
+            MODULE="$2"
+            shift
             shift
             ;;
-        -r|--reload)
-            RELOAD=":reload"
-            shift
-            ;;
-        --aes-mode)
-            AES_MODE="$2"
+        -s|--system)
+            SYSTEM="$2"
             shift
             shift
             ;;
         -es|--elgamal-scheme)
             ELGAMAL_SCHEME="$2"
+            shift
+            shift
+            ;;
+        -am|--aes-mode)
+            AES_MODE="$2"
             shift
             shift
             ;;
@@ -79,11 +114,6 @@ do
             shift
             shift
             ;;
-        -s|--system)
-            SYSTEM="$2"
-            shift
-            shift
-            ;;
         -n|--nr-shares)
             NR_SHARES="$2"
             shift
@@ -92,6 +122,14 @@ do
         -t|--threshold)
             TRHESHOLD="$2"
             shift
+            shift
+            ;;
+        -r|--reload)
+            RELOAD=true
+            shift
+            ;;
+        -v|--verbose)
+            VERBOSE=true
             shift
             ;;
         -h|--help)
@@ -105,22 +143,32 @@ do
     esac
 done
 
-
-TARGET="test";
-if [ ! -z $MODULE ]; then
-  TARGET="${TARGET}-${MODULE}"
-fi
-if [ ! -z $RELOAD ]; then
-  TARGET="${TARGET}:reload"
-fi
-
-
-export AES_MODE="${AES_MODE}"
+export SYSTEM="${SYSTEM}"
 export ELGAMAL_SCHEME="${ELGAMAL_SCHEME}"
+export AES_MODE="${AES_MODE}"
 export SIGNATURE_SCHEME="${SIGNATURE_SCHEME}"
 export ALGORITHM="${ALGORITHM}"
-export SYSTEM="${SYSTEM}"
 export NR_SHARES="${NR_SHARES}"
 export THRESHOLD="${THRESHOLD}"
 
-npm run "${TARGET}"
+
+TARGET=$MODULE
+if [[ $TARGET != "tests"* ]]; then
+    TARGET="tests/$TARGET"
+fi
+
+
+opts="--maxWorkers=1"
+if [[ $RELOAD == "true" ]]; then
+    opts+=" --watch"
+fi
+if [[ $VERBOSE == "true" ]]; then
+    opts+=" --verbose"
+fi
+
+# NOTE: npm test -- --help
+if [[ $TARGET == *"spec.ts" ]]; then
+    npm test -- $opts --findRelatedTests "$TARGET"
+else
+    npm test -- $opts --findRelatedTests "$TARGET"/*
+fi

@@ -1,8 +1,8 @@
-import { Systems } from '../src/enums';
-import { initGroup } from '../src/backend';
-import { Point } from '../src/backend/abstract';
-import { ErrorMessages } from '../src/errors';
-import { resolveTestConfig } from './environ';
+import { Systems } from '../../src/enums';
+import { initGroup } from '../../src/backend';
+import { Point } from '../../src/backend/abstract';
+import { ErrorMessages } from '../../src/errors';
+import { resolveTestConfig } from '../environ';
 
 const __0n = BigInt(0)
 const __1n = BigInt(1)
@@ -144,7 +144,7 @@ describe('inverse of random point', () => {
 });
 
 
-describe('scalar operation on generator', () => {
+describe('exponentiation on generator', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
 
@@ -161,7 +161,7 @@ describe('scalar operation on generator', () => {
 });
 
 
-describe('scalar operation on random point', () => {
+describe('exponentiation on random point', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
 
@@ -169,26 +169,26 @@ describe('scalar operation on random point', () => {
     let current: Point;
     let expected: Point
 
-    const p = await ctx.randomPoint();                      // p
+    const p = await ctx.randomPoint();                    // p
 
     s = __0n;
-    current = ctx.neutral;                                  // 0
-    expected = await ctx.exp(s, p);                     // 0 * p
+    current = ctx.neutral;                                // 0
+    expected = await ctx.exp(s, p);                       // 0 * p
     expect(await current.equals(expected)).toBe(true);
 
     s += __1n;
-    current = p;                                              // p
-    expected = await ctx.exp(s, p);                     // 1 * p
+    current = p;                                          // p
+    expected = await ctx.exp(s, p);                       // 1 * p
     expect(await current.equals(expected)).toBe(true);
 
     s += __1n;
-    current = await ctx.operate(p, current);                // p + p
-    expected = await ctx.exp(s, p);                     // 2 * p
+    current = await ctx.operate(p, current);              // p + p
+    expected = await ctx.exp(s, p);                       // 2 * p
     expect(await current.equals(expected)).toBe(true);
 
     s += __1n;
-    current = await ctx.operate(p, current);                // p + (p + p)
-    expected = await ctx.exp(s, p);                     // 3 * p
+    current = await ctx.operate(p, current);              // p + (p + p)
+    expected = await ctx.exp(s, p);                       // 3 * p
     expect(await current.equals(expected)).toBe(true);
   });
 });
@@ -224,7 +224,7 @@ describe('scalar validation', () => {
 });
 
 
-describe('Keypair generation - no given secret', () => {
+describe('Secret generation - no given secret', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
     const { secret, publicPoint } = await ctx.generateSecret();
@@ -232,7 +232,7 @@ describe('Keypair generation - no given secret', () => {
   })
 });
 
-describe('Keypair generation - given secret', () => {
+describe('Secret generation - given secret', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initGroup(system);
     const scalar = await ctx.randomScalar();

@@ -2,8 +2,8 @@ import {
   mod,
   gcd,
   modInv,
-} from '../src/arith';
-import { ErrorMessages } from '../src/errors';
+} from '../../src/arith';
+import { ErrorMessages } from '../../src/errors';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);

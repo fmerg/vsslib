@@ -1,6 +1,5 @@
-import { Algorithms, ElgamalSchemes, SignatureSchemes } from '../../src/enums';
+import { Algorithms, ElgamalSchemes } from '../../src/enums';
 import { System } from '../../src/types';
-import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
 import { toCanonical } from '../../src/keys/utils';
 import { randomNonce } from '../../src/crypto';
