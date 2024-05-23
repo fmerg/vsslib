@@ -35,7 +35,6 @@ Examples:
   ./$(basename "$0") hash --algorithm sha256 --reload
 "
 
-
 set -e
 
 usage() { echo -n "$usage_string" 1>&2; }
