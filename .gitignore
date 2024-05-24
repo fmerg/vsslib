@@ -2,5 +2,6 @@
 node_modules/
 dist/
 docs/
+benchmark/
 NOTES.txt
 TODOS.txt

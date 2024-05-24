@@ -137,6 +137,12 @@ $ ./test.sh --help
 $ npm run test[:reload]
 ```
 
+### Benchmarks
+
+```
+$ node bench/sample.ts
+```
+
 ## Build
 
 ```
