@@ -71,17 +71,6 @@ await privateShare.verifyPedersen(binding, commitments, publicBytes);
 import { reconstructKey, reconstructPublic } from 'vsslib';
 ```
 
-
-### Serialization
-
-```js
-import { serializePublicKey, deserializePublicKey } from 'vsslib/serializers';
-```
-
-```
-import { serializePrivateShare, deserializePrivateShare } from 'vsslib/serializers';
-```
-
 ### Threshold decryption
 
 ```js
