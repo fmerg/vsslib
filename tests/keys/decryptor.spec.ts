@@ -14,7 +14,7 @@ describe('generation', () => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor: targetDecryptor } = await publicKey.encrypt(message, { scheme });
-    const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext);
+    const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext);
     expect(decryptor).toEqual(targetDecryptor);
     expect(await publicKey.verifyDecryptor(ciphertext, decryptor, proof)).toBe(true);
   });

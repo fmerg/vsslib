@@ -3,8 +3,8 @@ import { Point } from '../../src/backend/abstract';
 import {
   shareSecret,
   reconstructSecret,
-  reconstructPublic,
-  ScalarShare,
+  reconstructPoint,
+  SecretShare,
   PointShare,
 } from '../../src/shamir';
 
@@ -18,7 +18,7 @@ describe(`Reconstruction from shares over ${system}`, () => {
 
   let secret: bigint;
   let pub: Point;
-  let secretShares: ScalarShare<Point>[];
+  let secretShares: SecretShare<Point>[];
   let publicShares: PointShare<Point>[];
 
   beforeAll(async () => {
@@ -26,7 +26,7 @@ describe(`Reconstruction from shares over ${system}`, () => {
     pub = await ctx.exp(secret, ctx.generator);
     const sharing = await shareSecret(ctx, nrShares, threshold, secret);
     secretShares = await sharing.getSecretShares();
-    publicShares = await sharing.getPublicShares();
+    publicShares = await sharing.getPointShares();
   })
 
   test('Secret scalar reconstruction', async () => {
@@ -38,7 +38,7 @@ describe(`Reconstruction from shares over ${system}`, () => {
 
   test('Public point reconstruction', async () => {
     partialPermutations(publicShares).forEach(async (qualifiedShares) => {
-      let reconstructed = await reconstructPublic(ctx, qualifiedShares);
+      let reconstructed = await reconstructPoint(ctx, qualifiedShares);
       expect(await reconstructed.equals(pub)).toBe(qualifiedShares.length >= threshold);
     });
   });

@@ -116,7 +116,7 @@ await publicKey.verifyDecryptor(ciphertext, decryptor, proof, {
 #### Generation
 
 ```js
-const { decryptor, proof } = await privateKey.generateDecryptor(ciphertext, {
+const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext, {
   algorithm: Algorithms.SHA256,
 });
 ```

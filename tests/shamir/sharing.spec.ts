@@ -1,12 +1,12 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { ErrorMessages } from '../../src/errors';
-import { shareSecret, ScalarShare, PointShare } from '../../src/shamir';
+import { shareSecret, SecretShare, PointShare } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
 
 function selectSecretShare<P extends Point>(
-  index: number, shares: ScalarShare<P>[]
-): ScalarShare<P> {
+  index: number, shares: SecretShare<P>[]
+): SecretShare<P> {
   const selected = shares.filter(share => share.index == index)[0];
   if (!selected) throw new Error(`No share with index ${index}`);
   return selected;
@@ -23,21 +23,8 @@ function selectPointShare<P extends Point>(
 let { system } = resolveTestConfig();
 
 const thresholdParams = [
-  [1, 1],
-  [2, 1],
-  [2, 2],
-  [3, 1],
-  [3, 2],
-  [3, 3],
-  [4, 1],
-  [4, 2],
-  [4, 3],
-  [4, 4],
-  [5, 1],
-  [5, 2],
-  [5, 3],
-  [5, 4],
-  [5, 5],
+  [1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3], [4, 1], [4, 2], [4, 3], [4, 4],
+  [5, 1], [5, 2], [5, 3], [5, 4], [5, 5],
 ];
 
 
@@ -85,7 +72,7 @@ describe(`Sharing without predefined points over ${system}`, () => {
     expect(nrShares).toEqual(n);
     expect(threshold).toEqual(t);
     const secretShares = await sharing.getSecretShares();
-    const publicShares = await sharing.getPublicShares();
+    const publicShares = await sharing.getPointShares();
     expect(secretShares.length).toEqual(n);
     expect(publicShares.length).toEqual(n);
     const { exp, generator } = ctx;
@@ -116,7 +103,7 @@ describe(`Sharing with predefined points over ${system}`, () => {
       expect(nrShares).toEqual(n);
       expect(threshold).toEqual(t);
       const secretShares = await sharing.getSecretShares();
-      const publicShares = await sharing.getPublicShares();
+      const publicShares = await sharing.getPointShares();
       expect(secretShares.length).toEqual(n);
       expect(publicShares.length).toEqual(n);
       expect(polynomial.evaluate(0)).toEqual(secret);

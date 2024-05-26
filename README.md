@@ -15,9 +15,9 @@ const { privateKey, publicKey, ctx } = await generateKey('ed25519');
 ### Sharing
 
 ```js
-import { distributeKey } from 'vsslib';
+import { shareKey } from 'vsslib';
 
-const sharing = distributeKey(5, 3, privateKey);
+const sharing = shareKey(5, 3, privateKey);
 ```
 
 ```js
@@ -38,11 +38,11 @@ const publicShares = await sharing.getPublicShares();
 #### Feldmann VSS scheme
 
 ```js
-const { commitments } = await sharing.proveFeldmann();
+const commitments = await sharing.generateFeldmannCommitments();
 ```
 
 ```js
-await privateShare.verifyFeldmann(commitments);
+await privateShare.verifyFeldmannCommitments(commitments);
 ```
 
 #### Pedersen VSS scheme
@@ -52,17 +52,17 @@ const publicBytes = (await ctx.randomPoint()).toBytes();
 ```
 
 ```js
-const { bindings, commitments } = await sharing.provePedersen(publicBytes);
+const { bindings, commitments } = await sharing.generatePedersenCommitments(publicBytes);
 ```
 
 ```js
-const { bindings, commitments } = await sharing.provePedersen(publicBytes);
+const { bindings, commitments } = await sharing.generatePedersenCommitments(publicBytes);
 
 const binding = bindings[privateShare.index];
 ```
 
 ```js
-await privateShare.verifyPedersen(binding, commitments, publicBytes);
+await privateShare.verifyPedersenCommitments(binding, publicBytes, publicBytes);
 ```
 
 ### Reconstruction
@@ -78,7 +78,7 @@ const { ciphertext } = await publicKey.encrypt(message, { scheme: 'ies' });
 ```
 
 ```js
-const partialDecryptor = await privateShare.generatePartialDecryptor(ciphertext);
+const partialDecryptor = await privateShare.computePartialDecryptor(ciphertext);
 ```
 
 ```js

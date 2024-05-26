@@ -20,7 +20,7 @@ const secretShares = await sharing.getSecretShares();
 ```
 
 ```js
-const publicShares = await sharing.getPublicShares();
+const publicShares = await sharing.getPointShares();
 ```
 
 ## Share verification
@@ -52,7 +52,7 @@ const binding = bindings[index];
 ```
 
 ```js
-await secretShare.verifyPedersen(binding, commitments, pub);
+await secretShare.verifyPedersen(binding, pub, commitments);
 ```
 
 ## Reconstruction
@@ -66,5 +66,5 @@ const reconstructed = await reconstructSecret(ctx, qualifiedShares);
 ```js
 const qualifiedShares = publicShares.slice(0, threshold);
 
-const reconstructed = await reconstructPublic(ctx, qualifiedShares);
+const reconstructed = await reconstructPoint(ctx, qualifiedShares);
 ```

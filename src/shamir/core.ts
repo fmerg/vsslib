@@ -12,7 +12,7 @@ const __1n = BigInt(1);
 
 export type PointShare<P extends Point> = { value: P, index: number };
 
-export class ScalarShare<P extends Point> {
+export class SecretShare<P extends Point> {
   ctx: Group<P>;
   value: bigint;
   index: number;
@@ -35,7 +35,7 @@ export class ScalarShare<P extends Point> {
     return lhs.equals(rhs);
   }
 
-  verifyPedersen = async (binding: bigint, commitments: P[], pub: P): Promise<boolean> => {
+  verifyPedersen = async (binding: bigint, pub: P, commitments: P[]): Promise<boolean> => {
     const h = pub;
     const { value: secret, index } = this;
     const { order, generator: g, neutral, exp, operate } = this.ctx;
@@ -67,16 +67,16 @@ export class ShamirSharing<P extends Point> {
     this.polynomial = polynomial;
   }
 
-  getSecretShares = async (): Promise<ScalarShare<P>[]> => {
+  getSecretShares = async (): Promise<SecretShare<P>[]> => {
     const { polynomial: { evaluate }, nrShares } = this;
     const shares = new Array(nrShares);
     for (let index = 1; index <= nrShares; index++) {
-      shares[index - 1] = new ScalarShare(this.ctx, evaluate(index), index);
+      shares[index - 1] = new SecretShare(this.ctx, evaluate(index), index);
     }
     return shares;
   }
 
-  getPublicShares = async (): Promise<PointShare<P>[]> => {
+  getPointShares = async (): Promise<PointShare<P>[]> => {
     const { nrShares, polynomial: { evaluate }, ctx: { exp, generator } } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
@@ -172,7 +172,7 @@ export function computeLambda<P extends Point>(
 
 export function reconstructSecret<P extends Point>(
   ctx: Group<P>,
-  qualifiedShares: ScalarShare<P>[]
+  qualifiedShares: SecretShare<P>[]
 ): bigint {
   const { order } = ctx;
   const indexes = qualifiedShares.map(share => share.index);
@@ -186,7 +186,7 @@ export function reconstructSecret<P extends Point>(
 }
 
 
-export async function reconstructPublic<P extends Point>(
+export async function reconstructPoint<P extends Point>(
   ctx: Group<P>,
   qualifiedShares: PointShare<P>[]
 ): Promise<P> {

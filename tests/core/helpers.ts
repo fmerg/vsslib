@@ -3,7 +3,7 @@ import { ElgamalSchemes } from '../../src/enums';
 import { ElgamalScheme, System } from '../../src/types';
 import { generateKey } from '../../src';
 import { randomIndex } from '../helpers';
-import { distributeKey } from '../../src/core';
+import { shareKey } from '../../src/core';
 import { PublicShare } from '../../src/core';
 
 
@@ -20,10 +20,10 @@ export const createKeyDistributionSetup = async (opts: {
 }) => {
   const { system, nrShares, threshold } = opts;
   const { privateKey, publicKey, ctx } = await generateKey(system);
-  const sharing = await distributeKey(ctx, nrShares, threshold, privateKey);
-  const privateShares = await sharing.getSecretShares();
+  const sharing = await shareKey(ctx, nrShares, threshold, privateKey);
+  const privateShares = await sharing.getPrivateShares();
   const publicShares = await sharing.getPublicShares();
-  const polynomial = sharing._sharing.polynomial; // TODO
+  const polynomial = sharing.polynomial; // TODO
   return {
     privateKey,
     publicKey,
@@ -57,7 +57,7 @@ export const createThresholdDecryptionSetup = async (opts: {
   const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {
-    const share = await privateShare.generatePartialDecryptor(ciphertext);
+    const share = await privateShare.computePartialDecryptor(ciphertext);
     partialDecryptors.push(share);
   }
   let invalidIndexes: number[] = [];

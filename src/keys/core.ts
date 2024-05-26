@@ -143,7 +143,7 @@ export class PrivateKey<P extends Point> {
     );
   }
 
-  generateDecryptor = async (
+  computeDecryptor = async (
     ciphertext: Ciphertext, opts?: { algorithm?: Algorithm }
   ): Promise<{
     decryptor: Uint8Array,

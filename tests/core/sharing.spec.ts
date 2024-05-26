@@ -26,43 +26,51 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
   });
   test('Feldmann verification scheme - success', async () => {
     const { ctx, sharing, privateShares } = setup;
-    const { commitments } = await sharing.proveFeldmann();
+    const commitments = await sharing.generateFeldmannCommitments();
     privateShares.forEach(async (share: PrivateShare<Point>) => {
-      const verified = await share.verifyFeldmann(commitments);
+      const verified = await share.verifyFeldmannCommitments(commitments);
       expect(verified).toBe(true);
     });
   });
   test('Feldmann verification scheme - failure', async () => {
     const { ctx, sharing, privateShares } = setup;
-    const { commitments } = await sharing.proveFeldmann();
+    const commitments = await sharing.generateFeldmannCommitments();
     const forgedCommitmnets = [
       ...commitments.slice(0, commitments.length - 1),
       (await ctx.randomPoint()).toBytes()
     ];
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       await expect(
-        share.verifyFeldmann(forgedCommitmnets)
+        share.verifyFeldmannCommitments(forgedCommitmnets)
       ).rejects.toThrow(ErrorMessages.INVALID_SHARE);
     });
   });
   test('Pedersen verification scheme - success', async () => {
     const { ctx, sharing, privateShares } = setup;
     const publicBytes = (await ctx.randomPoint()).toBytes();
-    const { commitments, bindings } = await sharing.provePedersen(publicBytes);
+    const { commitments, bindings } = await sharing.generatePedersenCommitments(
+      publicBytes
+    );
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const binding = bindings[share.index];
-      const verified = await share.verifyPedersen(binding, commitments, publicBytes);
+      const verified = await share.verifyPedersenCommitments(
+        binding,
+        publicBytes,
+        commitments,
+      );
       expect(verified).toBe(true);
     });
   });
   test('Pedersen verification scheme - failure', async () => {
     const { ctx, sharing, privateShares } = setup;
     const publicBytes = (await ctx.randomPoint()).toBytes();
-    const { commitments, bindings } = await sharing.provePedersen(publicBytes);
+    const { commitments, bindings } = await sharing.generatePedersenCommitments(
+      publicBytes
+    );
     privateShares.forEach(async (share: PrivateShare<Point>) => {
       const forgedBinding = leInt2Buff(await ctx.randomScalar());
       await expect(
-        share.verifyPedersen(forgedBinding, commitments, publicBytes)
+        share.verifyPedersenCommitments(forgedBinding, publicBytes, commitments)
       ).rejects.toThrow(ErrorMessages.INVALID_SHARE);
     });
   });

@@ -1,9 +1,9 @@
 export {
-  ScalarShare,
+  SecretShare,
   PointShare,
   ShamirSharing,
   shareSecret,
   computeLambda,
   reconstructSecret,
-  reconstructPublic,
+  reconstructPoint,
 } from './core';
