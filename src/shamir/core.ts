@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { mod, modInv } from '../arith';
-import { SecretShare, PubShare, BaseSharing } from './base';
+import { FieldPolynomial } from '../lagrange/utils';
 import { ErrorMessages } from '../errors';
 import { randomPolynomial } from '../lagrange/utils';
 
@@ -10,9 +10,9 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-export class ScalarShare<P extends Point> implements SecretShare<
-  P, bigint, P, bigint
-> {
+export type PointShare<P extends Point> = { value: P, index: number };
+
+export class SecretShare<P extends Point> {
   ctx: Group<P>;
   value: bigint;
   index: number;
@@ -35,7 +35,7 @@ export class ScalarShare<P extends Point> implements SecretShare<
     return lhs.equals(rhs);
   }
 
-  verifyPedersen = async (binding: bigint, commitments: P[], pub: P): Promise<boolean> => {
+  verifyPedersen = async (binding: bigint, pub: P, commitments: P[]): Promise<boolean> => {
     const h = pub;
     const { value: secret, index } = this;
     const { order, generator: g, neutral, exp, operate } = this.ctx;
@@ -52,31 +52,31 @@ export class ScalarShare<P extends Point> implements SecretShare<
 };
 
 
-export class PointShare<P extends Point> implements PubShare<P, P> {
-  value: P;
-  index: number;
+export class ShamirSharing<P extends Point> {
+  ctx: Group<P>;
+  nrShares: number;
+  threshold: number;
+  polynomial: FieldPolynomial<P>;
 
-  constructor(value: P, index: number) {
-    this.value = value;
-    this.index = index;
+  constructor(
+    ctx: Group<P>, nrShares: number, threshold: number, polynomial: FieldPolynomial<P>
+  ) {
+    this.ctx = ctx;
+    this.threshold = threshold;
+    this.nrShares = nrShares;
+    this.polynomial = polynomial;
   }
-};
 
-
-export class ShamirSharing<P extends Point> extends BaseSharing<
-  P, P, bigint, ScalarShare<P>, PointShare<P>
-> {
-
-  getSecretShares = async (): Promise<ScalarShare<P>[]> => {
+  getSecretShares = async (): Promise<SecretShare<P>[]> => {
     const { polynomial: { evaluate }, nrShares } = this;
     const shares = new Array(nrShares);
     for (let index = 1; index <= nrShares; index++) {
-      shares[index - 1] = new ScalarShare(this.ctx, evaluate(index), index);
+      shares[index - 1] = new SecretShare(this.ctx, evaluate(index), index);
     }
     return shares;
   }
 
-  getPublicShares = async (): Promise<PointShare<P>[]> => {
+  getPointShares = async (): Promise<PointShare<P>[]> => {
     const { nrShares, polynomial: { evaluate }, ctx: { exp, generator } } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
@@ -172,7 +172,7 @@ export function computeLambda<P extends Point>(
 
 export function reconstructSecret<P extends Point>(
   ctx: Group<P>,
-  qualifiedShares: ScalarShare<P>[]
+  qualifiedShares: SecretShare<P>[]
 ): bigint {
   const { order } = ctx;
   const indexes = qualifiedShares.map(share => share.index);
@@ -186,7 +186,7 @@ export function reconstructSecret<P extends Point>(
 }
 
 
-export async function reconstructPublic<P extends Point>(
+export async function reconstructPoint<P extends Point>(
   ctx: Group<P>,
   qualifiedShares: PointShare<P>[]
 ): Promise<P> {

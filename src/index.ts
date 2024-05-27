@@ -1,6 +1,6 @@
 import { generateKey } from './keys';
 import {
-  distributeKey,
+  shareKey,
   reconstructKey,
   reconstructPublic,
   verifyPartialDecryptors,
@@ -22,7 +22,7 @@ const signer = require('./signer');
 
 export {
   generateKey,
-  distributeKey,
+  shareKey,
   reconstructKey,
   reconstructPublic,
   reconstructDecryptor,

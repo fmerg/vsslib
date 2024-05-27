@@ -3,7 +3,7 @@ import { ElgamalSchemes } from '../../src/enums';
 import { ElgamalScheme, System } from '../../src/types';
 import { generateKey } from '../../src';
 import { randomIndex } from '../helpers';
-import { distributeKey } from '../../src/core';
+import { shareKey } from '../../src/core';
 import { PublicShare } from '../../src/core';
 
 
@@ -13,17 +13,17 @@ export const selectShare = (index: number, shares: PublicShare<Point>[]) => {
   return selected;
 }
 
-export const createKeyDistributionSetup = async (opts: {
+export const createKeySharingSetup = async (opts: {
   system: System,
   nrShares: number,
   threshold: number,
 }) => {
   const { system, nrShares, threshold } = opts;
   const { privateKey, publicKey, ctx } = await generateKey(system);
-  const sharing = await distributeKey(ctx, nrShares, threshold, privateKey);
-  const privateShares = await sharing.getSecretShares();
+  const sharing = await shareKey(ctx, nrShares, threshold, privateKey);
+  const privateShares = await sharing.getPrivateShares();
   const publicShares = await sharing.getPublicShares();
-  const { polynomial } = sharing;
+  const polynomial = sharing.polynomial; // TODO
   return {
     privateKey,
     publicKey,
@@ -50,14 +50,14 @@ export const createThresholdDecryptionSetup = async (opts: {
     privateShares,
     publicShares,
     ctx,
-  } = await createKeyDistributionSetup({ system, nrShares, threshold, });
+  } = await createKeySharingSetup({ system, nrShares, threshold, });
   const message = scheme == ElgamalSchemes.PLAIN ?
     (await ctx.randomPoint()).toBytes() :
     Uint8Array.from(Buffer.from('destroy earth'));
   const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {
-    const share = await privateShare.generatePartialDecryptor(ciphertext);
+    const share = await privateShare.computePartialDecryptor(ciphertext);
     partialDecryptors.push(share);
   }
   let invalidIndexes: number[] = [];
