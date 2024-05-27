@@ -29,14 +29,14 @@ describe(`Reconstruction from shares over ${system}`, () => {
     publicShares = await sharing.getPointShares();
   })
 
-  test('Secret scalar reconstruction', async () => {
+  test('Secret reconstruction', async () => {
     partialPermutations(secretShares).forEach(async (qualifiedShares) => {
       let reconstructed = reconstructSecret(ctx, qualifiedShares);
       expect(reconstructed == secret).toBe(qualifiedShares.length >= threshold);
     });
   });
 
-  test('Public point reconstruction', async () => {
+  test('Point reconstruction', async () => {
     partialPermutations(publicShares).forEach(async (qualifiedShares) => {
       let reconstructed = await reconstructPoint(ctx, qualifiedShares);
       expect(await reconstructed.equals(pub)).toBe(qualifiedShares.length >= threshold);

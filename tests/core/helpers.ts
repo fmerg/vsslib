@@ -13,7 +13,7 @@ export const selectShare = (index: number, shares: PublicShare<Point>[]) => {
   return selected;
 }
 
-export const createKeyDistributionSetup = async (opts: {
+export const createKeySharingSetup = async (opts: {
   system: System,
   nrShares: number,
   threshold: number,
@@ -50,7 +50,7 @@ export const createThresholdDecryptionSetup = async (opts: {
     privateShares,
     publicShares,
     ctx,
-  } = await createKeyDistributionSetup({ system, nrShares, threshold, });
+  } = await createKeySharingSetup({ system, nrShares, threshold, });
   const message = scheme == ElgamalSchemes.PLAIN ?
     (await ctx.randomPoint()).toBytes() :
     Uint8Array.from(Buffer.from('destroy earth'));

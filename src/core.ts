@@ -19,6 +19,9 @@ import { ElgamalScheme, AesMode, Algorithm } from './types';
 import elgamal from './elgamal';
 
 
+export type PartialDecryptor = { value: Uint8Array, proof: NizkProof, index: number };
+
+
 export class PrivateShare<P extends Point> extends PrivateKey<P> {
   index: number;
 
@@ -128,6 +131,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
   }
 };
 
+
 export class KeySharing<P extends Point> extends ShamirSharing<P> {
   getPrivateShares = async (): Promise<PrivateShare<P>[]> => {
     const shares = await this.getSecretShares();
@@ -162,17 +166,6 @@ export class KeySharing<P extends Point> extends ShamirSharing<P> {
 }
 
 
-export class PartialDecryptor{
-  value: Uint8Array;
-  proof: NizkProof;
-  index: number;
-
-  constructor(value: Uint8Array, index: number, proof: NizkProof) {
-    this.value = value;
-    this.proof = proof;
-    this.index = index;
-  }
-};
 
 
 export async function shareKey<P extends Point>(
