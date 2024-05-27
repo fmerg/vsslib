@@ -19,25 +19,7 @@ describe(`Secret share verification over ${system}`, () => {
     secretShares = await sharing.getSecretShares();
   })
 
-  test('Feldmann - success', async () => {
-    const { commitments } = await sharing.proveFeldmann();
-    secretShares.forEach(async (share: SecretShare<Point>) => {
-      const { value: secret, index } = share;
-      const verified = await share.verifyFeldmann(commitments);
-      expect(verified).toBe(true);
-    });
-  });
-
-  test('Feldmann - failure', async () => {
-    const { commitments } = await sharing.proveFeldmann();
-    const forgedCommitmnets = [...commitments.slice(0, commitments.length - 1), await ctx.randomPoint()];
-    secretShares.forEach(async (share: SecretShare<Point>) => {
-      const verified = await share.verifyFeldmann(forgedCommitmnets);
-      expect(verified).toBe(false);
-    });
-  });
-
-  test('Pedersen - success', async () => {
+  test('success', async () => {
     const pub = await ctx.randomPoint();
     const { commitments, bindings } = await sharing.provePedersen(pub);
     secretShares.forEach(async (share: SecretShare<Point>) => {
@@ -47,7 +29,7 @@ describe(`Secret share verification over ${system}`, () => {
     });
   });
 
-  test('Pedersen - failure', async () => {
+  test('failure', async () => {
     const pub = await ctx.randomPoint();
     const { commitments, bindings } = await sharing.provePedersen(pub);
     secretShares.forEach(async (share: SecretShare<Point>) => {

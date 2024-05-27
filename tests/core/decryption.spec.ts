@@ -9,11 +9,11 @@ import { cartesian, partialPermutations, isEqualBuffer } from '../helpers';
 import { createThresholdDecryptionSetup, selectShare } from './helpers';
 import { resolveTestConfig } from '../environ';
 
-const { systems, nrShares, threshold, elgamalSchemes } = resolveTestConfig();
+const { systems, nrShares, threshold, elgamalSchemes: schemes} = resolveTestConfig();
 
 
 describe('Single partial decryptor verification', () => {
-  it.each(cartesian([systems, elgamalSchemes]))('Success over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))('Success over %s/%s', async (system, scheme) => {
     const { ctx, publicShares, ciphertext, partialDecryptors } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
@@ -25,7 +25,7 @@ describe('Single partial decryptor verification', () => {
       expect(verified).toBe(true);
     }
   });
-  it.each(cartesian([systems, elgamalSchemes]))('Failure over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))('Failure over %s/%s', async (system, scheme) => {
     const { ctx, publicShares, ciphertext, partialDecryptors } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
@@ -46,7 +46,7 @@ describe('Single partial decryptor verification', () => {
 
 
 describe('Partial decryptors verification', () => {
-  it.each(cartesian([systems, elgamalSchemes]))('Success over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))('Success over %s/%s', async (system, scheme) => {
     const { ctx, publicShares, ciphertext, partialDecryptors } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
@@ -56,7 +56,7 @@ describe('Partial decryptors verification', () => {
     expect(flag).toBe(true);
     expect(indexes).toEqual([]);
   });
-  it.each(cartesian([systems, elgamalSchemes]))('Failure - not raised on invalid - over %s/%s', async (
+  it.each(cartesian([systems, schemes]))('Failure - not raised on invalid - over %s/%s', async (
     system, scheme
   ) => {
     const {
@@ -70,7 +70,7 @@ describe('Partial decryptors verification', () => {
     expect(flag).toBe(false);
     expect(indexes.sort()).toEqual(invalidIndexes.sort());
   });
-  it.each(cartesian([systems, elgamalSchemes]))('Failure - raised on invalid - over %s/%s', async (
+  it.each(cartesian([systems, schemes]))('Failure - raised on invalid - over %s/%s', async (
     system, scheme
   ) => {
     const {
@@ -84,7 +84,7 @@ describe('Partial decryptors verification', () => {
       })
     ).rejects.toThrow(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
   });
-  it.each(cartesian([systems, elgamalSchemes]))('Failure - less than threshold - over %s/%s', async (
+  it.each(cartesian([systems, schemes]))('Failure - less than threshold - over %s/%s', async (
     system, scheme
   ) => {
     const { ctx, publicShares, ciphertext, partialDecryptors } = await createThresholdDecryptionSetup({
@@ -96,7 +96,7 @@ describe('Partial decryptors verification', () => {
       )
     ).rejects.toThrow(ErrorMessages.INSUFFICIENT_NR_SHARES);
   });
-  it.each(cartesian([systems, elgamalSchemes]))('Failure - skip threshold check - over %s/%s', async (
+  it.each(cartesian([systems, schemes]))('Failure - skip threshold check - over %s/%s', async (
     system, scheme
   ) => {
     const { ctx, publicShares, ciphertext, partialDecryptors } = await createThresholdDecryptionSetup({
@@ -112,7 +112,7 @@ describe('Partial decryptors verification', () => {
 
 
 describe('Decryptor reconstruction', () => {
-  it.each(cartesian([systems, elgamalSchemes]))('Skip threshold check over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))('Skip threshold check over %s/%s', async (system, scheme) => {
     const { ctx, ciphertext, decryptor: targetDecryptor, partialDecryptors } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
@@ -123,7 +123,7 @@ describe('Decryptor reconstruction', () => {
       );
     });
   });
-  it.each(cartesian([systems, elgamalSchemes]))('With threshold check over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))('With threshold check over %s/%s', async (system, scheme) => {
     const { ctx, ciphertext, decryptor: targetDecryptor, partialDecryptors } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
@@ -141,7 +141,7 @@ describe('Decryptor reconstruction', () => {
 
 
 describe('Threshold decryption', () => {
-  it.each(cartesian([systems, elgamalSchemes]))('Skip threshold check over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))('Skip threshold check over %s/%s', async (system, scheme) => {
     const { privateKey, message, ciphertext, partialDecryptors, ctx } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
@@ -168,7 +168,7 @@ describe('Threshold decryption', () => {
         });
     }
   });
-  it.each(cartesian([systems, elgamalSchemes]))('With threshold check over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))('With threshold check over %s/%s', async (system, scheme) => {
     const { privateKey, message, ciphertext, partialDecryptors, ctx } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });

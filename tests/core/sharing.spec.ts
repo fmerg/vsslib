@@ -5,7 +5,7 @@ import { reconstructKey, reconstructPublic } from '../../src/core';
 import { PrivateShare, PublicShare } from '../../src/core';
 import { partialPermutations } from '../helpers';
 import { resolveTestConfig } from '../environ';
-import { createKeyDistributionSetup } from './helpers';
+import { createKeySharingSetup } from './helpers';
 
 const { system, nrShares, threshold } = resolveTestConfig();
 
@@ -14,7 +14,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
   let setup: any;
 
   beforeAll(async () => {
-    setup = await createKeyDistributionSetup({ system, nrShares, threshold });
+    setup = await createKeySharingSetup({ system, nrShares, threshold });
   });
 
   test('Sharing setup parameters', async () => {
