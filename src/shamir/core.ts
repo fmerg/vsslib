@@ -3,6 +3,11 @@ import { mod, modInv } from '../arith';
 import { FieldPolynomial } from '../lagrange/utils';
 import { ErrorMessages } from '../errors';
 import { randomPolynomial } from '../lagrange/utils';
+import { leInt2Buff } from '../arith';
+import { NizkProof } from '../nizk';
+import { Algorithm } from '../types';
+import { Algorithms } from '../enums';
+import nizk from '../nizk';
 
 const lagrange = require('../lagrange');
 
@@ -86,6 +91,13 @@ export class ShamirSharing<P extends Point> {
     return shares;
   }
 
+  getSecretShare = async (index: number): Promise<SecretShare<P>> => {
+    if (index < 1 || index > this.nrShares)
+      throw new Error('Invalid index');
+    const value = this.polynomial.evaluate(index);
+    return new SecretShare(this.ctx, value, index);
+  }
+
   proveFeldmann = async (): Promise<{ commitments: P[] }> => {
     const { coeffs, degree, ctx: { exp, generator }} = this.polynomial;
     const commitments = new Array(degree + 1);
@@ -119,7 +131,181 @@ export class ShamirSharing<P extends Point> {
     }
     return { commitments, bindings };
   }
+
+  createFeldmannPackets = async (): Promise<{
+    packets: SharePacket[],
+    commitments: Uint8Array[],
+  }> => {
+    const packets = [];
+    const { commitments: innerCommitments } = await this.proveFeldmann();
+    const commitments = innerCommitments.map(c => c.toBytes()); // TODO
+    for (let index = 1; index <= this.nrShares; index++) {
+      const share = await this.getSecretShare(index);
+      const value = leInt2Buff(share.value);
+      packets.push({ value, index });
+    }
+    return { packets, commitments };
+  }
+
+  createPedersenPackets = async (publicBytes: Uint8Array): Promise<{
+    packets: SharePacket[],
+    commitments: Uint8Array[],
+  }> => {
+    const packets = [];
+    const pub = await this.ctx.unpackValid(publicBytes);
+    const {
+      commitments: innerCommitments,
+      bindings: innerBindings,
+    } = await this.provePedersen(pub);
+    const commitments = innerCommitments.map(c => c.toBytes()); // TODO
+    const bindings = innerBindings.map(b => leInt2Buff(b)); // TODO
+    for (let index = 1; index <= this.nrShares; index++) {
+      const share = await this.getSecretShare(index);
+      const value = leInt2Buff(share.value);
+      const binding = bindings[index]
+      packets.push({ value, index, binding });
+    }
+    return { packets, commitments };
+  }
 };
+
+export type SharePacket = {
+  value: Uint8Array,
+  index: number,
+  binding?: Uint8Array,
+}
+
+export type PublicSharePacket = {
+  value: Uint8Array,
+  index: number,
+  proof: NizkProof,
+}
+
+
+export async function verifyFeldmann<P extends Point>(
+  ctx: Group<P>,
+  share: SecretShare<P>,
+  commitments: P[],
+): Promise<boolean> {
+  const { value: secret, index } = share;
+  const { order, generator, neutral, exp, operate } = ctx;
+  const lhs = await exp(secret, generator);
+  let rhs = neutral;
+  for (const [j, c] of commitments.entries()) {
+    const curr = await exp(mod(BigInt(index ** j), order), c);
+    rhs = await operate(rhs, curr);
+  }
+  return lhs.equals(rhs);
+}
+
+export async function verifyPedersen<P extends Point>(
+  ctx: Group<P>,
+  share: SecretShare<P>,
+  binding: bigint,
+  pub: P,
+  commitments: P[]
+): Promise<boolean> {
+  const h = pub;
+  const { value: secret, index } = share;
+  const { order, generator: g, neutral, exp, operate } = ctx;
+  const lhs = await operate(
+    await exp(secret, g),
+    await exp(binding, h)
+  );
+  let rhs = neutral;
+  for (const [j, c] of commitments.entries()) {
+    rhs = await operate(rhs, await exp(BigInt(index ** j), c));
+  }
+  return lhs.equals(rhs);
+}
+
+export async function parseFeldmannPacket<P extends Point>(
+  ctx: Group<P>,
+  commitments: Uint8Array[],
+  packet: SharePacket,
+): Promise<SecretShare<P>> {
+  const { value: bytes, index } = packet;
+  const value = ctx.leBuff2Scalar(bytes);
+  const share = new SecretShare(ctx, value, index);
+  const innerCommitments = new Array(commitments.length);
+  // TODO: avoid this loop?
+  for (let i = 0; i < commitments.length; i++) {
+    innerCommitments[i] = await ctx.unpackValid(commitments[i]);
+  }
+  const verified = await verifyFeldmann(ctx, share, innerCommitments);
+  if (!verified) {
+    throw new Error("Invalid share");
+  }
+  return share;
+}
+
+
+export async function parsePedersenPacket<P extends Point>(
+  ctx: Group<P>,
+  commitments: Uint8Array[],
+  publicBytes: Uint8Array,
+  packet: SharePacket,
+): Promise<{ share: SecretShare<P>, binding: bigint }> {
+  const { value: bytes, index, binding } = packet;
+  if (!binding) {
+    throw new Error('No binding found');
+  }
+  const value = ctx.leBuff2Scalar(bytes);
+  const share = new SecretShare(ctx, value, index);
+  const innerCommitments = new Array(commitments.length);
+  // TODO: avoid this loop?
+  for (let i = 0; i < commitments.length; i++) {
+    innerCommitments[i] = await ctx.unpackValid(commitments[i]);
+  }
+  // TODO: Avoid this
+  const innerBinding = ctx.leBuff2Scalar(binding);
+  const innerPublic  = await ctx.unpackValid(publicBytes);
+  const verified = await verifyPedersen(
+    ctx, share, innerBinding, innerPublic, innerCommitments
+  );
+  if (!verified) {
+    throw new Error("Invalid share");
+  }
+  return { share, binding: innerBinding };
+}
+
+export async function createPublicSharePacket<P extends Point>(
+  share: SecretShare<P>,
+  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
+): Promise<PublicSharePacket> {
+  const { ctx, value: x, index } = share;
+  const g = ctx.generator;
+  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+  const nonce = opts ? (opts.nonce || undefined) : undefined;
+  const y = await ctx.exp(x, g);
+  const proof = await nizk(ctx, algorithm).proveDlog(x, { u: ctx.generator, v: y }, nonce);
+  return { value: y.toBytes(), index, proof };
+}
+
+export async function parsePublicSharePacket<P extends Point>(
+  ctx: Group<P>,
+  packet: PublicSharePacket,
+  opts?: {
+    algorithm?: Algorithm,
+    nonce?: Uint8Array,
+  },
+): Promise<PointShare<P>> {
+  const { value, index, proof } = packet;
+  const y = await ctx.unpackValid(value);
+  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+  const nonce = opts ? (opts.nonce || undefined) : undefined;
+  const verified = await nizk(ctx, algorithm).verifyDlog(
+    {
+      u: ctx.generator,
+      v: y,
+    },
+    proof,
+    nonce
+  );
+  if (!verified)
+    throw new Error("Invalid public share");
+  return { value: y, index };
+}
 
 
 export async function shareSecret<P extends Point>(

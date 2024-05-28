@@ -19,6 +19,7 @@ import { ElgamalScheme, AesMode, Algorithm } from './types';
 import elgamal from './elgamal';
 
 
+export type SharePacket = { value: Uint8Array, index: number, binding?: Uint8Array };
 export type PartialDecryptor = { value: Uint8Array, proof: NizkProof, index: number };
 
 
@@ -164,8 +165,6 @@ export class KeySharing<P extends Point> extends ShamirSharing<P> {
     }
   }
 }
-
-
 
 
 export async function shareKey<P extends Point>(
