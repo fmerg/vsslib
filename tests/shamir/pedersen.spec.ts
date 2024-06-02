@@ -1,8 +1,9 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { SecretShare, ShamirSharing } from '../../src/shamir';
-import { shareSecret } from '../../src/shamir';
+import { shareSecret, verifyPedersenCommitments } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
+import { leInt2Buff } from '../../src/arith';
 
 let { system, nrShares, threshold } = resolveTestConfig();
 
@@ -20,22 +21,34 @@ describe(`Secret share verification over ${system}`, () => {
   })
 
   test('success', async () => {
-    const pub = await ctx.randomPoint();
-    const { commitments, bindings } = await sharing.provePedersen(pub);
+    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const { commitments, bindings } = await sharing.provePedersen(publicBytes);
     secretShares.forEach(async (share: SecretShare<Point>) => {
       const binding = bindings[share.index];
-      const verified = await share.verifyPedersen(binding, pub, commitments);
+      const verified = await verifyPedersenCommitments(
+        ctx,
+        share,
+        binding,
+        publicBytes,
+        commitments
+      );
       expect(verified).toBe(true);
     });
   });
 
   test('failure', async () => {
-    const pub = await ctx.randomPoint();
-    const { commitments, bindings } = await sharing.provePedersen(pub);
+    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const { commitments, bindings } = await sharing.provePedersen(publicBytes);
     secretShares.forEach(async (share: SecretShare<Point>) => {
-      const forgedBinding = await ctx.randomScalar();
-      const verified = await share.verifyPedersen(forgedBinding, pub, commitments);
-      expect(verified).toBe(false);
+      const forgedBinding = leInt2Buff(await ctx.randomScalar());
+      const verification = verifyPedersenCommitments(
+        ctx,
+        share,
+        forgedBinding,
+        publicBytes,
+        commitments
+      );
+      await expect(verification).rejects.toThrow('Invalid share');
     });
   });
 })

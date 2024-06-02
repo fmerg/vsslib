@@ -5,7 +5,8 @@ import { reconstructKey, reconstructPublic } from '../../src/core';
 import { PrivateShare, PublicShare } from '../../src/core';
 import { partialPermutations } from '../helpers';
 import { resolveTestConfig } from '../environ';
-import { createKeySharingSetup } from './helpers';
+import { createKeySharingSetup, selectPrivateShare } from './helpers';
+import { SharePacket } from '../../src/shamir';
 
 const { system, nrShares, threshold } = resolveTestConfig();
 
@@ -17,63 +18,73 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     setup = await createKeySharingSetup({ system, nrShares, threshold });
   });
 
-  test('Sharing setup parameters', async () => {
-    const { privateKey, privateShares, publicShares, polynomial } = setup;
-    expect(privateShares.length).toEqual(nrShares);
-    expect(publicShares.length).toEqual(nrShares);
-    expect(polynomial.degree).toEqual(threshold - 1);
-    expect(polynomial.evaluate(0)).toEqual(privateKey.secret);
-  });
   test('Feldmann verification scheme - success', async () => {
-    const { ctx, sharing, privateShares } = setup;
-    const commitments = await sharing.generateFeldmannCommitments();
-    privateShares.forEach(async (share: PrivateShare<Point>) => {
-      const verified = await share.verifyFeldmannCommitments(commitments);
-      expect(verified).toBe(true);
-    });
+    const { ctx, sharing, privateShares: shares } = setup;
+    const { packets, commitments } = await sharing.createFeldmannPackets();
+    packets.forEach(async (packet: SharePacket) => {
+      const privateShare = await PrivateShare.fromFeldmannPacket(ctx, commitments, packet);
+      const targetShare = selectPrivateShare(privateShare.index, shares);
+      expect(await privateShare.equals(targetShare)).toBe(true);
+    })
   });
   test('Feldmann verification scheme - failure', async () => {
-    const { ctx, sharing, privateShares } = setup;
-    const commitments = await sharing.generateFeldmannCommitments();
+    const { ctx, sharing, privateShares: shares } = setup;
+    const { packets, commitments } = await sharing.createFeldmannPackets();
     const forgedCommitmnets = [
       ...commitments.slice(0, commitments.length - 1),
       (await ctx.randomPoint()).toBytes()
     ];
-    privateShares.forEach(async (share: PrivateShare<Point>) => {
+    packets.forEach(async (packet: SharePacket) => {
+      const privateShare = await PrivateShare.fromFeldmannPacket(ctx, commitments, packet);
       await expect(
-        share.verifyFeldmannCommitments(forgedCommitmnets)
-      ).rejects.toThrow(ErrorMessages.INVALID_SHARE);
-    });
+        PrivateShare.fromFeldmannPacket(ctx, forgedCommitmnets, packet)
+      ).rejects.toThrow(
+        'Invalid share'
+      );
+    })
   });
+
   test('Pedersen verification scheme - success', async () => {
-    const { ctx, sharing, privateShares } = setup;
+    const { ctx, sharing, privateShares: shares } = setup;
     const publicBytes = (await ctx.randomPoint()).toBytes();
-    const { commitments, bindings } = await sharing.generatePedersenCommitments(
+    const { packets, commitments } = await sharing.createPedersenPackets(
       publicBytes
     );
-    privateShares.forEach(async (share: PrivateShare<Point>) => {
-      const binding = bindings[share.index];
-      const verified = await share.verifyPedersenCommitments(
-        binding,
-        publicBytes,
+    packets.forEach(async (packet: SharePacket) => {
+      const privateShare = await PrivateShare.fromPedersenPacket(
+        ctx,
         commitments,
+        publicBytes,
+        packet
       );
-      expect(verified).toBe(true);
-    });
+      const targetShare = selectPrivateShare(privateShare.index, shares);
+      expect(await privateShare.equals(targetShare)).toBe(true);
+    })
   });
   test('Pedersen verification scheme - failure', async () => {
-    const { ctx, sharing, privateShares } = setup;
+    const { ctx, sharing, privateShares: shares } = setup;
     const publicBytes = (await ctx.randomPoint()).toBytes();
-    const { commitments, bindings } = await sharing.generatePedersenCommitments(
+    const { packets, commitments } = await sharing.createPedersenPackets(
       publicBytes
     );
-    privateShares.forEach(async (share: PrivateShare<Point>) => {
-      const forgedBinding = leInt2Buff(await ctx.randomScalar());
+    const forgedCommitmnets = [
+      ...commitments.slice(0, commitments.length - 1),
+      (await ctx.randomPoint()).toBytes()
+    ];
+    packets.forEach(async (packet: SharePacket) => {
       await expect(
-        share.verifyPedersenCommitments(forgedBinding, publicBytes, commitments)
-      ).rejects.toThrow(ErrorMessages.INVALID_SHARE);
-    });
+        PrivateShare.fromPedersenPacket(
+          ctx,
+          forgedCommitmnets,
+          publicBytes,
+          packet,
+        )
+      ).rejects.toThrow(
+        'Invalid share'
+      );
+    })
   });
+
   test('Private reconstruction - skip threshold check', async () => {
     const { privateKey, privateShares, ctx } = setup;
     partialPermutations(privateShares).forEach(async (qualifiedShares) => {

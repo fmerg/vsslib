@@ -38,11 +38,7 @@ const publicShares = await sharing.getPublicShares();
 #### Feldmann VSS scheme
 
 ```js
-const commitments = await sharing.generateFeldmannCommitments();
-```
-
-```js
-await privateShare.verifyFeldmannCommitments(commitments);
+// TODO
 ```
 
 #### Pedersen VSS scheme
@@ -62,7 +58,7 @@ const binding = bindings[privateShare.index];
 ```
 
 ```js
-await privateShare.verifyPedersenCommitments(binding, publicBytes, publicBytes);
+// TODO
 ```
 
 ### Reconstruction

@@ -3,11 +3,18 @@ import { ElgamalSchemes } from '../../src/enums';
 import { ElgamalScheme, System } from '../../src/types';
 import { generateKey } from '../../src';
 import { randomIndex } from '../helpers';
-import { shareKey } from '../../src/core';
-import { PublicShare } from '../../src/core';
+import { SecretShare } from '../../src/shamir';
+import { shareKey, PrivateShare, PublicShare } from '../../src/core';
 
 
 export const selectShare = (index: number, shares: PublicShare<Point>[]) => {
+  const selected = shares.filter(share => share.index == index)[0];
+  if (!selected) throw new Error(`No share found for index ${index}`);
+  return selected;
+}
+
+
+export const selectPrivateShare = (index: number, shares: PrivateShare<Point>[]) => {
   const selected = shares.filter(share => share.index == index)[0];
   if (!selected) throw new Error(`No share found for index ${index}`);
   return selected;
@@ -20,19 +27,25 @@ export const createKeySharingSetup = async (opts: {
 }) => {
   const { system, nrShares, threshold } = opts;
   const { privateKey, publicKey, ctx } = await generateKey(system);
-  const sharing = await shareKey(ctx, nrShares, threshold, privateKey);
-  const privateShares = await sharing.getPrivateShares();
-  const publicShares = await sharing.getPublicShares();
-  const polynomial = sharing.polynomial; // TODO
+  const sharing = await privateKey.generateSharing(nrShares, threshold);
+  const polynomial = sharing.polynomial;
+  const secretShares = await sharing.getSecretShares();
+  const privateShares = secretShares.map(({ value, index }: SecretShare<Point>) => {
+    return new PrivateShare(ctx, value, index);
+  });
+  const publicShares = []
+  for (const share of privateShares) {
+    publicShares.push(await share.getPublicShare());
+  }
   return {
     privateKey,
     publicKey,
+    ctx,
+    sharing,
+    polynomial,
     privateShares,
     publicShares,
-    polynomial,
-    sharing,
-    ctx,
-  }
+  };
 }
 
 

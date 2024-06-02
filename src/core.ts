@@ -8,8 +8,13 @@ import {
   ShamirSharing,
   computeLambda,
   shareSecret,
+  parseFeldmannPacket,
+  parsePedersenPacket,
   reconstructSecret,
   reconstructPoint,
+  verifyFeldmannCommitments,
+  verifyPedersenCommitments,
+  SharePacket,
 } from './shamir';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
@@ -19,7 +24,6 @@ import { ElgamalScheme, AesMode, Algorithm } from './types';
 import elgamal from './elgamal';
 
 
-export type SharePacket = { value: Uint8Array, index: number, binding?: Uint8Array };
 export type PartialDecryptor = { value: Uint8Array, proof: NizkProof, index: number };
 
 
@@ -33,36 +37,28 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
 
   _secretShare = () => new SecretShare(this.ctx, this.secret, this.index);
 
-  verifyFeldmannCommitments = async (commitments: Uint8Array[]): Promise<boolean> => {
-    const innerCommitments = new Array(commitments.length);
-    for (const [i, commitment] of commitments.entries()) {
-      innerCommitments[i] = await this.ctx.unpackValid(commitment)
-    }
-
-    const verified = await this._secretShare().verifyFeldmann(innerCommitments);
-    if (!verified)
-      throw new Error(ErrorMessages.INVALID_SHARE);
-
-    return verified;
+  static async fromFeldmannPacket(
+    ctx: Group<Point>,
+    commitments: Uint8Array[],
+    packet: SharePacket
+  ): Promise<PrivateShare<Point>> {
+    const { value, index } = await parseFeldmannPacket(ctx, commitments, packet);
+    return new PrivateShare(ctx, value, index);
   }
 
-  verifyPedersenCommitments = async (
-    binding: Uint8Array, publicBytes: Uint8Array, commitments: Uint8Array[]
-  ): Promise<boolean> => {
-    const innerBinding = this.ctx.leBuff2Scalar(binding);
-    const innerPublic = await this.ctx.unpackValid(publicBytes);
-    const innerCommitments = new Array(commitments.length);
-    for (const [i, commitment] of commitments.entries()) {
-      innerCommitments[i] = await this.ctx.unpackValid(commitment)
-    }
-
-    const verified = await this._secretShare().verifyPedersen(
-      innerBinding, innerPublic, innerCommitments
+  static async fromPedersenPacket(
+    ctx: Group<Point>,
+    commitments: Uint8Array[],
+    publicBytes: Uint8Array,
+    packet: SharePacket,
+  ): Promise<PrivateShare<Point>> {
+    const { share: { value, index } } = await parsePedersenPacket(
+      ctx,
+      commitments,
+      publicBytes,
+      packet,
     );
-    if (!verified)
-      throw new Error(ErrorMessages.INVALID_SHARE);
-
-    return verified;
+    return new PrivateShare(ctx, value, index);
   }
 
   async getPublicShare(): Promise<PublicShare<P>> {
@@ -85,6 +81,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
     return { value: decryptor, proof, index: this.index };
   }
 };
+
 
 
 export class PublicShare<P extends Point> extends PublicKey<P> {
@@ -150,19 +147,14 @@ export class KeySharing<P extends Point> extends ShamirSharing<P> {
 
   generateFeldmannCommitments = async (): Promise<Uint8Array[]> => {
     const { commitments } = await this.proveFeldmann();
-    return commitments.map(c => c.toBytes());
+    return commitments;
   }
 
   generatePedersenCommitments = async (publicBytes: Uint8Array): Promise<{
     commitments: Uint8Array[],
     bindings: Uint8Array[],
   }> => {
-    const innerPublic = await this.ctx.unpackValid(publicBytes)
-    const { commitments, bindings } = await this.provePedersen(innerPublic);
-    return {
-      commitments: commitments.map(c => c.toBytes()),
-      bindings: bindings.map(b => leInt2Buff(b)),
-    }
+    return this.provePedersen(publicBytes);
   }
 }
 

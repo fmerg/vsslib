@@ -27,33 +27,6 @@ export class SecretShare<P extends Point> {
     this.value = value;
     this.index = index;
   }
-
-  verifyFeldmann = async (commitments: P[]): Promise<boolean> => {
-    const { value: secret, index } = this;
-    const { order, generator, neutral, exp, operate } = this.ctx;
-    const lhs = await exp(secret, generator);
-    let rhs = neutral;
-    for (const [j, c] of commitments.entries()) {
-      const curr = await exp(mod(BigInt(index ** j), order), c);
-      rhs = await operate(rhs, curr);
-    }
-    return lhs.equals(rhs);
-  }
-
-  verifyPedersen = async (binding: bigint, pub: P, commitments: P[]): Promise<boolean> => {
-    const h = pub;
-    const { value: secret, index } = this;
-    const { order, generator: g, neutral, exp, operate } = this.ctx;
-    const lhs = await operate(
-      await exp(secret, g),
-      await exp(binding, h)
-    );
-    let rhs = neutral;
-    for (const [j, c] of commitments.entries()) {
-      rhs = await operate(rhs, await exp(BigInt(index ** j), c));
-    }
-    return lhs.equals(rhs);
-  }
 };
 
 
@@ -98,20 +71,21 @@ export class ShamirSharing<P extends Point> {
     return new SecretShare(this.ctx, value, index);
   }
 
-  proveFeldmann = async (): Promise<{ commitments: P[] }> => {
+  proveFeldmann = async (): Promise<{ commitments: Uint8Array[] }> => {
     const { coeffs, degree, ctx: { exp, generator }} = this.polynomial;
     const commitments = new Array(degree + 1);
     for (const [index, coeff] of coeffs.entries()) {
-      commitments[index] = await exp(coeff, generator);
+      const c = await exp(coeff, generator);
+      commitments[index] = c.toBytes();
     }
     return { commitments };
   }
 
-  provePedersen = async (pub: P): Promise<{
-    commitments: P[],
-    bindings: bigint[],
+  provePedersen = async (publicBytes: Uint8Array): Promise<{
+    commitments: Uint8Array[],
+    bindings: Uint8Array[],
   }> => {
-    const h = pub;
+    const h = await this.ctx.unpackValid(publicBytes);
     const { generator: g, operate, exp } = this.ctx;
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
@@ -120,14 +94,17 @@ export class ShamirSharing<P extends Point> {
     for (const [i, a] of coeffs.entries()) {
       const a = coeffs[i];
       const b = bindingPolynomial.coeffs[i];
-      commitments[i] = await operate(
+      const c = await operate(
         await exp(a, g),
         await exp(b, h),
       );
-      bindings[i] = await bindingPolynomial.evaluate(i);
+      commitments[i] = c.toBytes();
+      const bAux = await bindingPolynomial.evaluate(i);
+      bindings[i] = leInt2Buff(bAux);
     }
     for (let j = coeffs.length; j <= this.nrShares; j++) {
-      bindings[j] = await bindingPolynomial.evaluate(j);
+      const bAux = await bindingPolynomial.evaluate(j);
+      bindings[j] = leInt2Buff(bAux);
     }
     return { commitments, bindings };
   }
@@ -137,8 +114,7 @@ export class ShamirSharing<P extends Point> {
     commitments: Uint8Array[],
   }> => {
     const packets = [];
-    const { commitments: innerCommitments } = await this.proveFeldmann();
-    const commitments = innerCommitments.map(c => c.toBytes()); // TODO
+    const { commitments } = await this.proveFeldmann();
     for (let index = 1; index <= this.nrShares; index++) {
       const share = await this.getSecretShare(index);
       const value = leInt2Buff(share.value);
@@ -152,13 +128,7 @@ export class ShamirSharing<P extends Point> {
     commitments: Uint8Array[],
   }> => {
     const packets = [];
-    const pub = await this.ctx.unpackValid(publicBytes);
-    const {
-      commitments: innerCommitments,
-      bindings: innerBindings,
-    } = await this.provePedersen(pub);
-    const commitments = innerCommitments.map(c => c.toBytes()); // TODO
-    const bindings = innerBindings.map(b => leInt2Buff(b)); // TODO
+    const { commitments, bindings } = await this.provePedersen(publicBytes);
     for (let index = 1; index <= this.nrShares; index++) {
       const share = await this.getSecretShare(index);
       const value = leInt2Buff(share.value);
@@ -182,41 +152,50 @@ export type PublicSharePacket = {
 }
 
 
-export async function verifyFeldmann<P extends Point>(
+export async function verifyFeldmannCommitments<P extends Point>(
   ctx: Group<P>,
   share: SecretShare<P>,
-  commitments: P[],
+  commitments: Uint8Array[],
 ): Promise<boolean> {
-  const { value: secret, index } = share;
+  const { value, index } = share;
   const { order, generator, neutral, exp, operate } = ctx;
-  const lhs = await exp(secret, generator);
+  const lhs = await exp(value, generator);
   let rhs = neutral;
-  for (const [j, c] of commitments.entries()) {
+  for (const [j, commitment] of commitments.entries()) {
+    const c = await ctx.unpackValid(commitment);
     const curr = await exp(mod(BigInt(index ** j), order), c);
     rhs = await operate(rhs, curr);
   }
-  return lhs.equals(rhs);
+  const valid = await lhs.equals(rhs);
+  if (!valid)
+    throw new Error('Invalid share');
+  return true
 }
 
-export async function verifyPedersen<P extends Point>(
+export async function verifyPedersenCommitments<P extends Point>(
   ctx: Group<P>,
   share: SecretShare<P>,
-  binding: bigint,
-  pub: P,
-  commitments: P[]
+  binding: Uint8Array,
+  publicBytes: Uint8Array,
+  commitments: Uint8Array[],
 ): Promise<boolean> {
-  const h = pub;
-  const { value: secret, index } = share;
+  const h = await ctx.unpackValid(publicBytes);
+  const { value: s, index } = share;
   const { order, generator: g, neutral, exp, operate } = ctx;
+  const b = ctx.leBuff2Scalar(binding);
   const lhs = await operate(
-    await exp(secret, g),
-    await exp(binding, h)
+    await exp(s, g),
+    await exp(b, h)
   );
   let rhs = neutral;
-  for (const [j, c] of commitments.entries()) {
+  for (const [j, commitment] of commitments.entries()) {
+    const c = await ctx.unpackValid(commitment);
     rhs = await operate(rhs, await exp(BigInt(index ** j), c));
   }
-  return lhs.equals(rhs);
+  const valid = await lhs.equals(rhs);
+  if (!valid)
+    throw new Error('Invalid share');
+  return true
 }
 
 export async function parseFeldmannPacket<P extends Point>(
@@ -228,13 +207,9 @@ export async function parseFeldmannPacket<P extends Point>(
   const value = ctx.leBuff2Scalar(bytes);
   const share = new SecretShare(ctx, value, index);
   const innerCommitments = new Array(commitments.length);
-  // TODO: avoid this loop?
-  for (let i = 0; i < commitments.length; i++) {
-    innerCommitments[i] = await ctx.unpackValid(commitments[i]);
-  }
-  const verified = await verifyFeldmann(ctx, share, innerCommitments);
+  const verified = await verifyFeldmannCommitments(ctx, share, commitments);
   if (!verified) {
-    throw new Error("Invalid share");
+    throw new Error('Invalid share');
   }
   return share;
 }
@@ -245,28 +220,20 @@ export async function parsePedersenPacket<P extends Point>(
   commitments: Uint8Array[],
   publicBytes: Uint8Array,
   packet: SharePacket,
-): Promise<{ share: SecretShare<P>, binding: bigint }> {
+): Promise<{ share: SecretShare<P>, binding: Uint8Array }> {
   const { value: bytes, index, binding } = packet;
   if (!binding) {
     throw new Error('No binding found');
   }
   const value = ctx.leBuff2Scalar(bytes);
   const share = new SecretShare(ctx, value, index);
-  const innerCommitments = new Array(commitments.length);
-  // TODO: avoid this loop?
-  for (let i = 0; i < commitments.length; i++) {
-    innerCommitments[i] = await ctx.unpackValid(commitments[i]);
-  }
-  // TODO: Avoid this
-  const innerBinding = ctx.leBuff2Scalar(binding);
-  const innerPublic  = await ctx.unpackValid(publicBytes);
-  const verified = await verifyPedersen(
-    ctx, share, innerBinding, innerPublic, innerCommitments
+  const verified = await verifyPedersenCommitments(
+    ctx, share, binding, publicBytes, commitments,
   );
   if (!verified) {
     throw new Error("Invalid share");
   }
-  return { share, binding: innerBinding };
+  return { share, binding };
 }
 
 export async function createPublicSharePacket<P extends Point>(

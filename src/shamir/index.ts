@@ -1,8 +1,11 @@
 export {
   SecretShare,
   PointShare,
+  SharePacket,
   ShamirSharing,
   shareSecret,
+  verifyFeldmannCommitments,
+  verifyPedersenCommitments,
   parseFeldmannPacket,
   parsePedersenPacket,
   createPublicSharePacket,

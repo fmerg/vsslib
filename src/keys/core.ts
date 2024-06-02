@@ -8,6 +8,7 @@ import { Signature } from '../signer';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, SignatureScheme } from '../types';
 import { toCanonical, fromCanonical, ctEqualBuffer } from './utils';
+import { shareSecret, ShamirSharing } from '../shamir';
 
 import elgamal from '../elgamal';
 import nizk from '../nizk';
@@ -42,6 +43,12 @@ export class PrivateKey<P extends Point> {
   getPublicBytes = async (): Promise<Uint8Array> => {
     const { exp, generator } = this.ctx;
     return (await exp(this.secret, generator)).toBytes();
+  }
+
+  generateSharing = async (nrShares: number, threshold: number): Promise<
+    ShamirSharing<P>
+  > => {
+    return shareSecret(this.ctx, nrShares, threshold, this.secret);
   }
 
   proveSecret = async (opts?: { nonce?: Uint8Array, algorithm?: Algorithm }): Promise<

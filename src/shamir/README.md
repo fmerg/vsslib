@@ -32,7 +32,7 @@ const commitments = await sharing.proveFeldmann();
 ```
 
 ```js
-await secretShare.verifyFelmann(commitments);
+// TODO
 ```
 
 ### Pedersen scheme
@@ -52,7 +52,7 @@ const binding = bindings[index];
 ```
 
 ```js
-await secretShare.verifyPedersen(binding, pub, commitments);
+// TODO
 ```
 
 ## Reconstruction
