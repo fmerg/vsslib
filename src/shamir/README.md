@@ -42,7 +42,7 @@ const pub = await ctx.randomPoint();
 ```
 
 ```js
-const { bindings, commitments } = await sharing.provePedersen(pub);
+// TODO
 ```
 
 ```js

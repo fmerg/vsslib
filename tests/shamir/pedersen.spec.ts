@@ -22,9 +22,9 @@ describe(`Secret share verification over ${system}`, () => {
 
   test('success', async () => {
     const publicBytes = (await ctx.randomPoint()).toBytes();
-    const { commitments, bindings } = await sharing.provePedersen(publicBytes);
+    const { commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
     secretShares.forEach(async (share: SecretShare<Point>) => {
-      const binding = bindings[share.index];
+      const binding = bindings[share.index - 1];
       const verified = await verifyPedersenCommitments(
         ctx,
         share,
@@ -38,7 +38,7 @@ describe(`Secret share verification over ${system}`, () => {
 
   test('failure', async () => {
     const publicBytes = (await ctx.randomPoint()).toBytes();
-    const { commitments, bindings } = await sharing.provePedersen(publicBytes);
+    const { commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
     secretShares.forEach(async (share: SecretShare<Point>) => {
       const forgedBinding = leInt2Buff(await ctx.randomScalar());
       const verification = verifyPedersenCommitments(

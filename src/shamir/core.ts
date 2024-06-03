@@ -71,34 +71,6 @@ export class ShamirSharing<P extends Point> {
     return new SecretShare(this.ctx, value, index);
   }
 
-  provePedersen = async (publicBytes: Uint8Array): Promise<{
-    commitments: Uint8Array[],
-    bindings: Uint8Array[],
-  }> => {
-    const h = await this.ctx.unpackValid(publicBytes);
-    const { generator: g, operate, exp } = this.ctx;
-    const { coeffs, degree } = this.polynomial;
-    const bindingPolynomial = await randomPolynomial(this.ctx, degree);
-    const commitments = new Array(degree + 1);
-    const bindings = new Array(degree + 1);
-    for (const [i, a] of coeffs.entries()) {
-      const a = coeffs[i];
-      const b = bindingPolynomial.coeffs[i];
-      const c = await operate(
-        await exp(a, g),
-        await exp(b, h),
-      );
-      commitments[i] = c.toBytes();
-      const bAux = await bindingPolynomial.evaluate(i);
-      bindings[i] = leInt2Buff(bAux);
-    }
-    for (let j = coeffs.length; j <= this.nrShares; j++) {
-      const bAux = await bindingPolynomial.evaluate(j);
-      bindings[j] = leInt2Buff(bAux);
-    }
-    return { commitments, bindings };
-  }
-
   createFeldmannPackets = async (): Promise<{
     packets: SharePacket[],
     commitments: Uint8Array[],
@@ -121,17 +93,35 @@ export class ShamirSharing<P extends Point> {
 
   createPedersenPackets = async (publicBytes: Uint8Array): Promise<{
     packets: SharePacket[],
+    bindings: Uint8Array[],
     commitments: Uint8Array[],
   }> => {
-    const packets = [];
-    const { commitments, bindings } = await this.provePedersen(publicBytes);
-    for (let index = 1; index <= this.nrShares; index++) {
+    const { operate, exp, generator: g } = this.ctx;
+    const { coeffs, degree } = this.polynomial;
+    const h = await this.ctx.unpackValid(publicBytes);
+    const commitments = new Array(degree + 1);
+    const bindings = new Array(degree + 1);
+    const packets = new Array<SharePacket>(this.nrShares);
+    const bindingPolynomial = await randomPolynomial(this.ctx, degree);
+    for (let i = 0; i < this.nrShares; i++) {
+      if (i < degree + 1) {
+        const a = coeffs[i];
+        const b = bindingPolynomial.coeffs[i];
+        const c = await operate(
+          await exp(a, g),
+          await exp(b, h),
+        );
+        commitments[i] = c.toBytes();
+      }
+      const aux = await bindingPolynomial.evaluate(i + 1);
+      const binding = leInt2Buff(aux);
+      bindings[i] = binding;
+      const index = i + 1;
       const share = await this.getSecretShare(index);
       const value = leInt2Buff(share.value);
-      const binding = bindings[index]
-      packets.push({ value, index, binding });
+      packets[i] = { value, index, binding };
     }
-    return { packets, commitments };
+    return { packets, bindings, commitments };
   }
 };
 
