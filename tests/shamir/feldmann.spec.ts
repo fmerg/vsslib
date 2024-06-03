@@ -20,7 +20,7 @@ describe(`Secret share verification over ${system}`, () => {
   })
 
   test('success', async () => {
-    const { commitments } = await sharing.proveFeldmann();
+    const { commitments } = await sharing.createFeldmannPackets();
     secretShares.forEach(async (share: SecretShare<Point>) => {
       const { value: secret, index } = share;
       const verified = await verifyFeldmannCommitments(
@@ -33,7 +33,7 @@ describe(`Secret share verification over ${system}`, () => {
   });
 
   test('failure', async () => {
-    const { commitments } = await sharing.proveFeldmann();
+    const { commitments } = await sharing.createFeldmannPackets();
     const forgedCommitmnets = [
       ...commitments.slice(0, commitments.length - 1),
       (await ctx.randomPoint()).toBytes()

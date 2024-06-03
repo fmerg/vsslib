@@ -28,7 +28,7 @@ const publicShares = await sharing.getPointShares();
 ### Feldmann scheme
 
 ```js
-const commitments = await sharing.proveFeldmann();
+// TODO
 ```
 
 ```js

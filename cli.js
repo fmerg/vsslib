@@ -53,8 +53,8 @@ selectParty = (index, parties) => parties.filter(p => p.index == index)[0];
 
 async function demoDKG(options) {
   const { system, encoding } = options;
-  const nrShares = 10;
-  const threshold = 3;
+  const nrShares = 20;
+  const threshold = 10;
   // const scheme = "Feldmann";
   const scheme = "Pedersen";
 

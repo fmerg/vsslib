@@ -71,16 +71,6 @@ export class ShamirSharing<P extends Point> {
     return new SecretShare(this.ctx, value, index);
   }
 
-  proveFeldmann = async (): Promise<{ commitments: Uint8Array[] }> => {
-    const { coeffs, degree, ctx: { exp, generator }} = this.polynomial;
-    const commitments = new Array(degree + 1);
-    for (const [index, coeff] of coeffs.entries()) {
-      const c = await exp(coeff, generator);
-      commitments[index] = c.toBytes();
-    }
-    return { commitments };
-  }
-
   provePedersen = async (publicBytes: Uint8Array): Promise<{
     commitments: Uint8Array[],
     bindings: Uint8Array[],
@@ -113,12 +103,18 @@ export class ShamirSharing<P extends Point> {
     packets: SharePacket[],
     commitments: Uint8Array[],
   }> => {
-    const packets = [];
-    const { commitments } = await this.proveFeldmann();
-    for (let index = 1; index <= this.nrShares; index++) {
-      const share = await this.getSecretShare(index);
+    const { coeffs, degree, ctx: { exp, generator: g } } = this.polynomial;
+    const commitments = new Array(degree + 1);
+    const packets = new Array<SharePacket>(this.nrShares);
+    for (let i = 0; i < this.nrShares; i++) {
+      if (i < degree + 1) {
+        const c = await exp(coeffs[i], g);
+        commitments[i] = c.toBytes();
+      }
+      const index = i + 1;
+      const share = await this.getSecretShare(index)
       const value = leInt2Buff(share.value);
-      packets.push({ value, index });
+      packets[i] = { value, index };
     }
     return { packets, commitments };
   }

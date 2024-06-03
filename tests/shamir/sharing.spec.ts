@@ -83,7 +83,7 @@ describe(`Sharing without predefined points over ${system}`, () => {
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
-    const { commitments } = await sharing.proveFeldmann();
+    const { commitments } = await sharing.createFeldmannPackets();
     expect(commitments.length).toEqual(t);
   });
 });
@@ -119,7 +119,7 @@ describe(`Sharing with predefined points over ${system}`, () => {
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);
-      const { commitments } = await sharing.proveFeldmann();
+      const { commitments } = await sharing.createFeldmannPackets();
       expect(commitments.length).toEqual(t);
     }
   });
