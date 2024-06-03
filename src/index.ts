@@ -1,7 +1,7 @@
 import { generateKey } from './keys';
 import {
   reconstructKey,
-  reconstructPublic,
+  reconstructPublicKey,
   verifyPartialDecryptors,
   reconstructDecryptor,
   thresholdDecrypt
@@ -22,7 +22,7 @@ const signer = require('./signer');
 export {
   generateKey,
   reconstructKey,
-  reconstructPublic,
+  reconstructPublicKey,
   reconstructDecryptor,
   verifyPartialDecryptors,
   thresholdDecrypt,

@@ -14,7 +14,7 @@ const {
   parsePedersenPacket,
   createPublicSharePacket,
   parsePublicSharePacket,
-  reconstructPoint,
+  reconstructPublic,
 } = require('./dist/shamir');
 
 const enums = require('./dist/enums')
@@ -42,13 +42,20 @@ class ShareHolder {
     this.sharing = undefined;
     this.aggregates = [];
     this.share = undefined;
-    this.publicShare = undefined;
-    this.pointShares = [];
+    this.localPublicShare = undefined;
+    this.publicShares = [];
     this.globalPublic = undefined;
   }
 }
 
 selectParty = (index, parties) => parties.filter(p => p.index == index)[0];
+
+isEqualBuffer = (a, b) => {
+  if (a.length != b.length) return false;
+  for (let i = 0; i < a.length; i++)
+    if (a[i] != b[i]) return false;
+  return true;
+}
 
 
 async function demoDKG(options) {
@@ -101,11 +108,11 @@ async function demoDKG(options) {
   // Local summation
   for (let party of parties) {
     console.time(`LOCAL SUMMATION ${party.index}`);
-    party.share = new SecretShare(ctx, BigInt(0), party.index);
+    party.share = { value: BigInt(0), index: party.index };
     for (const share of party.aggregates) {
       party.share.value = (party.share.value + share.value) % ctx.order;
     }
-    party.publicShare = {
+    party.localPublicShare = {
       value: await ctx.exp(party.share.value, ctx.generator),
       index: party.index,
     }
@@ -117,16 +124,16 @@ async function demoDKG(options) {
   for (sender of parties) {
     for (receiver of parties) {
       const nonce = await crypto.randomNonce();
-      const packet = await createPublicSharePacket(sender.share, { nonce });
-      const pointShare = await parsePublicSharePacket(ctx, packet, { nonce });
-      receiver.pointShares.push(pointShare);
+      const packet = await createPublicSharePacket(ctx, sender.share, { nonce });
+      const pubShare = await parsePublicSharePacket(ctx, packet, { nonce });
+      receiver.publicShares.push(pubShare);
     }
   }
   console.timeEnd("PUBLIC SHARE ADVERTISEMENT");
 
   // Local computation of global public
   for (let party of parties) {
-    party.globalPublic = await reconstructPoint(ctx, party.pointShares);
+    party.globalPublic = await reconstructPublic(ctx, party.publicShares);
   }
 
   // Test correctness
@@ -136,7 +143,7 @@ async function demoDKG(options) {
     targetPublic = await ctx.operate(curr, targetPublic);
   }
   for (party of parties) {
-    if (!(await party.globalPublic.equals(targetPublic))) {
+    if(!isEqualBuffer(party.globalPublic, targetPublic.toBytes())) {
       throw new Error(`Inconsistency at location {party.index}`);
     }
   }

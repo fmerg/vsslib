@@ -62,7 +62,7 @@ const binding = bindings[privateShare.index];
 ### Reconstruction
 
 ```js
-import { reconstructKey, reconstructPublic } from 'vsslib';
+import { reconstructKey, reconstructPublicKey } from 'vsslib';
 ```
 
 ### Threshold decryption

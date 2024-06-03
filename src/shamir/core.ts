@@ -14,20 +14,47 @@ const lagrange = require('../lagrange');
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 
+export type SecretShare = { value: bigint, index: number };
+export type SecretSharePacket = {
+  value: Uint8Array,
+  index: number,
+  binding?: Uint8Array,
+}
 
-export type PointShare<P extends Point> = { value: P, index: number };
+export type PublicShare = { value: Uint8Array, index: number };
+export type PublicSharePacket = PublicShare & { proof: NizkProof };
 
-export class SecretShare<P extends Point> {
-  ctx: Group<P>;
-  value: bigint;
-  index: number;
 
-  constructor(ctx: Group<P>, value: bigint, index: number) {
-    this.ctx = ctx;
-    this.value = value;
-    this.index = index;
+export async function shareSecret<P extends Point>(
+  ctx: Group<P>,
+  nrShares: number,
+  threshold: number,
+  secret: bigint,
+  predefined?: [bigint, bigint][]
+): Promise<ShamirSharing<P>> {
+  predefined = predefined || [];
+  if (nrShares < 1)
+    throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
+  if (threshold < 1)
+    throw new Error(ErrorMessages.THRESHOLD_BELOW_ONE);
+  if (threshold > nrShares)
+    throw new Error(ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES);
+  if (!(nrShares < ctx.order))
+    throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
+  if (!(predefined.length < threshold))
+    throw new Error(ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD);
+  const xyPoints = new Array(threshold);
+  xyPoints[0] = [__0n, secret];
+  let index = 1;
+  while (index < threshold) {
+    const x = index;
+    const y = index > predefined.length ? await ctx.randomScalar() : predefined[index - 1];
+    xyPoints[index] = [x, y];
+    index++;
   }
-};
+  const polynomial = await lagrange.interpolate(ctx, xyPoints);
+  return new ShamirSharing(ctx, nrShares, threshold, polynomial);
+}
 
 
 export class ShamirSharing<P extends Point> {
@@ -45,63 +72,58 @@ export class ShamirSharing<P extends Point> {
     this.polynomial = polynomial;
   }
 
-  getSecretShares = async (): Promise<SecretShare<P>[]> => {
+  getSecretShares = async (): Promise<SecretShare[]> => {
     const { polynomial: { evaluate }, nrShares } = this;
     const shares = new Array(nrShares);
     for (let index = 1; index <= nrShares; index++) {
-      shares[index - 1] = new SecretShare(this.ctx, evaluate(index), index);
+      const value = evaluate(index);
+      shares[index - 1] = { value, index };
     }
     return shares;
   }
 
-  getPointShares = async (): Promise<PointShare<P>[]> => {
+  getPublicShares = async (): Promise<PublicShare[]> => {
     const { nrShares, polynomial: { evaluate }, ctx: { exp, generator } } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
-      const value = await exp(evaluate(index), generator);
+      const aux = await exp(evaluate(index), generator);
+      const value = aux.toBytes();
       shares.push({ value, index });
     }
     return shares;
   }
 
-  getSecretShare = async (index: number): Promise<SecretShare<P>> => {
-    if (index < 1 || index > this.nrShares)
-      throw new Error('Invalid index');
-    const value = this.polynomial.evaluate(index);
-    return new SecretShare(this.ctx, value, index);
-  }
-
   createFeldmannPackets = async (): Promise<{
-    packets: SharePacket[],
+    packets: SecretSharePacket[],
     commitments: Uint8Array[],
   }> => {
-    const { coeffs, degree, ctx: { exp, generator: g } } = this.polynomial;
+    const { exp, generator: g } = this.ctx;
+    const { coeffs, degree, evaluate } = this.polynomial;
     const commitments = new Array(degree + 1);
-    const packets = new Array<SharePacket>(this.nrShares);
+    const packets = new Array<SecretSharePacket>(this.nrShares);
     for (let i = 0; i < this.nrShares; i++) {
       if (i < degree + 1) {
         const c = await exp(coeffs[i], g);
         commitments[i] = c.toBytes();
       }
       const index = i + 1;
-      const share = await this.getSecretShare(index)
-      const value = leInt2Buff(share.value);
+      const value = leInt2Buff(evaluate(index));
       packets[i] = { value, index };
     }
     return { packets, commitments };
   }
 
   createPedersenPackets = async (publicBytes: Uint8Array): Promise<{
-    packets: SharePacket[],
+    packets: SecretSharePacket[],
     bindings: Uint8Array[],
     commitments: Uint8Array[],
   }> => {
     const { operate, exp, generator: g } = this.ctx;
-    const { coeffs, degree } = this.polynomial;
+    const { coeffs, degree, evaluate } = this.polynomial;
     const h = await this.ctx.unpackValid(publicBytes);
     const commitments = new Array(degree + 1);
     const bindings = new Array(degree + 1);
-    const packets = new Array<SharePacket>(this.nrShares);
+    const packets = new Array<SecretSharePacket>(this.nrShares);
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     for (let i = 0; i < this.nrShares; i++) {
       if (i < degree + 1) {
@@ -113,34 +135,20 @@ export class ShamirSharing<P extends Point> {
         );
         commitments[i] = c.toBytes();
       }
-      const aux = await bindingPolynomial.evaluate(i + 1);
-      const binding = leInt2Buff(aux);
-      bindings[i] = binding;
       const index = i + 1;
-      const share = await this.getSecretShare(index);
-      const value = leInt2Buff(share.value);
+      const binding = leInt2Buff(bindingPolynomial.evaluate(index));
+      bindings[i] = binding;
+      const value = leInt2Buff(evaluate(index));
       packets[i] = { value, index, binding };
     }
     return { packets, bindings, commitments };
   }
 };
 
-export type SharePacket = {
-  value: Uint8Array,
-  index: number,
-  binding?: Uint8Array,
-}
-
-export type PublicSharePacket = {
-  value: Uint8Array,
-  index: number,
-  proof: NizkProof,
-}
-
 
 export async function verifyFeldmannCommitments<P extends Point>(
   ctx: Group<P>,
-  share: SecretShare<P>,
+  share: SecretShare,
   commitments: Uint8Array[],
 ): Promise<boolean> {
   const { value, index } = share;
@@ -158,9 +166,10 @@ export async function verifyFeldmannCommitments<P extends Point>(
   return true
 }
 
+
 export async function verifyPedersenCommitments<P extends Point>(
   ctx: Group<P>,
-  share: SecretShare<P>,
+  share: SecretShare,
   binding: Uint8Array,
   publicBytes: Uint8Array,
   commitments: Uint8Array[],
@@ -184,14 +193,15 @@ export async function verifyPedersenCommitments<P extends Point>(
   return true
 }
 
+
 export async function parseFeldmannPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
-  packet: SharePacket,
-): Promise<SecretShare<P>> {
+  packet: SecretSharePacket,
+): Promise<SecretShare> {
   const { value: bytes, index } = packet;
   const value = ctx.leBuff2Scalar(bytes);
-  const share = new SecretShare(ctx, value, index);
+  const share = { value, index };
   const innerCommitments = new Array(commitments.length);
   const verified = await verifyFeldmannCommitments(ctx, share, commitments);
   if (!verified) {
@@ -205,14 +215,14 @@ export async function parsePedersenPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
   publicBytes: Uint8Array,
-  packet: SharePacket,
-): Promise<{ share: SecretShare<P>, binding: Uint8Array }> {
+  packet: SecretSharePacket,
+): Promise<{ share: SecretShare, binding: Uint8Array }> {
   const { value: bytes, index, binding } = packet;
   if (!binding) {
     throw new Error('No binding found');
   }
   const value = ctx.leBuff2Scalar(bytes);
-  const share = new SecretShare(ctx, value, index);
+  const share = { value, index }
   const verified = await verifyPedersenCommitments(
     ctx, share, binding, publicBytes, commitments,
   );
@@ -222,11 +232,13 @@ export async function parsePedersenPacket<P extends Point>(
   return { share, binding };
 }
 
+
 export async function createPublicSharePacket<P extends Point>(
-  share: SecretShare<P>,
+  ctx: Group<P>,
+  share: SecretShare,
   opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<PublicSharePacket> {
-  const { ctx, value: x, index } = share;
+  const { value: x, index } = share;
   const g = ctx.generator;
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const nonce = opts ? (opts.nonce || undefined) : undefined;
@@ -235,6 +247,7 @@ export async function createPublicSharePacket<P extends Point>(
   return { value: y.toBytes(), index, proof };
 }
 
+
 export async function parsePublicSharePacket<P extends Point>(
   ctx: Group<P>,
   packet: PublicSharePacket,
@@ -242,7 +255,7 @@ export async function parsePublicSharePacket<P extends Point>(
     algorithm?: Algorithm,
     nonce?: Uint8Array,
   },
-): Promise<PointShare<P>> {
+): Promise<PublicShare> {
   const { value, index, proof } = packet;
   const y = await ctx.unpackValid(value);
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
@@ -257,37 +270,7 @@ export async function parsePublicSharePacket<P extends Point>(
   );
   if (!verified)
     throw new Error("Invalid public share");
-  return { value: y, index };
-}
-
-
-export async function shareSecret<P extends Point>(
-  ctx: Group<P>,
-  nrShares: number,
-  threshold: number,
-  secret: bigint,
-  predefined?: [bigint, bigint][]
-): Promise<ShamirSharing<P>> {
-  predefined = predefined || [];
-  if (nrShares < 1) throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
-  if (threshold < 1) throw new Error(ErrorMessages.THRESHOLD_BELOW_ONE);
-  if (threshold > nrShares) throw new Error(ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES);
-  if (!(nrShares < ctx.order)) throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
-  if (!(predefined.length < threshold)) throw new Error(
-    ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD
-  );
-  const xyPoints = new Array(threshold);
-  xyPoints[0] = [__0n, secret];
-  let index = 1;
-  while (index < threshold) {
-    const x = index;
-    const y = index <= predefined.length ? predefined[index - 1] :
-      await ctx.randomScalar();
-    xyPoints[index] = [x, y];
-    index++;
-  }
-  const polynomial = await lagrange.interpolate(ctx, xyPoints);
-  return new ShamirSharing<P>(ctx, nrShares, threshold, polynomial);
+  return { value, index };
 }
 
 
@@ -311,11 +294,11 @@ export function computeLambda<P extends Point>(
 
 export function reconstructSecret<P extends Point>(
   ctx: Group<P>,
-  qualifiedShares: SecretShare<P>[]
+  shares: SecretShare[]
 ): bigint {
   const { order } = ctx;
-  const indexes = qualifiedShares.map(share => share.index);
-  return qualifiedShares.reduce(
+  const indexes = shares.map(share => share.index);
+  return shares.reduce(
     (acc, { value, index }) => {
       const lambda = computeLambda(ctx, index, indexes);
       return mod(acc + value * lambda, order);
@@ -325,16 +308,17 @@ export function reconstructSecret<P extends Point>(
 }
 
 
-export async function reconstructPoint<P extends Point>(
+export async function reconstructPublic<P extends Point>(
   ctx: Group<P>,
-  qualifiedShares: PointShare<P>[]
-): Promise<P> {
-  const { order, operate, neutral, exp } = ctx;
-  const indexes = qualifiedShares.map(share => share.index);
+  shares: PublicShare[]
+): Promise<Uint8Array> {
+  const { order, operate, neutral, exp, unpackValid } = ctx;
+  const indexes = shares.map(share => share.index);
   let acc = neutral;
-  for (const { index, value } of qualifiedShares) {
+  for (const { index, value } of shares) {
     const lambda = computeLambda(ctx, index, indexes);
-    acc = await operate(acc, await exp(lambda, value));
+    const curr = await unpackValid(value);
+    acc = await operate(acc, await exp(lambda, curr));
   }
-  return acc;
+  return acc.toBytes();
 }

@@ -4,17 +4,17 @@ import { leInt2Buff } from './arith';
 import { NizkProof } from './nizk';
 import {
   SecretShare,
-  PointShare,
+  PublicShare,
   ShamirSharing,
   computeLambda,
   shareSecret,
   parseFeldmannPacket,
   parsePedersenPacket,
   reconstructSecret,
-  reconstructPoint,
+  reconstructPublic,
   verifyFeldmannCommitments,
   verifyPedersenCommitments,
-  SharePacket,
+  SecretSharePacket,
 } from './shamir';
 import { PrivateKey, PublicKey } from './keys';
 import { ErrorMessages } from './errors';
@@ -27,7 +27,7 @@ import elgamal from './elgamal';
 export type PartialDecryptor = { value: Uint8Array, proof: NizkProof, index: number };
 
 
-export class PrivateShare<P extends Point> extends PrivateKey<P> {
+export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
   index: number;
 
   constructor(ctx: Group<P>, secret: bigint, index: number) {
@@ -35,34 +35,34 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
     this.index = index;
   }
 
-  _secretShare = () => new SecretShare(this.ctx, this.secret, this.index);
+  _secretShare = (): SecretShare => { return { value: this.secret, index: this.index } };
 
   static async fromFeldmannPacket(
     ctx: Group<Point>,
     commitments: Uint8Array[],
-    packet: SharePacket
-  ): Promise<PrivateShare<Point>> {
+    packet: SecretSharePacket
+  ): Promise<PrivateKeyShare<Point>> {
     const { value, index } = await parseFeldmannPacket(ctx, commitments, packet);
-    return new PrivateShare(ctx, value, index);
+    return new PrivateKeyShare(ctx, value, index);
   }
 
   static async fromPedersenPacket(
     ctx: Group<Point>,
     commitments: Uint8Array[],
     publicBytes: Uint8Array,
-    packet: SharePacket,
-  ): Promise<PrivateShare<Point>> {
+    packet: SecretSharePacket,
+  ): Promise<PrivateKeyShare<Point>> {
     const { share: { value, index } } = await parsePedersenPacket(
       ctx,
       commitments,
       publicBytes,
       packet,
     );
-    return new PrivateShare(ctx, value, index);
+    return new PrivateKeyShare(ctx, value, index);
   }
 
-  async getPublicShare(): Promise<PublicShare<P>> {
-    return new PublicShare(
+  async getPublicShare(): Promise<PublicKeyShare<P>> {
+    return new PublicKeyShare(
       this.ctx, await this.getPublicBytes(), this.index
     );
   }
@@ -84,7 +84,7 @@ export class PrivateShare<P extends Point> extends PrivateKey<P> {
 
 
 
-export class PublicShare<P extends Point> extends PublicKey<P> {
+export class PublicKeyShare<P extends Point> extends PublicKey<P> {
   index: number;
 
   constructor(ctx: Group<P>, bytes: Uint8Array, index: number) {
@@ -92,9 +92,9 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
     this.index = index;
   }
 
-  asPointShare = async (): Promise<PointShare<P>> => {
+  asPublicShare = (): PublicShare => {
     return {
-      value: await this.asPoint(),
+      value: this.bytes,
       index: this.index,
     }
   }
@@ -132,7 +132,7 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
 
 export async function reconstructKey<P extends Point>(
   ctx: Group<P>,
-  shares: PrivateShare<P>[],
+  shares: PrivateKeyShare<P>[],
   threshold?: number
 ): Promise<PrivateKey<P>> {
   if (threshold && shares.length < threshold)
@@ -141,26 +141,26 @@ export async function reconstructKey<P extends Point>(
   return new PrivateKey(ctx, leInt2Buff(secret));
 }
 
-export async function reconstructPublic<P extends Point>(
+export async function reconstructPublicKey<P extends Point>(
   ctx: Group<P>,
-  shares: PublicShare<P>[],
+  shares: PublicKeyShare<P>[],
   threshold?: number
 ): Promise<PublicKey<P>> {
   if (threshold && shares.length < threshold)
     throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
-  const pointShares = new Array<PointShare<P>>(shares.length);
-  for (let i = 0; i < pointShares.length; i++) {
-    pointShares[i] = await shares[i].asPointShare();
+  const pubShares = new Array<PublicShare>(shares.length);
+  for (let i = 0; i < pubShares.length; i++) {
+    pubShares[i] = shares[i].asPublicShare();
   }
-  const combined = await reconstructPoint(ctx, pointShares);
-  return new PublicKey(ctx, combined.toBytes());
+  const combined = await reconstructPublic(ctx, pubShares);
+  return new PublicKey(ctx, combined);
 }
 
 // TODO: Include indexed nonces option?
 export async function verifyPartialDecryptors<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext,
-  publicShares: PublicShare<P>[],
+  publicShares: PublicKeyShare<P>[],
   shares: PartialDecryptor[],
   opts?: { threshold?: number, raiseOnInvalid?: boolean },
 ): Promise<{ flag: boolean, indexes: number[]}> {
@@ -168,7 +168,7 @@ export async function verifyPartialDecryptors<P extends Point>(
   if (threshold && shares.length < threshold) throw new Error(
     ErrorMessages.INSUFFICIENT_NR_SHARES
   );
-  const selectPublicShare = (index: number, shares: PublicShare<P>[]) => {
+  const selectPublicShare = (index: number, shares: PublicKeyShare<P>[]) => {
     const selected = shares.filter(share => share.index == index)[0];
     if (!selected) throw new Error('No share with index');
     return selected;
@@ -196,7 +196,7 @@ export async function verifyPartialDecryptors<P extends Point>(
 export async function reconstructDecryptor<P extends Point>(
   ctx: Group<P>,
   shares: PartialDecryptor[],
-  opts?: { threshold?: number, publicShares?: PublicShare<P>[] }
+  opts?: { threshold?: number, publicShares?: PublicKeyShare<P>[] }
 ): Promise<Uint8Array> {
   // TODO: Include validation
   const threshold = opts ? opts.threshold : undefined;

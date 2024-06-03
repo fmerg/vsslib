@@ -1,20 +1,18 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { ErrorMessages } from '../../src/errors';
-import { shareSecret, SecretShare, PointShare } from '../../src/shamir';
+import { shareSecret, SecretShare, PublicShare } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
 
-function selectSecretShare<P extends Point>(
-  index: number, shares: SecretShare<P>[]
-): SecretShare<P> {
+const selectSecretShare = (index: number, shares: SecretShare[]): SecretShare => {
   const selected = shares.filter(share => share.index == index)[0];
   if (!selected) throw new Error(`No share with index ${index}`);
   return selected;
 }
 
-function selectPointShare<P extends Point>(
-  index: number, shares: PointShare<P>[]
-): PointShare<P> {
+function selectPublicShare(
+  index: number, shares: PublicShare[]
+): PublicShare {
   const selected = shares.filter(share => share.index == index)[0];
   if (!selected) throw new Error(`No share with index ${index}`);
   return selected;
@@ -72,14 +70,15 @@ describe(`Sharing without predefined points over ${system}`, () => {
     expect(nrShares).toEqual(n);
     expect(threshold).toEqual(t);
     const secretShares = await sharing.getSecretShares();
-    const publicShares = await sharing.getPointShares();
+    const publicShares = await sharing.getPublicShares();
     expect(secretShares.length).toEqual(n);
     expect(publicShares.length).toEqual(n);
     const { exp, generator } = ctx;
     for (let index = 1; index < nrShares; index++) {
       const { value: secret } = selectSecretShare(index, secretShares);
-      const { value: pub } = selectPointShare(index, publicShares);
-      expect(await (pub as Point).equals(await exp(secret, generator))).toBe(true);
+      const { value } = selectPublicShare(index, publicShares);
+      const target = await ctx.unpackValid(value);
+      expect(await target.equals(await exp(secret, generator))).toBe(true);
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
@@ -103,7 +102,7 @@ describe(`Sharing with predefined points over ${system}`, () => {
       expect(nrShares).toEqual(n);
       expect(threshold).toEqual(t);
       const secretShares = await sharing.getSecretShares();
-      const publicShares = await sharing.getPointShares();
+      const publicShares = await sharing.getPublicShares();
       expect(secretShares.length).toEqual(n);
       expect(publicShares.length).toEqual(n);
       expect(polynomial.evaluate(0)).toEqual(secret);
@@ -114,8 +113,8 @@ describe(`Sharing with predefined points over ${system}`, () => {
       const { exp, generator } = ctx;
       for (let index = 1; index < nrShares; index++) {
         const { value: secret } = selectSecretShare(index, secretShares);
-        const { value: pub } = selectPointShare(index, publicShares);
-        expect(await (pub as Point).equals(await exp(secret, generator))).toBe(true);
+        const { value } = selectPublicShare(index, publicShares);
+        const target = await ctx.unpackValid(value);
       }
       expect(polynomial.evaluate(0)).toEqual(secret);
       expect(polynomial.degree).toEqual(t - 1);

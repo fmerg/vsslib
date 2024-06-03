@@ -11,7 +11,7 @@ describe(`Secret share verification over ${system}`, () => {
   const ctx = initGroup(system);
 
   let sharing: ShamirSharing<Point>;
-  let secretShares: SecretShare<Point>[];
+  let secretShares: SecretShare[];
 
   beforeAll(async () => {
     const secret = await ctx.randomScalar();
@@ -21,7 +21,7 @@ describe(`Secret share verification over ${system}`, () => {
 
   test('success', async () => {
     const { commitments } = await sharing.createFeldmannPackets();
-    secretShares.forEach(async (share: SecretShare<Point>) => {
+    secretShares.forEach(async (share: SecretShare) => {
       const { value: secret, index } = share;
       const verified = await verifyFeldmannCommitments(
         ctx,
@@ -38,7 +38,7 @@ describe(`Secret share verification over ${system}`, () => {
       ...commitments.slice(0, commitments.length - 1),
       (await ctx.randomPoint()).toBytes()
     ];
-    secretShares.forEach(async (share: SecretShare<Point>) => {
+    secretShares.forEach(async (share: SecretShare) => {
       const verification = verifyFeldmannCommitments(
         ctx,
         share,

@@ -1,7 +1,7 @@
 export {
   SecretShare,
-  PointShare,
-  SharePacket,
+  PublicShare,
+  SecretSharePacket,
   ShamirSharing,
   shareSecret,
   verifyFeldmannCommitments,
@@ -12,5 +12,5 @@ export {
   parsePublicSharePacket,
   computeLambda,
   reconstructSecret,
-  reconstructPoint,
+  reconstructPublic,
 } from './core';

@@ -1,12 +1,12 @@
 import { Point, Group } from '../../src/backend/abstract'
 import { leInt2Buff } from '../../src/arith';
 import { ErrorMessages } from '../../src/errors';
-import { reconstructKey, reconstructPublic } from '../../src/core';
-import { PrivateShare, PublicShare } from '../../src/core';
+import { reconstructKey, reconstructPublicKey } from '../../src/core';
+import { PrivateKeyShare, PublicKeyShare } from '../../src/core';
 import { partialPermutations } from '../helpers';
 import { resolveTestConfig } from '../environ';
 import { createKeySharingSetup, selectPrivateShare } from './helpers';
-import { SharePacket } from '../../src/shamir';
+import { SecretSharePacket } from '../../src/shamir';
 
 const { system, nrShares, threshold } = resolveTestConfig();
 
@@ -21,8 +21,8 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
   test('Feldmann verification scheme - success', async () => {
     const { ctx, sharing, privateShares: shares } = setup;
     const { packets, commitments } = await sharing.createFeldmannPackets();
-    packets.forEach(async (packet: SharePacket) => {
-      const privateShare = await PrivateShare.fromFeldmannPacket(ctx, commitments, packet);
+    packets.forEach(async (packet: SecretSharePacket) => {
+      const privateShare = await PrivateKeyShare.fromFeldmannPacket(ctx, commitments, packet);
       const targetShare = selectPrivateShare(privateShare.index, shares);
       expect(await privateShare.equals(targetShare)).toBe(true);
     })
@@ -34,10 +34,10 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
       ...commitments.slice(0, commitments.length - 1),
       (await ctx.randomPoint()).toBytes()
     ];
-    packets.forEach(async (packet: SharePacket) => {
-      const privateShare = await PrivateShare.fromFeldmannPacket(ctx, commitments, packet);
+    packets.forEach(async (packet: SecretSharePacket) => {
+      const privateShare = await PrivateKeyShare.fromFeldmannPacket(ctx, commitments, packet);
       await expect(
-        PrivateShare.fromFeldmannPacket(ctx, forgedCommitmnets, packet)
+        PrivateKeyShare.fromFeldmannPacket(ctx, forgedCommitmnets, packet)
       ).rejects.toThrow(
         'Invalid share'
       );
@@ -50,8 +50,8 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     const { packets, commitments } = await sharing.createPedersenPackets(
       publicBytes
     );
-    packets.forEach(async (packet: SharePacket) => {
-      const privateShare = await PrivateShare.fromPedersenPacket(
+    packets.forEach(async (packet: SecretSharePacket) => {
+      const privateShare = await PrivateKeyShare.fromPedersenPacket(
         ctx,
         commitments,
         publicBytes,
@@ -71,9 +71,9 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
       ...commitments.slice(0, commitments.length - 1),
       (await ctx.randomPoint()).toBytes()
     ];
-    packets.forEach(async (packet: SharePacket) => {
+    packets.forEach(async (packet: SecretSharePacket) => {
       await expect(
-        PrivateShare.fromPedersenPacket(
+        PrivateKeyShare.fromPedersenPacket(
           ctx,
           forgedCommitmnets,
           publicBytes,
@@ -109,7 +109,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
   test('Public reconstruction - skip threshold check', async () => {
     const { publicKey, publicShares, ctx } = setup;
     partialPermutations(publicShares).forEach(async (qualifiedShares) => {
-      const reconstructed = await reconstructPublic(ctx, qualifiedShares);
+      const reconstructed = await reconstructPublicKey(ctx, qualifiedShares);
       expect(await reconstructed.equals(publicKey)).toBe(
         qualifiedShares.length >= threshold
       );
@@ -118,12 +118,12 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
   test('Public reconstruction - with threshold check', async () => {
     const { publicKey, publicShares, ctx } = setup;
     partialPermutations(publicShares, 0, threshold - 1).forEach(async (qualifiedShares) => {
-      await expect(reconstructPublic(ctx, qualifiedShares, threshold)).rejects.toThrow(
+      await expect(reconstructPublicKey(ctx, qualifiedShares, threshold)).rejects.toThrow(
         'Insufficient number of shares'
       );
     });
     partialPermutations(publicShares, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const reconstructed = await reconstructPublic(ctx, qualifiedShares, threshold);
+      const reconstructed = await reconstructPublicKey(ctx, qualifiedShares, threshold);
       expect(await reconstructed.equals(publicKey)).toBe(true);
     });
   });
