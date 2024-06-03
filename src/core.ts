@@ -130,47 +130,6 @@ export class PublicShare<P extends Point> extends PublicKey<P> {
 };
 
 
-export class KeySharing<P extends Point> extends ShamirSharing<P> {
-  getPrivateShares = async (): Promise<PrivateShare<P>[]> => {
-    const shares = await this.getSecretShares();
-    return shares.map(
-      ({ index, value }) => new PrivateShare(this.ctx, value, index)
-    );
-  }
-
-  getPublicShares = async (): Promise<PublicShare<P>[]> => {
-    const shares = await this.getPointShares();
-    return shares.map(
-      ({ index, value }) => new PublicShare(this.ctx, value.toBytes(), index)
-    );
-  }
-
-  generateFeldmannCommitments = async (): Promise<Uint8Array[]> => {
-    const { commitments } = await this.proveFeldmann();
-    return commitments;
-  }
-
-  generatePedersenCommitments = async (publicBytes: Uint8Array): Promise<{
-    commitments: Uint8Array[],
-    bindings: Uint8Array[],
-  }> => {
-    return this.provePedersen(publicBytes);
-  }
-}
-
-
-export async function shareKey<P extends Point>(
-  ctx: Group<P>,
-  nrShares: number,
-  threshold: number,
-  privateKey: PrivateKey<P>
-): Promise<KeySharing<P>> {
-  const { polynomial } = await shareSecret(
-    ctx, nrShares, threshold, privateKey.secret
-  );
-  return new KeySharing(ctx, nrShares, threshold, polynomial);
-}
-
 export async function reconstructKey<P extends Point>(
   ctx: Group<P>,
   shares: PrivateShare<P>[],

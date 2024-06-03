@@ -2,7 +2,6 @@
 const { Command, Option } = require('commander');
 const {
   generateKey,
-  shareKey,
   parseSharePacket,
 } = require('./dist');
 const {

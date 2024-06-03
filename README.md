@@ -15,9 +15,7 @@ const { privateKey, publicKey, ctx } = await generateKey('ed25519');
 ### Sharing
 
 ```js
-import { shareKey } from 'vsslib';
-
-const sharing = shareKey(5, 3, privateKey);
+// TODO
 ```
 
 ```js

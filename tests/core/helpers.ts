@@ -4,7 +4,7 @@ import { ElgamalScheme, System } from '../../src/types';
 import { generateKey } from '../../src';
 import { randomIndex } from '../helpers';
 import { SecretShare } from '../../src/shamir';
-import { shareKey, PrivateShare, PublicShare } from '../../src/core';
+import { PrivateShare, PublicShare } from '../../src/core';
 
 
 export const selectShare = (index: number, shares: PublicShare<Point>[]) => {
