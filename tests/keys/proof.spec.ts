@@ -2,7 +2,7 @@ import { Algorithms } from '../../src/enums';
 import { generateKey } from '../../src';
 import { ErrorMessages } from '../../src/errors';
 import { randomNonce } from '../../src/crypto';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 const { systems, algorithms } = resolveTestConfig();

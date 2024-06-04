@@ -7,8 +7,8 @@ import { NizkProof } from '../nizk';
 import { Signature } from '../signer';
 import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, AesMode, ElgamalScheme, SignatureScheme } from '../types';
-import { toCanonical, fromCanonical, ctEqualBuffer } from './utils';
-import { shareSecret, ShamirSharing } from '../shamir';
+import { toCanonical, fromCanonical, ctEqualBuffer } from '../common';
+import { distributeSecret, ShamirSharing } from '../shamir';
 
 import elgamal from '../elgamal';
 import nizk from '../nizk';
@@ -66,7 +66,7 @@ export class PrivateKey<P extends Point> {
   generateSharing = async (nrShares: number, threshold: number): Promise<
     ShamirSharing<P>
   > => {
-    return shareSecret(this.ctx, nrShares, threshold, this.bytes);
+    return distributeSecret(this.ctx, nrShares, threshold, this.bytes);
   }
 
   sign = async (

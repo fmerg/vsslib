@@ -1,14 +1,17 @@
 import { Point, Group } from '../../src/backend/abstract'
-import { leInt2Buff } from '../../src/arith';
 import { ErrorMessages } from '../../src/errors';
-import { reconstructKey, reconstructPublicKey } from '../../src/core';
-import { PrivateKeyShare, PublicKeyShare } from '../../src/core';
-import { partialPermutations } from '../helpers';
-import { resolveTestConfig } from '../environ';
-import { createKeySharingSetup, selectPrivateShare } from './helpers';
+import { PrivateKeyShare, PublicKeyShare } from '../../src/keys';
+import { reconstructKey, reconstructPublicKey } from '../../src/combiner';
 import { SecretSharePacket } from '../../src/shamir';
+import { partialPermutations } from '../utils';
+import { resolveTestConfig } from '../environ';
+import { createKeySharingSetup } from '../helpers';
 
 const { system, nrShares, threshold } = resolveTestConfig();
+
+
+export const selectPrivateKeyShare = (index: number, shares: PrivateKeyShare<Point>[]) =>
+  shares.filter(share => share.index == index)[0];
 
 
 describe(`Sharing, verification and reconstruction over ${system}`, () => {
@@ -18,26 +21,26 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     setup = await createKeySharingSetup({ system, nrShares, threshold });
   });
 
-  test('Feldmann verification scheme - success', async () => {
+  test('Feldman verification scheme - success', async () => {
     const { ctx, sharing, privateShares: shares } = setup;
-    const { packets, commitments } = await sharing.createFeldmannPackets();
+    const { packets, commitments } = await sharing.createFeldmanPackets();
     packets.forEach(async (packet: SecretSharePacket) => {
-      const privateShare = await PrivateKeyShare.fromFeldmannPacket(ctx, commitments, packet);
-      const targetShare = selectPrivateShare(privateShare.index, shares);
+      const privateShare = await PrivateKeyShare.fromFeldmanPacket(ctx, commitments, packet);
+      const targetShare = selectPrivateKeyShare(privateShare.index, shares);
       expect(await privateShare.equals(targetShare)).toBe(true);
     })
   });
-  test('Feldmann verification scheme - failure', async () => {
+  test('Feldman verification scheme - failure', async () => {
     const { ctx, sharing, privateShares: shares } = setup;
-    const { packets, commitments } = await sharing.createFeldmannPackets();
+    const { packets, commitments } = await sharing.createFeldmanPackets();
     const forgedCommitmnets = [
       ...commitments.slice(0, commitments.length - 1),
       (await ctx.randomPoint()).toBytes()
     ];
     packets.forEach(async (packet: SecretSharePacket) => {
-      const privateShare = await PrivateKeyShare.fromFeldmannPacket(ctx, commitments, packet);
+      const privateShare = await PrivateKeyShare.fromFeldmanPacket(ctx, commitments, packet);
       await expect(
-        PrivateKeyShare.fromFeldmannPacket(ctx, forgedCommitmnets, packet)
+        PrivateKeyShare.fromFeldmanPacket(ctx, forgedCommitmnets, packet)
       ).rejects.toThrow(
         'Invalid share'
       );
@@ -57,7 +60,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
         publicBytes,
         packet
       );
-      const targetShare = selectPrivateShare(privateShare.index, shares);
+      const targetShare = selectPrivateKeyShare(privateShare.index, shares);
       expect(await privateShare.equals(targetShare)).toBe(true);
     })
   });

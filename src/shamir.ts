@@ -19,7 +19,7 @@ export type PublicShare = { value: Uint8Array, index: number };
 export type PublicSharePacket = PublicShare & { proof: NizkProof };
 
 
-export async function shareSecret<P extends Point>(
+export async function distributeSecret<P extends Point>(
   ctx: Group<P>,
   nrShares: number,
   threshold: number,
@@ -89,7 +89,7 @@ export class ShamirSharing<P extends Point> {
     return shares;
   }
 
-  createFeldmannPackets = async (): Promise<{
+  createFeldmanPackets = async (): Promise<{
     packets: SecretSharePacket[],
     commitments: Uint8Array[],
   }> => {
@@ -142,7 +142,7 @@ export class ShamirSharing<P extends Point> {
 };
 
 
-export async function verifyFeldmannCommitments<P extends Point>(
+export async function verifyFeldmanCommitments<P extends Point>(
   ctx: Group<P>,
   share: SecretShare,
   commitments: Uint8Array[],
@@ -191,14 +191,14 @@ export async function verifyPedersenCommitments<P extends Point>(
 }
 
 
-export async function parseFeldmannPacket<P extends Point>(
+export async function parseFeldmanPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
   packet: SecretSharePacket,
 ): Promise<SecretShare> {
   const { value, index } = packet;
   const share = { value, index };
-  await verifyFeldmannCommitments(ctx, share, commitments);
+  await verifyFeldmanCommitments(ctx, share, commitments);
   return share;
 }
 

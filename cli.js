@@ -8,9 +8,9 @@ const {
   initGroup
 } = require('./dist/backend');
 const {
-  shareSecret,
+  distributeSecret,
   SecretShare,
-  parseFeldmannPacket,
+  parseFeldmanPacket,
   parsePedersenPacket,
   createPublicSharePacket,
   parsePublicSharePacket,
@@ -66,7 +66,7 @@ async function demoDKG(options) {
   const { system, encoding } = options;
   const nrShares = 10;
   const threshold = 5;
-  // const scheme = "Feldmann";
+  // const scheme = "Feldman";
   const scheme = "Pedersen";
 
   const ctx = initGroup(system);
@@ -81,7 +81,7 @@ async function demoDKG(options) {
   for (const party of parties) {
     console.time(`SHARING COMPUTATION ${party.index}`);
     party.originalSecret = await ctx.randomSecret();
-    party.sharing = await shareSecret(ctx, nrShares, threshold, party.originalSecret);
+    party.sharing = await distributeSecret(ctx, nrShares, threshold, party.originalSecret);
     console.timeEnd(`SHARING COMPUTATION ${party.index}`);
   }
 
@@ -89,10 +89,10 @@ async function demoDKG(options) {
   // Sharing computation
   for (const party of parties) {
     console.time(`SHARE DISTRIBUTION ${party.index}`);
-    if (scheme == "Feldmann") {
-      const { packets, commitments } = await party.sharing.createFeldmannPackets();
+    if (scheme == "Feldman") {
+      const { packets, commitments } = await party.sharing.createFeldmanPackets();
       for (packet of packets) {
-        const share = await parseFeldmannPacket(ctx, commitments, packet);
+        const share = await parseFeldmanPacket(ctx, commitments, packet);
         selectParty(share.index, parties).aggregates.push(share);
       }
     } else if (scheme == "Pedersen") {

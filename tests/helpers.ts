@@ -1,69 +1,98 @@
-import { Permutation, PowerSet } from "js-combinatorics";
+import { generateKey } from '../src';
+import { Group, Point } from '../src/backend/abstract';
+import { ElgamalSchemes } from '../src/enums';
+import { ElgamalScheme, System } from '../src/types';
+import { SecretShare } from '../src/shamir';
+import { PrivateKeyShare } from '../src/keys';
+import { randomIndex } from './utils';
 
 
-/** Powerset of the provided collection **/
-export const powerSet = (array: any[]): any[] => [...PowerSet.of(array)];
+export const mockMessage = async (ctx: Group<Point>, scheme: ElgamalScheme) =>
+  scheme == ElgamalSchemes.PLAIN ? (await ctx.randomPoint()).toBytes() :
+    Uint8Array.from(Buffer.from('destroy earth'));
 
 
-/** Permutations of the provided collection **/
-export const permutations = (array: any[]): any[] => [...Permutation.of(array)];
-
-
-/** Union of sets of permutations of each member of the powerset of
-* the provided collection */
-export const partialPermutations = (
-  array: any[], minSize = 0, maxSize = array.length): any[] => {
-  const out = powerSet(array).reduce(
-    (acc: any[], comb: any[]) => acc = acc.concat(permutations(comb)), []
-  );
-  return out.filter(
-    (perm: any[]) => perm.length >= minSize && perm.length <= maxSize
-  );
+export const createKeySharingSetup = async (opts: {
+  system: System,
+  nrShares: number,
+  threshold: number,
+}) => {
+  const { system, nrShares, threshold } = opts;
+  const { privateKey, publicKey, ctx } = await generateKey(system);
+  const sharing = await privateKey.generateSharing(nrShares, threshold);
+  const polynomial = sharing.polynomial;
+  const secretShares = await sharing.getSecretShares();
+  const privateShares = secretShares.map(({ value, index }: SecretShare) => {
+    return new PrivateKeyShare(ctx, value, index);
+  });
+  const publicShares = []
+  for (const share of privateShares) {
+    publicShares.push(await share.getPublicShare());
+  }
+  return {
+    ctx,
+    privateKey,
+    publicKey,
+    sharing,
+    polynomial,
+    privateShares,
+    publicShares,
+  };
 }
 
 
-/** Cartesian product of the provided arrays */
-export const cartesian = (arrays: any[]): any[] => {
-  const xs = arrays[0];
-  const ys = arrays.length > 2 ? cartesian(arrays.slice(1)) :
-    arrays[1].map((a: any[]) => [a]);
-  let out = new Array(xs.length * ys.length);
-  for (const [i, x] of xs.entries()) {
-    for (const [j, y] of ys.entries()) {
-      out[i * ys.length + j] = [x, ...y];
+export const createThresholdDecryptionSetup = async (opts: {
+  system: System,
+  scheme: ElgamalScheme,
+  nrShares: number,
+  threshold: number,
+  nrInvalidIndexes?: number,
+}) => {
+  let { scheme, system, nrShares, threshold, nrInvalidIndexes } = opts;
+  const {
+    privateKey,
+    publicKey,
+    privateShares,
+    publicShares,
+    ctx,
+  } = await createKeySharingSetup({ system, nrShares, threshold, });
+  const message = scheme == ElgamalSchemes.PLAIN ?
+    (await ctx.randomPoint()).toBytes() :
+    Uint8Array.from(Buffer.from('destroy earth'));
+  const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
+  const partialDecryptors = [];
+  for (const privateShare of privateShares) {
+    const share = await privateShare.computePartialDecryptor(ciphertext);
+    partialDecryptors.push(share);
+  }
+  let invalidIndexes: number[] = [];
+  nrInvalidIndexes = nrInvalidIndexes || 0;
+  while (invalidIndexes.length < nrInvalidIndexes) {
+    const index = randomIndex(1, nrShares);
+    if (invalidIndexes.includes(index)) continue;
+    invalidIndexes.push(index);
+  }
+  const invalidDecryptors = [];
+  if (invalidIndexes) {
+    for (const share of partialDecryptors) {
+      invalidDecryptors.push(!(invalidIndexes.includes(share.index)) ? share : {
+        value: (await ctx.randomPoint()).toBytes(),
+        index: share.index,
+        proof: share.proof,
+      });
     }
   }
-  return out;
-}
-
-
-/** Trim trailing zeroes from number array */
-export const trimZeroes = (arr: number[]): number[] => {
-  let len = arr.length;
-  if (len > 0) while (arr[len - 1] == 0) len--;
-  return arr.slice(0, len);
-}
-
-
-/** Remove item from and return array */
-export const removeItem = (array: any[], item: any) => {
-  const index = array.indexOf(item);
-  if (index !== -1) array.splice(index, 1);
-  return array;
-}
-
-
-/** Random index in range inclusive ends */
-export const randomIndex = (min: number, max: number) => {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-/** Checks equality of byte arrays */
-export const isEqualBuffer = (a: Uint8Array, b: Uint8Array) => {
-  if (a.length != b.length) return false;
-  for (let i = 0; i < a.length; i++)
-    if (a[i] != b[i]) return false;
-  return true;
+  return {
+    ctx,
+    privateKey,
+    publicKey,
+    privateShares,
+    publicShares,
+    message,
+    ciphertext,
+    decryptor,
+    partialDecryptors,
+    invalidDecryptors,
+    invalidIndexes,
+  }
 }

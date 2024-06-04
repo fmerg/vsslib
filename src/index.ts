@@ -5,7 +5,7 @@ import {
   verifyPartialDecryptors,
   reconstructDecryptor,
   thresholdDecrypt
-} from './core';
+} from './combiner';
 
 
 const backend = require('./backend');

@@ -1,6 +1,7 @@
 import { initGroup } from '../backend';
 import { System } from '../types';
 import { PrivateKey, PublicKey } from './core'
+import { PrivateKeyShare, PublicKeyShare, PartialDecryptor } from './shares';
 
 const generateKey = async (system: System) => {
   const ctx = initGroup(system);
@@ -13,4 +14,7 @@ export {
   generateKey,
   PrivateKey,
   PublicKey,
+  PrivateKeyShare,
+  PublicKeyShare,
+  PartialDecryptor,
 }

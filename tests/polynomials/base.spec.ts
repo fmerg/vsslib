@@ -4,7 +4,7 @@ import { lagrange } from '../../src';
 import { ErrorMessages } from '../../src/errors';
 import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
 import { BasePolynomial } from '../../src/polynomials/base';
-import { cartesian, trimZeroes } from '../helpers';
+import { cartesian, trimZeroes } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 const __0n = BigInt(0);

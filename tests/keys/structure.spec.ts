@@ -3,7 +3,7 @@ import { Algorithms } from '../../src/enums';
 import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
 import { PrivateKey, PublicKey } from '../../src/keys';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 const { systems } = resolveTestConfig();

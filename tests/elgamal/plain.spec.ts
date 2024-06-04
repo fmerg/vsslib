@@ -3,7 +3,7 @@ import { leInt2Buff } from '../../src/arith';
 import { initGroup } from '../../src/backend';
 import { plainElgamal } from '../../src/elgamal/core';
 
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 const { systems, aesModes } = resolveTestConfig();

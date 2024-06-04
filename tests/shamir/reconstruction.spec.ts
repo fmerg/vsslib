@@ -1,16 +1,15 @@
 import { initGroup } from '../../src/backend';
 import { Group, Point } from '../../src/backend/abstract';
 import {
-  shareSecret,
+  distributeSecret,
   reconstructSecret,
   reconstructPublic,
   SecretShare,
   PublicShare,
 } from '../../src/shamir';
 
-import { partialPermutations } from '../helpers';
+import { partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
-import { isEqualBuffer } from '../helpers';
 
 let { system, nrShares, threshold } = resolveTestConfig();
 
@@ -29,7 +28,7 @@ describe(`Reconstruction from shares over ${system}`, () => {
   beforeAll(async () => {
     secret = await ctx.randomSecret();
     pub = await ctx.exp(ctx.leBuff2Scalar(secret), ctx.generator);
-    const sharing = await shareSecret(ctx, nrShares, threshold, secret);
+    const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
     secretShares = await sharing.getSecretShares();
     publicShares = await sharing.getPublicShares();
   })

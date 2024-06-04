@@ -1,7 +1,7 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { SecretShare, ShamirSharing } from '../../src/shamir';
-import { shareSecret, verifyPedersenCommitments } from '../../src/shamir';
+import { distributeSecret, verifyPedersenCommitments } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
 import { leInt2Buff } from '../../src/arith';
 
@@ -16,7 +16,7 @@ describe(`Secret share verification over ${system}`, () => {
 
   beforeAll(async () => {
     const secret = await ctx.randomSecret();
-    sharing = await shareSecret(ctx, nrShares, threshold, secret);
+    sharing = await distributeSecret(ctx, nrShares, threshold, secret);
     secretShares = await sharing.getSecretShares();
   })
 

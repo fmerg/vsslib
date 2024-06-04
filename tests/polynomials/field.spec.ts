@@ -1,7 +1,7 @@
 import { initGroup } from '../../src/backend';
 import { ErrorMessages } from '../../src/errors';
 import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 

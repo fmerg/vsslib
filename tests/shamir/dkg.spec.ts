@@ -4,8 +4,8 @@ import {
   SecretShare,
   ShamirSharing,
   PublicShare,
-  shareSecret,
-  parseFeldmannPacket,
+  distributeSecret,
+  parseFeldmanPacket,
   parsePedersenPacket,
   createPublicSharePacket,
   parsePublicSharePacket,
@@ -13,12 +13,13 @@ import {
 } from '../../src/shamir';
 import { randomNonce } from '../../src/crypto';
 import { resolveTestConfig } from '../environ';
-import { isEqualBuffer } from '../helpers';
+import { isEqualBuffer } from '../utils';
 import { mod, leInt2Buff } from '../../src/arith';
 
 let { system, nrShares, threshold } = resolveTestConfig();
 
 class ShareHolder<P extends Point> {
+  ctx: Group<P>;
   index: number;
   originalSecret?: Uint8Array;
   sharing?: ShamirSharing<P>;
@@ -29,6 +30,7 @@ class ShareHolder<P extends Point> {
   globalPublic?: Uint8Array;
 
   constructor(ctx: Group<P>, index: number) {
+    this.ctx = ctx;
     this.index = index;
     this.aggregates = [];
     this.publicShares = [];
@@ -55,16 +57,16 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
 
     for (let party of parties) {
       party.originalSecret = await ctx.randomSecret();
-      party.sharing = await shareSecret(ctx, nrShares, threshold, party.originalSecret!);
+      party.sharing = await distributeSecret(ctx, nrShares, threshold, party.originalSecret!);
     }
   })
 
-  test('Feldmann - success', async () => {
+  test('Feldman - success', async () => {
     // Shares distribution
     for (const party of parties) {
-      const { packets, commitments } = await party.sharing!.createFeldmannPackets();
+      const { packets, commitments } = await party.sharing!.createFeldmanPackets();
       for (const packet of packets) {
-        const share = await parseFeldmannPacket(ctx, commitments, packet);
+        const share = await parseFeldmanPacket(ctx, commitments, packet);
         selectParty(share.index, parties).aggregates.push(share);
       }
     }

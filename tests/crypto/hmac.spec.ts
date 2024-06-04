@@ -1,6 +1,6 @@
 import { createHmac } from 'node:crypto';
 import { hmac, randomBytes } from '../../src/crypto';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 const { algorithms }  = resolveTestConfig();
