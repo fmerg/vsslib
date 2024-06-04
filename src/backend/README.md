@@ -32,7 +32,7 @@ await ctx.validateScalar(s);
 ```
 
 ```js
-const b = await ctx.randomScalarBuff();
+const b = await ctx.randomSecret();
 ```
 
 

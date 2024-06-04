@@ -10,9 +10,7 @@ const selectSecretShare = (index: number, shares: SecretShare[]): SecretShare =>
   return selected;
 }
 
-function selectPublicShare(
-  index: number, shares: PublicShare[]
-): PublicShare {
+const selectPublicShare = (index: number, shares: PublicShare[]): PublicShare => {
   const selected = shares.filter(share => share.index == index)[0];
   if (!selected) throw new Error(`No share with index ${index}`);
   return selected;
@@ -75,10 +73,10 @@ describe(`Sharing without predefined points over ${system}`, () => {
     expect(publicShares.length).toEqual(n);
     const { exp, generator } = ctx;
     for (let index = 1; index < nrShares; index++) {
-      const { value: secret } = selectSecretShare(index, secretShares);
-      const { value } = selectPublicShare(index, publicShares);
-      const target = await ctx.unpackValid(value);
-      expect(await target.equals(await exp(secret, generator))).toBe(true);
+      const { value } = selectSecretShare(index, secretShares);
+      const { value: targetBytes } = selectPublicShare(index, publicShares);
+      const target = await ctx.unpackValid(targetBytes);
+      expect(await target.equals(await exp(ctx.leBuff2Scalar(value), generator))).toBe(true);
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(secret);
@@ -108,7 +106,7 @@ describe(`Sharing with predefined points over ${system}`, () => {
       expect(polynomial.evaluate(0)).toEqual(secret);
       for (let index = 1; index <= nrPredefined; index++) {
         const { value } = selectSecretShare(index, secretShares);
-        expect(value).toEqual(predefined[index - 1]);
+        expect(ctx.leBuff2Scalar(value)).toEqual(predefined[index - 1]);
       }
       const { exp, generator } = ctx;
       for (let index = 1; index < nrShares; index++) {

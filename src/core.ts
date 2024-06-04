@@ -7,7 +7,6 @@ import {
   PublicShare,
   ShamirSharing,
   computeLambda,
-  shareSecret,
   parseFeldmannPacket,
   parsePedersenPacket,
   reconstructSecret,
@@ -30,12 +29,10 @@ export type PartialDecryptor = { value: Uint8Array, proof: NizkProof, index: num
 export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
   index: number;
 
-  constructor(ctx: Group<P>, secret: bigint, index: number) {
-    super(ctx, leInt2Buff(secret));
+  constructor(ctx: Group<P>, bytes: Uint8Array, index: number) {
+    super(ctx, bytes);
     this.index = index;
   }
-
-  _secretShare = (): SecretShare => { return { value: this.secret, index: this.index } };
 
   static async fromFeldmannPacket(
     ctx: Group<Point>,
@@ -137,7 +134,13 @@ export async function reconstructKey<P extends Point>(
 ): Promise<PrivateKey<P>> {
   if (threshold && shares.length < threshold)
     throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
-  const secret = await reconstructSecret(ctx, shares.map(s => s._secretShare()));
+  const secret = await reconstructSecret(ctx, shares.map(s => {
+      return {
+        value: s.bytes,
+        index: s.index,
+      }
+    })
+  );
   return new PrivateKey(ctx, leInt2Buff(secret));
 }
 

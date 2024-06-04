@@ -4,6 +4,7 @@ import { ElgamalScheme, System } from '../../src/types';
 import { generateKey } from '../../src';
 import { randomIndex } from '../helpers';
 import { SecretShare } from '../../src/shamir';
+import { leInt2Buff } from '../../src/arith';
 import { PrivateKeyShare, PublicKeyShare } from '../../src/core';
 
 

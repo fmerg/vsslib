@@ -16,6 +16,10 @@ const {
   parsePublicSharePacket,
   reconstructPublic,
 } = require('./dist/shamir');
+const {
+  leInt2Buff,
+  mod,
+} = require('./dist/arith');
 
 const enums = require('./dist/enums')
 const crypto = require('./dist/crypto')
@@ -60,8 +64,8 @@ isEqualBuffer = (a, b) => {
 
 async function demoDKG(options) {
   const { system, encoding } = options;
-  const nrShares = 20;
-  const threshold = 10;
+  const nrShares = 10;
+  const threshold = 5;
   // const scheme = "Feldmann";
   const scheme = "Pedersen";
 
@@ -108,12 +112,19 @@ async function demoDKG(options) {
   // Local summation
   for (let party of parties) {
     console.time(`LOCAL SUMMATION ${party.index}`);
-    party.share = { value: BigInt(0), index: party.index };
+    party.share = { value: leInt2Buff(BigInt(0)), index: party.index };
     for (const share of party.aggregates) {
-      party.share.value = (party.share.value + share.value) % ctx.order;
+      const x = ctx.leBuff2Scalar(party.share.value);
+      const z = ctx.leBuff2Scalar(share.value);
+      party.share.value = leInt2Buff(mod(x + z, ctx.order));
     }
     party.localPublicShare = {
-      value: await ctx.exp(party.share.value, ctx.generator),
+      value: (
+        await ctx.exp(
+          ctx.leBuff2Scalar(party.share.value),
+          ctx.generator
+        )
+      ).toBytes(),
       index: party.index,
     }
     console.timeEnd(`LOCAL SUMMATION ${party.index}`);

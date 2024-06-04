@@ -14,13 +14,8 @@ const lagrange = require('../lagrange');
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 
-export type SecretShare = { value: bigint, index: number };
-export type SecretSharePacket = {
-  value: Uint8Array,
-  index: number,
-  binding?: Uint8Array,
-}
-
+export type SecretShare = { value: Uint8Array, index: number };
+export type SecretSharePacket = SecretShare & { binding?: Uint8Array };
 export type PublicShare = { value: Uint8Array, index: number };
 export type PublicSharePacket = PublicShare & { proof: NizkProof };
 
@@ -76,7 +71,7 @@ export class ShamirSharing<P extends Point> {
     const { polynomial: { evaluate }, nrShares } = this;
     const shares = new Array(nrShares);
     for (let index = 1; index <= nrShares; index++) {
-      const value = evaluate(index);
+      const value = leInt2Buff(evaluate(index));
       shares[index - 1] = { value, index };
     }
     return shares;
@@ -152,8 +147,8 @@ export async function verifyFeldmannCommitments<P extends Point>(
   commitments: Uint8Array[],
 ): Promise<boolean> {
   const { value, index } = share;
-  const { order, generator, neutral, exp, operate } = ctx;
-  const lhs = await exp(value, generator);
+  const { order, generator: g, neutral, exp, operate } = ctx;
+  const lhs = await exp(ctx.leBuff2Scalar(value), g);
   let rhs = neutral;
   for (const [j, commitment] of commitments.entries()) {
     const c = await ctx.unpackValid(commitment);
@@ -163,7 +158,7 @@ export async function verifyFeldmannCommitments<P extends Point>(
   const valid = await lhs.equals(rhs);
   if (!valid)
     throw new Error('Invalid share');
-  return true
+  return true;
 }
 
 
@@ -175,8 +170,9 @@ export async function verifyPedersenCommitments<P extends Point>(
   commitments: Uint8Array[],
 ): Promise<boolean> {
   const h = await ctx.unpackValid(publicBytes);
-  const { value: s, index } = share;
+  const { value, index } = share;
   const { order, generator: g, neutral, exp, operate } = ctx;
+  const s = ctx.leBuff2Scalar(value);
   const b = ctx.leBuff2Scalar(binding);
   const lhs = await operate(
     await exp(s, g),
@@ -190,7 +186,7 @@ export async function verifyPedersenCommitments<P extends Point>(
   const valid = await lhs.equals(rhs);
   if (!valid)
     throw new Error('Invalid share');
-  return true
+  return true;
 }
 
 
@@ -199,14 +195,9 @@ export async function parseFeldmannPacket<P extends Point>(
   commitments: Uint8Array[],
   packet: SecretSharePacket,
 ): Promise<SecretShare> {
-  const { value: bytes, index } = packet;
-  const value = ctx.leBuff2Scalar(bytes);
+  const { value, index } = packet;
   const share = { value, index };
-  const innerCommitments = new Array(commitments.length);
-  const verified = await verifyFeldmannCommitments(ctx, share, commitments);
-  if (!verified) {
-    throw new Error('Invalid share');
-  }
+  await verifyFeldmannCommitments(ctx, share, commitments);
   return share;
 }
 
@@ -217,18 +208,14 @@ export async function parsePedersenPacket<P extends Point>(
   publicBytes: Uint8Array,
   packet: SecretSharePacket,
 ): Promise<{ share: SecretShare, binding: Uint8Array }> {
-  const { value: bytes, index, binding } = packet;
+  const { value, index, binding } = packet;
   if (!binding) {
     throw new Error('No binding found');
   }
-  const value = ctx.leBuff2Scalar(bytes);
   const share = { value, index }
   const verified = await verifyPedersenCommitments(
     ctx, share, binding, publicBytes, commitments,
   );
-  if (!verified) {
-    throw new Error("Invalid share");
-  }
   return { share, binding };
 }
 
@@ -238,12 +225,13 @@ export async function createPublicSharePacket<P extends Point>(
   share: SecretShare,
   opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
 ): Promise<PublicSharePacket> {
-  const { value: x, index } = share;
+  const { value, index } = share;
   const g = ctx.generator;
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const nonce = opts ? (opts.nonce || undefined) : undefined;
+  const x = ctx.leBuff2Scalar(value);
   const y = await ctx.exp(x, g);
-  const proof = await nizk(ctx, algorithm).proveDlog(x, { u: ctx.generator, v: y }, nonce);
+  const proof = await nizk(ctx, algorithm).proveDlog(x, { u: g, v: y }, nonce);
   return { value: y.toBytes(), index, proof };
 }
 
@@ -296,12 +284,12 @@ export function reconstructSecret<P extends Point>(
   ctx: Group<P>,
   shares: SecretShare[]
 ): bigint {
-  const { order } = ctx;
+  const { order, leBuff2Scalar } = ctx;
   const indexes = shares.map(share => share.index);
   return shares.reduce(
     (acc, { value, index }) => {
       const lambda = computeLambda(ctx, index, indexes);
-      return mod(acc + value * lambda, order);
+      return mod(acc + leBuff2Scalar(value) * lambda, order);
     },
     __0n
   );

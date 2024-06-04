@@ -14,6 +14,7 @@ import {
 import { randomNonce } from '../../src/crypto';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer } from '../helpers';
+import { mod, leInt2Buff } from '../../src/arith';
 
 let { system, nrShares, threshold } = resolveTestConfig();
 
@@ -70,12 +71,19 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
 
     // Local summation
     for (let party of parties) {
-      party.share = { value: BigInt(0), index: party.index };
+      party.share = { value: leInt2Buff(BigInt(0)), index: party.index };
       for (const share of party.aggregates) {
-        party.share.value = (party.share.value + share.value) % ctx.order;
+        const x = ctx.leBuff2Scalar(party.share.value);
+        const z = ctx.leBuff2Scalar(share.value);
+        party.share.value = leInt2Buff(mod(x + z, ctx.order));
       }
       party.localPublicShare = {
-        value: await ctx.exp(party.share.value, ctx.generator),
+        value: (
+          await ctx.exp(
+            ctx.leBuff2Scalar(party.share.value),
+            ctx.generator
+          )
+        ).toBytes(),
         index: party.index,
       }
     }
@@ -122,12 +130,19 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
 
     // Local summation
     for (let party of parties) {
-      party.share = { value: BigInt(0), index: party.index };
+      party.share = { value: leInt2Buff(BigInt(0)), index: party.index };
       for (const share of party.aggregates) {
-        party.share.value = (party.share.value + share.value) % ctx.order;
+        const x = ctx.leBuff2Scalar(party.share.value);
+        const z = ctx.leBuff2Scalar(share.value);
+        party.share.value = leInt2Buff(mod(x + z, ctx.order));
       }
       party.localPublicShare = {
-        value: await ctx.exp(party.share.value, ctx.generator),
+        value: (
+          await ctx.exp(
+            ctx.leBuff2Scalar(party.share.value),
+            ctx.generator
+          )
+        ).toBytes(),
         index: party.index,
       }
     }
