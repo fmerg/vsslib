@@ -134,14 +134,13 @@ export async function reconstructKey<P extends Point>(
 ): Promise<PrivateKey<P>> {
   if (threshold && shares.length < threshold)
     throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
-  const secret = await reconstructSecret(ctx, shares.map(s => {
+  return new PrivateKey(ctx, await reconstructSecret(ctx, shares.map(s => {
       return {
         value: s.bytes,
         index: s.index,
       }
     })
-  );
-  return new PrivateKey(ctx, leInt2Buff(secret));
+  ));
 }
 
 export async function reconstructPublicKey<P extends Point>(

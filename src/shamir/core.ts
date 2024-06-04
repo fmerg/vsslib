@@ -24,10 +24,11 @@ export async function shareSecret<P extends Point>(
   ctx: Group<P>,
   nrShares: number,
   threshold: number,
-  secret: bigint,
+  secret: Uint8Array,
   predefined?: [bigint, bigint][]
 ): Promise<ShamirSharing<P>> {
   predefined = predefined || [];
+
   if (nrShares < 1)
     throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
   if (threshold < 1)
@@ -38,8 +39,9 @@ export async function shareSecret<P extends Point>(
     throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
   if (!(predefined.length < threshold))
     throw new Error(ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD);
+
   const xyPoints = new Array(threshold);
-  xyPoints[0] = [__0n, secret];
+  xyPoints[0] = [__0n, ctx.leBuff2Scalar(secret)];
   let index = 1;
   while (index < threshold) {
     const x = index;
@@ -283,16 +285,17 @@ export function computeLambda<P extends Point>(
 export function reconstructSecret<P extends Point>(
   ctx: Group<P>,
   shares: SecretShare[]
-): bigint {
+): Uint8Array {
   const { order, leBuff2Scalar } = ctx;
   const indexes = shares.map(share => share.index);
-  return shares.reduce(
+  const secret = shares.reduce(
     (acc, { value, index }) => {
       const lambda = computeLambda(ctx, index, indexes);
       return mod(acc + leBuff2Scalar(value) * lambda, order);
     },
     __0n
   );
+  return leInt2Buff(secret);
 }
 
 

@@ -20,7 +20,7 @@ let { system, nrShares, threshold } = resolveTestConfig();
 
 class ShareHolder<P extends Point> {
   index: number;
-  originalSecret?: bigint;
+  originalSecret?: Uint8Array;
   sharing?: ShamirSharing<P>;
   aggregates: SecretShare[];
   share?: SecretShare;
@@ -54,7 +54,7 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
     }
 
     for (let party of parties) {
-      party.originalSecret = await ctx.randomScalar();
+      party.originalSecret = await ctx.randomSecret();
       party.sharing = await shareSecret(ctx, nrShares, threshold, party.originalSecret!);
     }
   })
@@ -106,7 +106,10 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
     // Test correctness
     let targetPublic = ctx.neutral;
     for (const party of parties) {
-      const curr = await ctx.exp(party.originalSecret, ctx.generator);
+      const curr = await ctx.exp(
+        ctx.leBuff2Scalar(party.originalSecret),
+        ctx.generator
+      );
       targetPublic = await ctx.operate(curr, targetPublic);
     }
     for (const party of parties) {
@@ -165,7 +168,10 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
     // Test correctness
     let targetPublic = ctx.neutral;
     for (const party of parties) {
-      const curr = await ctx.exp(party.originalSecret, ctx.generator);
+      const curr = await ctx.exp(
+        ctx.leBuff2Scalar(party.originalSecret),
+        ctx.generator
+      );
       targetPublic = await ctx.operate(curr, targetPublic);
     }
     for (const party of parties) {

@@ -80,7 +80,7 @@ async function demoDKG(options) {
   // Sharing computation
   for (const party of parties) {
     console.time(`SHARING COMPUTATION ${party.index}`);
-    party.originalSecret = await ctx.randomScalar();
+    party.originalSecret = await ctx.randomSecret();
     party.sharing = await shareSecret(ctx, nrShares, threshold, party.originalSecret);
     console.timeEnd(`SHARING COMPUTATION ${party.index}`);
   }
@@ -150,7 +150,10 @@ async function demoDKG(options) {
   // Test correctness
   let targetPublic = ctx.neutral;
   for (party of parties) {
-    const curr = await ctx.exp(party.originalSecret, ctx.generator);
+    const curr = await ctx.exp(
+      ctx.leBuff2Scalar(party.originalSecret),
+      ctx.generator
+    );
     targetPublic = await ctx.operate(curr, targetPublic);
   }
   for (party of parties) {

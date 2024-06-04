@@ -27,19 +27,19 @@ const thresholdParams = [
 describe(`Sharing parameter errors over ${system}`, () => {
   const ctx = initGroup(system);
   test('Threshold exceeds number of shares', async () => {
-    const secret = await ctx.randomScalar();
+    const secret = await ctx.randomSecret();
     await expect(shareSecret(ctx, 1, 2, secret)).rejects.toThrow(
       ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES
     );
   });
   test('Threshold is < 1', async () => {
-    const secret = await ctx.randomScalar();
+    const secret = await ctx.randomSecret();
     await expect(shareSecret(ctx, 1, 0, secret)).rejects.toThrow(
       ErrorMessages.THRESHOLD_BELOW_ONE
     );
   });
   test('Number of shares violates group order', async () => {
-    const secret = await ctx.randomScalar();
+    const secret = await ctx.randomSecret();
     await expect(shareSecret(ctx, ctx.order, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
@@ -48,7 +48,7 @@ describe(`Sharing parameter errors over ${system}`, () => {
     );
   });
   test('Number of predefined points violates threshold', async () => {
-    const secret = await ctx.randomScalar();
+    const secret = await ctx.randomSecret();
     await expect(shareSecret(ctx, 3, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
@@ -62,7 +62,7 @@ describe(`Sharing parameter errors over ${system}`, () => {
 describe(`Sharing without predefined points over ${system}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const ctx = initGroup(system);
-    const secret = await ctx.randomScalar();
+    const secret = await ctx.randomSecret();
     const sharing = await shareSecret(ctx, n, t, secret);
     const { nrShares, threshold, polynomial } = sharing;
     expect(nrShares).toEqual(n);
@@ -79,7 +79,7 @@ describe(`Sharing without predefined points over ${system}`, () => {
       expect(await target.equals(await exp(ctx.leBuff2Scalar(value), generator))).toBe(true);
     }
     expect(polynomial.degree).toEqual(t - 1);
-    expect(polynomial.evaluate(0)).toEqual(secret);
+    expect(polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(secret));
     const { commitments } = await sharing.createFeldmannPackets();
     expect(commitments.length).toEqual(t);
   });
@@ -89,7 +89,7 @@ describe(`Sharing without predefined points over ${system}`, () => {
 describe(`Sharing with predefined points over ${system}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const ctx = initGroup(system);
-    const secret = await ctx.randomScalar();
+    const secret = await ctx.randomSecret();
     for (let nrPredefined = 1; nrPredefined < t; nrPredefined++) {
       const predefined = [];
       for (let i = 0; i < nrPredefined; i++) {
@@ -103,7 +103,6 @@ describe(`Sharing with predefined points over ${system}`, () => {
       const publicShares = await sharing.getPublicShares();
       expect(secretShares.length).toEqual(n);
       expect(publicShares.length).toEqual(n);
-      expect(polynomial.evaluate(0)).toEqual(secret);
       for (let index = 1; index <= nrPredefined; index++) {
         const { value } = selectSecretShare(index, secretShares);
         expect(ctx.leBuff2Scalar(value)).toEqual(predefined[index - 1]);
@@ -114,7 +113,7 @@ describe(`Sharing with predefined points over ${system}`, () => {
         const { value } = selectPublicShare(index, publicShares);
         const target = await ctx.unpackValid(value);
       }
-      expect(polynomial.evaluate(0)).toEqual(secret);
+      expect(polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(secret));
       expect(polynomial.degree).toEqual(t - 1);
       const { commitments } = await sharing.createFeldmannPackets();
       expect(commitments.length).toEqual(t);

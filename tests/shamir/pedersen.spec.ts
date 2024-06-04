@@ -15,7 +15,7 @@ describe(`Secret share verification over ${system}`, () => {
   let secretShares: SecretShare[];
 
   beforeAll(async () => {
-    const secret = await ctx.randomScalar();
+    const secret = await ctx.randomSecret();
     sharing = await shareSecret(ctx, nrShares, threshold, secret);
     secretShares = await sharing.getSecretShares();
   })

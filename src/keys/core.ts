@@ -66,7 +66,7 @@ export class PrivateKey<P extends Point> {
   generateSharing = async (nrShares: number, threshold: number): Promise<
     ShamirSharing<P>
   > => {
-    return shareSecret(this.ctx, nrShares, threshold, this.asScalar());
+    return shareSecret(this.ctx, nrShares, threshold, this.bytes);
   }
 
   sign = async (
