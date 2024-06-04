@@ -1,14 +1,14 @@
-import { Point, Group } from '../backend/abstract';
-import { mod, modInv } from '../arith';
-import { FieldPolynomial, randomPolynomial } from '../polynomials';
-import { ErrorMessages } from '../errors';
-import { leInt2Buff } from '../arith';
-import { NizkProof } from '../nizk';
-import { Algorithm } from '../types';
-import { Algorithms } from '../enums';
-import nizk from '../nizk';
+import { Point, Group } from './backend/abstract';
+import { mod, modInv } from './arith';
+import { FieldPolynomial, randomPolynomial } from './polynomials';
+import { ErrorMessages } from './errors';
+import { leInt2Buff } from './arith';
+import { NizkProof } from './nizk';
+import { Algorithm } from './types';
+import { Algorithms } from './enums';
+import nizk from './nizk';
 
-const lagrange = require('../lagrange');
+const lagrange = require('./lagrange');
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
