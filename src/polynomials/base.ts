@@ -1,5 +1,4 @@
 import { mod } from '../arith';
-import { Point, Group } from '../backend/abstract';
 import { ErrorMessages } from '../errors';
 
 const __0n = BigInt(0);
@@ -55,7 +54,8 @@ export class BasePolynomial {
   }
 
   add = (other: BasePolynomial): BasePolynomial => {
-    if (this.order !== other.order) throw new Error(ErrorMessages.DIFFERENT_ORDERS_CANNOT_ADD);
+    if (this.order !== other.order)
+      throw new Error(ErrorMessages.DIFFERENT_ORDERS_CANNOT_ADD);
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     if (short.isZero()) return long.clone();
     let newCoeffs = new Array(long.degree).fill(__0n);
@@ -69,8 +69,10 @@ export class BasePolynomial {
   }
 
   mult = (other: BasePolynomial): BasePolynomial => {
-    if (this.order !== other.order) throw new Error(ErrorMessages.DIFFERENT_ORDERS_CANNOT_MULTIPLY);
-    if (this.isZero() || other.isZero()) return new BasePolynomial([], this.order);
+    if (this.order !== other.order)
+      throw new Error(ErrorMessages.DIFFERENT_ORDERS_CANNOT_MULTIPLY);
+    if (this.isZero() || other.isZero())
+      return new BasePolynomial([], this.order);
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     let newCoeffs = new Array(long.degree + short.degree + 1).fill(__0n);
     for (let i = 0; i < long.degree + 1; i++) {
@@ -91,23 +93,4 @@ export class BasePolynomial {
     const acc = this.coeffs.reduce((acc, c, i) => acc + c * x ** BigInt(i), __0n);
     return mod(acc, this.order);
   }
-}
-
-
-export class FieldPolynomial<P extends Point> extends BasePolynomial {
-  ctx: Group<P>;
-  constructor(ctx: Group<P>, coeffs: bigint[]) {
-    super(coeffs, ctx.order);
-    this.ctx = ctx;
-  }
-}
-
-export async function randomPolynomial<P extends Point>(ctx: Group<P>, degree: number) {
-  if (degree < 0) throw new Error(ErrorMessages.NON_POSITIVE_DEGREE);
-  const { randomScalar } = ctx;
-  const coeffs = new Array(degree + 1);
-  for (let i = 0; i < coeffs.length; i++) {
-    coeffs[i] = await randomScalar();
-  }
-  return new FieldPolynomial(ctx, coeffs);
 }

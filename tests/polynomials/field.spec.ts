@@ -1,6 +1,6 @@
 import { initGroup } from '../../src/backend';
 import { ErrorMessages } from '../../src/errors';
-import { FieldPolynomial, randomPolynomial } from '../../src/lagrange/utils';
+import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
 import { cartesian } from '../helpers';
 import { resolveTestConfig } from '../environ';
 

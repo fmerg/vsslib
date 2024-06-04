@@ -1,8 +1,7 @@
 import { Point, Group } from '../backend/abstract';
 import { mod, modInv } from '../arith';
-import { FieldPolynomial } from '../lagrange/utils';
+import { FieldPolynomial, randomPolynomial } from '../polynomials';
 import { ErrorMessages } from '../errors';
-import { randomPolynomial } from '../lagrange/utils';
 import { leInt2Buff } from '../arith';
 import { NizkProof } from '../nizk';
 import { Algorithm } from '../types';

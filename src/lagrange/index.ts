@@ -1,1 +1,0 @@
-export { interpolate } from './core';

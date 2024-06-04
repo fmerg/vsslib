@@ -2,7 +2,8 @@ import { Systems } from '../../src/enums';
 import { initGroup } from '../../src/backend';
 import { lagrange } from '../../src';
 import { ErrorMessages } from '../../src/errors';
-import { BasePolynomial, FieldPolynomial, randomPolynomial } from '../../src/lagrange/base';
+import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
+import { BasePolynomial } from '../../src/polynomials/base';
 import { cartesian, trimZeroes } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
