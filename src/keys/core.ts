@@ -342,7 +342,6 @@ export class PublicKey<P extends Point> {
     opts?: {
       algorithm?: Algorithm,
       nonce?: Uint8Array,
-      raiseOnInvalid?: boolean
     }
   ): Promise<boolean> => {
     const { unpackValid } = this.ctx;
@@ -356,12 +355,9 @@ export class PublicKey<P extends Point> {
         w: await unpackValid(decryptor),
       },
       proof,
-      nonce
+      nonce,
     );
-    const raiseOnInvalid = opts ?
-      (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
-      true;
-    if (!verified && raiseOnInvalid)
+    if (!verified)
       throw new Error(ErrorMessages.INVALID_DECRYPTOR);
     return verified;
   }

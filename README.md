@@ -138,7 +138,7 @@ const { flag, indexes } = await verifyPartialDecryptors(
 
 ```js
 await verifyPartialDecryptors(
-  ctx, ciphertext, publicShares, partialDecryptors, { raiseOnInvalid: True }
+  ctx, ciphertext, publicShares, partialDecryptors, { errorOnInvalid: True }
 );
 ```
 
