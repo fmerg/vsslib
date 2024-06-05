@@ -57,7 +57,7 @@ export async function verifyPartialDecryptors<P extends Point>(
   ciphertext: Ciphertext,
   publicShares: PublicKeyShare<P>[],
   shares: PartialDecryptor[],
-  opts?: { threshold?: number, raiseOnInvalid?: boolean },
+  opts?: { threshold?: number, errorOnInvalid?: boolean },
 ): Promise<{ flag: boolean, indexes: number[]}> {
   const threshold = opts ? opts.threshold : undefined;
   if (threshold && shares.length < threshold) throw new Error(
@@ -70,20 +70,25 @@ export async function verifyPartialDecryptors<P extends Point>(
   }
   let flag = true;
   let indexes = [];
-  const raiseOnInvalid = opts ? (opts.raiseOnInvalid || false) : false;
+  const errorOnInvalid = opts ? (opts.errorOnInvalid || false) : false;
   for (const partialDecryptor of shares) {
-    const publicShare = selectPublicShare(partialDecryptor.index, publicShares);
-    const verified = await publicShare.verifyPartialDecryptor(
-      ciphertext,
-      partialDecryptor,
-      {
-        raiseOnInvalid: false,
+    const { index } = partialDecryptor;
+    const publicShare = selectPublicShare(index, publicShares);
+    try {
+      await publicShare.verifyPartialDecryptor(
+        ciphertext,
+        partialDecryptor,
+      );
+    } catch (err: any) {
+      if (err.message == ErrorMessages.INVALID_PARTIAL_DECRYPTOR) {
+        if (errorOnInvalid)
+          throw new Error(`Invalid partial decryptor with index ${index}`);
+        indexes.push(index);
+        flag &&= false;
+      } else {
+        throw err;
       }
-    );
-    if (!verified && raiseOnInvalid)
-      throw new Error(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
-    flag &&= verified;
-    if(!verified) indexes.push(partialDecryptor.index);
+    }
   }
   return { flag, indexes };
 }

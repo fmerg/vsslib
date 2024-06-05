@@ -45,9 +45,12 @@ abstract class BaseCipher<P extends Point, A> {
 
   async decrypt(ciphertext: { alpha: A, beta: Uint8Array}, secret: bigint): Promise<Uint8Array> {
     const { alpha, beta: betaBytes} = ciphertext;
-    const beta = this.ctx.unpack(betaBytes);
-    const isBetaValid = await this.ctx.validatePoint(beta, { raiseOnInvalid: false });
-    if(!isBetaValid) throw new Error('Could not decrypt: Point not in subgroup');
+    let beta;
+    try {
+      beta = await this.ctx.unpackValid(betaBytes);
+    } catch (err: any) {
+      throw new Error('Could not decrypt: ' + err.message);
+    }
     const decryptor = await this.ctx.exp(secret, beta);
     let plaintext;
     try {

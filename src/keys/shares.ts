@@ -88,27 +88,27 @@ export class PublicKeyShare<P extends Point> extends PublicKey<P> {
     decryptor: PartialDecryptor,
     opts?: {
       nonce?: Uint8Array,
-      raiseOnInvalid?: boolean
     },
   ): Promise<boolean> {
     const { ctx, index } = this;
     const { value, proof } = decryptor;
     const nonce = opts ? opts.nonce : undefined;
-    const { alpha, beta } = ciphertext;
-    const verified = await this.verifyDecryptor(
-      ciphertext,
-      value,
-      proof,
-      {
-        nonce,
-        raiseOnInvalid: false
+    try {
+      await this.verifyDecryptor(
+        ciphertext,
+        value,
+        proof,
+        {
+          nonce,
+        }
+      );
+    } catch (err: any) {
+      if (err.message == ErrorMessages.INVALID_DECRYPTOR)
+        throw new Error(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
+      else {
+        throw err
       }
-    );
-    const raiseOnInvalid = opts ?
-      (opts.raiseOnInvalid === undefined ? true : opts.raiseOnInvalid) :
-      true;
-    if (!verified && raiseOnInvalid) throw new Error(
-      ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
-    return verified;
+    }
+    return true;
   }
 };

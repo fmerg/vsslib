@@ -86,7 +86,7 @@ describe('Partial decryptors verification', () => {
     });
     await expect(
       verifyPartialDecryptors(ctx, ciphertext, publicShares, invalidDecryptors, {
-        threshold, raiseOnInvalid: true
+        threshold, errorOnInvalid: true
       })
     ).rejects.toThrow(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
   });

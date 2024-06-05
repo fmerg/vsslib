@@ -79,21 +79,19 @@ export class EcGroup extends Group<EcPoint> {
     ))
   );
 
-  validateScalar = async (scalar: bigint, opts?: { raiseOnInvalid: boolean }): Promise<boolean> => {
+  validateScalar = async (scalar: bigint): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
-    if (!flag && (opts ? opts.raiseOnInvalid : true))
+    if (!flag)
       throw new Error(ErrorMessages.INVALID_SCALAR)
     return flag;
   }
 
-  validatePoint = async (point: EcPoint, opts?: { raiseOnInvalid: boolean}): Promise<boolean> => {
+  validatePoint = async (point: EcPoint): Promise<boolean> => {
     let flag = true;
     if (await point.wrapped.equals(this._zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: any) {
       if (err.message.startsWith('bad point: ')) {
-        flag = false;
-        if (opts ? opts.raiseOnInvalid : true)
-          throw new Error(ErrorMessages.INVALID_POINT);
+        throw new Error(ErrorMessages.INVALID_POINT);
       }
       else throw err;
     }
