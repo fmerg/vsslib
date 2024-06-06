@@ -1,5 +1,4 @@
 import { Point, Group } from '../../src/backend/abstract'
-import { ErrorMessages } from '../../src/errors';
 import { PrivateKeyShare, PublicKeyShare } from '../../src/keys';
 import { reconstructKey, reconstructPublicKey } from '../../src/combiner';
 import { SecretSharePacket } from '../../src/shamir';
@@ -97,7 +96,7 @@ describe(`Sharing, verification and reconstruction over ${system}`, () => {
     const { privateKey, privateShares, ctx } = setup;
     partialPermutations(privateShares, 0, threshold - 1).forEach(async (qualifiedShares) => {
       await expect(reconstructKey(ctx, qualifiedShares, threshold)).rejects.toThrow(
-        ErrorMessages.INSUFFICIENT_NR_SHARES
+        'Insufficient number of shares'
       );
     });
     partialPermutations(privateShares, threshold, nrShares).forEach(async (qualifiedShares) => {

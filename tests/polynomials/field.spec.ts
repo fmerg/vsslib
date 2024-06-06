@@ -1,5 +1,4 @@
 import { initGroup } from '../../src/backend';
-import { ErrorMessages } from '../../src/errors';
 import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -14,7 +13,7 @@ describe('Random polynomial generation', () => {
   test('Non-positive degree error', async () => {
     const ctx = initGroup('ed25519');
     await expect(randomPolynomial(ctx, -1)).rejects.toThrow(
-      ErrorMessages.NON_POSITIVE_DEGREE
+      'Polynomial degree must be positive'
     );
   });
   test('Correct parameters', async () => {

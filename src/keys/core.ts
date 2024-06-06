@@ -1,5 +1,11 @@
 import { Group, Point } from '../backend/abstract';
-import { ErrorMessages } from '../errors';
+import {
+  ShamirError,
+  InvalidSignature,
+  InvalidSecret,
+  InvalidDecryptor,
+  InvalidEncryptionProof,
+} from '../errors';
 import { initGroup } from '../backend';
 import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../arith';
@@ -63,9 +69,7 @@ export class PrivateKey<P extends Point> {
     );
   }
 
-  generateSharing = async (nrShares: number, threshold: number): Promise<
-    ShamirSharing<P>
-  > => {
+  generateSharing = async (nrShares: number, threshold: number): Promise<ShamirSharing<P>> => {
     return distributeSecret(this.ctx, nrShares, threshold, this.bytes);
   }
 
@@ -120,8 +124,8 @@ export class PrivateKey<P extends Point> {
       proof,
       nonce,
     );
-    if (!verified) throw new Error(
-      ErrorMessages.INVALID_ENCRYPTION
+    if (!verified) throw new InvalidEncryptionProof(
+      `Invalid encryption`  // TODO
     );
     return verified;
   }
@@ -217,15 +221,17 @@ export class PrivateKey<P extends Point> {
     const outerVerified = await _signer.verifyBytes(
       senderPublic.asBytes(), toCanonical({ ciphertext, receiver }), signature, nonce
     );
-    if (!outerVerified)
-      throw new Error(ErrorMessages.INVALID_SIGNATURE);
+    if (!outerVerified) throw new InvalidSignature(
+      `Invalid signature` // TODO
+    );
     const plaintext = await _cipher.decrypt(ciphertext, this.asScalar());
     const { message, innerSignature } = fromCanonical(plaintext);
     const innerVerified = await _signer.verifyBytes(
       senderPublic.asBytes(), message, innerSignature, nonce
     );
-    if (!innerVerified)
-      throw new Error(ErrorMessages.INVALID_SIGNATURE);
+    if (!innerVerified) throw new InvalidSignature(
+      `Invalid signature` // TODO
+    );
     return { message, innerSignature };
   }
 }
@@ -269,8 +275,9 @@ export class PublicKey<P extends Point> {
       proof,
       nonce,
     );
-    if (!verified)
-      throw new Error(ErrorMessages.INVALID_SECRET);
+    if (!verified) throw new InvalidSecret(
+      `Invalid secret` // TODO
+    );
     return verified;
   }
 
@@ -288,8 +295,9 @@ export class PublicKey<P extends Point> {
     const verified = await signer(this.ctx, scheme, algorithm).verifyBytes(
       this.bytes, message, signature, nonce
     );
-    if (!verified)
-      throw new Error(ErrorMessages.INVALID_SIGNATURE);
+    if (!verified) throw new InvalidSignature(
+      `Invalid signature` // TODO
+    );
     return verified;
   }
 
@@ -357,8 +365,9 @@ export class PublicKey<P extends Point> {
       proof,
       nonce,
     );
-    if (!verified)
-      throw new Error(ErrorMessages.INVALID_DECRYPTOR);
+    if (!verified) throw new InvalidDecryptor(
+      `Invalid decryptor`   // TODO
+    );
     return verified;
   }
 }

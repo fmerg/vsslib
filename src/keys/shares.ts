@@ -1,6 +1,9 @@
 import { Point, Group } from '../backend/abstract';
 import { Ciphertext } from '../elgamal';
-import { ErrorMessages } from '../errors';
+import {
+  InvalidDecryptor,
+  InvalidPartialDecryptor,
+} from '../errors';
 import { NizkProof } from '../nizk';
 import {
   PublicShare,
@@ -103,11 +106,10 @@ export class PublicKeyShare<P extends Point> extends PublicKey<P> {
         }
       );
     } catch (err: any) {
-      if (err.message == ErrorMessages.INVALID_DECRYPTOR)
-        throw new Error(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
-      else {
-        throw err
-      }
+      if (err instanceof InvalidDecryptor) throw new InvalidPartialDecryptor(
+        `Invalid partial decryptor` // TODO: with index
+      );
+      else throw err;
     }
     return true;
   }

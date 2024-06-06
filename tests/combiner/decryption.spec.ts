@@ -1,6 +1,5 @@
 import { Point } from '../../src/backend/abstract';
 import { ElgamalSchemes } from '../../src/enums';
-import { ErrorMessages } from '../../src/errors';
 import {
   verifyPartialDecryptors,
   reconstructDecryptor,
@@ -39,7 +38,7 @@ describe('Single partial decryptor verification', () => {
           share
         )
       ).rejects.toThrow(
-        ErrorMessages.INVALID_PARTIAL_DECRYPTOR
+        'Invalid partial decryptor'
       );
     }
   });
@@ -83,7 +82,7 @@ describe('Partial decryptors verification', () => {
       verifyPartialDecryptors(ctx, ciphertext, publicShares, invalidDecryptors, {
         threshold, errorOnInvalid: true
       })
-    ).rejects.toThrow(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
+    ).rejects.toThrow('Invalid partial decryptor');
   });
   it.each(cartesian([systems, schemes]))('Failure - less than threshold - over %s/%s', async (
     system, scheme
@@ -95,7 +94,7 @@ describe('Partial decryptors verification', () => {
       verifyPartialDecryptors(
         ctx, ciphertext, publicShares, partialDecryptors.slice(0, threshold - 1), { threshold }
       )
-    ).rejects.toThrow(ErrorMessages.INSUFFICIENT_NR_SHARES);
+    ).rejects.toThrow('Insufficient number of shares');
   });
   it.each(cartesian([systems, schemes]))('Failure - skip threshold check - over %s/%s', async (
     system, scheme
@@ -130,7 +129,7 @@ describe('Decryptor reconstruction', () => {
     });
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedShares) => {
       await expect(reconstructDecryptor(ctx, qualifiedShares, { threshold })).rejects.toThrow(
-        ErrorMessages.INSUFFICIENT_NR_SHARES
+        'Insufficient number of shares'
       );
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
@@ -176,7 +175,7 @@ describe('Threshold decryption', () => {
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedShares) => {
       await expect(
         thresholdDecrypt(ctx, ciphertext, qualifiedShares, { scheme, threshold })
-      ).rejects.toThrow(ErrorMessages.INSUFFICIENT_NR_SHARES);
+      ).rejects.toThrow('Insufficient number of shares');
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
       const plaintext = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, {

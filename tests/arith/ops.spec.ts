@@ -3,7 +3,6 @@ import {
   gcd,
   modInv,
 } from '../../src/arith';
-import { ErrorMessages } from '../../src/errors';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -12,13 +11,13 @@ const __2n = BigInt(2);
 
 describe('errors', () => {
   test('mod - Modulus <= 2', async () => {
-    expect(() => mod(__1n, __0n)).toThrow(ErrorMessages.MODULUS_NOT_ABOVE_TWO);
-    expect(() => mod(__1n, __1n)).toThrow(ErrorMessages.MODULUS_NOT_ABOVE_TWO);
+    expect(() => mod(__1n, __0n)).toThrow('Modulus must be > 2');
+    expect(() => mod(__1n, __1n)).toThrow('Modulus must be > 2');
   });
   test('gcd - Non-positive inputs', async () => {
-    expect(() => gcd(__0n, __1n)).toThrow(ErrorMessages.NON_POSITIVE_INPUTS);
-    expect(() => gcd(__1n, __0n)).toThrow(ErrorMessages.NON_POSITIVE_INPUTS);
-    expect(() => gcd(__0n, __0n)).toThrow(ErrorMessages.NON_POSITIVE_INPUTS);
+    expect(() => gcd(__0n, __1n)).toThrow('Non-positive inputs');
+    expect(() => gcd(__1n, __0n)).toThrow('Non-positive inputs');
+    expect(() => gcd(__0n, __0n)).toThrow('Non-positive inputs');
   });
 });
 
@@ -169,7 +168,7 @@ describe('Inverse not exists', () => {
   ];
   it.each(fixtures)('%s, %s', async (x, q) => {
     expect(() => modInv(BigInt(x), BigInt(q))).toThrow(
-      ErrorMessages.INVERSE_NOT_EXISTS
+      'No inverse exists for provided modulo'
     );
   })
 })

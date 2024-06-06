@@ -1,7 +1,11 @@
 import { Point, Group } from './backend/abstract';
 import { mod, modInv } from './arith';
 import { FieldPolynomial, randomPolynomial } from './polynomials';
-import { ErrorMessages } from './errors';
+import {
+  InterpolationError,
+  ShamirError,
+  InvalidSecretShare,
+} from './errors';
 import { leInt2Buff } from './arith';
 import { NizkProof } from './nizk';
 import { Algorithm } from './types';
@@ -20,24 +24,27 @@ export type PublicSharePacket = PublicShare & { proof: NizkProof };
 
 
 export async function distributeSecret<P extends Point>(
-  ctx: Group<P>,
-  nrShares: number,
-  threshold: number,
-  secret: Uint8Array,
+  ctx: Group<P>, nrShares: number, threshold: number, secret: Uint8Array,
   predefined?: [bigint, bigint][]
 ): Promise<ShamirSharing<P>> {
   predefined = predefined || [];
+  if (nrShares < 1) throw new ShamirError(
+    `Number of shares must be at least one: ${nrShares}`
+  );
+  if (threshold < 1) throw new ShamirError(
+    `Threshold parameter must be at least 1: ${threshold}`
+  );
+  if (threshold > nrShares) throw new ShamirError(
+    `Threshold parameter exceeds number of shares: ${threshold} > ${nrShares}`
+  );
+  if (!(nrShares < ctx.order)) throw new ShamirError(
+    `Number of shares violates the group order: ${nrShares} >= ${ctx.order}`
+  );
+  if (!(predefined.length < threshold)) throw new ShamirError(
+    `Number of predefined points violates threshold: ${predefined.length} >= ${threshold}`,
+  );
 
-  if (nrShares < 1)
-    throw new Error(ErrorMessages.NR_SHARES_BELOW_ONE);
-  if (threshold < 1)
-    throw new Error(ErrorMessages.THRESHOLD_BELOW_ONE);
-  if (threshold > nrShares)
-    throw new Error(ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES);
-  if (!(nrShares < ctx.order))
-    throw new Error(ErrorMessages.NR_SHARES_VIOLATES_ORDER);
-  if (!(predefined.length < threshold))
-    throw new Error(ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD);
+  // TODO: validate secret as scalar?
 
   const xyPoints = new Array(threshold);
   xyPoints[0] = [__0n, ctx.leBuff2Scalar(secret)];
@@ -48,7 +55,16 @@ export async function distributeSecret<P extends Point>(
     xyPoints[index] = [x, y];
     index++;
   }
-  const polynomial = await lagrange.interpolate(ctx, xyPoints);
+
+  let polynomial;
+  try {
+    polynomial = await lagrange.interpolate(ctx, xyPoints);
+  } catch (err: any) {
+    if (err instanceof InterpolationError) throw new ShamirError(
+      err.message
+    );
+    else throw err;
+  }
   return new ShamirSharing(ctx, nrShares, threshold, polynomial);
 }
 
@@ -157,8 +173,9 @@ export async function verifyFeldmanCommitments<P extends Point>(
     rhs = await operate(rhs, curr);
   }
   const valid = await lhs.equals(rhs);
-  if (!valid)
-    throw new Error('Invalid share');
+  if (!valid) throw new InvalidSecretShare(
+    `Invalid share at index ${index}`
+  );
   return true;
 }
 
@@ -185,8 +202,9 @@ export async function verifyPedersenCommitments<P extends Point>(
     rhs = await operate(rhs, await exp(BigInt(index ** j), c));
   }
   const valid = await lhs.equals(rhs);
-  if (!valid)
-    throw new Error('Invalid share');
+  if (!valid) throw new InvalidSecretShare(
+    `Invalid share at index ${index}`
+  );
   return true;
 }
 
@@ -210,11 +228,12 @@ export async function parsePedersenPacket<P extends Point>(
   packet: SecretSharePacket,
 ): Promise<{ share: SecretShare, binding: Uint8Array }> {
   const { value, index, binding } = packet;
-  if (!binding) {
-    throw new Error('No binding found');
-  }
+  if (!binding)
+    throw new Error(
+      `No binding found for index ${index}`
+    );
   const share = { value, index }
-  const verified = await verifyPedersenCommitments(
+  await verifyPedersenCommitments(
     ctx, share, binding, publicBytes, commitments,
   );
   return { share, binding };

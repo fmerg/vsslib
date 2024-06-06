@@ -5,7 +5,7 @@ import { jubjub } from '@noble/curves/jubjub';
 import { secp256k1 } from '@noble/curves/secp256k1';
 import { Elliptic } from '../enums';
 import { System } from '../types';
-import { ErrorMessages } from '../errors';
+import { BadGroupError, BadPointError, BadScalarError } from '../errors';
 import { Point, Group } from './abstract';
 import { mod, leBuff2Int } from '../arith';
 
@@ -16,7 +16,6 @@ const __0n = BigInt(0);
 interface NoblePoint extends ExtPointType {
   toRawBytes?: Function;
 };
-
 
 class EcPoint implements Point {
   _wrapped: NoblePoint;
@@ -81,8 +80,9 @@ export class EcGroup extends Group<EcPoint> {
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
-    if (!flag)
-      throw new Error(ErrorMessages.INVALID_SCALAR)
+    if (!flag) throw new BadScalarError(
+      `Scalar not in range`
+    );
     return flag;
   }
 
@@ -90,9 +90,8 @@ export class EcGroup extends Group<EcPoint> {
     let flag = true;
     if (await point.wrapped.equals(this._zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: any) {
-      if (err.message.startsWith('bad point: ')) {
-        throw new Error(ErrorMessages.INVALID_POINT);
-      }
+      if (err.message.startsWith('bad point: ')) throw new BadPointError(
+      );
       else throw err;
     }
     return flag;
@@ -115,7 +114,7 @@ export class EcGroup extends Group<EcPoint> {
     try {
       unpacked = new EcPoint(this._curve.ExtendedPoint.fromHex(bytes));
     } catch (err: any) {
-      throw new Error(`bad encoding: ${err.message}`)
+      throw new BadPointError(`bad encoding: ${err.message}`)
     }
     return unpacked;
   }
@@ -160,9 +159,9 @@ export function initElliptic(system: System): EcGroup {
       group = new EcGroup(system, __curves[system]);
       break;
     default:
-      throw new Error(
-        `Unsupported group: ${system}`
-      )
+      throw new BadGroupError(
+        `Unsupported goup: ${system}`
+    );
   }
 
   return group;

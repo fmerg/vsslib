@@ -1,6 +1,5 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
-import { ErrorMessages } from '../../src/errors';
 import { distributeSecret } from '../../src/shamir';
 import { selectSecretShare, selectPublicShare } from '../helpers';
 import { resolveTestConfig } from '../environ';
@@ -18,13 +17,13 @@ describe(`Sharing parameter errors over ${system}`, () => {
   test('Threshold exceeds number of shares', async () => {
     const secret = await ctx.randomSecret();
     await expect(distributeSecret(ctx, 1, 2, secret)).rejects.toThrow(
-      ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES
+      'Threshold parameter exceeds number of shares'
     );
   });
   test('Threshold is < 1', async () => {
     const secret = await ctx.randomSecret();
     await expect(distributeSecret(ctx, 1, 0, secret)).rejects.toThrow(
-      ErrorMessages.THRESHOLD_BELOW_ONE
+      'Threshold parameter must be at least 1'
     );
   });
   test('Number of shares violates group order', async () => {
@@ -33,7 +32,7 @@ describe(`Sharing parameter errors over ${system}`, () => {
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
-      ErrorMessages.NR_SHARES_VIOLATES_ORDER
+      'Number of shares violates the group order'
     );
   });
   test('Number of predefined points violates threshold', async () => {
@@ -42,7 +41,7 @@ describe(`Sharing parameter errors over ${system}`, () => {
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
-      ErrorMessages.NR_PREDEFINED_VIOLATES_THRESHOLD
+      'Number of predefined points violates threshold'
     );
   });
 })
