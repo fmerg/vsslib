@@ -1,7 +1,7 @@
 import { Algorithms } from '../../src/enums';
 import { initGroup } from '../../src/backend';
 import { randomNonce } from '../../src/crypto';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { createAndDlogPairs } from './helpers';
 import { resolveTestConfig } from '../environ';
 import nizk from '../../src/nizk';

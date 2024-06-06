@@ -4,7 +4,7 @@ import { leInt2Buff } from '../../src/arith';
 import { initGroup } from '../../src/backend';
 import { iesElgamal } from '../../src/elgamal/core';
 
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 

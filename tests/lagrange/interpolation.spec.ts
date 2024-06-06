@@ -2,7 +2,7 @@ import { System } from '../../src/types';
 import { initGroup } from '../../src/backend';
 import { ErrorMessages } from '../../src/errors';
 import { lagrange } from '../../src';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { interpolate } from './helpers';
 

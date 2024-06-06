@@ -1,6 +1,6 @@
 import { Algorithms } from '../../src/enums';
 import { initGroup } from '../../src/backend';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { randomNonce } from '../../src/crypto';
 import { createEqDlogPairs } from './helpers';
 import { resolveTestConfig } from '../environ';

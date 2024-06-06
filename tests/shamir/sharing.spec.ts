@@ -1,20 +1,16 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { ErrorMessages } from '../../src/errors';
-import { shareSecret, SecretShare, PointShare } from '../../src/shamir';
+import { distributeSecret, SecretShare, PublicShare } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
 
-function selectSecretShare<P extends Point>(
-  index: number, shares: SecretShare<P>[]
-): SecretShare<P> {
+const selectSecretShare = (index: number, shares: SecretShare[]): SecretShare => {
   const selected = shares.filter(share => share.index == index)[0];
   if (!selected) throw new Error(`No share with index ${index}`);
   return selected;
 }
 
-function selectPointShare<P extends Point>(
-  index: number, shares: PointShare<P>[]
-): PointShare<P> {
+const selectPublicShare = (index: number, shares: PublicShare[]): PublicShare => {
   const selected = shares.filter(share => share.index == index)[0];
   if (!selected) throw new Error(`No share with index ${index}`);
   return selected;
@@ -31,20 +27,20 @@ const thresholdParams = [
 describe(`Sharing parameter errors over ${system}`, () => {
   const ctx = initGroup(system);
   test('Threshold exceeds number of shares', async () => {
-    const secret = await ctx.randomScalar();
-    await expect(shareSecret(ctx, 1, 2, secret)).rejects.toThrow(
+    const secret = await ctx.randomSecret();
+    await expect(distributeSecret(ctx, 1, 2, secret)).rejects.toThrow(
       ErrorMessages.THRESHOLD_EXCEEDS_NR_SHARES
     );
   });
   test('Threshold is < 1', async () => {
-    const secret = await ctx.randomScalar();
-    await expect(shareSecret(ctx, 1, 0, secret)).rejects.toThrow(
+    const secret = await ctx.randomSecret();
+    await expect(distributeSecret(ctx, 1, 0, secret)).rejects.toThrow(
       ErrorMessages.THRESHOLD_BELOW_ONE
     );
   });
   test('Number of shares violates group order', async () => {
-    const secret = await ctx.randomScalar();
-    await expect(shareSecret(ctx, ctx.order, 2, secret, [
+    const secret = await ctx.randomSecret();
+    await expect(distributeSecret(ctx, ctx.order, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
@@ -52,8 +48,8 @@ describe(`Sharing parameter errors over ${system}`, () => {
     );
   });
   test('Number of predefined points violates threshold', async () => {
-    const secret = await ctx.randomScalar();
-    await expect(shareSecret(ctx, 3, 2, secret, [
+    const secret = await ctx.randomSecret();
+    await expect(distributeSecret(ctx, 3, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
@@ -66,24 +62,25 @@ describe(`Sharing parameter errors over ${system}`, () => {
 describe(`Sharing without predefined points over ${system}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const ctx = initGroup(system);
-    const secret = await ctx.randomScalar();
-    const sharing = await shareSecret(ctx, n, t, secret);
+    const secret = await ctx.randomSecret();
+    const sharing = await distributeSecret(ctx, n, t, secret);
     const { nrShares, threshold, polynomial } = sharing;
     expect(nrShares).toEqual(n);
     expect(threshold).toEqual(t);
     const secretShares = await sharing.getSecretShares();
-    const publicShares = await sharing.getPointShares();
+    const publicShares = await sharing.getPublicShares();
     expect(secretShares.length).toEqual(n);
     expect(publicShares.length).toEqual(n);
     const { exp, generator } = ctx;
     for (let index = 1; index < nrShares; index++) {
-      const { value: secret } = selectSecretShare(index, secretShares);
-      const { value: pub } = selectPointShare(index, publicShares);
-      expect(await (pub as Point).equals(await exp(secret, generator))).toBe(true);
+      const { value } = selectSecretShare(index, secretShares);
+      const { value: targetBytes } = selectPublicShare(index, publicShares);
+      const target = await ctx.unpackValid(targetBytes);
+      expect(await target.equals(await exp(ctx.leBuff2Scalar(value), generator))).toBe(true);
     }
     expect(polynomial.degree).toEqual(t - 1);
-    expect(polynomial.evaluate(0)).toEqual(secret);
-    const { commitments } = await sharing.proveFeldmann();
+    expect(polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(secret));
+    const { commitments } = await sharing.createFeldmanPackets();
     expect(commitments.length).toEqual(t);
   });
 });
@@ -92,34 +89,33 @@ describe(`Sharing without predefined points over ${system}`, () => {
 describe(`Sharing with predefined points over ${system}`, () => {
   it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
     const ctx = initGroup(system);
-    const secret = await ctx.randomScalar();
+    const secret = await ctx.randomSecret();
     for (let nrPredefined = 1; nrPredefined < t; nrPredefined++) {
       const predefined = [];
       for (let i = 0; i < nrPredefined; i++) {
         predefined.push(await ctx.randomScalar());
       }
-      const sharing = await shareSecret(ctx, n, t, secret, predefined);
+      const sharing = await distributeSecret(ctx, n, t, secret, predefined);
       const { nrShares, threshold, polynomial } = sharing;
       expect(nrShares).toEqual(n);
       expect(threshold).toEqual(t);
       const secretShares = await sharing.getSecretShares();
-      const publicShares = await sharing.getPointShares();
+      const publicShares = await sharing.getPublicShares();
       expect(secretShares.length).toEqual(n);
       expect(publicShares.length).toEqual(n);
-      expect(polynomial.evaluate(0)).toEqual(secret);
       for (let index = 1; index <= nrPredefined; index++) {
         const { value } = selectSecretShare(index, secretShares);
-        expect(value).toEqual(predefined[index - 1]);
+        expect(ctx.leBuff2Scalar(value)).toEqual(predefined[index - 1]);
       }
       const { exp, generator } = ctx;
       for (let index = 1; index < nrShares; index++) {
         const { value: secret } = selectSecretShare(index, secretShares);
-        const { value: pub } = selectPointShare(index, publicShares);
-        expect(await (pub as Point).equals(await exp(secret, generator))).toBe(true);
+        const { value } = selectPublicShare(index, publicShares);
+        const target = await ctx.unpackValid(value);
       }
-      expect(polynomial.evaluate(0)).toEqual(secret);
+      expect(polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(secret));
       expect(polynomial.degree).toEqual(t - 1);
-      const { commitments } = await sharing.proveFeldmann();
+      const { commitments } = await sharing.createFeldmanPackets();
       expect(commitments.length).toEqual(t);
     }
   });

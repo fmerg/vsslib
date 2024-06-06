@@ -1,9 +1,8 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { SecretShare, ShamirSharing } from '../../src/shamir';
-import { distributeSecret, verifyPedersenCommitments } from '../../src/shamir';
+import { distributeSecret, verifyFeldmanCommitments } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
-import { leInt2Buff } from '../../src/arith';
 
 let { system, nrShares, threshold } = resolveTestConfig();
 
@@ -21,32 +20,29 @@ describe(`Secret share verification over ${system}`, () => {
   })
 
   test('success', async () => {
-    const publicBytes = (await ctx.randomPoint()).toBytes();
-    const { commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
+    const { commitments } = await sharing.createFeldmanPackets();
     secretShares.forEach(async (share: SecretShare) => {
-      const binding = bindings[share.index - 1];
-      const verified = await verifyPedersenCommitments(
+      const { value: secret, index } = share;
+      const verified = await verifyFeldmanCommitments(
         ctx,
         share,
-        binding,
-        publicBytes,
-        commitments
+        commitments,
       );
       expect(verified).toBe(true);
     });
   });
 
   test('failure', async () => {
-    const publicBytes = (await ctx.randomPoint()).toBytes();
-    const { commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
+    const { commitments } = await sharing.createFeldmanPackets();
+    const forgedCommitmnets = [
+      ...commitments.slice(0, commitments.length - 1),
+      (await ctx.randomPoint()).toBytes()
+    ];
     secretShares.forEach(async (share: SecretShare) => {
-      const forgedBinding = leInt2Buff(await ctx.randomScalar());
-      const verification = verifyPedersenCommitments(
+      const verification = verifyFeldmanCommitments(
         ctx,
         share,
-        forgedBinding,
-        publicBytes,
-        commitments
+        forgedCommitmnets
       );
       await expect(verification).rejects.toThrow('Invalid share');
     });

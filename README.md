@@ -7,74 +7,117 @@
 ## Usage
 
 ```js
-import { generateKey } from 'vsslib';
+import { initGroup } from "vsslib";
 
-const { privateKey, publicKey, ctx } = await generateKey('ed25519');
+const ctx = initGroup("ed25519");
 ```
 
-### Sharing
+### Verifiable Secret Sharing
 
 ```js
-import { shareKey } from 'vsslib';
+import { distributeSecret } from "vsslib";
 
-const sharing = shareKey(5, 3, privateKey);
+const sharing = await distributeSecret(ctx, 5, 3, secret);
 ```
 
-```js
-const { nrShares, threshold, polynomial } = sharing;
-```
+#### Feldman VSS scheme
 
 ```js
-const privateShares = await sharing.getPrivateShares();
-```
-
-```js
-const publicShares = await sharing.getPublicShares();
-```
-
-### Verification
-
-
-#### Feldmann VSS scheme
-
-```js
-const commitments = await sharing.generateFeldmannCommitments();
+const { packets, commitments } = await sharing.createFeldmanPackets();
 ```
 
 ```js
-await privateShare.verifyFeldmannCommitments(commitments);
+import { parseFeldmanPacket } from "vsslib";
+
+const share = await parseFeldmanPacket(ctx, commitments, packet);
+```
+
+```js
+import { verifyFeldmanCommitments } from "vsslib";
+
+await verifyFeldmanCommitments(ctx, share, commitments);
 ```
 
 #### Pedersen VSS scheme
 
 ```js
-const publicBytes = (await ctx.randomPoint()).toBytes();
+const { packets, commitments } = await sharing.createFeldmanPackets();
 ```
 
 ```js
-const { bindings, commitments } = await sharing.generatePedersenCommitments(publicBytes);
+import { parsePedersenPacket } from "vsslib";
+
+const { share, binding } = await parsePedersenPacket(
+  ctx, commitments, publicBytes, packet
+);
 ```
 
 ```js
-const { bindings, commitments } = await sharing.generatePedersenCommitments(publicBytes);
+import { verifyPedersenCommitments } from "vsslib";
 
-const binding = bindings[privateShare.index];
+await verifyPedersenCommitments(
+  ctx, share, bindng, publicBytes, commitments
+);
+```
+
+#### Reconsctruction
+
+```js
+import { reconstructPublic } from "vsslib";
+
+const globalPublic = await reconstructPublic(ctx, publicShares);
+```
+
+### Verifiable Key Distribution
+
+```js
+import { generateKey } from "vsslib";
+
+const { ctx, privateKey } = await generateKey("ed25519");
 ```
 
 ```js
-await privateShare.verifyPedersenCommitments(binding, publicBytes, publicBytes);
+const sharing = await privateKey.generateSharing(5, 3);
 ```
 
-### Reconstruction
+#### Feldman scheme
 
 ```js
-import { reconstructKey, reconstructPublic } from 'vsslib';
+const { packets, commitments } = await sharing.createFeldmanPackets();
+```
+
+```js
+import { PrivateKeyShare } from "vsslib";
+
+const privateShare = await PrivateKeyShare.fromFeldmanPacket(ctx, commitments, packet);
+```
+
+#### Pedersen scheme
+
+```js
+const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
+```
+
+```js
+import { PrivateKeyShare } from "vsslib";
+
+const privateShare = await PrivateKeyShare.fromPedersenCommitments(
+  ctx, commitments, publicBytes, packet
+);
+```
+
+#### Public key reconstruction
+
+```js
+import { reconstructPublicKey } from "vsslib";
+
+const globalPublicKey = await reconstructPublicKey(ctx, publicKeyShares, threshold);
 ```
 
 ### Threshold decryption
 
 ```js
-const { ciphertext } = await publicKey.encrypt(message, { scheme: 'ies' });
+const { ciphertext } = await publicKey.encrypt(message, { scheme: "ies" });
 ```
 
 ```js
@@ -86,7 +129,7 @@ await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
 ```
 
 ```js
-import { verifyPartialDecryptors } from 'vsslib';
+import { verifyPartialDecryptors } from "vsslib";
 
 const { flag, indexes } = await verifyPartialDecryptors(
   ctx, ciphertext, publicShares, partialDecryptors
@@ -103,6 +146,9 @@ await verifyPartialDecryptors(
 const plaintext = await thresholdDecrypt(ciphertext, partialDecryptors);
 ```
 
+### Threshold authentication
+
+
 ## Modules
 
 - [`vsslib.arith`](./src/arith)
@@ -110,9 +156,8 @@ const plaintext = await thresholdDecrypt(ciphertext, partialDecryptors);
 - [`vsslib.crypto`](./src/crypto)
 - [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.keys`](./src/keys)
-- [`vsslib.lagrange`](./src/lagrange)
 - [`vsslib.nizk`](./src/nizk)
-- [`vsslib.shamir`](./src/shamir)
+- [`vsslib.polynomials`](./src/polynomials)
 - [`vsslib.signer`](./src/signer)
 
 ## Development

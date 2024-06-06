@@ -1,15 +1,21 @@
+import { Point } from '../../src/backend/abstract';
 import { ElgamalSchemes } from '../../src/enums';
 import { ErrorMessages } from '../../src/errors';
 import {
   verifyPartialDecryptors,
   reconstructDecryptor,
   thresholdDecrypt,
-} from '../../src/core';
-import { cartesian, partialPermutations, isEqualBuffer } from '../helpers';
-import { createThresholdDecryptionSetup, selectShare } from './helpers';
+} from '../../src/combiner';
+import { PrivateKeyShare, PublicKeyShare } from '../../src/keys';
+import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
+import { createThresholdDecryptionSetup } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const { systems, nrShares, threshold, elgamalSchemes: schemes} = resolveTestConfig();
+
+
+export const selectPublicKeyShare = (index: number, shares: PublicKeyShare<Point>[]) =>
+  shares.filter(share => share.index == index)[0];
 
 
 describe('Single partial decryptor verification', () => {
@@ -18,7 +24,7 @@ describe('Single partial decryptor verification', () => {
       scheme, system, nrShares, threshold
     });
     for (const share of partialDecryptors) {
-      const publicShare = selectShare(share.index, publicShares);
+      const publicShare = selectPublicKeyShare(share.index, publicShares);
       const verified = await publicShare.verifyPartialDecryptor(
         ciphertext, share
       );
@@ -31,7 +37,7 @@ describe('Single partial decryptor verification', () => {
     });
     ciphertext.beta = (await ctx.randomPoint()).toBytes();
     for (const share of partialDecryptors) {
-      const publicShare = selectShare(share.index, publicShares);
+      const publicShare = selectPublicKeyShare(share.index, publicShares);
       await expect(
         publicShare.verifyPartialDecryptor(
           ciphertext,

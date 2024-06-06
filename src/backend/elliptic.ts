@@ -64,7 +64,7 @@ export class EcGroup extends Group<EcPoint> {
     return (other instanceof EcGroup) && (this._curve == other.curve);
   }
 
-  randomScalarBuff = async (): Promise<Uint8Array> =>
+  randomSecret = async (): Promise<Uint8Array> =>
     this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
 
   randomScalar = async (): Promise<bigint> => mod(

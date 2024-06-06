@@ -1,7 +1,7 @@
 import { Algorithms } from '../../src/enums';
 import { initGroup } from '../../src/backend';
 import { randomNonce } from '../../src/crypto';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { createDDHTuple } from './helpers';
 import { resolveTestConfig } from '../environ';
 

@@ -2,8 +2,8 @@ import { Algorithms } from '../../src/enums';
 import { generateKey } from '../../src';
 import { ErrorMessages } from '../../src/errors';
 import { randomNonce } from '../../src/crypto';
-import { cartesian } from '../helpers';
-import { mockMessage } from './helpers';
+import { cartesian } from '../utils';
+import { mockMessage } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const { systems, elgamalSchemes: schemes, aesModes, algorithms } = resolveTestConfig();

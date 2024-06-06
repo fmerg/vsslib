@@ -1,9 +1,9 @@
 import { Algorithms, ElgamalSchemes } from '../../src/enums';
 import { System } from '../../src/types';
 import { generateKey } from '../../src';
-import { toCanonical } from '../../src/keys/utils';
+import { toCanonical } from '../../src/common';
 import { randomNonce } from '../../src/crypto';
-import { cartesian, removeItem } from '../helpers';
+import { cartesian, removeItem } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 let {

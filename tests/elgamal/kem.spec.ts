@@ -4,7 +4,7 @@ import { randomBytes } from '../../src/crypto';
 import { initGroup } from '../../src/backend';
 import { kemElgamal } from '../../src/elgamal/core';
 
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 

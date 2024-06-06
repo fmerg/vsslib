@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import { hash } from '../../src/crypto';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 

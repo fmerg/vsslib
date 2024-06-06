@@ -14,7 +14,7 @@ import {
   ElgamalScheme,
   SignatureScheme,
 } from '../src/types';
-import { removeItem } from './helpers';
+import { removeItem } from './utils';
 
 const __aesModes          = removeItem([...Object.values(AesModes)], AesModes.DEFAULT);
 const __algorithms        = removeItem([...Object.values(Algorithms)], Algorithms.DEFAULT);

@@ -2,7 +2,7 @@ import { Algorithms, SignatureSchemes } from '../../src/enums';
 import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';
 import { randomNonce } from '../../src/crypto';
-import { cartesian } from '../helpers';
+import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 let { systems, algorithms, signatureSchemes: schemes } = resolveTestConfig();

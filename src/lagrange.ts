@@ -1,20 +1,21 @@
-import { Point, Group } from '../backend/abstract';
-import { mod, modInv } from '../arith';
-import { ErrorMessages } from '../errors';
-import { FieldPolynomial } from './utils';
+import { Point, Group } from './backend/abstract';
+import { mod, modInv } from './arith';
+import { ErrorMessages } from './errors';
+import { FieldPolynomial } from './polynomials';
+
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 
-type XYPoint = [bigint, bigint] | [number, number];
+export type XYPoint = [bigint, bigint] | [number, number];
 
-class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
+export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
   xs: bigint[];
   ys: bigint[];
   ws: bigint[];
 
   constructor(ctx: Group<P>, points: [bigint, bigint][]) {
-    const k = points.length
+    const k = points.length;
     const { order } = ctx;
     if (k > order) throw new Error(
       ErrorMessages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER
@@ -75,18 +76,12 @@ class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
   }
 }
 
-const interpolate = async (
+
+export const interpolate = async (
   ctx: Group<Point>,
   points: XYPoint[]
 ): Promise<LagrangePolynomial<Point>>=>{
   return new LagrangePolynomial(
     ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)])
   );
-}
-
-
-export {
-  XYPoint,
-  LagrangePolynomial,
-  interpolate
 }
