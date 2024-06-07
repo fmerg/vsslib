@@ -1,20 +1,9 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { ErrorMessages } from '../../src/errors';
-import { distributeSecret, SecretShare, PublicShare } from '../../src/shamir';
+import { distributeSecret } from '../../src/shamir';
+import { selectSecretShare, selectPublicShare } from '../helpers';
 import { resolveTestConfig } from '../environ';
-
-const selectSecretShare = (index: number, shares: SecretShare[]): SecretShare => {
-  const selected = shares.filter(share => share.index == index)[0];
-  if (!selected) throw new Error(`No share with index ${index}`);
-  return selected;
-}
-
-const selectPublicShare = (index: number, shares: PublicShare[]): PublicShare => {
-  const selected = shares.filter(share => share.index == index)[0];
-  if (!selected) throw new Error(`No share with index ${index}`);
-  return selected;
-}
 
 let { system } = resolveTestConfig();
 

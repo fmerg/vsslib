@@ -5,13 +5,9 @@ import { reconstructKey, reconstructPublicKey } from '../../src/combiner';
 import { SecretSharePacket } from '../../src/shamir';
 import { partialPermutations } from '../utils';
 import { resolveTestConfig } from '../environ';
-import { createKeySharingSetup } from '../helpers';
+import { selectPrivateKeyShare, createKeySharingSetup } from '../helpers';
 
 const { system, nrShares, threshold } = resolveTestConfig();
-
-
-export const selectPrivateKeyShare = (index: number, shares: PrivateKeyShare<Point>[]) =>
-  shares.filter(share => share.index == index)[0];
 
 
 describe(`Sharing, verification and reconstruction over ${system}`, () => {

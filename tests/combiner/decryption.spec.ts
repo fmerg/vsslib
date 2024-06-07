@@ -6,16 +6,11 @@ import {
   reconstructDecryptor,
   thresholdDecrypt,
 } from '../../src/combiner';
-import { PrivateKeyShare, PublicKeyShare } from '../../src/keys';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
-import { createThresholdDecryptionSetup } from '../helpers';
+import { createThresholdDecryptionSetup, selectPublicKeyShare } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const { systems, nrShares, threshold, elgamalSchemes: schemes} = resolveTestConfig();
-
-
-export const selectPublicKeyShare = (index: number, shares: PublicKeyShare<Point>[]) =>
-  shares.filter(share => share.index == index)[0];
 
 
 describe('Single partial decryptor verification', () => {

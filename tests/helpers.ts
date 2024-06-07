@@ -2,14 +2,26 @@ import { generateKey } from '../src';
 import { Group, Point } from '../src/backend/abstract';
 import { ElgamalSchemes } from '../src/enums';
 import { ElgamalScheme, System } from '../src/types';
-import { SecretShare } from '../src/shamir';
-import { PrivateKeyShare } from '../src/keys';
+import { SecretShare, PublicShare } from '../src/shamir';
+import { PrivateKeyShare, PublicKeyShare } from '../src/keys';
 import { randomIndex } from './utils';
 
 
 export const mockMessage = async (ctx: Group<Point>, scheme: ElgamalScheme) =>
   scheme == ElgamalSchemes.PLAIN ? (await ctx.randomPoint()).toBytes() :
     Uint8Array.from(Buffer.from('destroy earth'));
+
+export const selectSecretShare = (index: number, shares: SecretShare[]): SecretShare =>
+  shares.filter(share => share.index == index)[0];
+
+export const selectPublicShare = (index: number, shares: PublicShare[]): PublicShare =>
+  shares.filter(share => share.index == index)[0];
+
+export const selectPrivateKeyShare = (index: number, shares: PrivateKeyShare<Point>[]) =>
+  shares.filter(share => share.index == index)[0];
+
+export const selectPublicKeyShare = (index: number, shares: PublicKeyShare<Point>[]) =>
+  shares.filter(share => share.index == index)[0];
 
 
 export const createKeySharingSetup = async (opts: {
