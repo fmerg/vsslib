@@ -16,7 +16,7 @@ describe('success without nonce', () => {
   ) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const signature = await privateKey.sign(message, { scheme, algorithm });
+    const signature = await privateKey.signMessage(message, { scheme, algorithm });
     const verified = await publicKey.verifySignature(
       message, signature, {
         scheme,
@@ -35,7 +35,7 @@ describe('success with nonce', () => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
-    const signature = await privateKey.sign(message, { scheme, algorithm, nonce });
+    const signature = await privateKey.signMessage(message, { scheme, algorithm, nonce });
     const verified = await publicKey.verifySignature(
       message, signature, {
         scheme,
@@ -54,7 +54,7 @@ describe('failure if forged message', () => {
   ) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const signature = await privateKey.sign(message, { scheme, algorithm });
+    const signature = await privateKey.signMessage(message, { scheme, algorithm });
     const forgedMessage = Uint8Array.from(Buffer.from('don\' t destroy earth'));
     await expect(
       publicKey.verifySignature(
@@ -77,7 +77,7 @@ describe('failure if forged signature', () => {
   ) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const signature = await privateKey.sign(message, { scheme, algorithm });
+    const signature = await privateKey.signMessage(message, { scheme, algorithm });
     signature.c! = (await ctx.randomPoint()).toBytes();
     await expect(
       publicKey.verifySignature(
@@ -99,7 +99,7 @@ describe('failure if wrong algorithm', () => {
   ) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const signature = await privateKey.sign(message, { scheme, algorithm });
+    const signature = await privateKey.signMessage(message, { scheme, algorithm });
     await expect(
       publicKey.verifySignature(
         message, signature, {
@@ -122,7 +122,7 @@ describe('failure if missing nonce', () => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
-    const signature = await privateKey.sign(message, { scheme, algorithm, nonce });
+    const signature = await privateKey.signMessage(message, { scheme, algorithm, nonce });
     await expect(
       publicKey.verifySignature(
         message, signature, {
@@ -144,7 +144,7 @@ describe('failure if forged nonce', () => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
-    const signature = await privateKey.sign(message, { scheme, algorithm, nonce });
+    const signature = await privateKey.signMessage(message, { scheme, algorithm, nonce });
     const forgedNonce = await randomNonce();
     await expect(
       publicKey.verifySignature(

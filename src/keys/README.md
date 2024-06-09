@@ -134,7 +134,7 @@ const message = Uint8Array.from(Buffer.from('destroy earth'));
 ```
 
 ```js
-const signature = await privateKey.sign(message, {
+const signature = await privateKey.sigmMessage(message, {
   scheme: SignatureSchemes.SCHNORR,
   algorithm: Algorithms.SHA256,
 });

@@ -73,7 +73,7 @@ export class PrivateKey<P extends Point> {
     return distributeSecret(this.ctx, nrShares, threshold, this.bytes);
   }
 
-  sign = async (
+  signMessage = async (
     message: Uint8Array,
     opts: {
       scheme: SignatureScheme,
