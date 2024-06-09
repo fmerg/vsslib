@@ -1,9 +1,9 @@
 # `vsslib.backend`
 
 ```js
-import { initGroup }  from 'vsslib/backend';
+import { initGroup }  from "vsslib/backend";
 
-const ctx = initGroup('ed25519');
+const ctx = initGroup("ed25519");
 ```
 
 ```js

@@ -47,17 +47,13 @@ const { packets, commitments } = await sharing.createFeldmanPackets();
 ```js
 import { parsePedersenPacket } from "vsslib";
 
-const { share, binding } = await parsePedersenPacket(
-  ctx, commitments, publicBytes, packet
-);
+const { share, binding } = await parsePedersenPacket(ctx, commitments, publicBytes, packet);
 ```
 
 ```js
 import { verifyPedersenCommitments } from "vsslib";
 
-await verifyPedersenCommitments(
-  ctx, share, bindng, publicBytes, commitments
-);
+await verifyPedersenCommitments(ctx, share, bindng, publicBytes, commitments);
 ```
 
 #### Reconsctruction
@@ -101,9 +97,7 @@ const { packets, commitments } = await sharing.createPedersenPackets(publicBytes
 ```js
 import { PrivateKeyShare } from "vsslib";
 
-const privateShare = await PrivateKeyShare.fromPedersenCommitments(
-  ctx, commitments, publicBytes, packet
-);
+const privateShare = await PrivateKeyShare.fromPedersenCommitments(ctx, commitments, publicBytes, packet);
 ```
 
 #### Public key recovery
@@ -131,15 +125,11 @@ await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
 ```js
 import { verifyPartialDecryptors } from "vsslib";
 
-const { flag, indexes } = await verifyPartialDecryptors(
-  ctx, ciphertext, publicShares, partialDecryptors
-);
+const { flag, indexes } = await verifyPartialDecryptors(ctx, ciphertext, publicShares, partialDecryptors);
 ```
 
 ```js
-await verifyPartialDecryptors(
-  ctx, ciphertext, publicShares, partialDecryptors, { errorOnInvalid: True }
-);
+await verifyPartialDecryptors(ctx, ciphertext, publicShares, partialDecryptors, { errorOnInvalid: True });
 ```
 
 ```js
