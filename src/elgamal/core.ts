@@ -186,16 +186,16 @@ export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
 }
 
 
-/** First component of a IES-Elgamal ciphertext **/
-export type IesAlpha = {
+/** First component of a DHIES-Elgamal ciphertext **/
+export type DhiesAlpha = {
   ciphered: Uint8Array,
   iv: Uint8Array,
   mac: Uint8Array,
   tag?: Uint8Array,
 }
 
-/** IES-Elgamal encryption (DH-based Integrated Encryption Scheme) */
-export class IesCipher<P extends Point> extends BaseCipher<P, IesAlpha> {
+/** DHIES-Elgamal encryption (DH-based Integrated Encryption Scheme) */
+export class DhiesCipher<P extends Point> extends BaseCipher<P, DhiesAlpha> {
   mode: AesMode;
   algorithm: Algorithm;
 
@@ -206,7 +206,7 @@ export class IesCipher<P extends Point> extends BaseCipher<P, IesAlpha> {
   }
 
   encapsulate = async (pub: P, randomness: bigint, message: Uint8Array): Promise<{
-    alpha: IesAlpha,
+    alpha: DhiesAlpha,
     decryptor: P
   }> => {
     const { ctx: { generator, randomScalar, exp } } = this;
@@ -228,7 +228,7 @@ export class IesCipher<P extends Point> extends BaseCipher<P, IesAlpha> {
     return { alpha: { ciphered, iv, mac, tag }, decryptor };
   }
 
-  decapsulate = async (alpha: IesAlpha, decryptor: P): Promise<Uint8Array> => {
+  decapsulate = async (alpha: DhiesAlpha, decryptor: P): Promise<Uint8Array> => {
     const { ciphered, iv, mac, tag } = alpha;
     const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
@@ -262,6 +262,6 @@ export function hybridElgamal<P extends Point>(ctx: Group<P>, mode: AesMode) {
   return new HybridCipher(ctx, mode);
 }
 
-export function iesElgamal<P extends Point>(ctx: Group<P>, mode: AesMode, algorithm: Algorithm) {
-  return new IesCipher(ctx, mode, algorithm);
+export function dhiesElgamal<P extends Point>(ctx: Group<P>, mode: AesMode, algorithm: Algorithm) {
+  return new DhiesCipher(ctx, mode, algorithm);
 }

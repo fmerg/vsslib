@@ -2,7 +2,7 @@ import { Algorithms, AesModes } from '../../src/enums';
 import { randomBytes } from '../../src/crypto';
 import { leInt2Buff } from '../../src/arith';
 import { initGroup } from '../../src/backend';
-import { iesElgamal } from '../../src/elgamal/core';
+import { dhiesElgamal } from '../../src/elgamal/core';
 
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -18,8 +18,8 @@ describe('Decryption - success', () => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext } = await iesElgamal(ctx, mode, algorithm).encrypt(message, y);
-    const plaintext = await iesElgamal(ctx, mode, algorithm).decrypt(ciphertext, secret);
+    const { ciphertext } = await dhiesElgamal(ctx, mode, algorithm).encrypt(message, y);
+    const plaintext = await dhiesElgamal(ctx, mode, algorithm).decrypt(ciphertext, secret);
     expect(plaintext).toEqual(message);
   });
 });
@@ -32,9 +32,9 @@ describe('Decryption - failure if forged secret', () => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext } = await iesElgamal(ctx, mode, algorithm).encrypt(message, y);
+    const { ciphertext } = await dhiesElgamal(ctx, mode, algorithm).encrypt(message, y);
     const forgedSecret = await ctx.randomScalar();
-    await expect(iesElgamal(ctx, mode, algorithm).decrypt(ciphertext, forgedSecret)).rejects.toThrow(
+    await expect(dhiesElgamal(ctx, mode, algorithm).decrypt(ciphertext, forgedSecret)).rejects.toThrow(
       'Could not decrypt: Invalid MAC'
     );
   });
@@ -48,14 +48,14 @@ describe('Decryption - failure if forged iv', () => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext } = await iesElgamal(ctx, mode, algorithm).encrypt(message, y);
+    const { ciphertext } = await dhiesElgamal(ctx, mode, algorithm).encrypt(message, y);
     ciphertext.alpha.iv = await randomBytes(mode == AesModes.AES_256_GCM ? 12 : 16);
     if (!mode || [AesModes.AES_256_CBC, AesModes.AES_256_GCM].includes(mode)) {
-      await expect(iesElgamal(ctx, mode, algorithm).decrypt(ciphertext, secret)).rejects.toThrow(
+      await expect(dhiesElgamal(ctx, mode, algorithm).decrypt(ciphertext, secret)).rejects.toThrow(
         'Could not decrypt: AES decryption failure'
       );
     } else {
-      const plaintext = await iesElgamal(ctx, mode, algorithm).decrypt(ciphertext, secret);
+      const plaintext = await dhiesElgamal(ctx, mode, algorithm).decrypt(ciphertext, secret);
       expect(plaintext).not.toEqual(message);
     }
   });
@@ -67,12 +67,12 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext, decryptor } = await iesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
+    const { ciphertext, decryptor } = await dhiesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, y
     );
     const forgedDecryptor = (await ctx.randomPoint()).toBytes();
     await expect(
-      iesElgamal(ctx, mode, Algorithms.SHA256).decryptWithDecryptor(ciphertext, forgedDecryptor)
+      dhiesElgamal(ctx, mode, Algorithms.SHA256).decryptWithDecryptor(ciphertext, forgedDecryptor)
     ).rejects.toThrow(
       'Could not decrypt: Invalid MAC'
     );
@@ -85,10 +85,10 @@ describe('Decryption with randomness - success', () => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext, randomness } = await iesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
+    const { ciphertext, randomness } = await dhiesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, y
     );
-    const plaintext = await iesElgamal(ctx, mode, Algorithms.SHA256).decryptWithRandomness(
+    const plaintext = await dhiesElgamal(ctx, mode, Algorithms.SHA256).decryptWithRandomness(
       ciphertext, y, randomness
     );
     expect(plaintext).toEqual(message);
@@ -101,12 +101,12 @@ describe('Decryption with decryptor - failure if forged randomness', () => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext, randomness } = await iesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
+    const { ciphertext, randomness } = await dhiesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, y
     );
     const forgedRandomness = leInt2Buff(await ctx.randomScalar());
     await expect(
-      iesElgamal(ctx, mode, Algorithms.SHA256).decryptWithRandomness(ciphertext, y, forgedRandomness)
+      dhiesElgamal(ctx, mode, Algorithms.SHA256).decryptWithRandomness(ciphertext, y, forgedRandomness)
     ).rejects.toThrow(
       'Could not decrypt: Invalid MAC'
     );

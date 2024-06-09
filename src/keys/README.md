@@ -30,7 +30,7 @@ await publicKey.verifySecret(proof);
 
 ### ElGamal schemes
 
-#### IES-Encryption (Integrated Encryption Scheme)
+#### DHIES-Encryption (Integrated Encryption Scheme)
 
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -38,7 +38,7 @@ const message = Uint8Array.from(Buffer.from('destroy earth'));
 
 ```js
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
-  scheme: ElgamalSchemes.IES,
+  scheme: ElgamalSchemes.DHIES,
   algorithm: Algorithms.SHA256,
   mode: AesModes.AES_256_CBC,
 });
@@ -164,7 +164,7 @@ const message = Uint8Array.from(Buffer.from('destroy earth'));
 ```js
 const { ciphertext, signature } = await senderPrivate.signEncrypt(
   message, receiverPublic, {
-    encScheme: ElgamalSchemes.IES,
+    encScheme: ElgamalSchemes.DHIES,
     sigScheme: SignatureSchemes.SCHNORR,
   }
 );
@@ -173,7 +173,7 @@ const { ciphertext, signature } = await senderPrivate.signEncrypt(
 ```js
 const { plaintext } = await receiverPrivate.verifyDecrypt(
   ciphertext, signature, senderPublic, {
-    encScheme: ElgamalSchemes.IES,
+    encScheme: ElgamalSchemes.DHIES,
     sigScheme: SignatureSchemes.SCHNORR,
   }
 );

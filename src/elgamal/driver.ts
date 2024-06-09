@@ -3,15 +3,15 @@ import { leInt2Buff } from '../arith';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { ElgamalSchemes } from '../enums';
 
-import { IesAlpha, HybridAlpha, plainElgamal, iesElgamal, hybridElgamal } from './core';
+import { DhiesAlpha, HybridAlpha, plainElgamal, dhiesElgamal, hybridElgamal } from './core';
 
 
-type IesCiphertext    = { alpha: IesAlpha, beta: Uint8Array };
+type DhiesCiphertext    = { alpha: DhiesAlpha, beta: Uint8Array };
 type HybridCiphertext    = { alpha: HybridAlpha, beta: Uint8Array };
 type PlainCiphertext  = { alpha: Uint8Array, beta: Uint8Array };
 
 export type Ciphertext =
-  IesCiphertext |
+  DhiesCiphertext |
   HybridCiphertext |
   PlainCiphertext;
 
@@ -44,8 +44,8 @@ export class ElgamalDriver<P extends Point>{
         return this.encrypt_PLAIN(message, pubBytes);
       case ElgamalSchemes.HYBRID:
         return this.encrypt_HYBRID(message, pubBytes);
-      case ElgamalSchemes.IES:
-        return this.encrypt_IES(message, pubBytes);
+      case ElgamalSchemes.DHIES:
+        return this.encrypt_DHIES(message, pubBytes);
     }
   }
 
@@ -53,9 +53,9 @@ export class ElgamalDriver<P extends Point>{
     Uint8Array
   > => {
     switch (this.scheme) {
-      case ElgamalSchemes.IES:
-        return this.decrypt_IES(
-          ciphertext as IesCiphertext,
+      case ElgamalSchemes.DHIES:
+        return this.decrypt_DHIES(
+          ciphertext as DhiesCiphertext,
           secret,
         );
       case ElgamalSchemes.HYBRID:
@@ -76,9 +76,9 @@ export class ElgamalDriver<P extends Point>{
     decryptor: Uint8Array,
   ): Promise<Uint8Array> => {
     switch (this.scheme) {
-      case ElgamalSchemes.IES:
-        return this.decryptWithDecryptor_IES(
-          ciphertext as IesCiphertext,
+      case ElgamalSchemes.DHIES:
+        return this.decryptWithDecryptor_DHIES(
+          ciphertext as DhiesCiphertext,
           decryptor,
         );
       case ElgamalSchemes.HYBRID:
@@ -194,14 +194,14 @@ export class ElgamalDriver<P extends Point>{
     );
   }
 
-  encrypt_IES = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
-    ciphertext: IesCiphertext,
+  encrypt_DHIES = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
+    ciphertext: DhiesCiphertext,
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
     const { ctx, mode, algorithm } = this;
     const pub = await ctx.unpackValid(pubBytes);
-    const { ciphertext, randomness, decryptor } = await iesElgamal(ctx, mode, algorithm).encrypt(
+    const { ciphertext, randomness, decryptor } = await dhiesElgamal(ctx, mode, algorithm).encrypt(
       message, pub
     );
     const { alpha, beta } = ciphertext;
@@ -215,13 +215,13 @@ export class ElgamalDriver<P extends Point>{
     }
   }
 
-  decrypt_IES = async (
-    ciphertext: IesCiphertext,
+  decrypt_DHIES = async (
+    ciphertext: DhiesCiphertext,
     secret: bigint
   ): Promise<Uint8Array> => {
     const { ctx, mode, algorithm } = this;
     const { alpha, beta } = ciphertext;
-    return iesElgamal(ctx, mode, algorithm).decrypt(
+    return dhiesElgamal(ctx, mode, algorithm).decrypt(
       {
         alpha,
         beta,
@@ -230,13 +230,13 @@ export class ElgamalDriver<P extends Point>{
     );
   }
 
-  decryptWithDecryptor_IES = async (
-    ciphertext: IesCiphertext,
+  decryptWithDecryptor_DHIES = async (
+    ciphertext: DhiesCiphertext,
     decryptor: Uint8Array,
   ): Promise<Uint8Array> => {
     const { ctx, mode, algorithm } = this;
     const { alpha, beta } = ciphertext;
-    return iesElgamal(ctx, mode, algorithm).decryptWithDecryptor(
+    return dhiesElgamal(ctx, mode, algorithm).decryptWithDecryptor(
       {
         alpha,
         beta,

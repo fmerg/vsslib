@@ -19,10 +19,10 @@ const { secret, publicBytes } = await ctx.generateSecret();
 ## Encryption schemes
 
 
-### IES-ElGamal Encryption (Integrated Encryption Scheme)
+### DHIES-ElGamal Encryption (Integrated Encryption Scheme)
 
 ```js
-const cipher = elgamal(ctx, ElgamalSchemes.IES, AesModes.AES_256_CBC, Algorithms.SHA256);
+const cipher = elgamal(ctx, ElgamalSchemes.DHIES, AesModes.AES_256_CBC, Algorithms.SHA256);
 ```
 
 ```js

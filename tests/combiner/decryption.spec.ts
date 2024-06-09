@@ -152,7 +152,7 @@ describe('Threshold decryption', () => {
           expect(isEqualBuffer(plaintext, message)).toBe(qualifiedShares.length >= threshold);
         });
         break;
-      case ElgamalSchemes.IES:
+      case ElgamalSchemes.DHIES:
       case ElgamalSchemes.HYBRID:
         partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
           if (qualifiedShares.length >= threshold) {

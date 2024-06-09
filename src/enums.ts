@@ -43,10 +43,10 @@ export enum AesModes {
 }
 
 export enum ElgamalSchemes {
-  DEFAULT   = 'ies',
+  HYBRID    = 'hybrid',
+  DEFAULT   = 'dhies',
   PLAIN     = 'plain',
-  HYBRID       = 'hybrid',
-  IES       = 'ies',
+  DHIES     = 'dhies',
 }
 
 export enum SignatureSchemes {

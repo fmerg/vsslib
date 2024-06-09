@@ -15,7 +15,7 @@ let {
 
 algorithms  = [...algorithms, undefined];
 
-// Signcryption is only defined for HYBRID and IES ElGamal encryption schemes
+// Signcryption is only defined for HYBRID and DHIES ElGamal encryption schemes
 encSchemes = removeItem(encSchemes, ElgamalSchemes.PLAIN);
 
 
