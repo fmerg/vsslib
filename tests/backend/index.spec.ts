@@ -1,7 +1,6 @@
 import { Systems } from '../../src/enums';
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
-import { ErrorMessages } from '../../src/errors';
 import { resolveTestConfig } from '../environ';
 
 const __0n = BigInt(0)
@@ -22,7 +21,7 @@ describe('group initialization failure', () => {
   test('unsupported group', () => {
     const system = 'foo';
     expect(() => initGroup(system).toThrow(
-      `${ErrorMessages.UNSUPPORTED_GROUP}: ${system}`
+      `Unsupported group: ${system}`
     ))
   })
 })
@@ -218,7 +217,7 @@ describe('scalar validation', () => {
     expect(isValid).toBe(true);
     const t = ctx.order;
     await expect(ctx.validateScalar(t)).rejects.toThrow(
-      ErrorMessages.INVALID_SCALAR
+      'Scalar not in range'
     );
   })
 });

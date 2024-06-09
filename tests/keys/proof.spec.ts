@@ -1,6 +1,5 @@
 import { Algorithms } from '../../src/enums';
 import { generateKey } from '../../src';
-import { ErrorMessages } from '../../src/errors';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -35,7 +34,7 @@ describe('Schnorr identification - failure if forged proof', () => {
     const proof = await privateKey.proveSecret();
     proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
-      ErrorMessages.INVALID_SECRET
+      'Invalid secret'
     );
   });
 });
@@ -52,7 +51,7 @@ describe('Schnorr identification - failure if wrong algorithm', () => {
           Algorithms.SHA256
       })
     ).rejects.toThrow(
-      ErrorMessages.INVALID_SECRET
+      'Invalid secret'
     );
   });
 });
@@ -64,7 +63,7 @@ describe('Schnorr identification - failure if missing nonce', () => {
     const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
-      ErrorMessages.INVALID_SECRET
+      'Invalid secret'
     );
   });
 });
@@ -78,7 +77,7 @@ describe('Schnorr identification - failure if forged nonce', () => {
     await expect(
       publicKey.verifySecret(proof, { nonce: await randomNonce() })
     ).rejects.toThrow(
-      ErrorMessages.INVALID_SECRET
+      'Invalid secret'
     );
   });
 });

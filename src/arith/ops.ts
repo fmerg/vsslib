@@ -1,4 +1,5 @@
-import { ErrorMessages } from '../errors';
+import { BadModulusError, InverseNotExists } from '../errors';
+
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -6,7 +7,10 @@ const __1n = BigInt(1);
 
 /** Modulo operation. Takes care to give non-negative results */
 export const mod = (m: bigint, n: bigint): bigint => {
-  if (n < 2) throw new Error(ErrorMessages.MODULUS_NOT_ABOVE_TWO);
+  if (n < 2) throw new BadModulusError(
+    `Modulus must be > 2: ${n}`
+  );
+
   const r = m % n;
   return r >= __0n ? r : (r + n) % n;
 }
@@ -14,7 +18,9 @@ export const mod = (m: bigint, n: bigint): bigint => {
 
 /** Createst Common Divisor (extended euclidean algorithm) */
 export const gcd = (a: bigint, b: bigint): { x: bigint, y: bigint, g: bigint } => {
-  if (!(a > __0n && b > __0n)) throw new Error(ErrorMessages.NON_POSITIVE_INPUTS);
+  if (!(a > __0n && b > __0n))
+    throw new Error('Non-positive inputs');
+
   let [x, y, u, v] = [__0n, __1n, __1n, __0n];
   while (a > __0n) {
     const q = b / a;
@@ -34,14 +40,15 @@ export const gcd = (a: bigint, b: bigint): { x: bigint, y: bigint, g: bigint } =
 
 /** Modular muptiplicative inverse operation */
 export const modInv = (m: bigint, n: bigint): bigint => {
-  let d;
-  try { d = gcd(mod(m, n), n); } catch (err: any) {
-    if (err.message == ErrorMessages.NON_POSITIVE_INPUTS) throw new Error(
-      ErrorMessages.INVERSE_NOT_EXISTS
-    );
-    else throw err;
-  }
-  const { x, g } = d;
-  if (g !== __1n) throw new Error(ErrorMessages.INVERSE_NOT_EXISTS);
+  const a = mod(m, n);
+  if (!(a > __0n)) throw new InverseNotExists(
+    `No inverse exists for provided modulo`
+  );
+
+  const { x, g } = gcd(a, n);
+  if (g !== __1n) throw new InverseNotExists(
+    `No inverse exists for provided modulo`
+  );
+
   return mod(x, n);
 }

@@ -13,7 +13,7 @@ import {
   PublicKeyShare,
   PartialDecryptor
 } from './keys';
-import { ErrorMessages } from './errors';
+import { InvalidPartialDecryptor } from './errors';
 import { AesModes, Algorithms } from './enums';
 import { ElgamalScheme, AesMode, Algorithm } from './types';
 
@@ -26,7 +26,7 @@ export async function reconstructKey<P extends Point>(
   threshold?: number
 ): Promise<PrivateKey<P>> {
   if (threshold && shares.length < threshold)
-    throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
+    throw new Error('Insufficient number of shares');
   return new PrivateKey(ctx, await reconstructSecret(ctx, shares.map(s => {
       return {
         value: s.bytes,
@@ -42,7 +42,7 @@ export async function reconstructPublicKey<P extends Point>(
   threshold?: number
 ): Promise<PublicKey<P>> {
   if (threshold && shares.length < threshold)
-    throw new Error(ErrorMessages.INSUFFICIENT_NR_SHARES);
+    throw new Error('Insufficient number of shares');
   const pubShares = new Array<PublicShare>(shares.length);
   for (let i = 0; i < pubShares.length; i++) {
     pubShares[i] = shares[i].asPublicShare();
@@ -57,11 +57,11 @@ export async function verifyPartialDecryptors<P extends Point>(
   ciphertext: Ciphertext,
   publicShares: PublicKeyShare<P>[],
   shares: PartialDecryptor[],
-  opts?: { threshold?: number, raiseOnInvalid?: boolean },
+  opts?: { threshold?: number, errorOnInvalid?: boolean },
 ): Promise<{ flag: boolean, indexes: number[]}> {
   const threshold = opts ? opts.threshold : undefined;
   if (threshold && shares.length < threshold) throw new Error(
-    ErrorMessages.INSUFFICIENT_NR_SHARES
+    'Insufficient number of shares'
   );
   const selectPublicShare = (index: number, shares: PublicKeyShare<P>[]) => {
     const selected = shares.filter(share => share.index == index)[0];
@@ -70,20 +70,25 @@ export async function verifyPartialDecryptors<P extends Point>(
   }
   let flag = true;
   let indexes = [];
-  const raiseOnInvalid = opts ? (opts.raiseOnInvalid || false) : false;
+  const errorOnInvalid = opts ? (opts.errorOnInvalid || false) : false;
   for (const partialDecryptor of shares) {
-    const publicShare = selectPublicShare(partialDecryptor.index, publicShares);
-    const verified = await publicShare.verifyPartialDecryptor(
-      ciphertext,
-      partialDecryptor,
-      {
-        raiseOnInvalid: false,
+    const { index } = partialDecryptor;
+    const publicShare = selectPublicShare(index, publicShares);
+    try {
+      await publicShare.verifyPartialDecryptor(
+        ciphertext,
+        partialDecryptor,
+      );
+    } catch (err: any) {
+      if (err instanceof InvalidPartialDecryptor) {
+        if (errorOnInvalid)
+          throw new Error(`Invalid partial decryptor with index ${index}`);
+        indexes.push(index);
+        flag &&= false;
+      } else {
+        throw err;
       }
-    );
-    if (!verified && raiseOnInvalid)
-      throw new Error(ErrorMessages.INVALID_PARTIAL_DECRYPTOR);
-    flag &&= verified;
-    if(!verified) indexes.push(partialDecryptor.index);
+    }
   }
   return { flag, indexes };
 }
@@ -96,7 +101,7 @@ export async function reconstructDecryptor<P extends Point>(
   // TODO: Include validation
   const threshold = opts ? opts.threshold : undefined;
   if (threshold && shares.length < threshold) throw new Error(
-    ErrorMessages.INSUFFICIENT_NR_SHARES
+    'Insufficient number of shares'
   );
   const { order, neutral, exp, operate, unpackValid } = ctx;
   const qualifiedIndexes = shares.map(share => share.index);

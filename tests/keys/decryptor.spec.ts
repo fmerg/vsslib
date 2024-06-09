@@ -1,6 +1,5 @@
 import { Algorithms } from '../../src/enums';
 import { generateKey } from '../../src';
-import { ErrorMessages } from '../../src/errors';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
 import { mockMessage } from '../helpers';
@@ -58,7 +57,7 @@ describe('proof - failure if forged proof', () => {
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
-      ErrorMessages.INVALID_DECRYPTOR
+      'Invalid decryptor'
     );
   });
 });
@@ -79,7 +78,7 @@ describe('proof - failure if wrong algorithm', () => {
           Algorithms.SHA256
       })
     ).rejects.toThrow(
-      ErrorMessages.INVALID_DECRYPTOR
+      'Invalid decryptor'
     );
   });
 });
@@ -93,7 +92,7 @@ describe('proof - failure if missing nonce', () => {
     const nonce = await randomNonce();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
-      ErrorMessages.INVALID_DECRYPTOR
+      'Invalid decryptor'
     );
   });
 });
@@ -109,7 +108,7 @@ describe('proof - failure if forged nonce', () => {
     await expect(
       publicKey.verifyDecryptor(ciphertext, decryptor, proof, { nonce: await randomNonce() })
     ).rejects.toThrow(
-      ErrorMessages.INVALID_DECRYPTOR
+      'Invalid decryptor'
     );
   });
 });

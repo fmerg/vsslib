@@ -1,6 +1,5 @@
 import { Algorithms, ElgamalSchemes } from '../../src/enums';
 import { generateKey } from '../../src';
-import { ErrorMessages } from '../../src/errors';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
 import { mockMessage } from '../helpers';
@@ -73,7 +72,7 @@ describe('encrypt-then-prove - failure if forged proof', () => {
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
     proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
-      ErrorMessages.INVALID_ENCRYPTION
+      'Invalid encryption'
     );
   });
 });
@@ -94,7 +93,7 @@ describe('encrypt-then-prove - failure if wrong algorithm', () => {
           Algorithms.SHA256
       })
     ).rejects.toThrow(
-      ErrorMessages.INVALID_ENCRYPTION
+      'Invalid encryption'
     );
   });
 });
@@ -110,7 +109,7 @@ describe('encrypt-then-prove - failure if missing nonce', () => {
     const nonce = await randomNonce();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
     await expect(privateKey.verifyEncryption(ciphertext, proof, { algorithm })).rejects.toThrow(
-      ErrorMessages.INVALID_ENCRYPTION
+      'Invalid encryption'
     );
   });
 });
@@ -128,7 +127,7 @@ describe('encrypt-then-prove - failure if forged nonce', () => {
     await expect(
       privateKey.verifyEncryption(ciphertext, proof, { nonce: await randomNonce() })
     ).rejects.toThrow(
-      ErrorMessages.INVALID_ENCRYPTION
+      'Invalid encryption'
     );
   });
 });

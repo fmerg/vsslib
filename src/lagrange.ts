@@ -1,7 +1,10 @@
 import { Point, Group } from './backend/abstract';
 import { mod, modInv } from './arith';
-import { ErrorMessages } from './errors';
 import { FieldPolynomial } from './polynomials';
+import {
+  InverseNotExists,
+  InterpolationError,
+} from './errors';
 
 
 const __0n = BigInt(0);
@@ -17,9 +20,10 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
   constructor(ctx: Group<P>, points: [bigint, bigint][]) {
     const k = points.length;
     const { order } = ctx;
-    if (k > order) throw new Error(
-      ErrorMessages.INTERPOLATION_NR_POINTS_EXCEEDS_ORDER
+    if (k > order) throw new InterpolationError(
+      'Number of provided points exceeds order'
     );
+
     const xs = new Array(k);
     const ys = new Array(k);
     const ws = new Array(k);
@@ -44,8 +48,9 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
       }
       let wj;
       try { wj = modInv(w, order); } catch (err: any) {
-        if (err.message == ErrorMessages.INVERSE_NOT_EXISTS)
-          throw new Error(ErrorMessages.INTERPOLATION_NON_DISTINCT);
+        if (err instanceof InverseNotExists) throw new InterpolationError(
+          'Not all provided x\'s are distinct modulo order'
+        );
         else throw err;
       }
       xs[j] = xj;

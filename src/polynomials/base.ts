@@ -1,5 +1,5 @@
 import { mod } from '../arith';
-import { ErrorMessages } from '../errors';
+import { PolynomialEerror } from '../errors';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -11,7 +11,8 @@ export class BasePolynomial {
   order: bigint;
 
   constructor(coeffs: (bigint | number)[], order: bigint | number) {
-    if ((order <= __1n)) throw new Error(ErrorMessages.ORDER_NOT_ABOVE_ONE);
+    if ((order <= __1n))
+      throw new PolynomialEerror(`Order must be > 1: ${order}`);
     const reduced = coeffs.map((num) => mod(BigInt(num), BigInt(order)));
     let len = reduced.length;
     if (len > 0) {
@@ -54,8 +55,9 @@ export class BasePolynomial {
   }
 
   add = (other: BasePolynomial): BasePolynomial => {
-    if (this.order !== other.order)
-      throw new Error(ErrorMessages.DIFFERENT_ORDERS_CANNOT_ADD);
+    if (this.order !== other.order) throw new PolynomialEerror(
+      `Cannot add polynomials with different orders: ${this.order}, ${other.order}`
+    );
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     if (short.isZero()) return long.clone();
     let newCoeffs = new Array(long.degree).fill(__0n);
@@ -69,8 +71,9 @@ export class BasePolynomial {
   }
 
   mult = (other: BasePolynomial): BasePolynomial => {
-    if (this.order !== other.order)
-      throw new Error(ErrorMessages.DIFFERENT_ORDERS_CANNOT_MULTIPLY);
+    if (this.order !== other.order) throw new PolynomialEerror(
+      `Cannot multiply polynomials with different orders: ${this.order}, ${other.order}`
+    );
     if (this.isZero() || other.isZero())
       return new BasePolynomial([], this.order);
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];

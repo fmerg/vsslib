@@ -2,7 +2,7 @@ import { Point, Group } from '../backend/abstract';
 import { leInt2Buff } from '../arith';
 import { Algorithms, AesModes } from '../enums';
 import { Algorithm, AesMode } from '../types';
-import { ErrorMessages } from '../errors';
+import { AesError, ElgamalError } from '../errors';
 
 import { hash, hmac, aes } from '../crypto';
 
@@ -45,17 +45,20 @@ abstract class BaseCipher<P extends Point, A> {
 
   async decrypt(ciphertext: { alpha: A, beta: Uint8Array}, secret: bigint): Promise<Uint8Array> {
     const { alpha, beta: betaBytes} = ciphertext;
-    const beta = this.ctx.unpack(betaBytes);
-    const isBetaValid = await this.ctx.validatePoint(beta, { raiseOnInvalid: false });
-    if(!isBetaValid) throw new Error('Could not decrypt: Point not in subgroup');
-    const decryptor = await this.ctx.exp(secret, beta);
-    let plaintext;
+    let beta;
     try {
-      plaintext = await this.decapsulate(alpha, decryptor);
+      beta = await this.ctx.unpackValid(betaBytes);
+    } catch (err: any) {
+      throw new ElgamalError(
+        'Could not decrypt: ' + err.message // TODO
+      );
+    }
+    const decryptor = await this.ctx.exp(secret, beta);
+    try {
+      return await this.decapsulate(alpha, decryptor);
     } catch (err: any) {
       throw new Error('Could not decrypt: ' + err.message);
     }
-    return plaintext;
   }
 
   async decryptWithDecryptor(
@@ -65,15 +68,15 @@ abstract class BaseCipher<P extends Point, A> {
     },
     decryptor: Uint8Array
   ): Promise<Uint8Array> {
-    let plaintext;
     try {
-      plaintext = await this.decapsulate(
+      return await this.decapsulate(
         ciphertext.alpha, await this.ctx.unpackValid(decryptor)
       );
     } catch (err: any) {
-      throw new Error('Could not decrypt: ' + err.message);
+      throw new ElgamalError(
+        'Could not decrypt: ' + err.message
+      );
     }
-    return plaintext;
   }
 
   async decryptWithRandomness(
@@ -85,13 +88,13 @@ abstract class BaseCipher<P extends Point, A> {
     randomness: Uint8Array
   ): Promise<Uint8Array> {
     const decryptor = await this.ctx.exp(this.ctx.leBuff2Scalar(randomness), pub);
-    let plaintext;
     try {
-      plaintext = await this.decapsulate(ciphertext.alpha, decryptor);
+      return await this.decapsulate(ciphertext.alpha, decryptor);
     } catch (err: any) {
-      throw new Error('Could not decrypt: ' + err.message);
+      throw new ElgamalError(
+        'Could not decrypt: ' + err.message
+      );
     }
-    return plaintext;
   }
 }
 
@@ -108,14 +111,24 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
     alpha: Uint8Array,
     decryptor: P
   }> => {
-    const messageUnpacked = await this.ctx.unpackValid(message);
+    let messageUnpacked;
+    try {
+      messageUnpacked = await this.ctx.unpackValid(message);
+    } catch (err: any) {
+      throw new ElgamalError(err.message);
+    }
     const decryptor = await this.ctx.exp(randomness, pub);
     const alpha = await this.ctx.operate(decryptor, messageUnpacked);
     return { alpha: alpha.toBytes(), decryptor };
   }
 
   decapsulate = async (alpha: Uint8Array, decryptor: P): Promise<Uint8Array> => {
-    const alphaUnpacked = await this.ctx.unpackValid(alpha);
+    let alphaUnpacked;
+    try {
+      alphaUnpacked = await this.ctx.unpackValid(alpha);
+    } catch (err: any) {
+      throw new ElgamalError(err.message);
+    }
     const decryptorInverse = await this.ctx.invert(decryptor);
     const plaintext = await this.ctx.operate(alphaUnpacked, decryptorInverse);
     return plaintext.toBytes();
@@ -145,14 +158,30 @@ export class KemCipher<P extends Point> extends BaseCipher<P, KemAlpha> {
   }> => {
     const decryptor = await this.ctx.exp(randomness, pub);
     const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
-    const { ciphered, iv, tag } = aes(this.mode).encrypt(key, message);
+    let aesCiphertext;
+    try {
+      aesCiphertext = aes(this.mode).encrypt(key, message);
+    } catch (err: any) {
+      if (err instanceof AesError) throw new ElgamalError(
+        'Could not encrypt' // TODO
+      );
+      else throw err;
+    }
+    const { ciphered, iv, tag } = aesCiphertext;
     return { alpha: { ciphered, iv, tag }, decryptor };
   }
 
   decapsulate = async (alpha: KemAlpha, decryptor: P): Promise<Uint8Array> => {
     const { ciphered, iv, tag } = alpha;
     const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
-    return aes(this.mode).decrypt(key, ciphered, iv, tag);
+    try {
+      return aes(this.mode).decrypt(key, ciphered, iv, tag);
+    } catch (err: any) {
+      if (err instanceof AesError) throw new ElgamalError(
+        err.message // TODO
+      );
+      else throw err;
+    }
   }
 }
 
@@ -185,7 +214,16 @@ export class IesCipher<P extends Point> extends BaseCipher<P, IesAlpha> {
     const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
     const keyMac = key.slice(32, 64);
-    const { ciphered, iv, tag } = aes(this.mode).encrypt(keyAes, message);
+    let aesCiphertext;
+    try {
+      aesCiphertext = aes(this.mode).encrypt(keyAes, message);
+    } catch (err: any) {
+      if (err instanceof AesError) throw new ElgamalError(
+        'Could not encrypt' // TODO
+      );
+      else throw err;
+    }
+    const { ciphered, iv, tag } = aesCiphertext;
     const mac = await hmac(this.algorithm, keyMac).digest(ciphered);
     return { alpha: { ciphered, iv, mac, tag }, decryptor };
   }
@@ -201,9 +239,17 @@ export class IesCipher<P extends Point> extends BaseCipher<P, IesAlpha> {
     for (let i = 0; i < mac.length; i++) {
       isMacValid &&= mac[i] === targetMac[i];
     }
-    if (!isMacValid) throw new Error(ErrorMessages.INVALID_MAC);
-    const plaintext = aes(this.mode).decrypt(keyAes, ciphered, iv, tag);
-    return plaintext;
+    if (!isMacValid) throw new ElgamalError(
+      'Invalid MAC'
+    );
+    try {
+      return aes(this.mode).decrypt(keyAes, ciphered, iv, tag);
+    } catch (err: any) {
+      if (err instanceof AesError) throw new ElgamalError(
+        err.message // TODO
+      );
+      else throw err;
+    }
   }
 }
 

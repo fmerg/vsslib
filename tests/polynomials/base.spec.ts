@@ -1,7 +1,6 @@
 import { Systems } from '../../src/enums';
 import { initGroup } from '../../src/backend';
 import { lagrange } from '../../src';
-import { ErrorMessages } from '../../src/errors';
 import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
 import { BasePolynomial } from '../../src/polynomials/base';
 import { cartesian, trimZeroes } from '../utils';
@@ -64,7 +63,7 @@ describe('Construction - coefficients greater than order', () => {
 describe('Construction errors', () => {
   test('Order not greater than one', async () => {
     expect(() => { new BasePolynomial([], 1) }).toThrow(
-      ErrorMessages.ORDER_NOT_ABOVE_ONE
+      'Order must be > 1'
     );
   });
 });
@@ -128,14 +127,14 @@ describe('Algebraic operations errors', () => {
     const poly1 = new BasePolynomial([], 2);
     const poly2 = new BasePolynomial([], 3);
     expect(() => poly1.add(poly2)).toThrow(
-      ErrorMessages.DIFFERENT_ORDERS_CANNOT_ADD
+      'Cannot add polynomials with different order'
     );
   });
   test('Multiplication error - different orders', async () => {
     const poly1 = new BasePolynomial([], 2);
     const poly2 = new BasePolynomial([], 3);
     expect(() => poly1.mult(poly2)).toThrow(
-      ErrorMessages.DIFFERENT_ORDERS_CANNOT_MULTIPLY
+      'Cannot multiply polynomials with different order'
     );
   });
 });
@@ -243,7 +242,7 @@ describe('Random polynomial generation', () => {
   test('Non-positive degree error', async () => {
     const ctx = initGroup('ed25519');
     await expect(randomPolynomial(ctx, -1)).rejects.toThrow(
-      ErrorMessages.NON_POSITIVE_DEGREE
+      'Polynomial degree must be positive'
     );
   });
   test('Correct parameters', async () => {

@@ -1,6 +1,5 @@
 import { System } from '../../src/types';
 import { initGroup } from '../../src/backend';
-import { ErrorMessages } from '../../src/errors';
 import { lagrange } from '../../src';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -17,7 +16,7 @@ describe('Interpolation - errors', () => {
     const ctx = initGroup('ed25519');
     const points: [number, number][] = [[1, 2], [1, 3]];
     await expect(lagrange.interpolate(ctx, points)).rejects.toThrow(
-      ErrorMessages.INTERPOLATION_NON_DISTINCT
+      'Not all provided x\'s are distinct modulo order'
     );
   });
 });
