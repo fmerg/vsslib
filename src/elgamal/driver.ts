@@ -3,16 +3,16 @@ import { leInt2Buff } from '../arith';
 import { ElgamalScheme, AesMode, Algorithm } from '../types';
 import { ElgamalSchemes } from '../enums';
 
-import { IesAlpha, KemAlpha, plainElgamal, iesElgamal, kemElgamal } from './core';
+import { IesAlpha, HybridAlpha, plainElgamal, iesElgamal, hybridElgamal } from './core';
 
 
 type IesCiphertext    = { alpha: IesAlpha, beta: Uint8Array };
-type KemCiphertext    = { alpha: KemAlpha, beta: Uint8Array };
+type HybridCiphertext    = { alpha: HybridAlpha, beta: Uint8Array };
 type PlainCiphertext  = { alpha: Uint8Array, beta: Uint8Array };
 
 export type Ciphertext =
   IesCiphertext |
-  KemCiphertext |
+  HybridCiphertext |
   PlainCiphertext;
 
 
@@ -42,8 +42,8 @@ export class ElgamalDriver<P extends Point>{
     switch (this.scheme) {
       case ElgamalSchemes.PLAIN:
         return this.encrypt_PLAIN(message, pubBytes);
-      case ElgamalSchemes.KEM:
-        return this.encrypt_KEM(message, pubBytes);
+      case ElgamalSchemes.HYBRID:
+        return this.encrypt_HYBRID(message, pubBytes);
       case ElgamalSchemes.IES:
         return this.encrypt_IES(message, pubBytes);
     }
@@ -58,9 +58,9 @@ export class ElgamalDriver<P extends Point>{
           ciphertext as IesCiphertext,
           secret,
         );
-      case ElgamalSchemes.KEM:
-        return this.decrypt_KEM(
-          ciphertext as KemCiphertext,
+      case ElgamalSchemes.HYBRID:
+        return this.decrypt_HYBRID(
+          ciphertext as HybridCiphertext,
           secret,
         );
       case ElgamalSchemes.PLAIN:
@@ -81,9 +81,9 @@ export class ElgamalDriver<P extends Point>{
           ciphertext as IesCiphertext,
           decryptor,
         );
-      case ElgamalSchemes.KEM:
-        return this.decryptWithDecryptor_KEM(
-          ciphertext as KemCiphertext,
+      case ElgamalSchemes.HYBRID:
+        return this.decryptWithDecryptor_HYBRID(
+          ciphertext as HybridCiphertext,
           decryptor,
         );
       case ElgamalSchemes.PLAIN:
@@ -144,14 +144,14 @@ export class ElgamalDriver<P extends Point>{
     );
   }
 
-  encrypt_KEM = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
-    ciphertext: KemCiphertext,
+  encrypt_HYBRID = async (message: Uint8Array, pubBytes: Uint8Array): Promise<{
+    ciphertext: HybridCiphertext,
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
     const { ctx, mode } = this;
     const pub = await ctx.unpackValid(pubBytes);
-    const { ciphertext, randomness, decryptor } = await kemElgamal(ctx, mode).encrypt(
+    const { ciphertext, randomness, decryptor } = await hybridElgamal(ctx, mode).encrypt(
       message, pub
     );
     const { alpha, beta } = ciphertext;
@@ -165,12 +165,12 @@ export class ElgamalDriver<P extends Point>{
     }
   }
 
-  decrypt_KEM = async (ciphertext: KemCiphertext, secret: bigint): Promise<
+  decrypt_HYBRID = async (ciphertext: HybridCiphertext, secret: bigint): Promise<
     Uint8Array
   > => {
     const { ctx, mode } = this;
     const { alpha, beta } = ciphertext;
-    return kemElgamal(ctx, mode).decrypt(
+    return hybridElgamal(ctx, mode).decrypt(
       {
         alpha,
         beta,
@@ -179,13 +179,13 @@ export class ElgamalDriver<P extends Point>{
     );
   }
 
-  decryptWithDecryptor_KEM = async (
-    ciphertext: KemCiphertext,
+  decryptWithDecryptor_HYBRID = async (
+    ciphertext: HybridCiphertext,
     decryptor: Uint8Array,
   ): Promise<Uint8Array> => {
     const { ctx, mode } = this;
     const { alpha, beta } = ciphertext;
-    return kemElgamal(ctx, mode).decryptWithDecryptor(
+    return hybridElgamal(ctx, mode).decryptWithDecryptor(
       {
         alpha,
         beta,

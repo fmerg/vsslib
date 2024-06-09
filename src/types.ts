@@ -34,7 +34,7 @@ export type AesMode =
 
 export type ElgamalScheme =
   | ElgamalSchemes.PLAIN
-  | ElgamalSchemes.KEM
+  | ElgamalSchemes.HYBRID
   | ElgamalSchemes.IES;
 
 export type SignatureScheme =

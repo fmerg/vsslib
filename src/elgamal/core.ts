@@ -136,15 +136,15 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
 }
 
 
-/** First component of a KEM-Elgamal ciphertext */
-export type KemAlpha = {
+/** First component of a HYBRID-Elgamal ciphertext */
+export type HybridAlpha = {
   ciphered: Uint8Array,
   iv: Uint8Array,
   tag?: Uint8Array,
 };
 
-/** KEM-Elgamal encryption (DH-based Key Encapsulation Mechanism) */
-export class KemCipher<P extends Point> extends BaseCipher<P, KemAlpha> {
+/** HYBRID-Elgamal encryption (DH-based Key Encapsulation Mechanism) */
+export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
   mode: AesMode;
 
   constructor(ctx: Group<P>, mode: AesMode) {
@@ -153,7 +153,7 @@ export class KemCipher<P extends Point> extends BaseCipher<P, KemAlpha> {
   }
 
   encapsulate = async (pub: P, randomness: bigint, message: Uint8Array): Promise<{
-    alpha: KemAlpha,
+    alpha: HybridAlpha,
     decryptor: P
   }> => {
     const decryptor = await this.ctx.exp(randomness, pub);
@@ -171,7 +171,7 @@ export class KemCipher<P extends Point> extends BaseCipher<P, KemAlpha> {
     return { alpha: { ciphered, iv, tag }, decryptor };
   }
 
-  decapsulate = async (alpha: KemAlpha, decryptor: P): Promise<Uint8Array> => {
+  decapsulate = async (alpha: HybridAlpha, decryptor: P): Promise<Uint8Array> => {
     const { ciphered, iv, tag } = alpha;
     const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
     try {
@@ -258,8 +258,8 @@ export function plainElgamal<P extends Point>(ctx: Group<P>) {
   return new PlainCipher(ctx);
 }
 
-export function kemElgamal<P extends Point>(ctx: Group<P>, mode: AesMode) {
-  return new KemCipher(ctx, mode);
+export function hybridElgamal<P extends Point>(ctx: Group<P>, mode: AesMode) {
+  return new HybridCipher(ctx, mode);
 }
 
 export function iesElgamal<P extends Point>(ctx: Group<P>, mode: AesMode, algorithm: Algorithm) {

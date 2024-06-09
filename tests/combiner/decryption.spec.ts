@@ -153,14 +153,14 @@ describe('Threshold decryption', () => {
         });
         break;
       case ElgamalSchemes.IES:
-      case ElgamalSchemes.KEM:
+      case ElgamalSchemes.HYBRID:
         partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
           if (qualifiedShares.length >= threshold) {
             const plaintext = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, { scheme });
             expect(plaintext).toEqual(message);
           } else {
             await expect(thresholdDecrypt(ctx, ciphertext, qualifiedShares, { scheme })).rejects.toThrow(
-              scheme == ElgamalSchemes.KEM ?
+              scheme == ElgamalSchemes.HYBRID ?
                 'Could not decrypt: AES decryption failure' :
                 'Could not decrypt: Invalid MAC'
             );

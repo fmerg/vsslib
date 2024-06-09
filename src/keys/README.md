@@ -45,7 +45,7 @@ const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
 ```
 
 
-#### KEM-Encryption (Key Encapsulation Mechanism)
+#### HYBRID-Encryption (Key Encapsulation Mechanism)
 
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -53,7 +53,7 @@ const message = Uint8Array.from(Buffer.from('destroy earth'));
 
 ```js
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
-  scheme: ElgamalSchemes.KEM,
+  scheme: ElgamalSchemes.HYBRID,
   mode: AesModes.AES_256_CBC,
 });
 ```

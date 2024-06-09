@@ -45,7 +45,7 @@ export enum AesModes {
 export enum ElgamalSchemes {
   DEFAULT   = 'ies',
   PLAIN     = 'plain',
-  KEM       = 'kem',
+  HYBRID       = 'hybrid',
   IES       = 'ies',
 }
 

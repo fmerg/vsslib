@@ -174,7 +174,7 @@ export class PrivateKey<P extends Point> {
     message: Uint8Array,
     receiverPublic: PublicKey<Q>,
     opts: {
-      encScheme: ElgamalSchemes.IES | ElgamalSchemes.KEM,
+      encScheme: ElgamalSchemes.IES | ElgamalSchemes.HYBRID,
       sigScheme: SignatureScheme,
       algorithm?: Algorithm,
       mode?: AesMode,
@@ -205,7 +205,7 @@ export class PrivateKey<P extends Point> {
     signature: Signature,
     senderPublic: PublicKey<Q>,
     opts: {
-      encScheme: ElgamalSchemes.IES | ElgamalSchemes.KEM,
+      encScheme: ElgamalSchemes.IES | ElgamalSchemes.HYBRID,
       sigScheme: SignatureScheme,
       algorithm?: Algorithm,
       mode?: AesMode,

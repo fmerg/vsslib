@@ -31,10 +31,10 @@ const message = Buffer.from('destroy earth');
 const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, publicBytes);
 ```
 
-### KEM-ElGamal Encryption (Key Encapsulation Mechanism)
+### HYBRID-ElGamal Encryption (Key Encapsulation Mechanism)
 
 ```js
-const cipher = elgamal(ctx, ElgamalSchemes.KEM, AesModes.AES_256_CBC);
+const cipher = elgamal(ctx, ElgamalSchemes.HYBRID, AesModes.AES_256_CBC);
 ```
 
 ```js
