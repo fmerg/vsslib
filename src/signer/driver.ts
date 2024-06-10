@@ -26,37 +26,22 @@ export class SigDriver<P extends Point> {
   > => {
     switch (this.scheme) {
       case SignatureSchemes.SCHNORR:
-        return this.signBytes_SCHNORR(secret, message, nonce);
+        return schnorr(this.ctx, this.algorithm).signBytes(secret, message, nonce);
     }
   }
 
   verifyBytes = async (
     pubBytes: Uint8Array, message: Uint8Array, signature: Signature, nonce?: Uint8Array
   ): Promise<boolean> => {
+    const pub = await this.ctx.unpackValid(pubBytes);
     switch (this.scheme) {
       case SignatureSchemes.SCHNORR:
-        return this.verifyBytes_SCHNORR(
-          pubBytes,
+        return schnorr(this.ctx, this.algorithm).verifyBytes(
+          pub,
           message,
           signature as SchnorrSignature,
           nonce
-      );
+        );
     }
-  }
-
-  signBytes_SCHNORR = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<
-    SchnorrSignature
-  > => {
-    return schnorr(this.ctx, this.algorithm).signBytes(secret, message, nonce);
-  }
-
-  verifyBytes_SCHNORR = async (
-    pubBytes: Uint8Array, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array
-  ): Promise<boolean> => {
-    const ctx = this.ctx;
-    const pub = await ctx.unpackValid(pubBytes);
-    return schnorr(this.ctx, this.algorithm).verifyBytes(
-      pub, message, signature, nonce
-    );
   }
 }
