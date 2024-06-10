@@ -54,7 +54,7 @@ const v = await ctx.invert(p);
 ```
 
 ```js
-const w = await ctx.exp(s, p);
+const w = await ctx.exp(p, s);
 ```
 
 

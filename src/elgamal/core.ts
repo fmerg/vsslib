@@ -32,7 +32,7 @@ abstract class BaseCipher<P extends Point, A> {
     const { ctx: { generator, randomScalar, exp }, encapsulate } = this;
     const randomness = await randomScalar();
     const { alpha, decryptor } = await encapsulate(pub, randomness, message);
-    const beta = await exp(randomness, generator);
+    const beta = await exp(generator, randomness);
     return {
       ciphertext: {
         alpha,
@@ -53,7 +53,7 @@ abstract class BaseCipher<P extends Point, A> {
         'Could not decrypt: ' + err.message // TODO
       );
     }
-    const decryptor = await this.ctx.exp(secret, beta);
+    const decryptor = await this.ctx.exp(beta, secret);
     try {
       return await this.decapsulate(alpha, decryptor);
     } catch (err: any) {
@@ -87,7 +87,7 @@ abstract class BaseCipher<P extends Point, A> {
     pub: P,
     randomness: Uint8Array
   ): Promise<Uint8Array> {
-    const decryptor = await this.ctx.exp(this.ctx.leBuff2Scalar(randomness), pub);
+    const decryptor = await this.ctx.exp(pub, this.ctx.leBuff2Scalar(randomness));
     try {
       return await this.decapsulate(ciphertext.alpha, decryptor);
     } catch (err: any) {
@@ -117,7 +117,7 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
     } catch (err: any) {
       throw new ElgamalError(err.message);
     }
-    const decryptor = await this.ctx.exp(randomness, pub);
+    const decryptor = await this.ctx.exp(pub, randomness);
     const alpha = await this.ctx.operate(decryptor, messageUnpacked);
     return { alpha: alpha.toBytes(), decryptor };
   }
@@ -156,7 +156,7 @@ export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
     alpha: HybridAlpha,
     decryptor: P
   }> => {
-    const decryptor = await this.ctx.exp(randomness, pub);
+    const decryptor = await this.ctx.exp(pub, randomness);
     const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
     let aesCiphertext;
     try {
@@ -210,7 +210,7 @@ export class DhiesCipher<P extends Point> extends BaseCipher<P, DhiesAlpha> {
     decryptor: P
   }> => {
     const { ctx: { generator, randomScalar, exp } } = this;
-    const decryptor = await exp(randomness, pub);
+    const decryptor = await exp(pub, randomness);
     const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
     const keyMac = key.slice(32, 64);

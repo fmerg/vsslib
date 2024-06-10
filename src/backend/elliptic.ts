@@ -97,7 +97,7 @@ export class EcGroup extends Group<EcPoint> {
     return flag;
   }
 
-  exp = async (scalar: bigint, point: EcPoint): Promise<EcPoint> => new EcPoint(
+  exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => new EcPoint(
     scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero
   );
 
@@ -129,7 +129,7 @@ export class EcGroup extends Group<EcPoint> {
     secret: bigint, publicPoint: EcPoint, publicBytes: Uint8Array
   }> => {
     secret = secret || await this.randomScalar();
-    const publicPoint = await this.exp(secret, this.generator);
+    const publicPoint = await this.exp(this.generator, secret);
     const publicBytes = publicPoint.toBytes();
     return { secret, publicPoint, publicBytes };
   }

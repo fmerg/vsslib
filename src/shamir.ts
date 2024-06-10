@@ -98,7 +98,7 @@ export class ShamirSharing<P extends Point> {
     const { nrShares, polynomial: { evaluate }, ctx: { exp, generator } } = this;
     const shares = [];
     for (let index = 1; index <= nrShares; index++) {
-      const aux = await exp(evaluate(index), generator);
+      const aux = await exp(generator, evaluate(index));
       const value = aux.toBytes();
       shares.push({ value, index });
     }
@@ -115,7 +115,7 @@ export class ShamirSharing<P extends Point> {
     const packets = new Array<SecretSharePacket>(this.nrShares);
     for (let i = 0; i < this.nrShares; i++) {
       if (i < degree + 1) {
-        const c = await exp(coeffs[i], g);
+        const c = await exp(g, coeffs[i]);
         commitments[i] = c.toBytes();
       }
       const index = i + 1;
@@ -142,8 +142,8 @@ export class ShamirSharing<P extends Point> {
         const a = coeffs[i];
         const b = bindingPolynomial.coeffs[i];
         const c = await operate(
-          await exp(a, g),
-          await exp(b, h),
+          await exp(g, a),
+          await exp(h, b),
         );
         commitments[i] = c.toBytes();
       }
@@ -165,11 +165,11 @@ export async function verifyFeldmanCommitments<P extends Point>(
 ): Promise<boolean> {
   const { value, index } = share;
   const { order, generator: g, neutral, exp, operate } = ctx;
-  const lhs = await exp(ctx.leBuff2Scalar(value), g);
+  const lhs = await exp(g, ctx.leBuff2Scalar(value));
   let rhs = neutral;
   for (const [j, commitment] of commitments.entries()) {
     const c = await ctx.unpackValid(commitment);
-    const curr = await exp(mod(BigInt(index ** j), order), c);
+    const curr = await exp(c, mod(BigInt(index ** j), order));
     rhs = await operate(rhs, curr);
   }
   const valid = await lhs.equals(rhs);
@@ -193,13 +193,13 @@ export async function verifyPedersenCommitments<P extends Point>(
   const s = ctx.leBuff2Scalar(value);
   const b = ctx.leBuff2Scalar(binding);
   const lhs = await operate(
-    await exp(s, g),
-    await exp(b, h)
+    await exp(g, s),
+    await exp(h, b)
   );
   let rhs = neutral;
   for (const [j, commitment] of commitments.entries()) {
     const c = await ctx.unpackValid(commitment);
-    rhs = await operate(rhs, await exp(BigInt(index ** j), c));
+    rhs = await operate(rhs, await exp(c, BigInt(index ** j)));
   }
   const valid = await lhs.equals(rhs);
   if (!valid) throw new InvalidSecretShare(
@@ -250,7 +250,7 @@ export async function createPublicSharePacket<P extends Point>(
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const nonce = opts ? (opts.nonce || undefined) : undefined;
   const x = ctx.leBuff2Scalar(value);
-  const y = await ctx.exp(x, g);
+  const y = await ctx.exp(g, x);
   const proof = await nizk(ctx, algorithm).proveDlog(x, { u: g, v: y }, nonce);
   return { value: y.toBytes(), index, proof };
 }
@@ -327,7 +327,7 @@ export async function reconstructPublic<P extends Point>(
   for (const { index, value } of shares) {
     const lambda = computeLambda(ctx, index, indexes);
     const curr = await unpackValid(value);
-    acc = await operate(acc, await exp(lambda, curr));
+    acc = await operate(acc, await exp(curr, lambda));
   }
   return acc.toBytes();
 }

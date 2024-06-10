@@ -121,8 +121,8 @@ async function demoDKG(options) {
     party.localPublicShare = {
       value: (
         await ctx.exp(
+          ctx.generator,
           ctx.leBuff2Scalar(party.share.value),
-          ctx.generator
         )
       ).toBytes(),
       index: party.index,
@@ -151,8 +151,8 @@ async function demoDKG(options) {
   let targetPublic = ctx.neutral;
   for (party of parties) {
     const curr = await ctx.exp(
+      ctx.generator,
       ctx.leBuff2Scalar(party.originalSecret),
-      ctx.generator
     );
     targetPublic = await ctx.operate(curr, targetPublic);
   }

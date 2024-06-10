@@ -109,7 +109,7 @@ export async function reconstructDecryptor<P extends Point>(
   for (const share of shares) {
     const { value, index } = share;
     const lambda = computeLambda(ctx, index, qualifiedIndexes);
-    const curr = await exp(lambda, await unpackValid(value));
+    const curr = await exp(await unpackValid(value), lambda);
     acc = await operate(acc, curr);
   }
   return acc.toBytes();

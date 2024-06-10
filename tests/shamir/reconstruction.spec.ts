@@ -27,7 +27,7 @@ describe(`Reconstruction from shares over ${system}`, () => {
 
   beforeAll(async () => {
     secret = await ctx.randomSecret();
-    pub = await ctx.exp(ctx.leBuff2Scalar(secret), ctx.generator);
+    pub = await ctx.exp(ctx.generator, ctx.leBuff2Scalar(secret));
     const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
     secretShares = await sharing.getSecretShares();
     publicShares = await sharing.getPublicShares();

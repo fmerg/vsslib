@@ -41,7 +41,7 @@ export class PrivateKey<P extends Point> {
 
   getPublic = async (): Promise<P> => {
     const { exp, generator: g } = this.ctx;
-    return exp(this.asScalar(), g);
+    return exp(g, this.asScalar());
   }
 
   getPublicBytes = async (): Promise<Uint8Array> => {
@@ -160,7 +160,7 @@ export class PrivateKey<P extends Point> {
     proof: NizkProof
   }> => {
     const beta = await this.ctx.unpackValid(ciphertext.beta);
-    const d = await this.ctx.exp(this.asScalar(), beta);
+    const d = await this.ctx.exp(beta, this.asScalar());
     const decryptor = d.toBytes();
     const proof = await this.proveDecryptor(
       ciphertext,

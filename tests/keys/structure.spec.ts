@@ -13,7 +13,7 @@ describe('Public key extraction', () => {
   it.each(systems)('over %s', async (system) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
     const pubPoint = await publicKey.asPoint();
-    const targetPoint = await ctx.exp(privateKey.asScalar(), ctx.generator);
+    const targetPoint = await ctx.exp(ctx.generator, privateKey.asScalar());
     const targetPublic = new PublicKey(ctx, targetPoint.toBytes());
     expect(await pubPoint.equals(targetPoint)).toBe(true);
     expect(await publicKey.equals(targetPublic)).toBe(true);

@@ -18,7 +18,7 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
     SchnorrSignature
   > => {
     const { generator: g, exp } = this.ctx;
-    const pub = await exp(secret, g);
+    const pub = await exp(g, secret);
     const { commitment, response } = await nizk(this.ctx, this.algorithm).proveLinear(
       [secret],
       {

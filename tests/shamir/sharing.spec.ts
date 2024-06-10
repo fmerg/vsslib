@@ -64,7 +64,7 @@ describe(`Sharing without predefined points over ${system}`, () => {
       const { value } = selectSecretShare(index, secretShares);
       const { value: targetBytes } = selectPublicShare(index, publicShares);
       const target = await ctx.unpackValid(targetBytes);
-      expect(await target.equals(await exp(ctx.leBuff2Scalar(value), generator))).toBe(true);
+      expect(await target.equals(await exp(generator, ctx.leBuff2Scalar(value)))).toBe(true);
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(secret));
@@ -95,7 +95,7 @@ describe(`Sharing with predefined points over ${system}`, () => {
         const { value } = selectSecretShare(index, secretShares);
         expect(ctx.leBuff2Scalar(value)).toEqual(predefined[index - 1]);
       }
-      const { exp, generator } = ctx;
+      const { generator } = ctx;
       for (let index = 1; index < nrShares; index++) {
         const { value: secret } = selectSecretShare(index, secretShares);
         const { value } = selectPublicShare(index, publicShares);

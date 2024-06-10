@@ -82,8 +82,8 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
       party.localPublicShare = {
         value: (
           await ctx.exp(
+            ctx.generator,
             ctx.leBuff2Scalar(party.share.value),
-            ctx.generator
           )
         ).toBytes(),
         index: party.index,
@@ -109,8 +109,8 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
     let targetPublic = ctx.neutral;
     for (const party of parties) {
       const curr = await ctx.exp(
+        ctx.generator,
         ctx.leBuff2Scalar(party.originalSecret),
-        ctx.generator
       );
       targetPublic = await ctx.operate(curr, targetPublic);
     }
@@ -144,8 +144,8 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
       party.localPublicShare = {
         value: (
           await ctx.exp(
+            ctx.generator,
             ctx.leBuff2Scalar(party.share.value),
-            ctx.generator
           )
         ).toBytes(),
         index: party.index,
@@ -171,8 +171,8 @@ describe(`Distributed Key Generation (DKG) over ${system}`, () => {
     let targetPublic = ctx.neutral;
     for (const party of parties) {
       const curr = await ctx.exp(
+        ctx.generator,
         ctx.leBuff2Scalar(party.originalSecret),
-        ctx.generator
       );
       targetPublic = await ctx.operate(curr, targetPublic);
     }
