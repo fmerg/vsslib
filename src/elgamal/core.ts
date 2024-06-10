@@ -6,6 +6,21 @@ import { AesError, ElgamalError } from '../errors';
 
 import { hash, hmac, aes } from '../crypto';
 
+/** First component of a HYBRID-Elgamal ciphertext */
+export type HybridAlpha = {
+  ciphered: Uint8Array,
+  iv: Uint8Array,
+  tag?: Uint8Array,
+};
+
+/** First component of a DHIES-Elgamal ciphertext **/
+export type DhiesAlpha = {
+  ciphered: Uint8Array,
+  iv: Uint8Array,
+  mac: Uint8Array,
+  tag?: Uint8Array,
+}
+
 
 /** Generic ElGamal functionality; abstracts away encapsulation details */
 abstract class BaseCipher<P extends Point, A> {
@@ -135,14 +150,6 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
   }
 }
 
-
-/** First component of a HYBRID-Elgamal ciphertext */
-export type HybridAlpha = {
-  ciphered: Uint8Array,
-  iv: Uint8Array,
-  tag?: Uint8Array,
-};
-
 /** HYBRID-Elgamal encryption (DH-based Key Encapsulation Mechanism) */
 export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
   mode: AesMode;
@@ -183,15 +190,6 @@ export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
       else throw err;
     }
   }
-}
-
-
-/** First component of a DHIES-Elgamal ciphertext **/
-export type DhiesAlpha = {
-  ciphered: Uint8Array,
-  iv: Uint8Array,
-  mac: Uint8Array,
-  tag?: Uint8Array,
 }
 
 /** DHIES-Elgamal encryption (DH-based Integrated Encryption Scheme) */
