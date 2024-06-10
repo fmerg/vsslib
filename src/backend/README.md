@@ -36,13 +36,6 @@ const b = await ctx.randomSecret();
 ```
 
 
-### Secret generation
-
-```js
-const { secret, publicPoint, publicBytes } = await ctx.generateSecret();
-```
-
-
 ### Group operations
 
 ```js

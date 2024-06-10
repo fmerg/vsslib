@@ -6,6 +6,14 @@ import { SecretShare, PublicShare } from '../src/shamir';
 import { PrivateKeyShare, PublicKeyShare } from '../src/keys';
 import { randomIndex } from './utils';
 
+export async function randomDlogPair<P extends Point>(ctx: Group<P>): Promise<{
+  x: bigint, y: P, publicBytes: Uint8Array
+}> {
+  const { randomScalar, exp, generator: g } = ctx;
+  const x = await randomScalar();
+  const y = await exp(g, x);
+  return { x, y, publicBytes: y.toBytes() };
+}
 
 export const mockMessage = async (ctx: Group<Point>, scheme: ElgamalScheme) =>
   scheme == ElgamalSchemes.PLAIN ? (await ctx.randomPoint()).toBytes() :

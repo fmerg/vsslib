@@ -12,10 +12,6 @@ import { backend } from 'vsslib';
 const ctx = initGroup('ed25519');
 ```
 
-```js
-const { secret, publicBytes } = await ctx.generateSecret();
-```
-
 ## Encryption schemes
 
 

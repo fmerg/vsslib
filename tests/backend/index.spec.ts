@@ -221,22 +221,3 @@ describe('scalar validation', () => {
     );
   })
 });
-
-
-describe('Secret generation - no given secret', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const { secret, publicPoint } = await ctx.generateSecret();
-    expect(await publicPoint.equals(await ctx.exp(ctx.generator, secret))).toBe(true);
-  })
-});
-
-describe('Secret generation - given secret', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const scalar = await ctx.randomScalar();
-    const { secret, publicPoint } = await ctx.generateSecret(scalar);
-    expect(secret).toEqual(scalar);
-    expect(await publicPoint.equals(await ctx.exp(ctx.generator, scalar))).toBe(true);
-  })
-});
