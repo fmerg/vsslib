@@ -29,15 +29,10 @@ export abstract class Group<P extends Point> {
   abstract randomPoint: () => Promise<P>;
   abstract validateScalar: (scalar: bigint) => Promise<boolean>;
   abstract validatePoint: (point: P) => Promise<boolean>;
-  abstract exp: (scalar: bigint, point: P) => Promise<P>;
+  abstract exp: (point: P, scalar: bigint) => Promise<P>;
   abstract operate: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;
   abstract unpack: (bytes: Uint8Array) => P;
   abstract unpackValid: (bytes: Uint8Array) => Promise<P>;
-  abstract generateSecret: (secret?: bigint) => Promise<{
-    secret: bigint,
-    publicPoint: Point,
-    publicBytes: Uint8Array
-  }>;
 }
 

@@ -4,22 +4,15 @@ import { SecretShare, ShamirSharing } from '../../src/shamir';
 import { distributeSecret, verifyFeldmanCommitments } from '../../src/shamir';
 import { resolveTestConfig } from '../environ';
 
-let { system, nrShares, threshold } = resolveTestConfig();
+let { systems, nrShares, threshold } = resolveTestConfig();
 
 
-describe(`Secret share verification over ${system}`, () => {
-  const ctx = initGroup(system);
-
-  let sharing: ShamirSharing<Point>;
-  let secretShares: SecretShare[];
-
-  beforeAll(async () => {
+describe('Feldman VSS scheme', () => {
+  it.each(systems)('success over %s', async (system) => {
+    const ctx = initGroup(system);
     const secret = await ctx.randomSecret();
-    sharing = await distributeSecret(ctx, nrShares, threshold, secret);
-    secretShares = await sharing.getSecretShares();
-  })
-
-  test('success', async () => {
+    const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
+    const secretShares = await sharing.getSecretShares();
     const { commitments } = await sharing.createFeldmanPackets();
     secretShares.forEach(async (share: SecretShare) => {
       const { value: secret, index } = share;
@@ -32,7 +25,11 @@ describe(`Secret share verification over ${system}`, () => {
     });
   });
 
-  test('failure', async () => {
+  it.each(systems)('failure over %s', async (system) => {
+    const ctx = initGroup(system);
+    const secret = await ctx.randomSecret();
+    const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
+    const secretShares = await sharing.getSecretShares();
     const { commitments } = await sharing.createFeldmanPackets();
     const forgedCommitmnets = [
       ...commitments.slice(0, commitments.length - 1),

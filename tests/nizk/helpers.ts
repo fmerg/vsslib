@@ -23,7 +23,7 @@ export async function createGenericLinear<P extends Point>(
     const xj = await randomScalar();
     for (let i = 0; i < m; i++) {
       const uij = await randomPoint();
-      vs[i] = await operate(vs[i], await exp(xj, uij));
+      vs[i] = await operate(vs[i], await exp(uij, xj));
       us[i][j] = uij;
     }
     witness[j] = xj;
@@ -43,7 +43,7 @@ export async function createAndDlogPairs<P extends Point>(
   for (let i = 0; i < nrPairs; i++) {
     const x = await randomScalar();
     const u = await randomPoint();
-    const v = await exp(x, u);
+    const v = await exp(u, x);
     witness[i] = x;
     pairs[i] = { u, v };
   }
@@ -61,7 +61,7 @@ export async function createEqDlogPairs<P extends Point>(
   const pairs = [];
   for (let i = 0; i < nrPairs; i++) {
     const u = await randomPoint();
-    const v = await exp(x, u);
+    const v = await exp(u, x);
     pairs.push({ u, v });
   }
   return [x, pairs];
@@ -76,7 +76,7 @@ export async function createDlogPair<P extends Point>(
   const { randomScalar, randomPoint, exp } = ctx;
   x = x || await randomScalar();
   const u = await randomPoint();
-  const v = await exp(x, u);
+  const v = await exp(u, x);
   return [x, { u, v }];
 }
 
@@ -89,8 +89,8 @@ export async function createDDHTuple<P extends Point>(
   const { randomScalar, randomPoint, exp, generator: g } = ctx;
   z = z || await randomScalar();
   const u = await randomPoint();
-  const v = await exp(z, g);
-  const w = await exp(z, u);
+  const v = await exp(g, z);
+  const w = await exp(u, z);
   return [z, { u, v, w }];
 }
 
@@ -105,6 +105,6 @@ export async function createRepresentation<P extends Point>(
   const { randomScalar, exp, operate, generator: g } = ctx;
   s = s || await randomScalar();
   t = t || await randomScalar();
-  const u = await operate(await exp(s, g), await exp(t, h))
+  const u = await operate(await exp(g, s), await exp(h, t))
   return [{ s, t }, { h, u }];
 }

@@ -23,7 +23,7 @@ Groups:
   ed25519, ed448, jubjub
 
 ElGamal schemes:
-  ies, kem, plain
+  ies, hybrid, plain
 
 AES modes:
   aes-256-cbc, aes-256-cfb, aes-256-ofb, aes-256-ctr, aes-256-gcm

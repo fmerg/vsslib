@@ -11,8 +11,8 @@ import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../arith';
 import { NizkProof } from '../nizk';
 import { Signature } from '../signer';
-import { Algorithms, AesModes, ElgamalSchemes, SignatureSchemes } from '../enums';
-import { Algorithm, AesMode, ElgamalScheme, SignatureScheme } from '../types';
+import { Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from '../enums';
+import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from '../types';
 import { toCanonical, fromCanonical, ctEqualBuffer } from '../common';
 import { distributeSecret, ShamirSharing } from '../shamir';
 
@@ -41,7 +41,7 @@ export class PrivateKey<P extends Point> {
 
   getPublic = async (): Promise<P> => {
     const { exp, generator: g } = this.ctx;
-    return exp(this.asScalar(), g);
+    return exp(g, this.asScalar());
   }
 
   getPublicBytes = async (): Promise<Uint8Array> => {
@@ -73,7 +73,7 @@ export class PrivateKey<P extends Point> {
     return distributeSecret(this.ctx, nrShares, threshold, this.bytes);
   }
 
-  sign = async (
+  signMessage = async (
     message: Uint8Array,
     opts: {
       scheme: SignatureScheme,
@@ -92,12 +92,12 @@ export class PrivateKey<P extends Point> {
     opts: {
       scheme: ElgamalScheme,
       algorithm?: Algorithm
-      mode?: AesMode,
+      mode?: BlockMode,
     }
   ): Promise<Uint8Array> => {
     let { scheme, mode, algorithm } = opts;
     algorithm = algorithm || Algorithms.DEFAULT;
-    mode = mode || AesModes.DEFAULT;
+    mode = mode || BlockModes.DEFAULT;
     return elgamal(this.ctx, scheme, algorithm, mode).decrypt(
       ciphertext,
       this.asScalar()
@@ -160,7 +160,7 @@ export class PrivateKey<P extends Point> {
     proof: NizkProof
   }> => {
     const beta = await this.ctx.unpackValid(ciphertext.beta);
-    const d = await this.ctx.exp(this.asScalar(), beta);
+    const d = await this.ctx.exp(beta, this.asScalar());
     const decryptor = d.toBytes();
     const proof = await this.proveDecryptor(
       ciphertext,
@@ -174,10 +174,10 @@ export class PrivateKey<P extends Point> {
     message: Uint8Array,
     receiverPublic: PublicKey<Q>,
     opts: {
-      encScheme: ElgamalSchemes.IES | ElgamalSchemes.KEM,
+      encScheme: ElgamalSchemes.DHIES | ElgamalSchemes.HYBRID,
       sigScheme: SignatureScheme,
       algorithm?: Algorithm,
-      mode?: AesMode,
+      mode?: BlockMode,
       nonce?: Uint8Array,
     },
   ): Promise<{
@@ -186,7 +186,7 @@ export class PrivateKey<P extends Point> {
   }> {
     let { encScheme, sigScheme, algorithm, mode, nonce } = opts;
     algorithm = algorithm || Algorithms.DEFAULT;
-    mode = mode || AesModes.DEFAULT;
+    mode = mode || BlockModes.DEFAULT;
     const _signer = signer(this.ctx, sigScheme, algorithm);
     const _cipher = elgamal(this.ctx, encScheme, algorithm, mode);
     const innerSignature = await _signer.signBytes(this.asScalar(), message, nonce);
@@ -205,16 +205,16 @@ export class PrivateKey<P extends Point> {
     signature: Signature,
     senderPublic: PublicKey<Q>,
     opts: {
-      encScheme: ElgamalSchemes.IES | ElgamalSchemes.KEM,
+      encScheme: ElgamalSchemes.DHIES | ElgamalSchemes.HYBRID,
       sigScheme: SignatureScheme,
       algorithm?: Algorithm,
-      mode?: AesMode,
+      mode?: BlockMode,
       nonce?: Uint8Array,
     },
   ): Promise<{ message: Uint8Array, innerSignature: Signature }> {
     let { encScheme, sigScheme, algorithm, mode, nonce } = opts;
     algorithm = algorithm || Algorithms.DEFAULT;
-    mode = mode || AesModes.DEFAULT;
+    mode = mode || BlockModes.DEFAULT;
     const _signer = signer(this.ctx, sigScheme, algorithm);
     const _cipher = elgamal(this.ctx, encScheme, algorithm, mode);
     const receiver = await this.getPublicBytes();
@@ -306,7 +306,7 @@ export class PublicKey<P extends Point> {
     opts: {
       scheme: ElgamalScheme,
       algorithm?: Algorithm
-      mode?: AesMode,
+      mode?: BlockMode,
     }
   ): Promise<{
     ciphertext: Ciphertext,
@@ -315,7 +315,7 @@ export class PublicKey<P extends Point> {
   }> => {
     let { scheme, mode, algorithm } = opts;
     algorithm = algorithm || Algorithms.DEFAULT;
-    mode = mode || AesModes.DEFAULT;
+    mode = mode || BlockModes.DEFAULT;
     return elgamal(this.ctx, scheme, algorithm, mode).encrypt(
       message, this.bytes
     );

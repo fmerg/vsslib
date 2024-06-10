@@ -3,8 +3,9 @@ import { Point } from '../../src/backend/abstract';
 import { distributeSecret } from '../../src/shamir';
 import { selectSecretShare, selectPublicShare } from '../helpers';
 import { resolveTestConfig } from '../environ';
+import { cartesian } from '../utils';
 
-let { system } = resolveTestConfig();
+let { systems } = resolveTestConfig();
 
 const thresholdParams = [
   [1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3], [4, 1], [4, 2], [4, 3], [4, 4],
@@ -12,31 +13,22 @@ const thresholdParams = [
 ];
 
 
-describe(`Sharing parameter errors over ${system}`, () => {
-  const ctx = initGroup(system);
-  test('Threshold exceeds number of shares', async () => {
+describe('Sharing parameter errors', () => {
+  it.each(systems)('over %s', async (system) => {
+    const ctx = initGroup(system);
     const secret = await ctx.randomSecret();
     await expect(distributeSecret(ctx, 1, 2, secret)).rejects.toThrow(
       'Threshold parameter exceeds number of shares'
     );
-  });
-  test('Threshold is < 1', async () => {
-    const secret = await ctx.randomSecret();
     await expect(distributeSecret(ctx, 1, 0, secret)).rejects.toThrow(
       'Threshold parameter must be at least 1'
     );
-  });
-  test('Number of shares violates group order', async () => {
-    const secret = await ctx.randomSecret();
     await expect(distributeSecret(ctx, ctx.order, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
     ])).rejects.toThrow(
       'Number of shares violates the group order'
     );
-  });
-  test('Number of predefined points violates threshold', async () => {
-    const secret = await ctx.randomSecret();
     await expect(distributeSecret(ctx, 3, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],
@@ -47,8 +39,10 @@ describe(`Sharing parameter errors over ${system}`, () => {
 })
 
 
-describe(`Sharing without predefined points over ${system}`, () => {
-  it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
+describe('Sharing without predefined points', () => {
+  it.each(
+    cartesian([systems, thresholdParams])
+  )('over %s for threshold: %s', async (system, [n, t]) => {
     const ctx = initGroup(system);
     const secret = await ctx.randomSecret();
     const sharing = await distributeSecret(ctx, n, t, secret);
@@ -64,7 +58,7 @@ describe(`Sharing without predefined points over ${system}`, () => {
       const { value } = selectSecretShare(index, secretShares);
       const { value: targetBytes } = selectPublicShare(index, publicShares);
       const target = await ctx.unpackValid(targetBytes);
-      expect(await target.equals(await exp(ctx.leBuff2Scalar(value), generator))).toBe(true);
+      expect(await target.equals(await exp(generator, ctx.leBuff2Scalar(value)))).toBe(true);
     }
     expect(polynomial.degree).toEqual(t - 1);
     expect(polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(secret));
@@ -74,8 +68,10 @@ describe(`Sharing without predefined points over ${system}`, () => {
 });
 
 
-describe(`Sharing with predefined points over ${system}`, () => {
-  it.each(thresholdParams)('(n, t) = (%s, %s)', async (n, t) => {
+describe('Sharing with predefined points', () => {
+  it.each(
+    cartesian([systems, thresholdParams])
+  )('over %s for threshold: %s', async (system, [n, t]) => {
     const ctx = initGroup(system);
     const secret = await ctx.randomSecret();
     for (let nrPredefined = 1; nrPredefined < t; nrPredefined++) {
@@ -95,7 +91,7 @@ describe(`Sharing with predefined points over ${system}`, () => {
         const { value } = selectSecretShare(index, secretShares);
         expect(ctx.leBuff2Scalar(value)).toEqual(predefined[index - 1]);
       }
-      const { exp, generator } = ctx;
+      const { generator } = ctx;
       for (let index = 1; index < nrShares; index++) {
         const { value: secret } = selectSecretShare(index, secretShares);
         const { value } = selectPublicShare(index, publicShares);

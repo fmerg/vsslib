@@ -11,6 +11,7 @@ export class FieldPolynomial<P extends Point> extends BasePolynomial {
   }
 }
 
+
 export async function randomPolynomial<P extends Point>(ctx: Group<P>, degree: number) {
   if (degree < 0) throw new PolynomialEerror(
     `Polynomial degree must be positive: ${degree}`

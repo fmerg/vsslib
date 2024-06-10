@@ -1,15 +1,15 @@
 // TODO: browser
 const { createCipheriv, createDecipheriv } = require('node:crypto');
 
-import { AesMode } from '../types';
-import { AesModes } from '../enums';
+import { BlockMode } from '../types';
+import { BlockModes } from '../enums';
 import { randomBytes } from './random';
 import { AesError } from '../errors';
 
 class AesCipher {
-  mode: AesMode;
+  mode: BlockMode;
 
-  constructor(mode: AesMode) {
+  constructor(mode: BlockMode) {
     this.mode = mode;
   }
 
@@ -20,7 +20,7 @@ class AesCipher {
   } => {
     if (key.length !== 32)
       throw new AesError(`Invalid key length: ${key.length}`);
-    const ivLength = (this.mode == AesModes.AES_256_GCM) ? 12 : 16;
+    const ivLength = (this.mode == BlockModes.AES_256_GCM) ? 12 : 16;
     iv = !iv ? randomBytes(ivLength) : iv;
     if (iv.length !== ivLength)
       throw new AesError(`Invalid IV length: ${iv.length} != ${ivLength}`);
@@ -29,7 +29,7 @@ class AesCipher {
       Buffer.from(cipher.update(message, 'binary', 'binary') + cipher.final('binary'))
     );
     const tag = Uint8Array.from(
-      this.mode == AesModes.AES_256_GCM ? cipher.getAuthTag() : []
+      this.mode == BlockModes.AES_256_GCM ? cipher.getAuthTag() : []
     );
     return { ciphered, iv, tag };
   }
@@ -39,11 +39,11 @@ class AesCipher {
   ): Uint8Array => {
     if (key.length !== 32)
       throw new AesError(`Invalid key length: ${key.length}`);
-    const expectedIvLength = (this.mode === AesModes.AES_256_GCM) ? 12 : 16;
+    const expectedIvLength = (this.mode === BlockModes.AES_256_GCM) ? 12 : 16;
     if (iv.length !== expectedIvLength)
       throw new AesError(`Invalid IV length: ${iv.length} != ${expectedIvLength}`);
     const decipher = createDecipheriv(this.mode, key, iv);
-    if (this.mode == AesModes.AES_256_GCM) {
+    if (this.mode == BlockModes.AES_256_GCM) {
       if (tag === undefined || tag.length == 0)
         throw new AesError('Missing authentication tag');
       decipher.setAuthTag(tag);
@@ -59,6 +59,6 @@ class AesCipher {
   }
 }
 
-export default function(mode: AesMode) {
+export default function(mode: BlockMode) {
   return new AesCipher(mode);
 }

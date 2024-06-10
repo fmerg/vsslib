@@ -30,11 +30,11 @@ const key = randomBytes(32);
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphered, iv } = aes(AesModes.AES_256_CBC).encrypt(key, message);
+const { ciphered, iv } = aes(BlockModes.AES_256_CBC).encrypt(key, message);
 ```
 
 ```js
-const deciphered = aes(AesModes.AES_256_CBC).decrypt(key, ciphered, iv);
+const deciphered = aes(BlockModes.AES_256_CBC).decrypt(key, ciphered, iv);
 ```
 
 ### AES-256-GCM
@@ -42,9 +42,9 @@ const deciphered = aes(AesModes.AES_256_CBC).decrypt(key, ciphered, iv);
 ```js
 const message = Uint8Array.from(Buffer.from('destroy earth'));
 
-const { ciphered, iv, tag } = aes(AesModes.AES_256_GCM).encrypt(key, message);
+const { ciphered, iv, tag } = aes(BlockModes.AES_256_GCM).encrypt(key, message);
 ```
 
 ```js
-const deciphered = aes(AesModes.AES_256_GCM).decrypt(key, ciphered, iv, tag);
+const deciphered = aes(BlockModes.AES_256_GCM).decrypt(key, ciphered, iv, tag);
 ```

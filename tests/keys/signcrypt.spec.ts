@@ -15,7 +15,7 @@ let {
 
 algorithms  = [...algorithms, undefined];
 
-// Signcryption is only defined for KEM and IES ElGamal encryption schemes
+// Signcryption is only defined for HYBRID and DHIES ElGamal encryption schemes
 encSchemes = removeItem(encSchemes, ElgamalSchemes.PLAIN);
 
 
@@ -70,7 +70,7 @@ describe('Signcryption - failure receiver substitution', () => {
     );
 
     // Bob substitutes receiver and outer signature
-    const bobSignature = await bobPrivate.sign(
+    const bobSignature = await bobPrivate.signMessage(
       toCanonical({ ciphertext, receiver: carolPublic.bytes }), {
         scheme: sigScheme,
         algorithm,
@@ -114,7 +114,7 @@ describe('Signcryption - failure; message and inner signature substitution', () 
 
     // Bob substitutes message and inner signature
     const bobMessage = Uint8Array.from(Buffer.from('don\'t destroy earth'));
-    const bobInnerSignature = await bobPrivate.sign(bobMessage, {
+    const bobInnerSignature = await bobPrivate.signMessage(bobMessage, {
       scheme: sigScheme,
       algorithm
     });

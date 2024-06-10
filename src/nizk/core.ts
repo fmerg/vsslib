@@ -94,7 +94,7 @@ export class NizkProtocol<P extends Point>{
       for (let j = 0; j < n; j++) {
         ci = await operate(
           ci,
-          await exp(rs[j], us[i][j])
+          await exp(us[i][j], rs[j])
         );
       }
       commitment[i] = ci;
@@ -122,13 +122,13 @@ export class NizkProtocol<P extends Point>{
         throw new Error('Incompatible lengths');
       const rhs = await operate(
         commitment[i],
-        await exp(challenge, v)
+        await exp(v, challenge)
       );
       let lhs = neutral;
       for (const [j, s] of response.entries()) {
         lhs = await operate(
           lhs,
-          await exp(s, us[i][j])
+          await exp(us[i][j], s)
         );
       }
       flag &&= await lhs.equals(rhs);

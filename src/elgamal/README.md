@@ -3,7 +3,7 @@
 ```js
 import elgamal from 'vsslib/elgamal';
 
-import { ElgamalSchemes, Algorithms, AesModes } from 'vsslib/enums';
+import { ElgamalSchemes, Algorithms, BlockModes } from 'vsslib/enums';
 ```
 
 ```js
@@ -12,17 +12,13 @@ import { backend } from 'vsslib';
 const ctx = initGroup('ed25519');
 ```
 
-```js
-const { secret, publicBytes } = await ctx.generateSecret();
-```
-
 ## Encryption schemes
 
 
-### IES-ElGamal Encryption (Integrated Encryption Scheme)
+### DHIES-ElGamal Encryption (Integrated Encryption Scheme)
 
 ```js
-const cipher = elgamal(ctx, ElgamalSchemes.IES, AesModes.AES_256_CBC, Algorithms.SHA256);
+const cipher = elgamal(ctx, ElgamalSchemes.DHIES, BlockModes.AES_256_CBC, Algorithms.SHA256);
 ```
 
 ```js
@@ -31,10 +27,10 @@ const message = Buffer.from('destroy earth');
 const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, publicBytes);
 ```
 
-### KEM-ElGamal Encryption (Key Encapsulation Mechanism)
+### HYBRID-ElGamal Encryption (Key Encapsulation Mechanism)
 
 ```js
-const cipher = elgamal(ctx, ElgamalSchemes.KEM, AesModes.AES_256_CBC);
+const cipher = elgamal(ctx, ElgamalSchemes.HYBRID, BlockModes.AES_256_CBC);
 ```
 
 ```js

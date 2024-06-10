@@ -1,9 +1,9 @@
 # `vsslib.backend`
 
 ```js
-import { initGroup }  from 'vsslib/backend';
+import { initGroup }  from "vsslib/backend";
 
-const ctx = initGroup('ed25519');
+const ctx = initGroup("ed25519");
 ```
 
 ```js
@@ -36,13 +36,6 @@ const b = await ctx.randomSecret();
 ```
 
 
-### Secret generation
-
-```js
-const { secret, publicPoint, publicBytes } = await ctx.generateSecret();
-```
-
-
 ### Group operations
 
 ```js
@@ -54,7 +47,7 @@ const v = await ctx.invert(p);
 ```
 
 ```js
-const w = await ctx.exp(s, p);
+const w = await ctx.exp(p, s);
 ```
 
 

@@ -5,11 +5,11 @@ import { cartesian } from '../utils';
 import { mockMessage } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
-const { systems, elgamalSchemes: schemes, aesModes, algorithms } = resolveTestConfig();
+const { systems, elgamalSchemes: schemes, modes, algorithms } = resolveTestConfig();
 
 
 describe('encrypt and decrypt', () => {
-  it.each(cartesian([systems, schemes, aesModes, algorithms]))('over %s/%s/%s/%s', async (
+  it.each(cartesian([systems, schemes, modes, algorithms]))('over %s/%s/%s/%s', async (
     system, scheme, mode, algorithm
   ) => {
     const { privateKey, publicKey, ctx } = await generateKey(system);
