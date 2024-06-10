@@ -3,7 +3,7 @@
 ```js
 import elgamal from 'vsslib/elgamal';
 
-import { ElgamalSchemes, Algorithms, AesModes } from 'vsslib/enums';
+import { ElgamalSchemes, Algorithms, BlockModes } from 'vsslib/enums';
 ```
 
 ```js
@@ -22,7 +22,7 @@ const { secret, publicBytes } = await ctx.generateSecret();
 ### DHIES-ElGamal Encryption (Integrated Encryption Scheme)
 
 ```js
-const cipher = elgamal(ctx, ElgamalSchemes.DHIES, AesModes.AES_256_CBC, Algorithms.SHA256);
+const cipher = elgamal(ctx, ElgamalSchemes.DHIES, BlockModes.AES_256_CBC, Algorithms.SHA256);
 ```
 
 ```js
@@ -34,7 +34,7 @@ const { ciphertext, randomness, decryptor } = await cipher.encrypt(message, publ
 ### HYBRID-ElGamal Encryption (Key Encapsulation Mechanism)
 
 ```js
-const cipher = elgamal(ctx, ElgamalSchemes.HYBRID, AesModes.AES_256_CBC);
+const cipher = elgamal(ctx, ElgamalSchemes.HYBRID, BlockModes.AES_256_CBC);
 ```
 
 ```js

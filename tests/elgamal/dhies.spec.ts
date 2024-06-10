@@ -1,4 +1,4 @@
-import { Algorithms, AesModes } from '../../src/enums';
+import { Algorithms, BlockModes } from '../../src/enums';
 import { randomBytes } from '../../src/crypto';
 import { leInt2Buff } from '../../src/arith';
 import { initGroup } from '../../src/backend';
@@ -8,11 +8,11 @@ import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 
-const { systems, aesModes, algorithms } = resolveTestConfig();
+const { systems, modes, algorithms } = resolveTestConfig();
 
 
 describe('Decryption - success', () => {
-  it.each(cartesian([systems, aesModes, algorithms]))('over %s/%s/%s', async (
+  it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
     system, mode, algorithm,
   ) => {
     const ctx = initGroup(system);
@@ -26,7 +26,7 @@ describe('Decryption - success', () => {
 
 
 describe('Decryption - failure if forged secret', () => {
-  it.each(cartesian([systems, aesModes, algorithms]))('over %s/%s/%s', async (
+  it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
     system, mode, algorithm,
   ) => {
     const ctx = initGroup(system);
@@ -42,15 +42,15 @@ describe('Decryption - failure if forged secret', () => {
 
 
 describe('Decryption - failure if forged iv', () => {
-  it.each(cartesian([systems, aesModes, algorithms]))('over %s/%s/%s', async (
+  it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
     system, mode, algorithm
   ) => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await dhiesElgamal(ctx, mode, algorithm).encrypt(message, y);
-    ciphertext.alpha.iv = await randomBytes(mode == AesModes.AES_256_GCM ? 12 : 16);
-    if (!mode || [AesModes.AES_256_CBC, AesModes.AES_256_GCM].includes(mode)) {
+    ciphertext.alpha.iv = await randomBytes(mode == BlockModes.AES_256_GCM ? 12 : 16);
+    if (!mode || [BlockModes.AES_256_CBC, BlockModes.AES_256_GCM].includes(mode)) {
       await expect(dhiesElgamal(ctx, mode, algorithm).decrypt(ciphertext, secret)).rejects.toThrow(
         'Could not decrypt: AES decryption failure'
       );
@@ -63,7 +63,7 @@ describe('Decryption - failure if forged iv', () => {
 
 
 describe('Decryption with decryptor - failure if forged decryptor', () => {
-  it.each(cartesian([systems, aesModes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -81,7 +81,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
 
 
 describe('Decryption with randomness - success', () => {
-  it.each(cartesian([systems, aesModes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -97,7 +97,7 @@ describe('Decryption with randomness - success', () => {
 
 
 describe('Decryption with decryptor - failure if forged randomness', () => {
-  it.each(cartesian([systems, aesModes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
     const ctx = initGroup(system);
     const { secret, publicPoint: y } = await ctx.generateSecret();
     const message = Uint8Array.from(Buffer.from('destroy earth'));

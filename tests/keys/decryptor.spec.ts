@@ -5,7 +5,7 @@ import { cartesian } from '../utils';
 import { mockMessage } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
-const { systems, elgamalSchemes: schemes, aesModes, algorithms } = resolveTestConfig();
+const { systems, elgamalSchemes: schemes, modes, algorithms } = resolveTestConfig();
 
 
 describe('generation', () => {

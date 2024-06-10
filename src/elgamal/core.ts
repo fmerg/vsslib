@@ -1,7 +1,7 @@
 import { Point, Group } from '../backend/abstract';
 import { leInt2Buff } from '../arith';
-import { Algorithms, AesModes } from '../enums';
-import { Algorithm, AesMode } from '../types';
+import { Algorithms, BlockModes } from '../enums';
+import { Algorithm, BlockMode } from '../types';
 import { AesError, ElgamalError } from '../errors';
 
 import { hash, hmac, aes } from '../crypto';
@@ -152,9 +152,9 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
 
 /** HYBRID-Elgamal encryption (DH-based Key Encapsulation Mechanism) */
 export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
-  mode: AesMode;
+  mode: BlockMode;
 
-  constructor(ctx: Group<P>, mode: AesMode) {
+  constructor(ctx: Group<P>, mode: BlockMode) {
     super(ctx);
     this.mode = mode;
   }
@@ -194,10 +194,10 @@ export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
 
 /** DHIES-Elgamal encryption (DH-based Integrated Encryption Scheme) */
 export class DhiesCipher<P extends Point> extends BaseCipher<P, DhiesAlpha> {
-  mode: AesMode;
+  mode: BlockMode;
   algorithm: Algorithm;
 
-  constructor(ctx: Group<P>, mode: AesMode, algorithm: Algorithms) {
+  constructor(ctx: Group<P>, mode: BlockMode, algorithm: Algorithms) {
     super(ctx);
     this.mode = mode;
     this.algorithm = algorithm;
@@ -256,10 +256,10 @@ export function plainElgamal<P extends Point>(ctx: Group<P>) {
   return new PlainCipher(ctx);
 }
 
-export function hybridElgamal<P extends Point>(ctx: Group<P>, mode: AesMode) {
+export function hybridElgamal<P extends Point>(ctx: Group<P>, mode: BlockMode) {
   return new HybridCipher(ctx, mode);
 }
 
-export function dhiesElgamal<P extends Point>(ctx: Group<P>, mode: AesMode, algorithm: Algorithm) {
+export function dhiesElgamal<P extends Point>(ctx: Group<P>, mode: BlockMode, algorithm: Algorithm) {
   return new DhiesCipher(ctx, mode, algorithm);
 }

@@ -1,5 +1,5 @@
 import { Point, Group } from '../backend/abstract';
-import { ElgamalScheme, AesMode, Algorithm } from '../types';
+import { ElgamalScheme, BlockMode, Algorithm } from '../types';
 import { ElgamalSchemes } from '../enums';
 
 import { DhiesAlpha, HybridAlpha, plainElgamal, dhiesElgamal, hybridElgamal } from './core';
@@ -19,9 +19,9 @@ export class ElgamalDriver<P extends Point>{
   ctx: Group<P>;
   scheme: ElgamalScheme;
   algorithm: Algorithm;
-  mode: AesMode;
+  mode: BlockMode;
 
-  constructor(ctx: Group<P>, scheme: ElgamalScheme, algorithm: Algorithm, mode: AesMode) {
+  constructor(ctx: Group<P>, scheme: ElgamalScheme, algorithm: Algorithm, mode: BlockMode) {
     this.ctx = ctx;
     this.scheme = scheme;
     this.algorithm = algorithm;

@@ -6,7 +6,7 @@ import { plainElgamal } from '../../src/elgamal/core';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 
-const { systems, aesModes } = resolveTestConfig();
+const { systems, modes } = resolveTestConfig();
 
 
 describe('Decryption - success', () => {

@@ -14,8 +14,8 @@ import {
   PartialDecryptor
 } from './keys';
 import { InvalidPartialDecryptor } from './errors';
-import { AesModes, Algorithms } from './enums';
-import { ElgamalScheme, AesMode, Algorithm } from './types';
+import { BlockModes, Algorithms } from './enums';
+import { ElgamalScheme, BlockMode, Algorithm } from './types';
 
 import elgamal from './elgamal';
 
@@ -122,7 +122,7 @@ export async function thresholdDecrypt<P extends Point>(
   shares: PartialDecryptor[],
   opts: {
     scheme: ElgamalScheme,
-    mode?: AesMode,
+    mode?: BlockMode,
     algorithm?: Algorithm,
     threshold?: number,
   },
@@ -131,7 +131,7 @@ export async function thresholdDecrypt<P extends Point>(
   // TODO: Include public schares option for validation?
   const decryptor = await reconstructDecryptor(ctx, shares, { threshold });
   algorithm = algorithm || Algorithms.DEFAULT;
-  mode = mode || AesModes.DEFAULT;
+  mode = mode || BlockModes.DEFAULT;
   return elgamal(ctx, scheme, algorithm, mode).decryptWithDecryptor(
     ciphertext,
     decryptor,

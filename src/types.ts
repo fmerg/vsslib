@@ -2,7 +2,7 @@ import {
   Modular,
   Elliptic,
   Algorithms,
-  AesModes,
+  BlockModes,
   ElgamalSchemes,
   SignatureSchemes,
   Encodings,
@@ -25,12 +25,12 @@ export type Algorithm =
   | Algorithms.SHA3_384
   | Algorithms.SHA3_512;
 
-export type AesMode =
-  | AesModes.AES_256_CBC
-  | AesModes.AES_256_CFB
-  | AesModes.AES_256_OFB
-  | AesModes.AES_256_CTR
-  | AesModes.AES_256_GCM;
+export type BlockMode =
+  | BlockModes.AES_256_CBC
+  | BlockModes.AES_256_CFB
+  | BlockModes.AES_256_OFB
+  | BlockModes.AES_256_CTR
+  | BlockModes.AES_256_GCM;
 
 export type ElgamalScheme =
   | ElgamalSchemes.PLAIN
