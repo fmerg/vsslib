@@ -2,7 +2,7 @@ import { Point } from '../../src/backend/abstract';
 import { ElgamalSchemes } from '../../src/enums';
 import {
   verifyPartialDecryptors,
-  reconstructDecryptor,
+  recoverDecryptor,
   thresholdDecrypt,
 } from '../../src/combiner';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
@@ -111,13 +111,13 @@ describe('Partial decryptors verification', () => {
 });
 
 
-describe('Decryptor reconstruction', () => {
+describe('Decryptor recovery', () => {
   it.each(cartesian([systems, schemes]))('Skip threshold check over %s/%s', async (system, scheme) => {
     const { ctx, ciphertext, decryptor: targetDecryptor, partialDecryptors } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
     partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-      const decryptor = await reconstructDecryptor(ctx, qualifiedShares);
+      const decryptor = await recoverDecryptor(ctx, qualifiedShares);
       expect(isEqualBuffer(decryptor, targetDecryptor)).toBe(
         qualifiedShares.length >= threshold
       );
@@ -128,12 +128,12 @@ describe('Decryptor reconstruction', () => {
       scheme, system, nrShares, threshold
     });
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedShares) => {
-      await expect(reconstructDecryptor(ctx, qualifiedShares, { threshold })).rejects.toThrow(
+      await expect(recoverDecryptor(ctx, qualifiedShares, { threshold })).rejects.toThrow(
         'Insufficient number of shares'
       );
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const decryptor = await reconstructDecryptor(ctx, qualifiedShares, { threshold });
+      const decryptor = await recoverDecryptor(ctx, qualifiedShares, { threshold });
       expect(isEqualBuffer(decryptor, targetDecryptor)).toBe(true);
     });
   });

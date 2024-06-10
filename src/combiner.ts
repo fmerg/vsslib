@@ -3,8 +3,8 @@ import { Ciphertext } from './elgamal';
 import {
   PublicShare,
   computeLambda,
-  reconstructSecret,
-  reconstructPublic,
+  recoverSecret,
+  recoverPublic,
 } from './shamir';
 import {
   PrivateKey,
@@ -20,14 +20,14 @@ import { ElgamalScheme, BlockMode, Algorithm } from './types';
 import elgamal from './elgamal';
 
 
-export async function reconstructKey<P extends Point>(
+export async function recoverKey<P extends Point>(
   ctx: Group<P>,
   shares: PrivateKeyShare<P>[],
   threshold?: number
 ): Promise<PrivateKey<P>> {
   if (threshold && shares.length < threshold)
     throw new Error('Insufficient number of shares');
-  return new PrivateKey(ctx, await reconstructSecret(ctx, shares.map(s => {
+  return new PrivateKey(ctx, await recoverSecret(ctx, shares.map(s => {
       return {
         value: s.bytes,
         index: s.index,
@@ -36,7 +36,7 @@ export async function reconstructKey<P extends Point>(
   ));
 }
 
-export async function reconstructPublicKey<P extends Point>(
+export async function recoverPublicKey<P extends Point>(
   ctx: Group<P>,
   shares: PublicKeyShare<P>[],
   threshold?: number
@@ -47,7 +47,7 @@ export async function reconstructPublicKey<P extends Point>(
   for (let i = 0; i < pubShares.length; i++) {
     pubShares[i] = shares[i].asPublicShare();
   }
-  const combined = await reconstructPublic(ctx, pubShares);
+  const combined = await recoverPublic(ctx, pubShares);
   return new PublicKey(ctx, combined);
 }
 
@@ -93,7 +93,7 @@ export async function verifyPartialDecryptors<P extends Point>(
   return { flag, indexes };
 }
 
-export async function reconstructDecryptor<P extends Point>(
+export async function recoverDecryptor<P extends Point>(
   ctx: Group<P>,
   shares: PartialDecryptor[],
   opts?: { threshold?: number, publicShares?: PublicKeyShare<P>[] }
@@ -129,7 +129,7 @@ export async function thresholdDecrypt<P extends Point>(
 ): Promise<Uint8Array> {
   let { scheme, mode, algorithm, threshold } = opts;
   // TODO: Include public schares option for validation?
-  const decryptor = await reconstructDecryptor(ctx, shares, { threshold });
+  const decryptor = await recoverDecryptor(ctx, shares, { threshold });
   algorithm = algorithm || Algorithms.DEFAULT;
   mode = mode || BlockModes.DEFAULT;
   return elgamal(ctx, scheme, algorithm, mode).decryptWithDecryptor(

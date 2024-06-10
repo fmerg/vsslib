@@ -1,9 +1,9 @@
 import { generateKey } from './keys';
 import {
-  reconstructKey,
-  reconstructPublicKey,
+  recoverKey,
+  recoverPublicKey,
   verifyPartialDecryptors,
-  reconstructDecryptor,
+  recoverDecryptor,
   thresholdDecrypt
 } from './combiner';
 
@@ -21,9 +21,9 @@ const signer = require('./signer');
 
 export {
   generateKey,
-  reconstructKey,
-  reconstructPublicKey,
-  reconstructDecryptor,
+  recoverKey,
+  recoverPublicKey,
+  recoverDecryptor,
   verifyPartialDecryptors,
   thresholdDecrypt,
   backend,

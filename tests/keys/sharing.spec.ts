@@ -1,6 +1,6 @@
 import { Point, Group } from '../../src/backend/abstract'
 import { PrivateKeyShare, PublicKeyShare } from '../../src/keys';
-import { reconstructKey, reconstructPublicKey } from '../../src/combiner';
+import { recoverKey, recoverPublicKey } from '../../src/combiner';
 import { SecretSharePacket } from '../../src/shamir';
 import { partialPermutations } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -92,61 +92,61 @@ describe('Pedersen verification scheme - failure', () => {
   })
 });
 
-describe('Private reconstruction - skip threshold check', () => {
+describe('Private recovery - skip threshold check', () => {
   it.each(systems)('over %s', async (system) => {
     const { ctx, privateKey, privateShares: shares } = await createKeySharingSetup({
       system, nrShares, threshold
     });
     partialPermutations(shares).forEach(async (qualifiedShares) => {
-      const reconstructed = await reconstructKey(ctx, qualifiedShares);
-      expect(await reconstructed.equals(privateKey)).toBe(
+      const recovered = await recoverKey(ctx, qualifiedShares);
+      expect(await recovered.equals(privateKey)).toBe(
         qualifiedShares.length >= threshold
       );
     });
   });
 });
-describe('Private reconstruction - with threshold check', () => {
+describe('Private recovery - with threshold check', () => {
   it.each(systems)('over %s', async (system) => {
     const { ctx, privateKey, privateShares: shares } = await createKeySharingSetup({
       system, nrShares, threshold
     });
     partialPermutations(shares, 0, threshold - 1).forEach(async (qualifiedShares) => {
-      await expect(reconstructKey(ctx, qualifiedShares, threshold)).rejects.toThrow(
+      await expect(recoverKey(ctx, qualifiedShares, threshold)).rejects.toThrow(
         'Insufficient number of shares'
       );
     });
     partialPermutations(shares, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const reconstructed = await reconstructKey(ctx, qualifiedShares, threshold);
-      expect(await reconstructed.equals(privateKey)).toBe(true);
+      const recovered = await recoverKey(ctx, qualifiedShares, threshold);
+      expect(await recovered.equals(privateKey)).toBe(true);
     });
   });
 });
-describe('Public reconstruction - skip threshold check', () => {
+describe('Public recovery - skip threshold check', () => {
   it.each(systems)('over %s', async (system) => {
     const { ctx, publicKey, publicShares: shares } = await createKeySharingSetup({
       system, nrShares, threshold
     });
     partialPermutations(shares).forEach(async (qualifiedShares) => {
-      const reconstructed = await reconstructPublicKey(ctx, qualifiedShares);
-      expect(await reconstructed.equals(publicKey)).toBe(
+      const recovered = await recoverPublicKey(ctx, qualifiedShares);
+      expect(await recovered.equals(publicKey)).toBe(
         qualifiedShares.length >= threshold
       );
     });
   });
 });
-describe('Public reconstruction - with threshold check', () => {
+describe('Public recovery - with threshold check', () => {
   it.each(systems)('over %s', async (system) => {
     const { ctx, publicKey, publicShares: shares } = await createKeySharingSetup({
       system, nrShares, threshold
     });
     partialPermutations(shares, 0, threshold - 1).forEach(async (qualifiedShares) => {
-      await expect(reconstructPublicKey(ctx, qualifiedShares, threshold)).rejects.toThrow(
+      await expect(recoverPublicKey(ctx, qualifiedShares, threshold)).rejects.toThrow(
         'Insufficient number of shares'
       );
     });
     partialPermutations(shares, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const reconstructed = await reconstructPublicKey(ctx, qualifiedShares, threshold);
-      expect(await reconstructed.equals(publicKey)).toBe(true);
+      const recovered = await recoverPublicKey(ctx, qualifiedShares, threshold);
+      expect(await recovered.equals(publicKey)).toBe(true);
     });
   });
 });

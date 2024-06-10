@@ -14,7 +14,7 @@ const {
   parsePedersenPacket,
   createPublicSharePacket,
   parsePublicSharePacket,
-  reconstructPublic,
+  recoverPublic,
 } = require('./dist/shamir');
 const {
   leInt2Buff,
@@ -144,7 +144,7 @@ async function demoDKG(options) {
 
   // Local computation of global public
   for (let party of parties) {
-    party.globalPublic = await reconstructPublic(ctx, party.publicShares);
+    party.globalPublic = await recoverPublic(ctx, party.publicShares);
   }
 
   // Test correctness

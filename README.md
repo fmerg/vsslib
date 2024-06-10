@@ -63,9 +63,9 @@ await verifyPedersenCommitments(
 #### Reconsctruction
 
 ```js
-import { reconstructPublic } from "vsslib";
+import { recoverPublic } from "vsslib";
 
-const globalPublic = await reconstructPublic(ctx, publicShares);
+const globalPublic = await recoverPublic(ctx, publicShares);
 ```
 
 ### Verifiable Key Distribution
@@ -106,12 +106,12 @@ const privateShare = await PrivateKeyShare.fromPedersenCommitments(
 );
 ```
 
-#### Public key reconstruction
+#### Public key recovery
 
 ```js
-import { reconstructPublicKey } from "vsslib";
+import { recoverPublicKey } from "vsslib";
 
-const globalPublicKey = await reconstructPublicKey(ctx, publicKeyShares, threshold);
+const globalPublicKey = await recoverPublicKey(ctx, publicKeyShares, threshold);
 ```
 
 ### Threshold decryption

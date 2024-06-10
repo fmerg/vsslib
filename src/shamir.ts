@@ -300,7 +300,7 @@ export function computeLambda<P extends Point>(
 }
 
 
-export function reconstructSecret<P extends Point>(
+export function recoverSecret<P extends Point>(
   ctx: Group<P>,
   shares: SecretShare[]
 ): Uint8Array {
@@ -317,7 +317,7 @@ export function reconstructSecret<P extends Point>(
 }
 
 
-export async function reconstructPublic<P extends Point>(
+export async function recoverPublic<P extends Point>(
   ctx: Group<P>,
   shares: PublicShare[]
 ): Promise<Uint8Array> {
