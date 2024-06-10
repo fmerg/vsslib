@@ -30,7 +30,6 @@ export const resolveTestConfig = () => {
   const signatureSchemes = process.env.SIGNATURE_SCHEME ? [process.env.SIGNATURE_SCHEME as SignatureScheme] : __signatureSchemes;
   const encodings = [...Object.values(Encodings)]
   const systems = process.env.SYSTEM ? [process.env.SYSTEM as System] : [...Object.values(Systems)];
-  const system = process.env.SYSTEM ? process.env.SYSTEM as System : Systems.ED25519;
   const nrShares = process.env.NR_SHARES ? parseInt(process.env.NR_SHARES) : __nrShares;
   const threshold = process.env.THRESHOLD ? parseInt(process.env.THRESHOLD) : __threshold;
   return {
@@ -40,7 +39,6 @@ export const resolveTestConfig = () => {
     signatureSchemes,
     encodings,
     systems,
-    system,
     nrShares,
     threshold
   }
