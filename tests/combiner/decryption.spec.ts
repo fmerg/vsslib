@@ -56,11 +56,11 @@ describe('Partial decryptors verification', () => {
     expect(flag).toBe(true);
     expect(indexes).toEqual([]);
   });
-  it.each(cartesian([systems, schemes]))('Failure - not raised on invalid - over %s/%s', async (
+  it.each(cartesian([systems, schemes]))('Failure - not error on invalid - over %s/%s', async (
     system, scheme
   ) => {
     const {
-      ctx, publicShares, ciphertext, partialDecryptors, invalidDecryptors, invalidIndexes
+      ctx, publicShares, ciphertext, partialDecryptors, invalidDecryptors, blame: targetBlame
     } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold, nrInvalidIndexes: 2
     });
@@ -68,13 +68,13 @@ describe('Partial decryptors verification', () => {
       ctx, ciphertext, publicShares, invalidDecryptors
     );
     expect(flag).toBe(false);
-    expect(indexes.sort()).toEqual(invalidIndexes.sort());
+    expect(indexes.sort()).toEqual(targetBlame.sort());
   });
-  it.each(cartesian([systems, schemes]))('Failure - raised on invalid - over %s/%s', async (
+  it.each(cartesian([systems, schemes]))('Failure - error on invalid - over %s/%s', async (
     system, scheme
   ) => {
     const {
-      ctx, publicShares, ciphertext, partialDecryptors, invalidDecryptors, invalidIndexes
+      ctx, publicShares, ciphertext, partialDecryptors, invalidDecryptors
     } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold, nrInvalidIndexes: 2
     });

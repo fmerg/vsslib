@@ -1,10 +1,13 @@
 import { Point, Group } from './backend/abstract';
 import { Ciphertext } from './elgamal';
 import {
+  SecretShare,
   PublicShare,
   computeLambda,
   recoverSecret,
   recoverPublic,
+  PublicSharePacket,
+  combinePublics,
 } from './shamir';
 import {
   PrivateKey,
@@ -22,33 +25,26 @@ import elgamal from './elgamal';
 
 export async function recoverKey<P extends Point>(
   ctx: Group<P>,
-  shares: PrivateKeyShare<P>[],
+  shares: SecretShare[],
   threshold?: number
 ): Promise<PrivateKey<P>> {
-  if (threshold && shares.length < threshold)
-    throw new Error('Insufficient number of shares');
-  return new PrivateKey(ctx, await recoverSecret(ctx, shares.map(s => {
-      return {
-        value: s.bytes,
-        index: s.index,
-      }
-    })
-  ));
+  const result = await recoverSecret(ctx, shares, threshold);
+  return new PrivateKey(ctx, result);
 }
 
 export async function recoverPublicKey<P extends Point>(
   ctx: Group<P>,
-  shares: PublicKeyShare<P>[],
-  threshold?: number
-): Promise<PublicKey<P>> {
-  if (threshold && shares.length < threshold)
-    throw new Error('Insufficient number of shares');
-  const pubShares = new Array<PublicShare>(shares.length);
-  for (let i = 0; i < pubShares.length; i++) {
-    pubShares[i] = shares[i].asPublicShare();
-  }
-  const combined = await recoverPublic(ctx, pubShares);
-  return new PublicKey(ctx, combined);
+  packets: PublicSharePacket[],
+  opts?: {
+    algorithm?: Algorithm,
+    nonce?: Uint8Array, // TODO: Individual nonces
+    threshold?: number,
+    errorOnInvalid?: boolean,
+  },
+): Promise<{ recovered: PublicKey<P>, blame: number[] }> {
+  const { result, blame } = await recoverPublic(ctx, packets, opts);
+  const recovered = new PublicKey(ctx, result);
+  return { recovered, blame };
 }
 
 // TODO: Include indexed nonces option?

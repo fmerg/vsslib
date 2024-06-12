@@ -9,7 +9,7 @@ import {
   parsePedersenPacket,
   createPublicSharePacket,
   parsePublicSharePacket,
-  recoverPublic,
+  combinePublics,
 } from '../../src/shamir';
 import { randomNonce } from '../../src/crypto';
 import { resolveTestConfig } from '../environ';
@@ -99,7 +99,7 @@ describe('Distributed Key Generation (DKG)', () => {
 
     // Local computation of global public
     for (let party of parties) {
-      party.globalPublic = await recoverPublic(ctx, party.publicShares);
+      party.globalPublic = await combinePublics(ctx, party.publicShares);
     }
 
     // Test correctness

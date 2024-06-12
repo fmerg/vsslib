@@ -60,6 +60,7 @@ export const randomIndex = (min: number, max: number) => {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+
 /** Checks equality of byte arrays */
 export const isEqualBuffer = (a: Uint8Array, b: Uint8Array) => {
   if (a.length != b.length) return false;
@@ -67,3 +68,5 @@ export const isEqualBuffer = (a: Uint8Array, b: Uint8Array) => {
     if (a[i] != b[i]) return false;
   return true;
 }
+
+

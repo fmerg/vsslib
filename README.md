@@ -12,7 +12,7 @@ import { initGroup } from "vsslib";
 const ctx = initGroup("ed25519");
 ```
 
-### Verifiable Secret Sharing
+### Sharing
 
 ```js
 import { distributeSecret } from "vsslib";
@@ -56,15 +56,44 @@ import { verifyPedersenCommitments } from "vsslib";
 await verifyPedersenCommitments(ctx, share, bindng, publicBytes, commitments);
 ```
 
-#### Reconsctruction
+### Recovery
+
+
+#### Secret scalar reconstruction
 
 ```js
-import { recoverPublic } from "vsslib";
-
-const globalPublic = await recoverPublic(ctx, publicShares);
+import { recoverSecret } from 'vsslib';
 ```
 
-### Verifiable Key Distribution
+```js
+const result = await recoverSecret(shares);
+```
+
+#### Public point reconstruction
+
+```js
+import { recoverPublic } from 'vsslib';
+```
+
+```js
+const { result } = await recoverPublic(ctx, packets, { algorithm });
+```
+
+```js
+const { result, blame } = await recoverPublic(ctx, packets, { algorithm, errorOnInvalid: false});
+```
+
+#### Public point reconstruction without verification
+
+```js
+import { combiner } from 'vsslib';
+```
+
+```js
+const result = await combinePublics(ctx, shares);
+```
+
+### Key Distribution
 
 ```js
 import { generateKey } from "vsslib";
@@ -100,12 +129,26 @@ import { PrivateKeyShare } from "vsslib";
 const privateShare = await PrivateKeyShare.fromPedersenCommitments(ctx, commitments, publicBytes, packet);
 ```
 
-#### Public key recovery
+### Key recovery
+
+```js
+import { recoverKey } from "vsslib";
+
+const recovered = await recoverKey(ctx, shares);
+```
+
+### Public key recovery
 
 ```js
 import { recoverPublicKey } from "vsslib";
+```
 
-const globalPublicKey = await recoverPublicKey(ctx, publicKeyShares, threshold);
+```js
+const { publicKey } = await recoverPublicKey(ctx, publicKeyShares, { algorithm });
+```
+
+```js
+const { publicKey, blame } = await recoverPublicKey(ctx, publicKeyShares, { algorithm, errorOnInvalid: false });
 ```
 
 ### Threshold decryption

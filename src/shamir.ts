@@ -5,6 +5,7 @@ import {
   InterpolationError,
   ShamirError,
   InvalidSecretShare,
+  InvalidPublicShare,
 } from './errors';
 import { leInt2Buff } from './arith';
 import { NizkProof } from './nizk';
@@ -277,7 +278,7 @@ export async function parsePublicSharePacket<P extends Point>(
     nonce
   );
   if (!verified)
-    throw new Error("Invalid public share");
+    throw new InvalidPublicShare(`Invalid packet with index ${index}`);
   return { value, index };
 }
 
@@ -300,10 +301,13 @@ export function computeLambda<P extends Point>(
 }
 
 
-export function recoverSecret<P extends Point>(
+export async function recoverSecret<P extends Point>(
   ctx: Group<P>,
-  shares: SecretShare[]
-): Uint8Array {
+  shares: SecretShare[],
+  threshold?: number
+): Promise<Uint8Array> {
+  if (threshold && shares.length < threshold)
+    throw new Error('Insufficient number of shares');
   const { order, leBuff2Scalar } = ctx;
   const indexes = shares.map(share => share.index);
   const secret = shares.reduce(
@@ -317,10 +321,13 @@ export function recoverSecret<P extends Point>(
 }
 
 
-export async function recoverPublic<P extends Point>(
+export async function combinePublics<P extends Point>(
   ctx: Group<P>,
-  shares: PublicShare[]
+  shares: PublicShare[],
+  threshold?: number
 ): Promise<Uint8Array> {
+  if (threshold && shares.length < threshold)
+    throw new Error('Insufficient number of shares');
   const { order, operate, neutral, exp, unpackValid } = ctx;
   const indexes = shares.map(share => share.index);
   let acc = neutral;
@@ -330,4 +337,44 @@ export async function recoverPublic<P extends Point>(
     acc = await operate(acc, await exp(curr, lambda));
   }
   return acc.toBytes();
+}
+
+
+export async function recoverPublic<P extends Point>(
+  ctx: Group<P>,
+  packets: PublicSharePacket[],
+  opts?: {
+    algorithm?: Algorithm,
+    nonce?: Uint8Array, // TODO: Individual nonces
+    threshold?: number,
+    errorOnInvalid?: boolean,
+  },
+): Promise<{ result: Uint8Array, blame: number[] }> {
+  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+  const nonce = opts ? (opts.nonce || undefined) : undefined;
+  const threshold = opts ? opts.threshold : undefined;
+  const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
+  if (threshold && packets.length < threshold) throw new Error(
+    'Insufficient number of shares'
+  );
+  const indexes = packets.map(packet => packet.index);
+  const { order, operate, neutral, exp, unpackValid } = ctx;
+  let acc = neutral;
+  const blame = [];
+  for (const packet of packets) {
+    try {
+      const { value, index } = await parsePublicSharePacket(ctx, packet, { algorithm, nonce });
+      const lambda = computeLambda(ctx, index, indexes);
+      const curr = await unpackValid(value);
+      acc = await operate(acc, await exp(curr, lambda));
+    } catch (err: any) {
+      if (err instanceof InvalidPublicShare) {
+        if (errorOnInvalid) throw err;
+        blame.push(packet.index);
+      }
+      else throw err;
+    }
+  }
+  const result = acc.toBytes();
+  return { result, blame };
 }
