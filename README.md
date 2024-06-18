@@ -151,6 +151,18 @@ const { publicKey } = await recoverPublicKey(ctx, publicKeyShares, { algorithm }
 const { publicKey, blame } = await recoverPublicKey(ctx, publicKeyShares, { algorithm, errorOnInvalid: false });
 ```
 
+### Decryptor recovery
+
+```js
+import { recoverDecryptor } from "vsslib";
+
+const { result } = await recoverDecryptor(ctx, shares, ciphertext, publicShares);
+```
+
+```js
+const { result, blame } = await recoverDecryptor(ctx, shares, ciphertext, publicShares, { errorOnInvalid: false });
+```
+
 ### Threshold decryption
 
 ```js
@@ -158,26 +170,17 @@ const { ciphertext } = await publicKey.encrypt(message, { scheme: "ies" });
 ```
 
 ```js
-const partialDecryptor = await privateShare.computePartialDecryptor(ciphertext);
+const decryptorShare = await privateShare.computePartialDecryptor(ciphertext);
 ```
 
 ```js
-await publicShare.verifyPartialDecryptor(ciphertext, partialDecryptor);
+const { plaintext } = await thresholdDecrypt(ctx, ciphertext, decryptorShares, publicShares, { scheme });
 ```
 
 ```js
-import { verifyPartialDecryptors } from "vsslib";
-
-const { flag, indexes } = await verifyPartialDecryptors(ctx, ciphertext, publicShares, partialDecryptors);
+const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, decryptorShares, publicShares, { scheme, errorOnInvalid: false });
 ```
 
-```js
-await verifyPartialDecryptors(ctx, ciphertext, publicShares, partialDecryptors, { errorOnInvalid: True });
-```
-
-```js
-const plaintext = await thresholdDecrypt(ciphertext, partialDecryptors);
-```
 
 ### Threshold authentication
 

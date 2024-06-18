@@ -2,7 +2,7 @@ import { generateKey } from './keys';
 import {
   recoverKey,
   recoverPublicKey,
-  verifyPartialDecryptors,
+  combinePartialDecryptors,
   recoverDecryptor,
   thresholdDecrypt
 } from './combiner';
@@ -23,8 +23,8 @@ export {
   generateKey,
   recoverKey,
   recoverPublicKey,
+  combinePartialDecryptors,
   recoverDecryptor,
-  verifyPartialDecryptors,
   thresholdDecrypt,
   backend,
   crypto,
