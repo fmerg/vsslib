@@ -1,6 +1,6 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
-import { distributeSecret } from '../../src/shamir';
+import { distributeSecret } from '../../src/dealer';
 import { selectSecretShare, selectPublicShare } from '../helpers';
 import { resolveTestConfig } from '../environ';
 import { cartesian } from '../utils';

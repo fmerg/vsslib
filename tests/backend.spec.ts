@@ -1,7 +1,7 @@
-import { Systems } from '../../src/enums';
-import { initGroup } from '../../src/backend';
-import { Point } from '../../src/backend/abstract';
-import { resolveTestConfig } from '../environ';
+import { Point } from '../src/backend/abstract';
+import { Systems } from '../src/enums';
+import { initGroup } from '../src/backend';
+import { resolveTestConfig } from './environ';
 
 const __0n = BigInt(0)
 const __1n = BigInt(1)

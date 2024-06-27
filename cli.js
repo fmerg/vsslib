@@ -3,6 +3,7 @@ const { Command, Option } = require('commander');
 const {
   generateKey,
   parseSharePacket,
+  combinePublicShares,
 } = require('./dist');
 const {
   initGroup
@@ -14,8 +15,7 @@ const {
   parsePedersenPacket,
   createPublicSharePacket,
   parsePublicSharePacket,
-  combinePublics,
-} = require('./dist/shamir');
+} = require('./dist/dealer');
 const {
   leInt2Buff,
   mod,
@@ -144,7 +144,7 @@ async function demoDKG(options) {
 
   // Local computation of global public
   for (let party of parties) {
-    party.globalPublic = await combinePublics(ctx, party.publicShares);
+    party.globalPublic = await combinePublicShares(ctx, party.publicShares);
   }
 
   // Test correctness

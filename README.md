@@ -4,7 +4,9 @@
 
 ## Install
 
-## Usage
+## Preliminaries
+
+### Group initialization
 
 ```js
 import { initGroup } from "vsslib";
@@ -12,7 +14,17 @@ import { initGroup } from "vsslib";
 const ctx = initGroup("ed25519");
 ```
 
-### Sharing
+### Secret generation
+
+### Key generation
+
+```js
+import { generateKey } from "vsslib";
+
+const { ctx, privateKey } = await generateKey("ed25519");
+```
+
+## Verifiable secret sharing
 
 ```js
 import { distributeSecret } from "vsslib";
@@ -20,7 +32,7 @@ import { distributeSecret } from "vsslib";
 const sharing = await distributeSecret(ctx, 5, 3, secret);
 ```
 
-#### Feldman VSS scheme
+### Feldman VSS scheme
 
 ```js
 const { packets, commitments } = await sharing.createFeldmanPackets();
@@ -38,10 +50,10 @@ import { verifyFeldmanCommitments } from "vsslib";
 await verifyFeldmanCommitments(ctx, share, commitments);
 ```
 
-#### Pedersen VSS scheme
+### Pedersen VSS scheme
 
 ```js
-const { packets, commitments } = await sharing.createFeldmanPackets();
+const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
 ```
 
 ```js
@@ -56,20 +68,26 @@ import { verifyPedersenCommitments } from "vsslib";
 await verifyPedersenCommitments(ctx, share, bindng, publicBytes, commitments);
 ```
 
-### Recovery
-
-
-#### Secret scalar reconstruction
+### Secret recovery
 
 ```js
-import { recoverSecret } from 'vsslib';
+import { combineSecretShares } from 'vsslib';
 ```
 
 ```js
-const result = await recoverSecret(shares);
+const result = await combineSecretShares(ctx, shares, { threshold });
 ```
 
-#### Public point reconstruction
+### Verifiable public share packets
+
+```js
+import { createPublicSharePacket } from 'vsslib';
+
+const packet = await createPublicSharePacket(ctx, share, { algorithm, nonce });
+```
+
+### Public recovery
+
 
 ```js
 import { recoverPublic } from 'vsslib';
@@ -83,29 +101,23 @@ const { result } = await recoverPublic(ctx, packets, { algorithm });
 const { result, blame } = await recoverPublic(ctx, packets, { algorithm, errorOnInvalid: false});
 ```
 
-#### Public point reconstruction without verification
+#### Raw combination
 
 ```js
-import { combiner } from 'vsslib';
+import { combinePublicShares } from 'vsslib';
 ```
 
 ```js
-const result = await combinePublics(ctx, shares);
+const result = await combinePublicShares(ctx, shares, { threshold });
 ```
 
-### Key Distribution
-
-```js
-import { generateKey } from "vsslib";
-
-const { ctx, privateKey } = await generateKey("ed25519");
-```
+## Key sharing
 
 ```js
 const sharing = await privateKey.generateSharing(5, 3);
 ```
 
-#### Feldman scheme
+### Feldman VSS scheme
 
 ```js
 const { packets, commitments } = await sharing.createFeldmanPackets();
@@ -117,7 +129,7 @@ import { PrivateKeyShare } from "vsslib";
 const privateShare = await PrivateKeyShare.fromFeldmanPacket(ctx, commitments, packet);
 ```
 
-#### Pedersen scheme
+### Pedersen VSS scheme
 
 ```js
 const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
@@ -127,14 +139,6 @@ const { packets, commitments } = await sharing.createPedersenPackets(publicBytes
 import { PrivateKeyShare } from "vsslib";
 
 const privateShare = await PrivateKeyShare.fromPedersenCommitments(ctx, commitments, publicBytes, packet);
-```
-
-### Key recovery
-
-```js
-import { recoverKey } from "vsslib";
-
-const recovered = await recoverKey(ctx, shares);
 ```
 
 ### Public key recovery
@@ -149,18 +153,6 @@ const { publicKey } = await recoverPublicKey(ctx, publicKeyShares, { algorithm }
 
 ```js
 const { publicKey, blame } = await recoverPublicKey(ctx, publicKeyShares, { algorithm, errorOnInvalid: false });
-```
-
-### Decryptor recovery
-
-```js
-import { recoverDecryptor } from "vsslib";
-
-const { result } = await recoverDecryptor(ctx, shares, ciphertext, publicShares);
-```
-
-```js
-const { result, blame } = await recoverDecryptor(ctx, shares, ciphertext, publicShares, { errorOnInvalid: false });
 ```
 
 ### Threshold decryption
@@ -181,8 +173,17 @@ const { plaintext } = await thresholdDecrypt(ctx, ciphertext, decryptorShares, p
 const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, decryptorShares, publicShares, { scheme, errorOnInvalid: false });
 ```
 
+#### Decryptor recovery
 
-### Threshold authentication
+```js
+import { recoverDecryptor } from "vsslib";
+
+const { result } = await recoverDecryptor(ctx, shares, ciphertext, publicShares);
+```
+
+```js
+const { result, blame } = await recoverDecryptor(ctx, shares, ciphertext, publicShares, { errorOnInvalid: false });
+```
 
 
 ## Modules

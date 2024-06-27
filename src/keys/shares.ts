@@ -10,7 +10,7 @@ import {
   parseFeldmanPacket,
   parsePedersenPacket,
   SecretSharePacket,
-} from '../shamir';
+} from '../dealer';
 import { Algorithm } from '../types';
 import { PrivateKey, PublicKey } from './core';
 

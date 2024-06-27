@@ -1,5 +1,5 @@
 import { PrivateKeyShare } from '../../src/keys';
-import { SecretSharePacket } from '../../src/shamir';
+import { SecretSharePacket } from '../../src/dealer';
 import { resolveTestConfig } from '../environ';
 import { selectPrivateKeyShare, createKeySharingSetup } from '../helpers';
 

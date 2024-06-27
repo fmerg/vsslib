@@ -3,7 +3,7 @@ import { initGroup } from '../src/backend';
 import { generateKey } from '../src';
 import { ElgamalSchemes } from '../src/enums';
 import { ElgamalScheme, System, Algorithm } from '../src/types';
-import { distributeSecret, createPublicSharePacket, SecretShare, PublicShare } from '../src/shamir';
+import { distributeSecret, createPublicSharePacket, SecretShare, PublicShare } from '../src/dealer';
 import { PrivateKeyShare, PublicKeyShare } from '../src/keys';
 import { leInt2Buff } from '../src/arith';
 import { randomIndex } from './utils';
