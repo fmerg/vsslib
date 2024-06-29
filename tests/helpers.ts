@@ -95,7 +95,8 @@ export const createKeySharingSetup = async (opts: {
   threshold: number,
 }) => {
   const { system, nrShares, threshold } = opts;
-  const { privateKey, publicKey, ctx } = await generateKey(system);
+  const ctx = initBackend(system)
+  const { privateKey, publicKey } = await generateKey(ctx);
   const sharing = await privateKey.generateSharing(nrShares, threshold);
   const polynomial = sharing.polynomial;
   const secretShares = await sharing.getSecretShares();

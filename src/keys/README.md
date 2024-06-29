@@ -3,11 +3,11 @@
 ## Key generation
 
 ```js
-import { generateKey } from "vsslib";
-```
+import { initBackend, generateKey } from "vsslib";
 
-```js
-const { privateKey, publicKey, ctx } = await generateKey("ed25519");
+const ctx = initBackend("ed25519");
+
+const { privateKey, publicKey } = await generateKey(ctx);
 ```
 
 ```js

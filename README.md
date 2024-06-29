@@ -4,7 +4,7 @@
 
 ## Install
 
-## Preliminaries
+## Cryptosystem initialization
 
 ```js
 import { initBackend } from "vsslib";
@@ -12,25 +12,19 @@ import { initBackend } from "vsslib";
 const ctx = initBackend("ed25519");
 ```
 
-### Secret generation
-
-### Key generation
-
-```js
-import { generateKey } from "vsslib";
-
-const { ctx, privateKey } = await generateKey("ed25519");
-```
-
 ## Verifiable secret sharing
+
+### Shamir sharing
 
 ```js
 import { distributeSecret } from "vsslib";
 
+const secret = await ctx.randomSecret();
+
 const sharing = await distributeSecret(ctx, 5, 3, secret);
 ```
 
-### Feldman VSS scheme
+#### Feldman VSS scheme
 
 ```js
 const { packets, commitments } = await sharing.createFeldmanPackets();
@@ -48,7 +42,7 @@ import { verifyFeldmanCommitments } from "vsslib";
 await verifyFeldmanCommitments(ctx, share, commitments);
 ```
 
-### Pedersen VSS scheme
+#### Pedersen VSS scheme
 
 ```js
 const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
@@ -66,6 +60,14 @@ import { verifyPedersenCommitments } from "vsslib";
 await verifyPedersenCommitments(ctx, share, bindng, publicBytes, commitments);
 ```
 
+#### Verifiable public shares
+
+```js
+import { createPublicSharePacket } from 'vsslib';
+
+const packet = await createPublicSharePacket(ctx, share, { algorithm, nonce });
+```
+
 ### Secret recovery
 
 ```js
@@ -76,15 +78,7 @@ import { combineSecretShares } from 'vsslib';
 const result = await combineSecretShares(ctx, shares, { threshold });
 ```
 
-### Verifiable public share packets
-
-```js
-import { createPublicSharePacket } from 'vsslib';
-
-const packet = await createPublicSharePacket(ctx, share, { algorithm, nonce });
-```
-
-### Public recovery
+### Public point recovery
 
 
 ```js
@@ -99,7 +93,7 @@ const { result } = await recoverPublic(ctx, packets, { algorithm });
 const { result, blame } = await recoverPublic(ctx, packets, { algorithm, errorOnInvalid: false});
 ```
 
-#### Raw combination
+#### Raw combination of public shares
 
 ```js
 import { combinePublicShares } from 'vsslib';
@@ -109,9 +103,11 @@ import { combinePublicShares } from 'vsslib';
 const result = await combinePublicShares(ctx, shares, { threshold });
 ```
 
-## Key sharing
+## Private key sharing
 
 ```js
+const { privateKey } = await generateKey(ctx);
+
 const sharing = await privateKey.generateSharing(5, 3);
 ```
 
@@ -153,7 +149,7 @@ const { publicKey } = await recoverPublicKey(ctx, publicKeyShares, { algorithm }
 const { publicKey, blame } = await recoverPublicKey(ctx, publicKeyShares, { algorithm, errorOnInvalid: false });
 ```
 
-### Threshold decryption
+## Threshold decryption
 
 ```js
 const { ciphertext } = await publicKey.encrypt(message, { scheme: "ies" });
@@ -171,7 +167,7 @@ const { plaintext } = await thresholdDecrypt(ctx, ciphertext, decryptorShares, p
 const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, decryptorShares, publicShares, { scheme, errorOnInvalid: false });
 ```
 
-#### Decryptor recovery
+### Decryptor recovery
 
 ```js
 import { recoverDecryptor } from "vsslib";

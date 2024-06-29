@@ -1,5 +1,5 @@
 import { Algorithms } from '../../src/enums';
-import { generateKey } from '../../src';
+import { initBackend, generateKey } from '../../src';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
 import { mockMessage } from '../helpers';
@@ -10,7 +10,8 @@ const { systems, elgamalSchemes: schemes, modes, algorithms } = resolveTestConfi
 
 describe('generation', () => {
   it.each(cartesian([systems, schemes]))('over %s%/s', async (system, scheme) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor: targetDecryptor } = await publicKey.encrypt(message, { scheme });
     const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext);
@@ -24,7 +25,8 @@ describe('proof - success without nonce', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s', async (
     system, scheme, algorithm
   ) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
@@ -38,7 +40,8 @@ describe('proof - success with nonce', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s', async (
     system, scheme, algorithm
   ) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const nonce = await randomNonce();
@@ -51,7 +54,8 @@ describe('proof - success with nonce', () => {
 
 describe('proof - failure if forged proof', () => {
   it.each(cartesian([systems, schemes]))('over %s', async (system, scheme) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
@@ -67,7 +71,8 @@ describe('proof - failure if wrong algorithm', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
     system, scheme, algorithm
   ) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
@@ -86,7 +91,8 @@ describe('proof - failure if wrong algorithm', () => {
 
 describe('proof - failure if missing nonce', () => {
   it.each(cartesian([systems, schemes]))('over %s/%s', async (system, scheme) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const nonce = await randomNonce();
@@ -100,7 +106,8 @@ describe('proof - failure if missing nonce', () => {
 
 describe('proof - failure if forged nonce', () => {
   it.each(cartesian([systems, schemes]))('over %s/%s', async (system, scheme) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const nonce = await randomNonce();

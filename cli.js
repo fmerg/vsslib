@@ -29,7 +29,8 @@ const program = new Command();
 
 async function doGenerateKey(options) {
   const { system, encoding } = options;
-  const { privateKey, publicKey, ctx } = await generateKey(system);
+  const ctx = initBackend(system);
+  const { privateKey, publicKey, ctx } = await generateKey(ctx);
   console.log('Key', {
     private: privateKey.secret,
     public: publicKey.bytes,

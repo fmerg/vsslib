@@ -1,3 +1,4 @@
+import { initBackend } from './backend';
 import { generateKey } from './keys';
 import {
   combinePublicShares,
@@ -28,6 +29,7 @@ const signer = require('./signer');
 
 
 export {
+  initBackend,
   generateKey,
   distributeSecret,
   parseFeldmanPacket,

@@ -1,5 +1,5 @@
 import { Algorithms } from '../../src/enums';
-import { generateKey } from '../../src';
+import { initBackend, generateKey } from '../../src';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -9,7 +9,8 @@ const { systems, algorithms } = resolveTestConfig();
 
 describe('Schnorr identification - success without nonce', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const proof = await privateKey.proveSecret({ algorithm });
     const verified = await publicKey.verifySecret(proof, { algorithm });
     expect(verified).toBe(true);
@@ -19,7 +20,8 @@ describe('Schnorr identification - success without nonce', () => {
 
 describe('Schnorr identification - success with nonce', () => {
   it.each(systems)('over %s', async (system) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
     const verified = await publicKey.verifySecret(proof, { nonce });
@@ -30,7 +32,8 @@ describe('Schnorr identification - success with nonce', () => {
 
 describe('Schnorr identification - failure if forged proof', () => {
   it.each(systems)('over %s', async (system) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const proof = await privateKey.proveSecret();
     proof.commitment[0] = (await ctx.randomPoint()).toBytes();
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
@@ -42,7 +45,8 @@ describe('Schnorr identification - failure if forged proof', () => {
 
 describe('Schnorr identification - failure if wrong algorithm', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const proof = await privateKey.proveSecret({ algorithm });
     await expect(
       publicKey.verifySecret(proof, {
@@ -59,7 +63,8 @@ describe('Schnorr identification - failure if wrong algorithm', () => {
 
 describe('Schnorr identification - failure if missing nonce', () => {
   it.each(systems)('over %s', async (system) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
@@ -71,7 +76,8 @@ describe('Schnorr identification - failure if missing nonce', () => {
 
 describe('Schnorr identification - failure if forged nonce', () => {
   it.each(systems)('over %s', async (system) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
     const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
     await expect(

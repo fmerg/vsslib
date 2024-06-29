@@ -1,13 +1,14 @@
-import { initBackend } from '../backend';
-import { System } from '../types';
+import { Point, Group } from '../backend/abstract';
 import { PrivateKey, PublicKey } from './core'
 import { PrivateKeyShare, PublicKeyShare, PartialDecryptor } from './shares';
 
-const generateKey = async (system: System) => {
-  const ctx = initBackend(system);
+async function generateKey<P extends Point>(ctx: Group<P>): Promise<{
+  privateKey: PrivateKey<P>,
+  publicKey: PublicKey<P>
+}> {
   const privateKey = new PrivateKey(ctx, await ctx.randomSecret());
   const publicKey = await privateKey.getPublicKey();
-  return { privateKey, publicKey, ctx };
+  return { privateKey, publicKey };
 }
 
 export {

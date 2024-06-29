@@ -2,7 +2,6 @@ import { initBackend } from '../../src/backend';
 import { PrivateKeyShare } from '../../src/keys/shares';
 import { Algorithms } from '../../src/enums';
 import { System, ElgamalScheme, Algorithm } from '../../src/types';
-import { generateKey } from '../../src';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
 import { mockMessage } from '../helpers';
