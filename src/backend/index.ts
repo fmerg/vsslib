@@ -5,8 +5,8 @@ import { initElliptic } from './elliptic';
 
 const sanitize  = (system: System | string) => system as System;
 const isModular = (system: System | string) => Object.values(Modular).includes(sanitize(system));
-const initGroup = (system: System | string) => isModular(system) ?
+const initBackend = (system: System | string) => isModular(system) ?
     initModular(sanitize(system)) :
     initElliptic(sanitize(system));
 
-export { initGroup };
+export { initBackend };

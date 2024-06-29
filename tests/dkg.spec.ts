@@ -1,4 +1,4 @@
-import { initGroup } from '../src/backend';
+import { initBackend } from '../src/backend';
 import { Group, Point } from '../src/backend/abstract';
 import { SecretShare, ShamirSharing, PublicShare } from '../src/dealer';
 import {
@@ -41,7 +41,7 @@ const selectParty = (index: number, parties: ShareHolder<Point>[]) => parties.fi
 
 describe('Distributed Key Generation (DKG)', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const publicBytes = (await ctx.randomPoint()).toBytes();
     let parties = [];
     for (let index = 1; index <= nrShares; index++) {

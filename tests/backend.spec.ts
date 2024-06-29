@@ -1,6 +1,6 @@
 import { Point } from '../src/backend/abstract';
 import { Systems } from '../src/enums';
-import { initGroup } from '../src/backend';
+import { initBackend } from '../src/backend';
 import { resolveTestConfig } from './environ';
 
 const __0n = BigInt(0)
@@ -11,7 +11,7 @@ const { systems } = resolveTestConfig();
 
 describe('group initialization - success', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     expect(ctx.system).toEqual(system);
   });
 })
@@ -19,7 +19,7 @@ describe('group initialization - success', () => {
 describe('group initialization - failure', () => {
   test('unsupported group', () => {
     const system = 'foo';
-    expect(() => initGroup(system).toThrow(
+    expect(() => initBackend(system).toThrow(
       `Unsupported group: ${system}`
     ))
   })
@@ -27,7 +27,7 @@ describe('group initialization - failure', () => {
 
 describe('neutral element', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     await ctx.validatePoint(ctx.neutral);
     const neutral = await ctx.exp(ctx.generator, __0n);
     expect(await neutral.equals(ctx.neutral)).toBe(true);
@@ -36,7 +36,7 @@ describe('neutral element', () => {
 
 describe('group generator', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     await ctx.validatePoint(ctx.generator);
     const generator = await ctx.exp(ctx.generator, __1n);
     expect(await generator.equals(ctx.generator)).toBe(true);
@@ -45,7 +45,7 @@ describe('group generator', () => {
 
 describe('group operation', () => {
   it.each(systems)('neutral element - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const p = await ctx.randomPoint();
     const q = await ctx.operate(p, ctx.neutral);
     expect(await q.equals(p)).toBe(true);
@@ -53,7 +53,7 @@ describe('group operation', () => {
     expect(await u.equals(p)).toBe(true);
   });
   it.each(systems)('random pair - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const r = await ctx.randomScalar();
     const s = await ctx.randomScalar();
     const p = await ctx.exp(ctx.generator, r);
@@ -67,14 +67,14 @@ describe('group operation', () => {
 
 describe('inverse', () => {
   it.each(systems)('neutral - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const neutInv = await ctx.invert(ctx.neutral);
     expect(await neutInv.equals(ctx.neutral)).toBe(true);
     const neutral = await ctx.operate(ctx.neutral, neutInv);
     expect(await neutral.equals(ctx.neutral)).toBe(true);
   });
   it.each(systems)('generator - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const minusOne = ctx.order - __1n;             // TODO: scalar -1
     const expected = await ctx.exp(ctx.generator, minusOne);
     const genInv = await ctx.invert(ctx.generator);
@@ -83,7 +83,7 @@ describe('inverse', () => {
     expect(await neutral.equals(ctx.neutral)).toBe(true);
   });
   it.each(systems)('random point - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const r = await ctx.randomScalar();
     const p = await ctx.exp(ctx.generator, r);
     const pInv = await ctx.invert(p);
@@ -97,7 +97,7 @@ describe('inverse', () => {
 
 describe('exponentiation', () => {
   it.each(systems)('generator - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
 
     let expected = await ctx.exp(ctx.generator, __0n)
     expect(await ctx.neutral.equals(expected)).toBe(true);
@@ -110,7 +110,7 @@ describe('exponentiation', () => {
     expect(await q.equals(p)).toBe(true);
   })
   it.each(systems)('random point - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     let s: bigint;
     let current: Point;
     let expected: Point
@@ -141,14 +141,14 @@ describe('exponentiation', () => {
 
 describe('point to bytes and back', () => {
   it.each(systems)('success over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const p = await ctx.randomPoint();
     const pBytes = p.toBytes();
     const pBack = await ctx.unpackValid(pBytes);
     expect(await pBack.equals(p)).toBe(true);
   })
   it.each(systems)('failure over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const pBytes = Uint8Array.from(Buffer.from('foo'));
     expect(() => ctx.unpack(pBytes)).toThrow('bad encoding:');
   })
@@ -156,7 +156,7 @@ describe('point to bytes and back', () => {
 
 describe('scalar validation', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const s = await ctx.randomScalar();
     const isValid = await ctx.validateScalar(s);
     expect(isValid).toBe(true);

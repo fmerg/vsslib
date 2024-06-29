@@ -1,4 +1,4 @@
-import { initGroup } from '../../src/backend';
+import { initBackend } from '../../src/backend';
 import { PrivateKeyShare } from '../../src/keys/shares';
 import { Algorithms } from '../../src/enums';
 import { System, ElgamalScheme, Algorithm } from '../../src/types';
@@ -12,7 +12,7 @@ const createPartialDecryptorSetup = async (opts: {
   system: System, scheme: ElgamalScheme, algorithm: Algorithm, nonce?: Uint8Array
 }) => {
   const { system, scheme, algorithm, nonce } = opts;
-  const ctx = initGroup(system);
+  const ctx = initBackend(system);
   const privateKey = new PrivateKeyShare(ctx, await ctx.randomSecret(), 666);
   const publicKey = await privateKey.getPublicShare();
   const message = await mockMessage(ctx, scheme);

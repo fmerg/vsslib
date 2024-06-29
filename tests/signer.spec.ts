@@ -1,4 +1,4 @@
-import { initGroup } from '../src/backend';
+import { initBackend } from '../src/backend';
 import { randomNonce } from '../src/crypto';
 
 import { cartesian } from './utils';
@@ -13,7 +13,7 @@ describe('Signature verification - success without nonce', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
     system, scheme, algorithm
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
@@ -31,7 +31,7 @@ describe('Signature verification - success with nonce', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
     system, scheme, algorithm
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
@@ -50,7 +50,7 @@ describe('Signature verification - failure if forged message', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
     system, scheme, algorithm
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
@@ -69,7 +69,7 @@ describe('Signature verification - failure if forged key', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
     system, scheme, algorithm
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const forgedSecret = await ctx.randomScalar();
@@ -88,7 +88,7 @@ describe('Signature verification - failure if forged signature', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
     system, scheme, algorithm
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
@@ -107,7 +107,7 @@ describe('Signature verification - failure if forged nonce', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
     system, scheme, algorithm
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
@@ -127,7 +127,7 @@ describe('Signature verification - failure if missing nonce', () => {
   it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
     system, scheme, algorithm
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();

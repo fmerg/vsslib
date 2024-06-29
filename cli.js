@@ -6,7 +6,7 @@ const {
   combinePublicShares,
 } = require('./dist');
 const {
-  initGroup
+  initBackend
 } = require('./dist/backend');
 const {
   distributeSecret,
@@ -69,7 +69,7 @@ async function demoDKG(options) {
   // const scheme = "Feldman";
   const scheme = "Pedersen";
 
-  const ctx = initGroup(system);
+  const ctx = initBackend(system);
   const publicBytes = (await ctx.randomPoint()).toBytes();
 
   const parties = [];

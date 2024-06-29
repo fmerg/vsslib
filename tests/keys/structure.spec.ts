@@ -1,4 +1,4 @@
-import { initGroup } from '../../src/backend';
+import { initBackend } from '../../src/backend';
 import { Algorithms } from '../../src/enums';
 import { Algorithm } from '../../src/types';
 import { generateKey } from '../../src';

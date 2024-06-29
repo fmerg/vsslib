@@ -1,7 +1,7 @@
 import { Algorithms, BlockModes } from '../../src/enums';
 import { randomBytes } from '../../src/crypto';
 import { leInt2Buff } from '../../src/arith';
-import { initGroup } from '../../src/backend';
+import { initBackend } from '../../src/backend';
 import { dhiesElgamal } from '../../src/elgamal/core';
 
 import { cartesian } from '../utils';
@@ -16,7 +16,7 @@ describe('Decryption - success', () => {
   it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
     system, mode, algorithm,
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await dhiesElgamal(ctx, mode, algorithm).encrypt(message, y);
@@ -30,7 +30,7 @@ describe('Decryption - failure if forged secret', () => {
   it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
     system, mode, algorithm,
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await dhiesElgamal(ctx, mode, algorithm).encrypt(message, y);
@@ -46,7 +46,7 @@ describe('Decryption - failure if forged iv', () => {
   it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
     system, mode, algorithm
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext } = await dhiesElgamal(ctx, mode, algorithm).encrypt(message, y);
@@ -65,7 +65,7 @@ describe('Decryption - failure if forged iv', () => {
 
 describe('Decryption with decryptor - failure if forged decryptor', () => {
   it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await dhiesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
@@ -83,7 +83,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
 
 describe('Decryption with randomness - success', () => {
   it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await dhiesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
@@ -99,7 +99,7 @@ describe('Decryption with randomness - success', () => {
 
 describe('Decryption with decryptor - failure if forged randomness', () => {
   it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, randomness } = await dhiesElgamal(ctx, mode, Algorithms.SHA256).encrypt(

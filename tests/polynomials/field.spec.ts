@@ -1,4 +1,4 @@
-import { initGroup } from '../../src/backend';
+import { initBackend } from '../../src/backend';
 import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -11,13 +11,13 @@ const { systems } = resolveTestConfig();
 
 describe('Random polynomial generation', () => {
   it.each(systems)('Non-positive degree error - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     await expect(randomPolynomial(ctx, -1)).rejects.toThrow(
       'Polynomial degree must be positive'
     );
   });
   it.each(systems)('Success - over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const degree = 7;
     const polynomial = await randomPolynomial(ctx, degree);
     expect(polynomial.ctx.system).toBe(system);
@@ -35,7 +35,7 @@ describe('Algebraic operations with random poynomials', () => {
   it.each(cartesian([degree_pairs, systems]))('Addition - degrees %s over %s', async (
     degrees, system
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await randomPolynomial(ctx, degree1);
     const poly2 = await randomPolynomial(ctx, degree2);
@@ -52,7 +52,7 @@ describe('Algebraic operations with random poynomials', () => {
   it.each(cartesian([degree_pairs, systems]))('Multiplication - degrees %s over %s', async (
     degrees, system
   ) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await randomPolynomial(ctx, degree1);
     const poly2 = await randomPolynomial(ctx, degree2);

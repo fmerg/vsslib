@@ -1,4 +1,4 @@
-import { initGroup } from '../../src/backend';
+import { initBackend } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { distributeSecret } from '../../src/dealer';
 import { selectSecretShare, selectPublicShare } from '../helpers';
@@ -15,7 +15,7 @@ const thresholdParams = [
 
 describe('Sharing parameter errors', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
     await expect(distributeSecret(ctx, 1, 2, secret)).rejects.toThrow(
       'Threshold parameter exceeds number of shares'
@@ -43,7 +43,7 @@ describe('Sharing without predefined points', () => {
   it.each(
     cartesian([systems, thresholdParams])
   )('over %s for threshold: %s', async (system, [n, t]) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
     const sharing = await distributeSecret(ctx, n, t, secret);
     const { nrShares, threshold, polynomial } = sharing;
@@ -72,7 +72,7 @@ describe('Sharing with predefined points', () => {
   it.each(
     cartesian([systems, thresholdParams])
   )('over %s for threshold: %s', async (system, [n, t]) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
     for (let nrPredefined = 1; nrPredefined < t; nrPredefined++) {
       const predefined = [];

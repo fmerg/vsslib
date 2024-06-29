@@ -1,5 +1,5 @@
 import { Algorithms } from '../../src/enums';
-import { initGroup } from '../../src/backend';
+import { initBackend } from '../../src/backend';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
 import { createDlogPair } from './helpers';
@@ -12,7 +12,7 @@ let { systems, algorithms } = resolveTestConfig();
 
 describe('Success - without nonce', () => {
   it.each(cartesian([systems, algorithms]))('over %s/%s', async (system, algorithm) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const proof = await nizk(ctx, algorithm).proveDlog(x, { u, v });
     const valid = await nizk(ctx, algorithm).verifyDlog({ u, v }, proof);
@@ -23,7 +23,7 @@ describe('Success - without nonce', () => {
 
 describe('Success - with nonce', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveDlog(x, { u, v }, nonce);
@@ -35,7 +35,7 @@ describe('Success - with nonce', () => {
 
 describe('Failure - forged proof', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const proof = await nizk(ctx, Algorithms.SHA256).proveDlog(x, { u, v });
     proof.commitment[0] = (await ctx.randomPoint()).toBytes();
@@ -47,7 +47,7 @@ describe('Failure - forged proof', () => {
 
 describe('Failure - missing nonce', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveDlog(x, { u, v }, nonce);
@@ -59,7 +59,7 @@ describe('Failure - missing nonce', () => {
 
 describe('Failure - forged nonce', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveDlog(x, { u, v }, nonce);

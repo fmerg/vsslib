@@ -6,12 +6,10 @@
 
 ## Preliminaries
 
-### Group initialization
-
 ```js
-import { initGroup } from "vsslib";
+import { initBackend } from "vsslib";
 
-const ctx = initGroup("ed25519");
+const ctx = initBackend("ed25519");
 ```
 
 ### Secret generation

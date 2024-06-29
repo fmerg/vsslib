@@ -1,4 +1,4 @@
-import { initGroup } from '../../src/backend';
+import { initBackend } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
 import { SecretShare, ShamirSharing } from '../../src/dealer';
 import { distributeSecret, verifyFeldmanCommitments } from '../../src/dealer';
@@ -9,7 +9,7 @@ let { systems, nrShares, threshold } = resolveTestConfig();
 
 describe('Feldman VSS scheme', () => {
   it.each(systems)('success over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
     const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
     const secretShares = await sharing.getSecretShares();
@@ -26,7 +26,7 @@ describe('Feldman VSS scheme', () => {
   });
 
   it.each(systems)('failure over %s', async (system) => {
-    const ctx = initGroup(system);
+    const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
     const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
     const secretShares = await sharing.getSecretShares();

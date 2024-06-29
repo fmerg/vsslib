@@ -6,7 +6,7 @@ import {
   InvalidDecryptor,
   InvalidEncryptionProof,
 } from '../errors';
-import { initGroup } from '../backend';
+import { initBackend } from '../backend';
 import { Ciphertext } from '../elgamal';
 import { leInt2Buff } from '../arith';
 import { NizkProof } from '../nizk';

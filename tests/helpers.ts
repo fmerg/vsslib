@@ -1,5 +1,5 @@
 import { Group, Point } from '../src/backend/abstract';
-import { initGroup } from '../src/backend';
+import { initBackend } from '../src/backend';
 import { generateKey } from '../src';
 import { ElgamalSchemes } from '../src/enums';
 import { ElgamalScheme, System, Algorithm } from '../src/types';
@@ -47,7 +47,7 @@ export const createSharingSetup = async (opts: {
   threshold: number,
 }) => {
   const { system, nrShares, threshold } = opts;
-  const ctx = initGroup(system);
+  const ctx = initBackend(system);
   const { secret, publicBytes } = await randomDlogPair(ctx);
   const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
   const secretShares = await sharing.getSecretShares();
