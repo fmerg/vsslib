@@ -1,28 +1,46 @@
 # `vsslib.keys`
   
 
-## Generation
+## Key generation
 
 ```js
-import { initBackend, generateKey } from "vsslib";
+import { initBackend } from "vsslib";
 
 const ctx = initBackend("ed25519");
+```
+
+```js
+import { generateKey } from "vsslib";
 
 const { privateKey, publicKey } = await generateKey(ctx);
 ```
 
 ```js
-const publicKey = await privateKey.publicKey();
+const publicKey = await privateKey.getPublicKey();
 ```
 
-## Identification (Schnorr protocol)
+## Schnorr identification
 
 ```js
 const proof = await privateKey.proveSecret({ algorithm: "sha256" });
 ```
 
 ```js
-await publicKey.verifySecret(proof);
+await publicKey.verifySecret(proof, { algorithm: "sha256" });
+```
+
+## Signatures
+
+```js
+const message = Uint8Array.from(Buffer.from("destroy earth"));
+```
+
+```js
+const signature = await privateKey.signMessage(message, { scheme: "schnorr", algorithm: "sha256" });
+```
+
+```js
+await publicKey.verifySignature(message, signature, { scheme: "schnorr", algorithm: "sha256" });
 ```
 
 ## Elgamal encryption
@@ -38,7 +56,7 @@ const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
 ```
 
 
-### HYBRID-Encryption (Key Encapsulation Mechanism)
+### Hybrid encryption (Key Encapsulation Mechanism)
 
 ```js
 const message = Uint8Array.from(Buffer.from("destroy earth"));
@@ -85,20 +103,6 @@ const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorith
 
 ```js
 await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
-```
-
-## Signing
-
-```js
-const message = Uint8Array.from(Buffer.from("destroy earth"));
-```
-
-```js
-const signature = await privateKey.sigmMessage(message, { scheme: "schnorr", algorithm: "sha256" });
-```
-
-```js
-await publicKey.verifySignature(message, signature, { scheme: "schnorr", algorithm: "sha256" });
 ```
 
 ## Signcryption
