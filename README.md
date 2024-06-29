@@ -188,14 +188,9 @@ const { result, blame } = await recoverDecryptor(ctx, shares, ciphertext, public
 
 ## Modules
 
-- [`vsslib.arith`](./src/arith)
 - [`vsslib.backend`](./src/backend)
-- [`vsslib.crypto`](./src/crypto)
-- [`vsslib.elgamal`](./src/elgamal)
 - [`vsslib.keys`](./src/keys)
-- [`vsslib.nizk`](./src/nizk)
-- [`vsslib.polynomials`](./src/polynomials)
-- [`vsslib.signer`](./src/signer)
+
 
 ## Development
 
