@@ -1,6 +1,7 @@
 # `vsslib.keys`
+  
 
-## Key generation
+## Generation
 
 ```js
 import { initBackend, generateKey } from "vsslib";
@@ -14,7 +15,7 @@ const { privateKey, publicKey } = await generateKey(ctx);
 const publicKey = await privateKey.publicKey();
 ```
 
-## Schnorr identification
+## Identification (Schnorr protocol)
 
 ```js
 const proof = await privateKey.proveSecret({ algorithm: "sha256" });
@@ -24,11 +25,9 @@ const proof = await privateKey.proveSecret({ algorithm: "sha256" });
 await publicKey.verifySecret(proof);
 ```
 
-## Encryption
+## Elgamal encryption
 
-### ElGamal schemes
-
-#### DHIES-Encryption (Integrated Encryption Scheme)
+### DHIES-Encryption (Integrated Encryption Scheme)
 
 ```js
 const message = Uint8Array.from(Buffer.from("destroy earth"));
@@ -39,7 +38,7 @@ const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
 ```
 
 
-#### HYBRID-Encryption (Key Encapsulation Mechanism)
+### HYBRID-Encryption (Key Encapsulation Mechanism)
 
 ```js
 const message = Uint8Array.from(Buffer.from("destroy earth"));
@@ -49,7 +48,7 @@ const message = Uint8Array.from(Buffer.from("destroy earth"));
 const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, { scheme: "hybrid", mode: "aes-256-cbc" });
 ```
 
-#### Plain Encryption
+### Plain Elgamal encryption
 
 ```js
 const message = (await ctx.randomPoint()).toBytes();
@@ -68,33 +67,7 @@ const plaintext = privateKey.decrypt(ciphertext, {
 });
 ```
 
-#### Decryption with decryptor
-
-#### Decryption with randomness
-
-### Verifiable encryption
-
-```js
-const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: "sha256" });
-```
-
-```js
-await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
-```
-
 ### Decryptors
-
-#### Verification
-
-```js
-const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm: "sha256" });
-```
-
-```js
-await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm: "sha256" });
-```
-
-#### Generation
 
 ```js
 const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext, { algorithm: "sha256" });
@@ -104,7 +77,17 @@ const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext, { alg
 await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm: "sha256" });
 ```
 
-## Signatures
+### Encrypt-then-prove
+
+```js
+const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: "sha256" });
+```
+
+```js
+await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
+```
+
+## Signing
 
 ```js
 const message = Uint8Array.from(Buffer.from("destroy earth"));
