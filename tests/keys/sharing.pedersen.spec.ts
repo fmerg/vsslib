@@ -1,4 +1,4 @@
-import { PartialKey, PublicKeyShare } from '../../src/keys';
+import { PartialKey, PartialPublic } from '../../src/keys';
 import { SecretPacket } from '../../src/dealer';
 import { resolveTestConfig } from '../environ';
 import { selectPartialKey, createKeySharingSetup } from '../helpers';
