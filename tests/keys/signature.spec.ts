@@ -10,10 +10,9 @@ let { systems, algorithms, signatureSchemes: schemes } = resolveTestConfig();
 algorithms  = [...algorithms, undefined];
 
 
-describe('success without nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+describe('Signing and verification', () => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'success - without nonce -over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -26,13 +25,8 @@ describe('success without nonce', () => {
     );
     expect(verified).toBe(true);
   });
-});
-
-
-describe('success with nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'success - with nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -47,13 +41,8 @@ describe('success with nonce', () => {
     );
     expect(verified).toBe(true);
   });
-});
-
-
-describe('failure if forged message', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - forged message - over %s/%s/%s', async ( system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -71,13 +60,8 @@ describe('failure if forged message', () => {
       'Invalid signature'
     );
   });
-});
-
-
-describe('failure if forged signature', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - forged signature - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -94,36 +78,8 @@ describe('failure if forged signature', () => {
       'Invalid signature'
     );
   });
-});
-
-
-describe('failure if wrong algorithm', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
-    const ctx = initBackend(system);
-    const { privateKey, publicKey } = await generateKey(ctx);
-    const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const signature = await privateKey.signMessage(message, { scheme, algorithm });
-    await expect(
-      publicKey.verifySignature(
-        message, signature, {
-          scheme,
-          algorithm: (algorithm == Algorithms.SHA256 || algorithm == undefined) ?
-            Algorithms.SHA512 :
-            Algorithms.SHA256
-        })
-    ).rejects.toThrow(
-      'Invalid signature'
-    );
-  });
-});
-
-
-describe('failure if missing nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - forged nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -140,13 +96,8 @@ describe('failure if missing nonce', () => {
       'Invalid signature'
     );
   });
-});
-
-
-describe('failure if forged nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - missing nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -161,6 +112,24 @@ describe('failure if forged nonce', () => {
           nonce: forgedNonce,
         }
       )
+    ).rejects.toThrow(
+      'Invalid signature'
+    );
+  });
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - wrong algorithm - over %s/%s/%s', async (system, scheme, algorithm) => {
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
+    const message = Uint8Array.from(Buffer.from('destroy earth'));
+    const signature = await privateKey.signMessage(message, { scheme, algorithm });
+    await expect(
+      publicKey.verifySignature(
+        message, signature, {
+          scheme,
+          algorithm: (algorithm == Algorithms.SHA256 || algorithm == undefined) ?
+            Algorithms.SHA512 :
+            Algorithms.SHA256
+        })
     ).rejects.toThrow(
       'Invalid signature'
     );
