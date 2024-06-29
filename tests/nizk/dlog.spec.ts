@@ -38,7 +38,7 @@ describe('Failure - forged proof', () => {
     const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const proof = await nizk(ctx, Algorithms.SHA256).proveDlog(x, { u, v });
-    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
+    proof.commitment[0] = await ctx.randomPublic();
     const valid = await nizk(ctx, Algorithms.SHA256).verifyDlog({ u, v }, proof);
     expect(valid).toBe(false);
   });

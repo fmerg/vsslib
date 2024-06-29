@@ -80,7 +80,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const { ciphertext, decryptor } = await hybridElgamal(ctx, mode).encrypt(message, y);
-    const forgedDecryptor = (await ctx.randomPoint()).toBytes();
+    const forgedDecryptor = await ctx.randomPublic();
     if (!mode || [BlockModes.AES_256_CBC, BlockModes.AES_256_GCM].includes(mode)) {
       await expect(
         hybridElgamal(ctx, mode).decryptWithDecryptor(ciphertext, forgedDecryptor)

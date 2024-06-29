@@ -65,7 +65,7 @@ describe('failure - forged proof', () => {
     const { ctx, publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
       system, scheme, algorithm
     });
-    decryptor.proof.commitment[0] = (await ctx.randomPoint()).toBytes();
+    decryptor.proof.commitment[0] = await ctx.randomPublic();
     await expect(
       publicKey.verifyPartialDecryptor(ciphertext, decryptor, { algorithm })
     ).rejects.toThrow(

@@ -25,7 +25,7 @@ describe('Feldman VSS scheme - success', () => {
     const { packets, commitments } = await sharing.createFeldmanPackets();
     const forgedCommitmnets = [
       ...commitments.slice(0, commitments.length - 1),
-      (await ctx.randomPoint()).toBytes()
+      await ctx.randomPublic()
     ];
     packets.forEach(async (packet: SecretPacket) => {
       const privateShare = await extractPartialKey(ctx, commitments, packet);

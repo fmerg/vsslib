@@ -59,7 +59,7 @@ describe('proof - failure if forged proof', () => {
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
-    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
+    proof.commitment[0] = await ctx.randomPublic();
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       'Invalid decryptor'
     );

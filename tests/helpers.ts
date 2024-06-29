@@ -25,7 +25,7 @@ export const isEqualSecret = (
 ): boolean => ctx.leBuff2Scalar(lhs) == ctx.leBuff2Scalar(rhs);
 
 export const mockMessage = async (ctx: Group<Point>, scheme: ElgamalScheme) =>
-  scheme == ElgamalSchemes.PLAIN ? (await ctx.randomPoint()).toBytes() :
+  scheme == ElgamalSchemes.PLAIN ? await ctx.randomPublic() :
     Uint8Array.from(Buffer.from('destroy earth'));
 
 export const selectSecretShare = (index: number, shares: SecretShare[]): SecretShare =>
@@ -79,7 +79,7 @@ export const createPublicPackets = async (opts: {
   if (blame) {
     for (const packet of packets) {
       invalidPackets.push(!(blame.includes(packet.index)) ? packet : {
-        value: (await ctx.randomPoint()).toBytes(),
+        value: await ctx.randomPublic(),
         index: packet.index,
         proof: packet.proof,
       });
@@ -152,7 +152,7 @@ export const createThresholdDecryptionSetup = async (opts: {
   if (blame) {
     for (const share of partialDecryptors) {
       invalidDecryptors.push(!(blame.includes(share.index)) ? share : {
-        value: (await ctx.randomPoint()).toBytes(),
+        value: await ctx.randomPublic(),
         index: share.index,
         proof: share.proof,
       });
