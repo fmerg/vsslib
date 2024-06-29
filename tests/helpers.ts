@@ -3,7 +3,7 @@ import { initBackend } from '../src/backend';
 import { generateKey } from '../src';
 import { ElgamalSchemes } from '../src/enums';
 import { ElgamalScheme, System, Algorithm } from '../src/types';
-import { distributeSecret, createPublicSharePacket, SecretShare, PublicShare } from '../src/dealer';
+import { distributeSecret, createPublicPacket, SecretShare, PublicShare } from '../src/dealer';
 import { PrivateKeyShare, PublicKeyShare } from '../src/keys';
 import { leInt2Buff } from '../src/arith';
 import { randomIndex } from './utils';
@@ -56,7 +56,7 @@ export const createSharingSetup = async (opts: {
 }
 
 
-export const createPublicSharePackets = async (opts: {
+export const createPublicPackets = async (opts: {
   ctx: Group<Point>,
   shares: SecretShare[],
   algorithm?: Algorithm,
@@ -65,7 +65,7 @@ export const createPublicSharePackets = async (opts: {
   let { ctx, shares, algorithm, nrInvalidIndexes } = opts;
   const packets = [];
   for (const share of shares) {
-    const packet = await createPublicSharePacket(ctx, share, { algorithm });
+    const packet = await createPublicPacket(ctx, share, { algorithm });
     packets.push(packet);
   }
   let blame: number[] = [];

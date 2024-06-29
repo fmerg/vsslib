@@ -5,8 +5,8 @@ import {
   distributeSecret,
   parseFeldmanPacket,
   parsePedersenPacket,
-  createPublicSharePacket,
-  parsePublicSharePacket,
+  createPublicPacket,
+  parsePublicPacket,
   combinePublicShares,
 } from '../src';
 import { randomNonce } from '../src/crypto';
@@ -89,8 +89,8 @@ describe('Distributed Key Generation (DKG)', () => {
     for (const sender of parties) {
       for (const receiver of parties) {
         const nonce = await randomNonce();
-        const packet = await createPublicSharePacket(ctx, sender.share!, { nonce });
-        const publicShare = await parsePublicSharePacket(ctx, packet, { nonce });
+        const packet = await createPublicPacket(ctx, sender.share!, { nonce });
+        const publicShare = await parsePublicPacket(ctx, packet, { nonce });
         receiver.publicShares.push(publicShare);
       }
     }

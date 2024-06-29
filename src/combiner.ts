@@ -3,8 +3,8 @@ import { Ciphertext } from './elgamal';
 import {
   SecretShare,
   PublicShare,
-  PublicSharePacket,
-  parsePublicSharePacket,
+  PublicPacket,
+  parsePublicPacket,
 } from './dealer';
 import { leInt2Buff } from './arith';
 import {
@@ -106,7 +106,7 @@ export async function combinePartialDecryptors<P extends Point>(
 
 export async function recoverPublic<P extends Point>(
   ctx: Group<P>,
-  packets: PublicSharePacket[],
+  packets: PublicPacket[],
   opts?: {
     algorithm?: Algorithm,
     nonce?: Uint8Array, // TODO: Individual nonces
@@ -127,7 +127,7 @@ export async function recoverPublic<P extends Point>(
   const blame = [];
   for (const packet of packets) {
     try {
-      const { value, index } = await parsePublicSharePacket(ctx, packet, { algorithm, nonce });
+      const { value, index } = await parsePublicPacket(ctx, packet, { algorithm, nonce });
       const lambda = computeLambda(ctx, index, indexes);
       const curr = await unpackValid(value);
       acc = await operate(acc, await exp(curr, lambda));
@@ -146,7 +146,7 @@ export async function recoverPublic<P extends Point>(
 
 export async function recoverPublicKey<P extends Point>(
   ctx: Group<P>,
-  packets: PublicSharePacket[],
+  packets: PublicPacket[],
   opts?: {
     algorithm?: Algorithm,
     nonce?: Uint8Array, // TODO: Individual nonces

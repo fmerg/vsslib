@@ -1,25 +1,17 @@
 #!/usr/bin/node
+
 const { Command, Option } = require('commander');
 const {
+  initBackend,
   generateKey,
-  parseSharePacket,
+  parsePublicPacket,
   combinePublicShares,
-} = require('./dist');
-const {
-  initBackend
-} = require('./dist/backend');
-const {
   distributeSecret,
-  SecretShare,
   parseFeldmanPacket,
   parsePedersenPacket,
-  createPublicSharePacket,
-  parsePublicSharePacket,
-} = require('./dist/dealer');
-const {
-  leInt2Buff,
-  mod,
-} = require('./dist/arith');
+  createPublicPacket,
+} = require('./dist');
+const { leInt2Buff, mod } = require('./dist/arith');
 
 const enums = require('./dist/enums')
 const crypto = require('./dist/crypto')
@@ -30,7 +22,7 @@ const program = new Command();
 async function doGenerateKey(options) {
   const { system, encoding } = options;
   const ctx = initBackend(system);
-  const { privateKey, publicKey, ctx } = await generateKey(ctx);
+  const { privateKey, publicKey } = await generateKey(ctx);
   console.log('Key', {
     private: privateKey.secret,
     public: publicKey.bytes,
@@ -136,8 +128,8 @@ async function demoDKG(options) {
   for (sender of parties) {
     for (receiver of parties) {
       const nonce = await crypto.randomNonce();
-      const packet = await createPublicSharePacket(ctx, sender.share, { nonce });
-      const pubShare = await parsePublicSharePacket(ctx, packet, { nonce });
+      const packet = await createPublicPacket(ctx, sender.share, { nonce });
+      const pubShare = await parsePublicPacket(ctx, packet, { nonce });
       receiver.publicShares.push(pubShare);
     }
   }

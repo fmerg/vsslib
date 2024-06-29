@@ -12,8 +12,8 @@ import {
   distributeSecret,
   parseFeldmanPacket,
   parsePedersenPacket,
-  createPublicSharePacket,
-  parsePublicSharePacket,
+  createPublicPacket,
+  parsePublicPacket,
 } from './dealer';
 
 
@@ -34,8 +34,8 @@ export {
   distributeSecret,
   parseFeldmanPacket,
   parsePedersenPacket,
-  createPublicSharePacket,
-  parsePublicSharePacket,
+  createPublicPacket,
+  parsePublicPacket,
   combinePublicShares,
   recoverPublicKey,
   combinePartialDecryptors,
