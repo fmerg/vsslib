@@ -188,7 +188,6 @@ const { result, blame } = await recoverDecryptor(ctx, shares, ciphertext, public
 
 ## Modules
 
-- [`vsslib.backend`](./src/backend)
 - [`vsslib.keys`](./src/keys)
 
 
