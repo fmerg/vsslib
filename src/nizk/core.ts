@@ -19,14 +19,7 @@ export class NizkProtocol<P extends Point>{
     this.algorithm = algorithm;
   }
 
-  fillMatrix = (m: number, n: number, pt: P): P[][] => Array.from({ length: m }, (_, i) =>
-    Array.from({ length: n }, (_, i) => pt)
-  )
-
-  toInner = async (proof: NizkProof): Promise<{
-    commitment: P[],
-    response: bigint[]
-  }> => {
+  _toInner = async (proof: NizkProof): Promise<{ commitment: P[], response: bigint[] }> => {
     const { unpackValid, leBuff2Scalar } = this.ctx;
     const { commitment: commitmentBuffers, response: responseBuffers } = proof;
     const m = commitmentBuffers.length;
@@ -42,9 +35,7 @@ export class NizkProtocol<P extends Point>{
     return { commitment, response };
   }
 
-  toOuter = async (proof: { commitment: P[], response: bigint[] }): Promise<
-    NizkProof
-  > => {
+  _toOuter = async (proof: { commitment: P[], response: bigint[] }): Promise<NizkProof> => {
     const { commitment, response } = proof;
     return {
       commitment: commitment.map(c => c.toBytes()),
@@ -52,7 +43,7 @@ export class NizkProtocol<P extends Point>{
     }
   }
 
-  computeChallenge = async (
+  _computeChallenge = async (
     relation: GenericLinear<P>, commitment: P[], extras: Uint8Array[], nonce?: Uint8Array
   ): Promise<bigint> => {
     const { modulus, order, generator: g } = this.ctx;
@@ -99,12 +90,12 @@ export class NizkProtocol<P extends Point>{
       }
       commitment[i] = ci;
     }
-    const challenge = await this.computeChallenge(relation, commitment, extras, nonce);
+    const challenge = await this._computeChallenge(relation, commitment, extras, nonce);
     const response = new Array(n);
     for (const [j, x] of witness.entries()) {
       response[j] = mod(rs[j] + x * challenge, order);
     }
-    return this.toOuter({ commitment, response });
+    return this._toOuter({ commitment, response });
   }
 
   _verifyLinear = async (
@@ -112,10 +103,10 @@ export class NizkProtocol<P extends Point>{
   ): Promise<boolean> => {
     const { neutral, exp, operate } = this.ctx;
     const { us, vs } = relation;
-    const { commitment, response } = await this.toInner(proof);
+    const { commitment, response } = await this._toInner(proof);
     if (vs.length !== commitment.length)
       throw new Error('Incompatible lengths');
-    const challenge = await this.computeChallenge(relation, commitment, extras, nonce);
+    const challenge = await this._computeChallenge(relation, commitment, extras, nonce);
     let flag = true;
     for (const [i, v] of vs.entries()) {
       if (us[i].length !== response.length)
@@ -136,6 +127,7 @@ export class NizkProtocol<P extends Point>{
     return flag;
   }
 
+  /* Prove knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` */
   proveLinear = async (
     witness: bigint[], relation: GenericLinear<P>, nonce?: Uint8Array, extras?: Uint8Array[]
   ): Promise<NizkProof> => {
@@ -158,6 +150,7 @@ export class NizkProtocol<P extends Point>{
     );
   }
 
+  /* Prove knowledge of `x` such that `v = u ^ x` */
   proveDlog = async (x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array): Promise<
     NizkProof
   > => {
@@ -186,93 +179,7 @@ export class NizkProtocol<P extends Point>{
     );
   }
 
-  proveAndDlog = async (witness: bigint[], pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<
-    NizkProof
-  > => {
-    const m = pairs.length;
-    const us = this.fillMatrix(m, m, this.ctx.neutral);
-    const vs = new Array(m);
-    for (let i = 0; i < m; i++) {
-      const { u, v } = pairs[i];
-      us[i][i] = u;
-      vs[i] = v;
-    }
-    return this._proveLinear(
-      witness,
-      {
-        us,
-        vs,
-      },
-      [],
-      nonce
-    );
-  }
-
-  verifyAndDlog = async (pairs: DlogPair<P>[], proof: NizkProof, nonce?: Uint8Array): Promise<
-    boolean
-  > => {
-    const m = pairs.length;
-    const us = this.fillMatrix(m, m, this.ctx.neutral);
-    const vs = new Array(m);
-    for (let i = 0; i < m; i++) {
-      const { u, v } = pairs[i];
-      us[i][i] = u;
-      vs[i] = v;
-    }
-    return this._verifyLinear(
-      {
-        us,
-        vs,
-      },
-      proof,
-      [],
-      nonce
-    );
-  }
-
-  proveEqDlog = async (x: bigint, pairs: DlogPair<P>[], nonce?: Uint8Array): Promise<NizkProof> => {
-    const m = pairs.length;
-    const witness = Array.from({ length: m }, (_, i) => x);
-    const us = this.fillMatrix(m, m, this.ctx.neutral);
-    const vs = new Array(m);
-    for (let i = 0; i < m; i++) {
-      const { u, v } = pairs[i];
-      us[i][i] = u;
-      vs[i] = v;
-    }
-    return this._proveLinear(
-      witness,
-      {
-        us,
-        vs,
-      },
-      [],
-      nonce
-    );
-  }
-
-  verifyEqDlog = async (pairs: DlogPair<P>[], proof: NizkProof, nonce?: Uint8Array): Promise<
-    boolean
-  > => {
-    const m = pairs.length;
-    const us = this.fillMatrix(m, m, this.ctx.neutral);
-    const vs = new Array(m);
-    for (let i = 0; i < m; i++) {
-      const { u, v } = pairs[i];
-      us[i][i] = u;
-      vs[i] = v;
-    }
-    return this._verifyLinear(
-      {
-        us,
-        vs,
-      },
-      proof,
-      [],
-      nonce
-    );
-  }
-
+  /* Prove knowledge of `z` such that `u = g ^ x`, `v = g ^ z` and `w = g ^ xz` */
   proveDDH = async (z: bigint, { u, v, w }: DDHTuple<P>, nonce?: Uint8Array): Promise<
     NizkProof
   > => {
@@ -296,39 +203,6 @@ export class NizkProtocol<P extends Point>{
       {
         us: [[g, n], [n, u]],
         vs: [v, w]
-      },
-      proof,
-      [],
-      nonce
-    );
-  }
-
-  proveRepresentation = async (
-    witness: { s: bigint, t: bigint }, commitment: { h: P, u: P }, nonce?: Uint8Array
-  ): Promise<NizkProof> => {
-    const { s, t } = witness;
-    const { h, u } = commitment;
-    const { generator: g } = this.ctx;
-    return this._proveLinear(
-      [s, t],
-      {
-        us: [[g, h]],
-        vs: [u]
-      },
-      [],
-      nonce
-    );
-  }
-
-  verifyRepresentation = async (
-    commitment: { h: P, u: P }, proof: NizkProof, nonce?: Uint8Array
-  ): Promise<boolean> => {
-    const { h, u } = commitment;
-    const { generator: g } = this.ctx;
-    return this._verifyLinear(
-      {
-        us: [[g, h]],
-        vs: [u]
       },
       proof,
       [],

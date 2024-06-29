@@ -32,42 +32,6 @@ export async function createGenericLinear<P extends Point>(
 }
 
 
-/** Create dlog pair with non-uniform logarithm */
-export async function createAndDlogPairs<P extends Point>(
-  ctx: Group<P>,
-  nrPairs: number,
-): Promise<[bigint[], DlogPair<P>[]]>{
-  const { randomScalar, randomPoint, exp } = ctx;
-  const witness = new Array(nrPairs);
-  const pairs = new Array(nrPairs);
-  for (let i = 0; i < nrPairs; i++) {
-    const x = await randomScalar();
-    const u = await randomPoint();
-    const v = await exp(u, x);
-    witness[i] = x;
-    pairs[i] = { u, v };
-  }
-  return [witness, pairs];
-}
-
-
-/** Creates dlog pairs with uniform logarithm */
-export async function createEqDlogPairs<P extends Point>(
-  ctx: Group<P>,
-  nrPairs: number
-): Promise<[bigint, DlogPair<P>[]]> {
-  const { randomScalar, randomPoint, exp } = ctx;
-  const x = await randomScalar();
-  const pairs = [];
-  for (let i = 0; i < nrPairs; i++) {
-    const u = await randomPoint();
-    const v = await exp(u, x);
-    pairs.push({ u, v });
-  }
-  return [x, pairs];
-}
-
-
 /** Create single dlog pair */
 export async function createDlogPair<P extends Point>(
   ctx: Group<P>,
@@ -92,19 +56,4 @@ export async function createDDHTuple<P extends Point>(
   const v = await exp(g, z);
   const w = await exp(u, z);
   return [z, { u, v, w }];
-}
-
-
-/** Create point representation based on Pedersen commitment */
-export async function createRepresentation<P extends Point>(
-  ctx: Group<P>,
-  h: P,
-  s?: bigint,
-  t?: bigint,
-): Promise<[{ s: bigint, t: bigint }, { h: P, u: P }]> {
-  const { randomScalar, exp, operate, generator: g } = ctx;
-  s = s || await randomScalar();
-  t = t || await randomScalar();
-  const u = await operate(await exp(g, s), await exp(h, t))
-  return [{ s, t }, { h, u }];
 }
