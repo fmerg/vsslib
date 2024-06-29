@@ -66,7 +66,7 @@ describe('Signing and verification', () => {
     const { privateKey, publicKey } = await generateKey(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.signMessage(message, { scheme, algorithm });
-    signature.c! = (await ctx.randomPoint()).toBytes();
+    signature.c! = await ctx.randomPublic();
     await expect(
       publicKey.verifySignature(
         message, signature, {

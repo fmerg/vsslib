@@ -33,7 +33,7 @@ describe('Feldman VSS scheme', () => {
     const { commitments } = await sharing.createFeldmanPackets();
     const forgedCommitmnets = [
       ...commitments.slice(0, commitments.length - 1),
-      (await ctx.randomPoint()).toBytes()
+      await ctx.randomPublic()
     ];
     secretShares.forEach(async (share: SecretShare) => {
       const verification = verifyFeldmanCommitments(

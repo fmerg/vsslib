@@ -75,7 +75,7 @@ describe('encrypt-then-prove - failure if forged proof', () => {
     const message = await mockMessage(ctx, scheme);
     const { ciphertext, randomness } = await publicKey.encrypt(message, { scheme });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
+    proof.commitment[0] = await ctx.randomPublic();
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       'Invalid encryption'
     );

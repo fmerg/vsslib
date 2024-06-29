@@ -47,13 +47,13 @@ export class EcGroup extends Group<EcPoint> {
     this.curve = curve;
   }
 
-  randomSecret = async (): Promise<Uint8Array> =>
-    this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
-
   randomScalar = async (): Promise<bigint> => mod(
     leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
     this.order
   );
+
+  randomSecret = async (): Promise<Uint8Array> =>
+    this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
 
   randomPoint = async (): Promise<EcPoint> => new EcPoint(
     this._base.multiply(mod(
@@ -61,6 +61,9 @@ export class EcGroup extends Group<EcPoint> {
       this.order
     ))
   );
+
+  randomPublic = async (): Promise<Uint8Array> => (
+    await this.randomPoint()).toBytes();
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;

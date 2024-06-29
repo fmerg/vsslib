@@ -11,7 +11,7 @@ describe('Pedersen VSS scheme', () => {
     const { ctx, sharing, privateShares: shares } = await createKeySharingSetup({
       system, nrShares, threshold
     });
-    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const publicBytes = await ctx.randomPublic();
     const { packets, commitments } = await sharing.createPedersenPackets(
       publicBytes
     );
@@ -27,13 +27,13 @@ describe('Pedersen VSS scheme', () => {
     const { ctx, sharing, privateShares: shares } = await createKeySharingSetup({
       system, nrShares, threshold
     });
-    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const publicBytes = await ctx.randomPublic();
     const { packets, commitments } = await sharing.createPedersenPackets(
       publicBytes
     );
     const forgedCommitments = [
       ...commitments.slice(0, commitments.length - 1),
-      (await ctx.randomPoint()).toBytes()
+      await ctx.randomPublic()
     ];
     packets.forEach(async (packet: SecretPacket) => {
       await expect(

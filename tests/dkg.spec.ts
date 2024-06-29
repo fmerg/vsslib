@@ -42,7 +42,7 @@ const selectParty = (index: number, parties: ShareHolder<Point>[]) => parties.fi
 describe('Distributed Key Generation (DKG)', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initBackend(system);
-    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const publicBytes = await ctx.randomPublic();
     let parties = [];
     for (let index = 1; index <= nrShares; index++) {
       parties.push(new ShareHolder(ctx, index));

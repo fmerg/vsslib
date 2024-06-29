@@ -94,7 +94,7 @@ describe('Signature verification - failure if forged signature', () => {
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message
     );
-    signature.c = (await ctx.randomPoint()).toBytes();
+    signature.c = await ctx.randomPublic();
     const verified = await signer(ctx, scheme, algorithm).verifyBytes(
       publicBytes, message, signature
     );

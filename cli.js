@@ -63,7 +63,7 @@ async function demoDKG(options) {
   const scheme = "Pedersen";
 
   const ctx = initBackend(system);
-  const publicBytes = (await ctx.randomPoint()).toBytes();
+  const publicBytes = await ctx.randomPublic();
 
   const parties = [];
   for (let index = 1; index <= nrShares; index++) {

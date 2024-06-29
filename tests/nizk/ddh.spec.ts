@@ -39,7 +39,7 @@ describe('Failure - forged proof', () => {
     const ctx = initBackend(system);
     const [z, { u, v, w }] = await createDDHTuple(ctx);
     const proof = await nizk(ctx, Algorithms.SHA256).proveDDH(z, { u, v, w })
-    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
+    proof.commitment[0] = await ctx.randomPublic();
     const valid = await nizk(ctx, Algorithms.SHA256).verifyDDH({ u, v, w }, proof);
     expect(valid).toBe(false);
   });

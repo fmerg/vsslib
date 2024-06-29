@@ -71,7 +71,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     const { ciphertext, decryptor } = await dhiesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
       message, y
     );
-    const forgedDecryptor = (await ctx.randomPoint()).toBytes();
+    const forgedDecryptor = await ctx.randomPublic();
     await expect(
       dhiesElgamal(ctx, mode, Algorithms.SHA256).decryptWithDecryptor(ciphertext, forgedDecryptor)
     ).rejects.toThrow(

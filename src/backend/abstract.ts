@@ -23,9 +23,10 @@ export abstract class Group<P extends Point> {
 
   leBuff2Scalar = (bytes: Uint8Array): bigint => mod(leBuff2Int(bytes), this.order);
 
-  abstract randomSecret: () => Promise<Uint8Array>;
   abstract randomScalar: () => Promise<bigint>;
+  abstract randomSecret: () => Promise<Uint8Array>;
   abstract randomPoint: () => Promise<P>;
+  abstract randomPublic: () => Promise<Uint8Array>;
   abstract validateScalar: (scalar: bigint) => Promise<boolean>;
   abstract validatePoint: (point: P) => Promise<boolean>;
   abstract exp: (point: P, scalar: bigint) => Promise<P>;

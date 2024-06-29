@@ -35,7 +35,7 @@ describe('Schnorr identification - failure if forged proof', () => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const proof = await privateKey.proveSecret();
-    proof.commitment[0] = (await ctx.randomPoint()).toBytes();
+    proof.commitment[0] = await ctx.randomPublic();
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
       'Invalid secret'
     );

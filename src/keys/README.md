@@ -69,7 +69,7 @@ const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
 ### Plain Elgamal encryption
 
 ```js
-const message = (await ctx.randomPoint()).toBytes();
+const message = await ctx.randomPublic();
 ```
 
 ```js
