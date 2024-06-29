@@ -9,10 +9,9 @@ import signer from '../src/signer';
 
 const { systems, algorithms, signatureSchemes: schemes} = resolveTestConfig();
 
-describe('Signature verification - success without nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+describe('Signing operation', () => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'success - without nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -24,13 +23,8 @@ describe('Signature verification - success without nonce', () => {
     );
     expect(verified).toBe(true);
   });
-});
-
-
-describe('Signature verification - success with nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'success - with nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -43,13 +37,8 @@ describe('Signature verification - success with nonce', () => {
     );
     expect(verified).toBe(true);
   });
-});
-
-
-describe('Signature verification - failure if forged message', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - forged message - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -62,13 +51,8 @@ describe('Signature verification - failure if forged message', () => {
     );
     expect(verified).toBe(false);
   });
-});
-
-
-describe('Signature verification - failure if forged key', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - forged key - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -81,13 +65,8 @@ describe('Signature verification - failure if forged key', () => {
     );
     expect(verified).toBe(false);
   });
-});
-
-
-describe('Signature verification - failure if forged signature', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - forged signature - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -100,13 +79,8 @@ describe('Signature verification - failure if forged signature', () => {
     );
     expect(verified).toBe(false);
   });
-});
-
-
-describe('Signature verification - failure if forged nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - forged nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -120,13 +94,8 @@ describe('Signature verification - failure if forged nonce', () => {
     );
     expect(verified).toBe(false);
   });
-});
-
-
-describe('Signature verification - failure if missing nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'failure - missing nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { x: secret, publicBytes } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));

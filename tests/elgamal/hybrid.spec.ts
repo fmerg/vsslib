@@ -12,8 +12,9 @@ import { resolveTestConfig } from '../environ';
 const { systems, modes } = resolveTestConfig();
 
 
-describe('Decryption - success', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+describe('Hybrid encryption (Key Encapsulation Mechanism)', () => {
+  it.each(cartesian([systems, modes]))(
+    'success - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -21,11 +22,8 @@ describe('Decryption - success', () => {
     const plaintext = await hybridElgamal(ctx, mode).decrypt(ciphertext, x);
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption - failure if forged secret', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'failure - foged secret - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -40,11 +38,8 @@ describe('Decryption - failure if forged secret', () => {
       expect(plaintext).not.toEqual(message);
     }
   });
-});
-
-
-describe('Decryption - failure if forged iv', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'failure - forged IV - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -59,11 +54,8 @@ describe('Decryption - failure if forged iv', () => {
       expect(plaintext).not.toEqual(message);
     }
   });
-});
-
-
-describe('Decryption with decryptor - success', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'decrypt with decryptor - success - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -71,11 +63,8 @@ describe('Decryption with decryptor - success', () => {
     const plaintext = await hybridElgamal(ctx, mode).decryptWithDecryptor(ciphertext, decryptor);
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption with decryptor - failure if forged decryptor', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'decrypt with decryptor - failure - if forged decryptor - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -94,11 +83,8 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
       expect(plaintext).not.toEqual(message);
     }
   });
-});
-
-
-describe('Decryption with randomness - success', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'decrypt with randomness - success - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -108,11 +94,8 @@ describe('Decryption with randomness - success', () => {
     );
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption with decryptor - failure if forged randomness', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'decrypt with decryptor - failure - forged randomness - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));

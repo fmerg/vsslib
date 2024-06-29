@@ -10,8 +10,8 @@ import { resolveTestConfig } from '../environ';
 const { systems, modes } = resolveTestConfig();
 
 
-describe('Decryption - success', () => {
-  it.each(systems)('over %s', async (system) => {
+describe('Plain Elgamal encryption', () => {
+  it.each(systems)('succes - over %s', async (system) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = await ctx.randomPublic();
@@ -19,11 +19,8 @@ describe('Decryption - success', () => {
     const plaintext = await plainElgamal(ctx).decrypt(ciphertext, x);
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption - failure if forged secret', () => {
-  it.each(systems)('over %s', async (system) => {
+  it.each(systems)(
+    'failure - forged secret - over %s', async (system) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = await ctx.randomPublic();
@@ -32,11 +29,7 @@ describe('Decryption - failure if forged secret', () => {
     const plaintext = await plainElgamal(ctx).decrypt(ciphertext, forgedSecret);
     expect(plaintext).not.toEqual(message);
   });
-});
-
-
-describe('Decryption with decryptor - success', () => {
-  it.each(systems)('over %s', async (system) => {
+  it.each(systems)('decrypt with decryptor - succes - over %s', async (system) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = await ctx.randomPublic();
@@ -46,11 +39,7 @@ describe('Decryption with decryptor - success', () => {
     );
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption with decryptor - failure if forged decryptor', () => {
-  it.each(systems)('over %s', async (system) => {
+  it.each(systems)('decrypt with decryptor - failure - over %s', async (system) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = await ctx.randomPublic();
@@ -61,11 +50,7 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
     );
     expect(plaintext).not.toEqual(message);
   });
-});
-
-
-describe('Decryption with randomness - success', () => {
-  it.each(systems)('over %s', async (system) => {
+  it.each(systems)('decrypt with randomness - success - over %s', async (system) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = await ctx.randomPublic();
@@ -75,11 +60,7 @@ describe('Decryption with randomness - success', () => {
     );
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption with randomness - failure if forged randomness', () => {
-  it.each(systems)('over %s', async (system) => {
+  it.each(systems)('decrypt with randomness - failure - forged randomness - over %s', async (system) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = await ctx.randomPublic();

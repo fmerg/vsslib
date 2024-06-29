@@ -12,10 +12,9 @@ import { resolveTestConfig } from '../environ';
 const { systems, modes, algorithms } = resolveTestConfig();
 
 
-describe('Decryption - success', () => {
-  it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
-    system, mode, algorithm,
-  ) => {
+describe('DHIES encryption and decryption (Integrated Encryption Scheme)', () => {
+  it.each(cartesian([systems, modes, algorithms]))(
+    'success - over %s/%s/%s', async (system, mode, algorithm,) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -23,13 +22,8 @@ describe('Decryption - success', () => {
     const plaintext = await dhiesElgamal(ctx, mode, algorithm).decrypt(ciphertext, x);
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption - failure if forged secret', () => {
-  it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
-    system, mode, algorithm,
-  ) => {
+  it.each(cartesian([systems, modes, algorithms]))(
+    'failure - forged secret - over %s/%s/%s', async (system, mode, algorithm,) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -39,13 +33,8 @@ describe('Decryption - failure if forged secret', () => {
       'Could not decrypt: Invalid MAC'
     );
   });
-});
-
-
-describe('Decryption - failure if forged iv', () => {
-  it.each(cartesian([systems, modes, algorithms]))('over %s/%s/%s', async (
-    system, mode, algorithm
-  ) => {
+  it.each(cartesian([systems, modes, algorithms]))(
+    'failure - forged IV - over %s/%s/%s', async (system, mode, algorithm) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -60,11 +49,21 @@ describe('Decryption - failure if forged iv', () => {
       expect(plaintext).not.toEqual(message);
     }
   });
-});
-
-
-describe('Decryption with decryptor - failure if forged decryptor', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'decrypt with decryptor - success - over %s/%s', async (system, mode) => {
+    const ctx = initBackend(system);
+    const { x, y } = await randomDlogPair(ctx);
+    const message = Uint8Array.from(Buffer.from('destroy earth'));
+    const { ciphertext, decryptor } = await dhiesElgamal(ctx, mode, Algorithms.SHA256).encrypt(
+      message, y
+    );
+    const plaintext = await dhiesElgamal(ctx, mode, Algorithms.SHA256).decryptWithDecryptor(
+      ciphertext, decryptor
+    )
+    expect(plaintext).toEqual(message);
+  });
+  it.each(cartesian([systems, modes]))(
+    'decrypt with decryptor - failure - forged decryptor - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -78,11 +77,8 @@ describe('Decryption with decryptor - failure if forged decryptor', () => {
       'Could not decrypt: Invalid MAC'
     );
   });
-});
-
-
-describe('Decryption with randomness - success', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'decrypt with randomness - success - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
@@ -94,11 +90,8 @@ describe('Decryption with randomness - success', () => {
     );
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption with decryptor - failure if forged randomness', () => {
-  it.each(cartesian([systems, modes]))('over %s/%s', async (system, mode) => {
+  it.each(cartesian([systems, modes]))(
+    'decrypt with randomness - failure - forged randomness - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
     const { x, y } = await randomDlogPair(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));

@@ -24,7 +24,7 @@ export const isEqualSecret = (
   rhs: Uint8Array,
 ): boolean => ctx.leBuff2Scalar(lhs) == ctx.leBuff2Scalar(rhs);
 
-export const mockMessage = async (ctx: Group<Point>, scheme: ElgamalScheme) =>
+export const buildMessage = async (ctx: Group<Point>, scheme: ElgamalScheme) =>
   scheme == ElgamalSchemes.PLAIN ? await ctx.randomPublic() :
     Uint8Array.from(Buffer.from('destroy earth'));
 
@@ -134,7 +134,7 @@ export const createThresholdDecryptionSetup = async (opts: {
     publicShares,
     ctx,
   } = await createKeySharingSetup({ system, nrShares, threshold, });
-  const message = await mockMessage(ctx, scheme);
+  const message = await buildMessage(ctx, scheme);
   const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
   const partialDecryptors = [];
   for (const privateShare of privateShares) {

@@ -1,5 +1,4 @@
 import { initBackend } from '../../src/backend';
-import { Point } from '../../src/backend/abstract';
 import { distributeSecret } from '../../src/dealer';
 import { selectSecretShare, selectPublicShare } from '../helpers';
 import { resolveTestConfig } from '../environ';
@@ -13,36 +12,9 @@ const thresholdParams = [
 ];
 
 
-describe('Sharing parameter errors', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initBackend(system);
-    const secret = await ctx.randomSecret();
-    await expect(distributeSecret(ctx, 1, 2, secret)).rejects.toThrow(
-      'Threshold parameter exceeds number of shares'
-    );
-    await expect(distributeSecret(ctx, 1, 0, secret)).rejects.toThrow(
-      'Threshold parameter must be at least 1'
-    );
-    await expect(distributeSecret(ctx, ctx.order, 2, secret, [
-      [BigInt(0), BigInt(1)],
-      [BigInt(1), BigInt(2)],
-    ])).rejects.toThrow(
-      'Number of shares violates the group order'
-    );
-    await expect(distributeSecret(ctx, 3, 2, secret, [
-      [BigInt(0), BigInt(1)],
-      [BigInt(1), BigInt(2)],
-    ])).rejects.toThrow(
-      'Number of predefined points violates threshold'
-    );
-  });
-})
-
-
-describe('Sharing without predefined points', () => {
-  it.each(
-    cartesian([systems, thresholdParams])
-  )('over %s for threshold: %s', async (system, [n, t]) => {
+describe('Shamir secret sharing', () => {
+  it.each(cartesian([systems, thresholdParams]))(
+    'ok - without predefined shares - over %s - (n, t): %s', async (system, [n, t]) => {
     const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
     const sharing = await distributeSecret(ctx, n, t, secret);
@@ -65,13 +37,8 @@ describe('Sharing without predefined points', () => {
     const { commitments } = await sharing.createFeldmanPackets();
     expect(commitments.length).toEqual(t);
   });
-});
-
-
-describe('Sharing with predefined points', () => {
-  it.each(
-    cartesian([systems, thresholdParams])
-  )('over %s for threshold: %s', async (system, [n, t]) => {
+  it.each(cartesian([systems, thresholdParams]))(
+    'ok - with predefined shares - over %s - (n, t): %s', async (system, [n, t]) => {
     const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
     for (let nrPredefined = 1; nrPredefined < t; nrPredefined++) {
@@ -103,4 +70,46 @@ describe('Sharing with predefined points', () => {
       expect(commitments.length).toEqual(t);
     }
   });
-});
+  it.each(systems)(
+    'error - number of requested shares < threshold - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const secret = await ctx.randomSecret();
+    await expect(distributeSecret(ctx, 0, 2, secret)).rejects.toThrow(
+      'Number of shares must be at least one'
+    );
+  });
+  it.each(systems)(
+    'error - threshold parameter exceeds number of shares - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const secret = await ctx.randomSecret();
+    await expect(distributeSecret(ctx, 1, 2, secret)).rejects.toThrow(
+      'Threshold parameter exceeds number of shares'
+    );
+  });
+  it.each(systems)(
+    'error - threshold parameter < 1 - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const secret = await ctx.randomSecret();
+    await expect(distributeSecret(ctx, 1, 0, secret)).rejects.toThrow(
+      'Threshold parameter must be at least 1'
+    );
+  });
+  it.each(systems)('error - number of shares >= order - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const secret = await ctx.randomSecret();
+    await expect(distributeSecret(ctx, ctx.order, 2, secret, [
+      [BigInt(0), BigInt(1)],
+      [BigInt(1), BigInt(2)],
+    ])).rejects.toThrow(
+      'Number of shares violates the group order'
+    );
+    await expect(distributeSecret(ctx, 3, 2, secret, [
+      [BigInt(0), BigInt(1)],
+      [BigInt(1), BigInt(2)],
+    ])).rejects.toThrow(
+      'Number of predefined shares violates threshold'
+    );
+  });
+})
+
+
