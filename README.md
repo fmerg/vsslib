@@ -118,9 +118,9 @@ const { packets, commitments } = await sharing.createFeldmanPackets();
 ```
 
 ```js
-import { PartialKey } from "vsslib";
+import { extractPartialKey } from "vsslib";
 
-const privateShare = await PartialKey.fromFeldmanPacket(ctx, commitments, packet);
+const privateShare = await extractPartialKey(ctx, commitments, packet);
 ```
 
 ### Pedersen VSS scheme
@@ -130,9 +130,9 @@ const { packets, commitments } = await sharing.createPedersenPackets(publicBytes
 ```
 
 ```js
-import { PartialKey } from "vsslib";
+import { extractPartialKey } from "vsslib";
 
-const privateShare = await PartialKey.fromPedersenCommitments(ctx, commitments, publicBytes, packet);
+const privateShare = await extractPartialKey(ctx, commitments, packet);
 ```
 
 ### Public key recovery

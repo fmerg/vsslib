@@ -11,36 +11,31 @@ import { PrivateKey, PublicKey } from './core';
 
 export type PartialDecryptor = { value: Uint8Array, index: number, proof: NizkProof };
 
+export async function extractPartialKey<P extends Point>(
+  ctx: Group<P>,
+  commitments: Uint8Array[],
+  packet: SecretPacket,
+  publicBytes?: Uint8Array,
+): Promise<PartialKey<P>> {
+  if (publicBytes) {
+    const { share: { value, index } } = await parsePedersenPacket(
+      ctx, commitments, publicBytes, packet,
+    );
+    return new PartialKey(ctx, value, index);
+  } else {
+    const { value, index } = await parseFeldmanPacket(
+      ctx, commitments, packet
+    );
+    return new PartialKey(ctx, value, index);
+  }
+}
+
 export class PartialKey<P extends Point> extends PrivateKey<P> {
   index: number;
 
   constructor(ctx: Group<P>, bytes: Uint8Array, index: number) {
     super(ctx, bytes);
     this.index = index;
-  }
-
-  static async fromFeldmanPacket(
-    ctx: Group<Point>,
-    commitments: Uint8Array[],
-    packet: SecretPacket
-  ): Promise<PartialKey<Point>> {
-    const { value, index } = await parseFeldmanPacket(ctx, commitments, packet);
-    return new PartialKey(ctx, value, index);
-  }
-
-  static async fromPedersenPacket(
-    ctx: Group<Point>,
-    commitments: Uint8Array[],
-    publicBytes: Uint8Array,
-    packet: SecretPacket,
-  ): Promise<PartialKey<Point>> {
-    const { share: { value, index } } = await parsePedersenPacket(
-      ctx,
-      commitments,
-      publicBytes,
-      packet,
-    );
-    return new PartialKey(ctx, value, index);
   }
 
   async getPublicShare(): Promise<PartialPublic<P>> {
