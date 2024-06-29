@@ -14,7 +14,7 @@ import { Signature } from '../signer';
 import { Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from '../types';
 import { toCanonical, fromCanonical, ctEqualBuffer } from '../common';
-import { distributeSecret, ShamirSharing } from '../shamir';
+import { distributeSecret, ShamirSharing } from '../dealer';
 
 import elgamal from '../elgamal';
 import nizk from '../nizk';

@@ -5,6 +5,7 @@ import {
   InterpolationError,
   ShamirError,
   InvalidSecretShare,
+  InvalidPublicShare,
 } from './errors';
 import { leInt2Buff } from './arith';
 import { NizkProof } from './nizk';
@@ -277,57 +278,6 @@ export async function parsePublicSharePacket<P extends Point>(
     nonce
   );
   if (!verified)
-    throw new Error("Invalid public share");
+    throw new InvalidPublicShare(`Invalid packet with index ${index}`);
   return { value, index };
-}
-
-
-export function computeLambda<P extends Point>(
-  ctx: Group<P>,
-  index: number,
-  qualifiedIndexes: number[]
-): bigint {
-  let lambda = __1n;
-  const { order } = ctx
-  const i = index;
-  qualifiedIndexes.forEach(j => {
-    if (i != j) {
-      const curr = BigInt(j) * modInv(BigInt(j - i), order);
-      lambda = mod(lambda * curr, order);
-    }
-  });
-  return lambda;
-}
-
-
-export function recoverSecret<P extends Point>(
-  ctx: Group<P>,
-  shares: SecretShare[]
-): Uint8Array {
-  const { order, leBuff2Scalar } = ctx;
-  const indexes = shares.map(share => share.index);
-  const secret = shares.reduce(
-    (acc, { value, index }) => {
-      const lambda = computeLambda(ctx, index, indexes);
-      return mod(acc + leBuff2Scalar(value) * lambda, order);
-    },
-    __0n
-  );
-  return leInt2Buff(secret);
-}
-
-
-export async function recoverPublic<P extends Point>(
-  ctx: Group<P>,
-  shares: PublicShare[]
-): Promise<Uint8Array> {
-  const { order, operate, neutral, exp, unpackValid } = ctx;
-  const indexes = shares.map(share => share.index);
-  let acc = neutral;
-  for (const { index, value } of shares) {
-    const lambda = computeLambda(ctx, index, indexes);
-    const curr = await unpackValid(value);
-    acc = await operate(acc, await exp(curr, lambda));
-  }
-  return acc.toBytes();
 }

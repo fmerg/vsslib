@@ -10,7 +10,7 @@ import {
   parseFeldmanPacket,
   parsePedersenPacket,
   SecretSharePacket,
-} from '../shamir';
+} from '../dealer';
 import { Algorithm } from '../types';
 import { PrivateKey, PublicKey } from './core';
 
@@ -90,6 +90,7 @@ export class PublicKeyShare<P extends Point> extends PublicKey<P> {
     ciphertext: Ciphertext,
     decryptor: PartialDecryptor,
     opts?: {
+      algorithm?: Algorithm,
       nonce?: Uint8Array,
     },
   ): Promise<boolean> {
@@ -101,9 +102,7 @@ export class PublicKeyShare<P extends Point> extends PublicKey<P> {
         ciphertext,
         value,
         proof,
-        {
-          nonce,
-        }
+        opts
       );
     } catch (err: any) {
       if (err instanceof InvalidDecryptor) throw new InvalidPartialDecryptor(

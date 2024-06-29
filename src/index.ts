@@ -1,11 +1,19 @@
 import { generateKey } from './keys';
 import {
-  recoverKey,
+  combinePublicShares,
   recoverPublicKey,
-  verifyPartialDecryptors,
+  combinePartialDecryptors,
   recoverDecryptor,
   thresholdDecrypt
 } from './combiner';
+
+import {
+  distributeSecret,
+  parseFeldmanPacket,
+  parsePedersenPacket,
+  createPublicSharePacket,
+  parsePublicSharePacket,
+} from './dealer';
 
 
 const backend = require('./backend');
@@ -15,16 +23,21 @@ const enums = require('./enums');
 const keys = require('./keys');
 const lagrange = require('./lagrange');
 const nizk = require('./nizk');
-const shamir = require('./shamir');
+const dealer = require('./dealer');
 const signer = require('./signer');
 
 
 export {
   generateKey,
-  recoverKey,
+  distributeSecret,
+  parseFeldmanPacket,
+  parsePedersenPacket,
+  createPublicSharePacket,
+  parsePublicSharePacket,
+  combinePublicShares,
   recoverPublicKey,
+  combinePartialDecryptors,
   recoverDecryptor,
-  verifyPartialDecryptors,
   thresholdDecrypt,
   backend,
   crypto,
@@ -33,6 +46,6 @@ export {
   keys,
   lagrange,
   nizk,
-  shamir,
+  dealer,
   signer,
 }

@@ -1,20 +1,18 @@
-import { initGroup } from '../../src/backend';
-import { Group, Point } from '../../src/backend/abstract';
+import { initGroup } from '../src/backend';
+import { Group, Point } from '../src/backend/abstract';
+import { SecretShare, ShamirSharing, PublicShare } from '../src/dealer';
 import {
-  SecretShare,
-  ShamirSharing,
-  PublicShare,
   distributeSecret,
   parseFeldmanPacket,
   parsePedersenPacket,
   createPublicSharePacket,
   parsePublicSharePacket,
-  recoverPublic,
-} from '../../src/shamir';
-import { randomNonce } from '../../src/crypto';
-import { resolveTestConfig } from '../environ';
-import { isEqualBuffer } from '../utils';
-import { mod, leInt2Buff } from '../../src/arith';
+  combinePublicShares,
+} from '../src';
+import { randomNonce } from '../src/crypto';
+import { resolveTestConfig } from './environ';
+import { isEqualBuffer } from './utils';
+import { mod, leInt2Buff } from '../src/arith';
 
 let { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -99,7 +97,7 @@ describe('Distributed Key Generation (DKG)', () => {
 
     // Local computation of global public
     for (let party of parties) {
-      party.globalPublic = await recoverPublic(ctx, party.publicShares);
+      party.globalPublic = await combinePublicShares(ctx, party.publicShares);
     }
 
     // Test correctness

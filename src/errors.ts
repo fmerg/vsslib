@@ -29,3 +29,5 @@ export class InvalidPartialDecryptor extends Error {}
 export class InvalidEncryptionProof extends Error {}
 
 export class InvalidSecretShare extends Error {}
+
+export class InvalidPublicShare extends Error {}

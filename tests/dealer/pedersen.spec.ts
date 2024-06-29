@@ -1,45 +1,48 @@
 import { initGroup } from '../../src/backend';
 import { Point } from '../../src/backend/abstract';
-import { SecretShare, ShamirSharing } from '../../src/shamir';
-import { distributeSecret, verifyFeldmanCommitments } from '../../src/shamir';
+import { SecretShare, ShamirSharing } from '../../src/dealer';
+import { distributeSecret, verifyPedersenCommitments } from '../../src/dealer';
 import { resolveTestConfig } from '../environ';
+import { leInt2Buff } from '../../src/arith';
 
 let { systems, nrShares, threshold } = resolveTestConfig();
 
 
-describe('Feldman VSS scheme', () => {
+describe('Pedersen VSS scheme', () => {
   it.each(systems)('success over %s', async (system) => {
     const ctx = initGroup(system);
     const secret = await ctx.randomSecret();
     const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
+    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const { commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
     const secretShares = await sharing.getSecretShares();
-    const { commitments } = await sharing.createFeldmanPackets();
     secretShares.forEach(async (share: SecretShare) => {
-      const { value: secret, index } = share;
-      const verified = await verifyFeldmanCommitments(
+      const binding = bindings[share.index - 1];
+      const verified = await verifyPedersenCommitments(
         ctx,
         share,
-        commitments,
+        binding,
+        publicBytes,
+        commitments
       );
       expect(verified).toBe(true);
     });
   });
-
   it.each(systems)('failure over %s', async (system) => {
     const ctx = initGroup(system);
     const secret = await ctx.randomSecret();
     const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
+    const publicBytes = (await ctx.randomPoint()).toBytes();
+    const { commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
     const secretShares = await sharing.getSecretShares();
-    const { commitments } = await sharing.createFeldmanPackets();
-    const forgedCommitmnets = [
-      ...commitments.slice(0, commitments.length - 1),
-      (await ctx.randomPoint()).toBytes()
-    ];
     secretShares.forEach(async (share: SecretShare) => {
-      const verification = verifyFeldmanCommitments(
+      const forgedBinding = leInt2Buff(await ctx.randomScalar());
+      const verification = verifyPedersenCommitments(
         ctx,
         share,
-        forgedCommitmnets
+        forgedBinding,
+        publicBytes,
+        commitments
       );
       await expect(verification).rejects.toThrow('Invalid share');
     });

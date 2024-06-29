@@ -16,12 +16,12 @@ import {
 } from '../src/types';
 import { removeItem } from './utils';
 
-const __modes          = removeItem([...Object.values(BlockModes)], BlockModes.DEFAULT);
-const __algorithms        = removeItem([...Object.values(Algorithms)], Algorithms.DEFAULT);
-const __elgamalSchemes    = removeItem([...Object.values(ElgamalSchemes)], ElgamalSchemes.DEFAULT);
-const __signatureSchemes  = removeItem([...Object.values(SignatureSchemes)], SignatureSchemes.DEFAULT);
-const __nrShares          = 3;
-const __threshold         = 2;
+const __modes = removeItem([...Object.values(BlockModes)], BlockModes.DEFAULT);
+const __algorithms = removeItem([...Object.values(Algorithms)], Algorithms.DEFAULT);
+const __elgamalSchemes = removeItem([...Object.values(ElgamalSchemes)], ElgamalSchemes.DEFAULT);
+const __signatureSchemes = removeItem([...Object.values(SignatureSchemes)], SignatureSchemes.DEFAULT);
+const __nrShares  = 3;
+const __threshold = 2;
 
 export const resolveTestConfig = () => {
   const modes = process.env.AES_MODE ? [process.env.AES_MODE as BlockMode] : __modes;
