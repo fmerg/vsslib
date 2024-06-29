@@ -1,7 +1,7 @@
 import { recoverPublic } from '../../src/combiner';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
-import { createSharingSetup, createPublicSharePackets } from '../helpers';
+import { createSharingSetup, createPublicPackets } from '../helpers';
 
 let { systems, algorithms, nrShares, threshold } = resolveTestConfig();
 
@@ -12,7 +12,7 @@ describe('Public point recovery', () => {
     const { ctx, secret, publicBytes, secretShares: shares } = await createSharingSetup({
       system, nrShares, threshold
     });
-    const { packets } = await createPublicSharePackets({ ctx, shares, algorithm });
+    const { packets } = await createPublicPackets({ ctx, shares, algorithm });
     partialPermutations(packets).forEach(async (qualifiedPackets) => {
       let { result, blame } = await recoverPublic(ctx, qualifiedPackets, { algorithm });
       expect(isEqualBuffer(result, publicBytes)).toBe(qualifiedPackets.length >= threshold);
@@ -24,7 +24,7 @@ describe('Public point recovery', () => {
     const { ctx, secret, publicBytes, secretShares: shares } = await createSharingSetup({
       system, nrShares, threshold
     });
-    const { packets } = await createPublicSharePackets({ ctx, shares, algorithm });
+    const { packets } = await createPublicPackets({ ctx, shares, algorithm });
     partialPermutations(packets, 0, threshold - 1).forEach(async (qualifiedPackets) => {
       await expect(recoverPublic(ctx, qualifiedPackets, { algorithm, threshold })).rejects.toThrow(
         'Insufficient number of shares'
@@ -41,7 +41,7 @@ describe('Public point recovery', () => {
     const { ctx, secret, publicBytes, secretShares: shares } = await createSharingSetup({
       system, nrShares, threshold
     });
-    const { invalidPackets } = await createPublicSharePackets({
+    const { invalidPackets } = await createPublicPackets({
       ctx, shares, algorithm, nrInvalidIndexes: 2
     });
     await expect(recoverPublic(ctx, invalidPackets, { algorithm, threshold })).rejects.toThrow(
@@ -53,7 +53,7 @@ describe('Public point recovery', () => {
     const { ctx, secret, publicBytes, secretShares: shares } = await createSharingSetup({
       system, nrShares, threshold
     });
-    const { invalidPackets, blame: targetBlame } = await createPublicSharePackets({
+    const { invalidPackets, blame: targetBlame } = await createPublicPackets({
       ctx, shares, algorithm, nrInvalidIndexes: 2
     });
     let { result, blame } = await recoverPublic(

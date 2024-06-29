@@ -63,9 +63,9 @@ await verifyPedersenCommitments(ctx, share, bindng, publicBytes, commitments);
 #### Verifiable public shares
 
 ```js
-import { createPublicSharePacket } from 'vsslib';
+import { createPublicPacket } from 'vsslib';
 
-const packet = await createPublicSharePacket(ctx, share, { algorithm, nonce });
+const packet = await createPublicPacket(ctx, share, { algorithm, nonce });
 ```
 
 ### Secret recovery

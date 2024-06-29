@@ -1,21 +1,15 @@
 import { Point, Group } from '../backend/abstract';
 import { Ciphertext } from '../elgamal';
-import {
-  InvalidDecryptor,
-  InvalidPartialDecryptor,
-} from '../errors';
 import { NizkProof } from '../nizk';
 import {
-  PublicShare,
-  parseFeldmanPacket,
-  parsePedersenPacket,
-  SecretSharePacket,
+  PublicShare, SecretPacket, parseFeldmanPacket, parsePedersenPacket
 } from '../dealer';
+import { InvalidDecryptor, InvalidPartialDecryptor } from '../errors';
 import { Algorithm } from '../types';
 import { PrivateKey, PublicKey } from './core';
 
 
-export type PartialDecryptor = { value: Uint8Array, proof: NizkProof, index: number };
+export type PartialDecryptor = { value: Uint8Array, index: number, proof: NizkProof };
 
 export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
   index: number;
@@ -28,7 +22,7 @@ export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
   static async fromFeldmanPacket(
     ctx: Group<Point>,
     commitments: Uint8Array[],
-    packet: SecretSharePacket
+    packet: SecretPacket
   ): Promise<PrivateKeyShare<Point>> {
     const { value, index } = await parseFeldmanPacket(ctx, commitments, packet);
     return new PrivateKeyShare(ctx, value, index);
@@ -38,7 +32,7 @@ export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
     ctx: Group<Point>,
     commitments: Uint8Array[],
     publicBytes: Uint8Array,
-    packet: SecretSharePacket,
+    packet: SecretPacket,
   ): Promise<PrivateKeyShare<Point>> {
     const { share: { value, index } } = await parsePedersenPacket(
       ctx,
@@ -68,7 +62,7 @@ export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
     );
     return { value: decryptor, proof, index: this.index };
   }
-};
+}
 
 
 export class PublicKeyShare<P extends Point> extends PublicKey<P> {
@@ -106,10 +100,10 @@ export class PublicKeyShare<P extends Point> extends PublicKey<P> {
       );
     } catch (err: any) {
       if (err instanceof InvalidDecryptor) throw new InvalidPartialDecryptor(
-        `Invalid partial decryptor` // TODO: with index
+        `Invalid partial decryptor` // TODO
       );
       else throw err;
     }
     return true;
   }
-};
+}

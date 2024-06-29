@@ -19,9 +19,10 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 export type SecretShare = { value: Uint8Array, index: number };
-export type SecretSharePacket = SecretShare & { binding?: Uint8Array };
+export type SecretPacket = SecretShare & { binding?: Uint8Array };
+
 export type PublicShare = { value: Uint8Array, index: number };
-export type PublicSharePacket = PublicShare & { proof: NizkProof };
+export type PublicPacket = PublicShare & { proof: NizkProof };
 
 
 export async function distributeSecret<P extends Point>(
@@ -107,13 +108,13 @@ export class ShamirSharing<P extends Point> {
   }
 
   createFeldmanPackets = async (): Promise<{
-    packets: SecretSharePacket[],
+    packets: SecretPacket[],
     commitments: Uint8Array[],
   }> => {
     const { exp, generator: g } = this.ctx;
     const { coeffs, degree, evaluate } = this.polynomial;
     const commitments = new Array(degree + 1);
-    const packets = new Array<SecretSharePacket>(this.nrShares);
+    const packets = new Array<SecretPacket>(this.nrShares);
     for (let i = 0; i < this.nrShares; i++) {
       if (i < degree + 1) {
         const c = await exp(g, coeffs[i]);
@@ -127,7 +128,7 @@ export class ShamirSharing<P extends Point> {
   }
 
   createPedersenPackets = async (publicBytes: Uint8Array): Promise<{
-    packets: SecretSharePacket[],
+    packets: SecretPacket[],
     bindings: Uint8Array[],
     commitments: Uint8Array[],
   }> => {
@@ -136,7 +137,7 @@ export class ShamirSharing<P extends Point> {
     const h = await this.ctx.unpackValid(publicBytes);
     const commitments = new Array(degree + 1);
     const bindings = new Array(degree + 1);
-    const packets = new Array<SecretSharePacket>(this.nrShares);
+    const packets = new Array<SecretPacket>(this.nrShares);
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     for (let i = 0; i < this.nrShares; i++) {
       if (i < degree + 1) {
@@ -213,7 +214,7 @@ export async function verifyPedersenCommitments<P extends Point>(
 export async function parseFeldmanPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
-  packet: SecretSharePacket,
+  packet: SecretPacket,
 ): Promise<SecretShare> {
   const { value, index } = packet;
   const share = { value, index };
@@ -226,7 +227,7 @@ export async function parsePedersenPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
   publicBytes: Uint8Array,
-  packet: SecretSharePacket,
+  packet: SecretPacket,
 ): Promise<{ share: SecretShare, binding: Uint8Array }> {
   const { value, index, binding } = packet;
   if (!binding)
@@ -241,11 +242,11 @@ export async function parsePedersenPacket<P extends Point>(
 }
 
 
-export async function createPublicSharePacket<P extends Point>(
+export async function createPublicPacket<P extends Point>(
   ctx: Group<P>,
   share: SecretShare,
   opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
-): Promise<PublicSharePacket> {
+): Promise<PublicPacket> {
   const { value, index } = share;
   const g = ctx.generator;
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
@@ -257,9 +258,9 @@ export async function createPublicSharePacket<P extends Point>(
 }
 
 
-export async function parsePublicSharePacket<P extends Point>(
+export async function parsePublicPacket<P extends Point>(
   ctx: Group<P>,
-  packet: PublicSharePacket,
+  packet: PublicPacket,
   opts?: {
     algorithm?: Algorithm,
     nonce?: Uint8Array,
