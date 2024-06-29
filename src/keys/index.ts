@@ -1,6 +1,6 @@
 import { Point, Group } from '../backend/abstract';
 import { PrivateKey, PublicKey } from './core'
-import { PartialKey, PublicKeyShare, PartialDecryptor } from './shares';
+import { PartialKey, PartialPublic, PartialDecryptor } from './shares';
 
 async function generateKey<P extends Point>(ctx: Group<P>): Promise<{
   privateKey: PrivateKey<P>,
@@ -16,6 +16,6 @@ export {
   PrivateKey,
   PublicKey,
   PartialKey,
-  PublicKeyShare,
+  PartialPublic,
   PartialDecryptor,
 }

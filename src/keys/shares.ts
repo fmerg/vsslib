@@ -43,8 +43,8 @@ export class PartialKey<P extends Point> extends PrivateKey<P> {
     return new PartialKey(ctx, value, index);
   }
 
-  async getPublicShare(): Promise<PublicKeyShare<P>> {
-    return new PublicKeyShare(
+  async getPublicShare(): Promise<PartialPublic<P>> {
+    return new PartialPublic(
       this.ctx, await this.getPublicBytes(), this.index
     );
   }
@@ -65,7 +65,7 @@ export class PartialKey<P extends Point> extends PrivateKey<P> {
 }
 
 
-export class PublicKeyShare<P extends Point> extends PublicKey<P> {
+export class PartialPublic<P extends Point> extends PublicKey<P> {
   index: number;
 
   constructor(ctx: Group<P>, bytes: Uint8Array, index: number) {

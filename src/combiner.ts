@@ -1,3 +1,4 @@
+import { leInt2Buff } from './arith';
 import { Point, Group } from './backend/abstract';
 import { Ciphertext } from './elgamal';
 import {
@@ -6,12 +7,11 @@ import {
   PublicPacket,
   parsePublicPacket,
 } from './dealer';
-import { leInt2Buff } from './arith';
 import {
   PrivateKey,
   PublicKey,
   PartialKey,
-  PublicKeyShare,
+  PartialPublic,
   PartialDecryptor
 } from './keys';
 import { InvalidPublicShare, InvalidPartialDecryptor } from './errors';
@@ -164,7 +164,7 @@ export async function recoverDecryptor<P extends Point>(
   ctx: Group<P>,
   shares: PartialDecryptor[],
   ciphertext: Ciphertext,
-  publicShares: PublicKeyShare<P>[],
+  publicShares: PartialPublic<P>[],
   opts?: {
     algorithm?: Algorithm,
     nonce?: Uint8Array, // TODO: Individual decryptor nonces
@@ -219,7 +219,7 @@ export async function thresholdDecrypt<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext,
   decryptorShares: PartialDecryptor[],
-  publicShares: PublicKeyShare<P>[],
+  publicShares: PartialPublic<P>[],
   opts: {
     scheme: ElgamalScheme,
     mode?: BlockMode,
