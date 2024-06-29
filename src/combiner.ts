@@ -10,7 +10,7 @@ import { leInt2Buff } from './arith';
 import {
   PrivateKey,
   PublicKey,
-  PrivateKeyShare,
+  PartialKey,
   PublicKeyShare,
   PartialDecryptor
 } from './keys';
