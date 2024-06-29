@@ -1,5 +1,5 @@
 import { initBackend } from './backend';
-import { generateKey } from './keys';
+import { generateKey, extractPartialKey } from './keys';
 import {
   combinePublicShares,
   recoverPublicKey,
@@ -31,6 +31,7 @@ const signer = require('./signer');
 export {
   initBackend,
   generateKey,
+  extractPartialKey,
   distributeSecret,
   parseFeldmanPacket,
   parsePedersenPacket,
