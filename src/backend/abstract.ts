@@ -23,7 +23,6 @@ export abstract class Group<P extends Point> {
 
   leBuff2Scalar = (bytes: Uint8Array): bigint => mod(leBuff2Int(bytes), this.order);
 
-  abstract equals<Q extends Point>(other: Group<Q>): Promise<boolean>;
   abstract randomSecret: () => Promise<Uint8Array>;
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;

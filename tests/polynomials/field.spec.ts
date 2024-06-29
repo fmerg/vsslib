@@ -10,17 +10,17 @@ const { systems } = resolveTestConfig();
 
 
 describe('Random polynomial generation', () => {
-  test('Non-positive degree error', async () => {
-    const ctx = initGroup('ed25519');
+  it.each(systems)('Non-positive degree error - over %s', async (system) => {
+    const ctx = initGroup(system);
     await expect(randomPolynomial(ctx, -1)).rejects.toThrow(
       'Polynomial degree must be positive'
     );
   });
-  test('Correct parameters', async () => {
-    const ctx = initGroup('ed25519');
+  it.each(systems)('Success - over %s', async (system) => {
+    const ctx = initGroup(system);
     const degree = 7;
     const polynomial = await randomPolynomial(ctx, degree);
-    expect(await polynomial.ctx.equals(ctx)).toBe(true);
+    expect(polynomial.ctx.system).toBe(system);
     expect(polynomial.degree).toEqual(degree);
     expect(polynomial.coeffs.length).toEqual(degree + 1);
   });
@@ -32,7 +32,7 @@ describe('Algebraic operations with random poynomials', () => {
     [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]
   ];
 
-  it.each(cartesian([degree_pairs, systems]))('Addition with degrees %s over %s', async (
+  it.each(cartesian([degree_pairs, systems]))('Addition - degrees %s over %s', async (
     degrees, system
   ) => {
     const ctx = initGroup(system);
@@ -49,7 +49,7 @@ describe('Algebraic operations with random poynomials', () => {
     expect(poly3.equals(poly2.add(poly1))).toBe(true);
   });
 
-  it.each(cartesian([degree_pairs, systems]))('Multiplication with degrees %s over %s', async (
+  it.each(cartesian([degree_pairs, systems]))('Multiplication - degrees %s over %s', async (
     degrees, system
   ) => {
     const ctx = initGroup(system);

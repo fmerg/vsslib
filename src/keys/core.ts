@@ -31,10 +31,7 @@ export class PrivateKey<P extends Point> {
   }
 
   async equals<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
-    return (
-      (await this.ctx.equals(other.ctx)) &&
-        (this.asScalar() == other.asScalar())
-    );
+    return this.asScalar() == other.asScalar();
   }
 
   asScalar = (): bigint => this.ctx.leBuff2Scalar(this.bytes);
@@ -250,10 +247,7 @@ export class PublicKey<P extends Point> {
   asBytes = (): Uint8Array => this.bytes;
 
   async equals<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
-    return (
-      (await this.ctx.equals(other.ctx)) &&
-        ctEqualBuffer(this.bytes, other.bytes)
-    );
+    return ctEqualBuffer(this.bytes, other.bytes);
   }
 
   verifySecret = async (
