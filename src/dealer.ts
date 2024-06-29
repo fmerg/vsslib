@@ -43,7 +43,7 @@ export async function distributeSecret<P extends Point>(
     `Number of shares violates the group order: ${nrShares} >= ${ctx.order}`
   );
   if (!(predefined.length < threshold)) throw new ShamirError(
-    `Number of predefined points violates threshold: ${predefined.length} >= ${threshold}`,
+    `Number of predefined shares violates threshold: ${predefined.length} >= ${threshold}`,
   );
 
   // TODO: validate secret as scalar?

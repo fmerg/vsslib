@@ -2,61 +2,48 @@ import { Algorithms } from '../../src/enums';
 import { initBackend, generateKey } from '../../src';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
-import { mockMessage } from '../helpers';
+import { buildMessage } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const { systems, elgamalSchemes: schemes, modes, algorithms } = resolveTestConfig();
 
 
-describe('generation', () => {
-  it.each(cartesian([systems, schemes]))('over %s%/s', async (system, scheme) => {
+describe('Decryptor', () => {
+  it.each(cartesian([systems, schemes]))('generation - over %s%/s', async (system, scheme) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
-    const message = await mockMessage(ctx, scheme);
+    const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor: targetDecryptor } = await publicKey.encrypt(message, { scheme });
     const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext);
     expect(decryptor).toEqual(targetDecryptor);
     expect(await publicKey.verifyDecryptor(ciphertext, decryptor, proof)).toBe(true);
   });
-});
-
-
-describe('proof - success without nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - success without nonce - over %s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
-    const message = await mockMessage(ctx, scheme);
+    const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
     const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm });
     expect(verified).toBe(true);
   });
-});
-
-
-describe('proof - success with nonce', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - success - over %s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
-    const message = await mockMessage(ctx, scheme);
+    const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const nonce = await randomNonce();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
     const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm, nonce });
     expect(verified).toBe(true);
   });
-});
-
-
-describe('proof - failure if forged proof', () => {
-  it.each(cartesian([systems, schemes]))('over %s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))(
+    'verification - failure - forged proof - over %s', async (system, scheme) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
-    const message = await mockMessage(ctx, scheme);
+    const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
     proof.commitment[0] = await ctx.randomPublic();
@@ -64,16 +51,11 @@ describe('proof - failure if forged proof', () => {
       'Invalid decryptor'
     );
   });
-});
-
-
-describe('proof - failure if wrong algorithm', () => {
-  it.each(cartesian([systems, schemes, algorithms]))('over %s/%s/%s', async (
-    system, scheme, algorithm
-  ) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - failure - wrong algorithm - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
-    const message = await mockMessage(ctx, scheme);
+    const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
     await expect(
@@ -86,14 +68,11 @@ describe('proof - failure if wrong algorithm', () => {
       'Invalid decryptor'
     );
   });
-});
-
-
-describe('proof - failure if missing nonce', () => {
-  it.each(cartesian([systems, schemes]))('over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))(
+    'verification - failure - missing nonce - over %s/%s', async (system, scheme) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
-    const message = await mockMessage(ctx, scheme);
+    const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const nonce = await randomNonce();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });
@@ -101,14 +80,11 @@ describe('proof - failure if missing nonce', () => {
       'Invalid decryptor'
     );
   });
-});
-
-
-describe('proof - failure if forged nonce', () => {
-  it.each(cartesian([systems, schemes]))('over %s/%s', async (system, scheme) => {
+  it.each(cartesian([systems, schemes]))(
+    'verification - failure - forged nonce - over %s/%s', async (system, scheme) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
-    const message = await mockMessage(ctx, scheme);
+    const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const nonce = await randomNonce();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { nonce });

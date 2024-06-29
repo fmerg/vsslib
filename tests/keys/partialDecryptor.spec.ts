@@ -4,7 +4,7 @@ import { Algorithms } from '../../src/enums';
 import { System, ElgamalScheme, Algorithm } from '../../src/types';
 import { randomNonce } from '../../src/crypto';
 import { cartesian } from '../utils';
-import { mockMessage } from '../helpers';
+import { buildMessage } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const createPartialDecryptorSetup = async (opts: {
@@ -14,7 +14,7 @@ const createPartialDecryptorSetup = async (opts: {
   const ctx = initBackend(system);
   const privateKey = new PartialKey(ctx, await ctx.randomSecret(), 666);
   const publicKey = await privateKey.getPublicShare();
-  const message = await mockMessage(ctx, scheme);
+  const message = await buildMessage(ctx, scheme);
   const { ciphertext } = await publicKey.encrypt(message, { scheme });
   const decryptor = await privateKey.computePartialDecryptor(ciphertext, { algorithm, nonce })
   return {
@@ -30,22 +30,17 @@ const createPartialDecryptorSetup = async (opts: {
 
 const { systems, elgamalSchemes: schemes, modes, algorithms } = resolveTestConfig();
 
-describe('success - no nonce', () => {
-  it.each(
-    cartesian([systems, schemes, algorithms])
-  )('over %s/%s/%s', async (system, scheme, algorithm) => {
+describe('Partial decryptor', () => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - success - without nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
       system, scheme, algorithm
     });
     const verified = await publicKey.verifyPartialDecryptor(ciphertext, decryptor, { algorithm });
     expect(verified).toBe(true);
   });
-});
-
-describe('success - with nonce', () => {
-  it.each(
-    cartesian([systems, schemes, algorithms])
-  )('over %s/%s/%s', async (system, scheme, algorithm) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - success - with nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const nonce = await randomNonce();
     const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
       system, scheme, algorithm, nonce
@@ -55,13 +50,8 @@ describe('success - with nonce', () => {
     });
     expect(verified).toBe(true);
   });
-});
-
-
-describe('failure - forged proof', () => {
-  it.each(
-    cartesian([systems, schemes, algorithms])
-  )('over %s/%s/%s', async (system, scheme, algorithm) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - failure - forged proof - over %s/%s/%s', async (system, scheme, algorithm) => {
     const { ctx, publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
       system, scheme, algorithm
     });
@@ -72,13 +62,35 @@ describe('failure - forged proof', () => {
       'Invalid partial decryptor'
     );
   });
-});
-
-
-describe('failure - wrong algorithm', () => {
-  it.each(
-    cartesian([systems, schemes, algorithms])
-  )('over %s/%s/%s', async (system, scheme, algorithm) => {
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - failure - forged nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
+    const nonce = await randomNonce();
+    const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
+      system, scheme, algorithm, nonce
+    });
+    await expect(
+      publicKey.verifyPartialDecryptor(ciphertext, decryptor, {
+        algorithm,
+        nonce: await randomNonce(),
+      })
+    ).rejects.toThrow(
+      'Invalid partial decryptor'
+    );
+  });
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - failure - missing nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
+    const nonce = await randomNonce();
+    const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
+      system, scheme, algorithm, nonce
+    });
+    await expect(
+      publicKey.verifyPartialDecryptor(ciphertext, decryptor, { algorithm })
+    ).rejects.toThrow(
+      'Invalid partial decryptor'
+    );
+  });
+  it.each(cartesian([systems, schemes, algorithms]))(
+    'verification - failure - wrong algorithm - over %s/%s/%s', async (system, scheme, algorithm) => {
     const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
       system, scheme, algorithm
     });
@@ -91,43 +103,6 @@ describe('failure - wrong algorithm', () => {
             Algorithms.SHA512 :
             Algorithms.SHA256
         })
-    ).rejects.toThrow(
-      'Invalid partial decryptor'
-    );
-  });
-});
-
-
-describe('failure - missing nonce', () => {
-  it.each(
-    cartesian([systems, schemes, algorithms])
-  )('over %s/%s/%s', async (system, scheme, algorithm) => {
-    const nonce = await randomNonce();
-    const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
-      system, scheme, algorithm, nonce
-    });
-    await expect(
-      publicKey.verifyPartialDecryptor(ciphertext, decryptor, { algorithm })
-    ).rejects.toThrow(
-      'Invalid partial decryptor'
-    );
-  });
-});
-
-
-describe('failure - forged nonce', () => {
-  it.each(
-    cartesian([systems, schemes, algorithms])
-  )('over %s/%s/%s', async (system, scheme, algorithm) => {
-    const nonce = await randomNonce();
-    const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
-      system, scheme, algorithm, nonce
-    });
-    await expect(
-      publicKey.verifyPartialDecryptor(ciphertext, decryptor, {
-        algorithm,
-        nonce: await randomNonce(),
-      })
     ).rejects.toThrow(
       'Invalid partial decryptor'
     );

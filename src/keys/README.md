@@ -108,14 +108,6 @@ await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
 ## Signcryption
 
 ```js
-const { privateKey: senderPrivate, publicKey: senderPublic } = await generateKey("ed25519");
-```
-
-```js
-const { privateKey: receiverPrivate, publicKey: receiverPublic } = await generateKey("ed25519");
-```
-
-```js
 const message = Uint8Array.from(Buffer.from("destroy earth"));
 ```
 

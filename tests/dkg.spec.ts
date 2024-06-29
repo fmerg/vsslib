@@ -24,8 +24,8 @@ class ShareHolder<P extends Point> {
   aggregates: SecretShare[];
   share?: SecretShare;
   publicShares: PublicShare[];
-  localPublicShare?: PublicShare;
-  globalPublic?: Uint8Array;
+  localPublic?: PublicShare;
+  combinedPublic?: Uint8Array;
 
   constructor(ctx: Group<P>, index: number) {
     this.ctx = ctx;
@@ -74,7 +74,7 @@ describe('Distributed Key Generation (DKG)', () => {
         const z = ctx.leBuff2Scalar(share.value);
         party.share.value = leInt2Buff(mod(x + z, ctx.order));
       }
-      party.localPublicShare = {
+      party.localPublic = {
         value: (
           await ctx.exp(
             ctx.generator,
@@ -95,12 +95,12 @@ describe('Distributed Key Generation (DKG)', () => {
       }
     }
 
-    // Local computation of global public
+    // Local recovery of combined public
     for (let party of parties) {
-      party.globalPublic = await combinePublicShares(ctx, party.publicShares);
+      party.combinedPublic = await combinePublicShares(ctx, party.publicShares);
     }
 
-    // Test correctness
+    // Test consistency
     let targetPublic = ctx.neutral;
     for (const party of parties) {
       const curr = await ctx.exp(
@@ -110,7 +110,7 @@ describe('Distributed Key Generation (DKG)', () => {
       targetPublic = await ctx.operate(curr, targetPublic);
     }
     for (const party of parties) {
-      expect(isEqualBuffer(party.globalPublic!, targetPublic.toBytes())).toBe(true);
+      expect(isEqualBuffer(party.combinedPublic!, targetPublic.toBytes())).toBe(true);
     }
   });
 })

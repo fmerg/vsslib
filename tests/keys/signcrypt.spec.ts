@@ -19,10 +19,9 @@ algorithms  = [...algorithms, undefined];
 encSchemes = removeItem(encSchemes, ElgamalSchemes.PLAIN);
 
 
-describe('Signcryption - success without nonce', () => {
-  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
-    system, encScheme, sigScheme, algorithm
-  ) => {
+describe('Signcryption', () => {
+  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
+    'success - without nonce - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
@@ -44,12 +43,34 @@ describe('Signcryption - success without nonce', () => {
     );
     expect(plaintext).toEqual(message);
   });
-});
+  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
+    'success - with nonce - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
+    const ctx = initBackend(system);
+    const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
+    const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
 
-describe('Signcryption - failure receiver substitution', () => {
-  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
-    system, encScheme, sigScheme, algorithm
-  ) => {
+    const message = Uint8Array.from(Buffer.from('destroy earth'));
+    const nonce = await randomNonce();
+    const { ciphertext, signature } = await alicePrivate.signEncrypt(
+      message, bobPublic, {
+        encScheme,
+        sigScheme,
+        algorithm,
+        nonce,
+      }
+    );
+    const { message: plaintext } = await bobPrivate.verifyDecrypt(
+      ciphertext, signature, alicePublic, {
+        encScheme,
+        sigScheme,
+        algorithm,
+        nonce,
+      }
+    );
+    expect(plaintext).toEqual(message);
+  });
+  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
+    'failure - receiver substitution - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
@@ -88,12 +109,8 @@ describe('Signcryption - failure receiver substitution', () => {
       )
     ).rejects.toThrow('Invalid signature')
   });
-});
-
-describe('Signcryption - failure; message and inner signature substitution', () => {
-  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
-    system, encScheme, sigScheme, algorithm
-  ) => {
+  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
+    'failure - inner signature substitution - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
@@ -137,42 +154,8 @@ describe('Signcryption - failure; message and inner signature substitution', () 
       )
     ).rejects.toThrow('Invalid signature')
   });
-});
-
-describe('Signcryption - success with nonce', () => {
-  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
-    system, encScheme, sigScheme, algorithm
-  ) => {
-    const ctx = initBackend(system);
-    const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
-    const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
-
-    const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const nonce = await randomNonce();
-    const { ciphertext, signature } = await alicePrivate.signEncrypt(
-      message, bobPublic, {
-        encScheme,
-        sigScheme,
-        algorithm,
-        nonce,
-      }
-    );
-    const { message: plaintext } = await bobPrivate.verifyDecrypt(
-      ciphertext, signature, alicePublic, {
-        encScheme,
-        sigScheme,
-        algorithm,
-        nonce,
-      }
-    );
-    expect(plaintext).toEqual(message);
-  });
-});
-
-describe('Signcryption - failure missing nonce', () => {
-  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
-    system, encScheme, sigScheme, algorithm
-  ) => {
+  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
+    'failure - missing nonce - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
@@ -197,12 +180,8 @@ describe('Signcryption - failure missing nonce', () => {
       )
     ).rejects.toThrow('Invalid signature');
   });
-});
-
-describe('Signcryption - failure forged nonce', () => {
-  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
-    system, encScheme, sigScheme, algorithm
-  ) => {
+  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
+    'failure - forged nonce - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
@@ -228,12 +207,8 @@ describe('Signcryption - failure forged nonce', () => {
       )
     ).rejects.toThrow('Invalid signature');
   });
-});
-
-describe('Signcryption - failure wrong algorithm', () => {
-  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))('over %s/%s/%s/%s', async (
-    system, encScheme, sigScheme, algorithm
-  ) => {
+  it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
+    'failure - wrong algorithm - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
