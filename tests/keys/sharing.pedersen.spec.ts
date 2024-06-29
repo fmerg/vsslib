@@ -1,7 +1,7 @@
-import { PrivateKeyShare, PublicKeyShare } from '../../src/keys';
+import { PartialKey, PublicKeyShare } from '../../src/keys';
 import { SecretPacket } from '../../src/dealer';
 import { resolveTestConfig } from '../environ';
-import { selectPrivateKeyShare, createKeySharingSetup } from '../helpers';
+import { selectPartialKey, createKeySharingSetup } from '../helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -16,13 +16,13 @@ describe('Pedersen verification scheme - success', () => {
       publicBytes
     );
     packets.forEach(async (packet: SecretPacket) => {
-      const privateShare = await PrivateKeyShare.fromPedersenPacket(
+      const privateShare = await PartialKey.fromPedersenPacket(
         ctx,
         commitments,
         publicBytes,
         packet
       );
-      const targetShare = selectPrivateKeyShare(privateShare.index, shares);
+      const targetShare = selectPartialKey(privateShare.index, shares);
       expect(await privateShare.equals(targetShare)).toBe(true);
     })
   })
@@ -43,7 +43,7 @@ describe('Pedersen verification scheme - failure', () => {
     ];
     packets.forEach(async (packet: SecretPacket) => {
       await expect(
-        PrivateKeyShare.fromPedersenPacket(
+        PartialKey.fromPedersenPacket(
           ctx,
           forgedCommitmnets,
           publicBytes,

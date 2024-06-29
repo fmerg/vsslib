@@ -4,7 +4,7 @@ import { generateKey } from '../src';
 import { ElgamalSchemes } from '../src/enums';
 import { ElgamalScheme, System, Algorithm } from '../src/types';
 import { distributeSecret, createPublicPacket, SecretShare, PublicShare } from '../src/dealer';
-import { PrivateKeyShare, PublicKeyShare } from '../src/keys';
+import { PartialKey, PublicKeyShare } from '../src/keys';
 import { leInt2Buff } from '../src/arith';
 import { randomIndex } from './utils';
 
@@ -34,7 +34,7 @@ export const selectSecretShare = (index: number, shares: SecretShare[]): SecretS
 export const selectPublicShare = (index: number, shares: PublicShare[]): PublicShare =>
   shares.filter(share => share.index == index)[0];
 
-export const selectPrivateKeyShare = (index: number, shares: PrivateKeyShare<Point>[]) =>
+export const selectPartialKey = (index: number, shares: PartialKey<Point>[]) =>
   shares.filter(share => share.index == index)[0];
 
 export const selectPublicKeyShare = (index: number, shares: PublicKeyShare<Point>[]) =>
@@ -101,7 +101,7 @@ export const createKeySharingSetup = async (opts: {
   const polynomial = sharing.polynomial;
   const secretShares = await sharing.getSecretShares();
   const privateShares = secretShares.map(({ value, index }: SecretShare) => {
-    return new PrivateKeyShare(ctx, value, index);
+    return new PartialKey(ctx, value, index);
   });
   const publicShares = []
   for (const share of privateShares) {

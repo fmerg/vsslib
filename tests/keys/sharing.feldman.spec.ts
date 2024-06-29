@@ -1,7 +1,7 @@
-import { PrivateKeyShare } from '../../src/keys';
+import { PartialKey } from '../../src/keys';
 import { SecretPacket } from '../../src/dealer';
 import { resolveTestConfig } from '../environ';
-import { selectPrivateKeyShare, createKeySharingSetup } from '../helpers';
+import { selectPartialKey, createKeySharingSetup } from '../helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -13,8 +13,8 @@ describe('Feldman verification scheme - success', () => {
     });
     const { packets, commitments } = await sharing.createFeldmanPackets();
     packets.forEach(async (packet: SecretPacket) => {
-      const privateShare = await PrivateKeyShare.fromFeldmanPacket(ctx, commitments, packet);
-      const targetShare = selectPrivateKeyShare(privateShare.index, shares);
+      const privateShare = await PartialKey.fromFeldmanPacket(ctx, commitments, packet);
+      const targetShare = selectPartialKey(privateShare.index, shares);
       expect(await privateShare.equals(targetShare)).toBe(true);
     })
   });
@@ -31,9 +31,9 @@ describe('Feldman verification scheme - failure', () => {
       (await ctx.randomPoint()).toBytes()
     ];
     packets.forEach(async (packet: SecretPacket) => {
-      const privateShare = await PrivateKeyShare.fromFeldmanPacket(ctx, commitments, packet);
+      const privateShare = await PartialKey.fromFeldmanPacket(ctx, commitments, packet);
       await expect(
-        PrivateKeyShare.fromFeldmanPacket(ctx, forgedCommitmnets, packet)
+        PartialKey.fromFeldmanPacket(ctx, forgedCommitmnets, packet)
       ).rejects.toThrow(
         'Invalid share'
       );

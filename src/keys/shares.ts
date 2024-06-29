@@ -11,7 +11,7 @@ import { PrivateKey, PublicKey } from './core';
 
 export type PartialDecryptor = { value: Uint8Array, index: number, proof: NizkProof };
 
-export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
+export class PartialKey<P extends Point> extends PrivateKey<P> {
   index: number;
 
   constructor(ctx: Group<P>, bytes: Uint8Array, index: number) {
@@ -23,9 +23,9 @@ export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
     ctx: Group<Point>,
     commitments: Uint8Array[],
     packet: SecretPacket
-  ): Promise<PrivateKeyShare<Point>> {
+  ): Promise<PartialKey<Point>> {
     const { value, index } = await parseFeldmanPacket(ctx, commitments, packet);
-    return new PrivateKeyShare(ctx, value, index);
+    return new PartialKey(ctx, value, index);
   }
 
   static async fromPedersenPacket(
@@ -33,14 +33,14 @@ export class PrivateKeyShare<P extends Point> extends PrivateKey<P> {
     commitments: Uint8Array[],
     publicBytes: Uint8Array,
     packet: SecretPacket,
-  ): Promise<PrivateKeyShare<Point>> {
+  ): Promise<PartialKey<Point>> {
     const { share: { value, index } } = await parsePedersenPacket(
       ctx,
       commitments,
       publicBytes,
       packet,
     );
-    return new PrivateKeyShare(ctx, value, index);
+    return new PartialKey(ctx, value, index);
   }
 
   async getPublicShare(): Promise<PublicKeyShare<P>> {
