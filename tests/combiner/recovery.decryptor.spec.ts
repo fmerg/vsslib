@@ -13,8 +13,8 @@ describe('Decryptor recovery', () => {
       scheme, system, nrShares, threshold
     });
     partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-      const { result, blame } = await recoverDecryptor(ctx, qualifiedShares, ciphertext, publicShares);
-      expect(isEqualBuffer(result, decryptor)).toBe(qualifiedShares.length >= threshold);
+      const { recovered, blame } = await recoverDecryptor(ctx, qualifiedShares, ciphertext, publicShares);
+      expect(isEqualBuffer(recovered, decryptor)).toBe(qualifiedShares.length >= threshold);
       expect(blame).toEqual([]);
     });
   });
@@ -29,8 +29,8 @@ describe('Decryptor recovery', () => {
       );
     });
     partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const { result, blame } = await recoverDecryptor(ctx, qualifiedShares, ciphertext, publicShares);
-      expect(isEqualBuffer(result, decryptor)).toBe(qualifiedShares.length >= threshold);
+      const { recovered, blame } = await recoverDecryptor(ctx, qualifiedShares, ciphertext, publicShares);
+      expect(isEqualBuffer(recovered, decryptor)).toBe(qualifiedShares.length >= threshold);
       expect(blame).toEqual([]);
     });
   });
@@ -54,10 +54,10 @@ describe('Decryptor recovery', () => {
     } = await createThresholdDecryptionSetup({
       scheme, system, nrShares, threshold, nrInvalidIndexes: 2
     });
-    const { result, blame } = await recoverDecryptor(
+    const { recovered, blame } = await recoverDecryptor(
       ctx, invalidDecryptors, ciphertext, publicShares, { errorOnInvalid: false }
     );
-    expect(isEqualBuffer(result, decryptor)).toBe(false);
+    expect(isEqualBuffer(recovered, decryptor)).toBe(false);
     expect(blame.sort()).toEqual(targetBlame.sort());
   });
   it.each(cartesian([systems, schemes]))(

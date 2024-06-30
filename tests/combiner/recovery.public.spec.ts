@@ -14,8 +14,8 @@ describe('Public point recovery', () => {
     });
     const { packets } = await createPublicPackets({ ctx, shares, algorithm });
     partialPermutations(packets).forEach(async (qualifiedPackets) => {
-      let { result, blame } = await recoverPublic(ctx, qualifiedPackets, { algorithm });
-      expect(isEqualBuffer(result, publicBytes)).toBe(qualifiedPackets.length >= threshold);
+      let { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, { algorithm });
+      expect(isEqualBuffer(recovered, publicBytes)).toBe(qualifiedPackets.length >= threshold);
       expect(blame).toEqual([]);
     });
   });
@@ -31,8 +31,8 @@ describe('Public point recovery', () => {
       );
     });
     partialPermutations(packets, threshold, nrShares).forEach(async (qualifiedPackets) => {
-      let { result, blame } = await recoverPublic(ctx, qualifiedPackets, { algorithm, threshold });
-      expect(isEqualBuffer(result, publicBytes)).toBe(qualifiedPackets.length >= threshold);
+      let { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, { algorithm, threshold });
+      expect(isEqualBuffer(recovered, publicBytes)).toBe(qualifiedPackets.length >= threshold);
       expect(blame).toEqual([]);
     });
   });
@@ -56,10 +56,10 @@ describe('Public point recovery', () => {
     const { invalidPackets, blame: targetBlame } = await createPublicPackets({
       ctx, shares, algorithm, nrInvalidIndexes: 2
     });
-    let { result, blame } = await recoverPublic(
+    let { recovered, blame } = await recoverPublic(
       ctx, invalidPackets, { algorithm, threshold, errorOnInvalid: false }
     );
-    expect(isEqualBuffer(result, publicBytes)).toBe(false);
+    expect(isEqualBuffer(recovered, publicBytes)).toBe(false);
     expect(blame.sort()).toEqual(targetBlame.sort());
   });
 });

@@ -75,7 +75,7 @@ import { combineSecretShares } from 'vsslib';
 ```
 
 ```js
-const result = await combineSecretShares(ctx, shares, { threshold });
+const combinedSecret = await combineSecretShares(ctx, shares, { threshold });
 ```
 
 ### Public point recovery
@@ -86,11 +86,11 @@ import { recoverPublic } from 'vsslib';
 ```
 
 ```js
-const { result } = await recoverPublic(ctx, packets, { algorithm });
+const { recovered } = await recoverPublic(ctx, packets, { algorithm });
 ```
 
 ```js
-const { result, blame } = await recoverPublic(ctx, packets, { algorithm, errorOnInvalid: false});
+const { recovered, blame } = await recoverPublic(ctx, packets, { algorithm, errorOnInvalid: false});
 ```
 
 #### Raw combination of public shares
@@ -100,7 +100,7 @@ import { combinePublicShares } from 'vsslib';
 ```
 
 ```js
-const result = await combinePublicShares(ctx, shares, { threshold });
+const combinedPublic = await combinePublicShares(ctx, shares, { threshold });
 ```
 
 ## Private key sharing
@@ -172,11 +172,11 @@ const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, decryptorSh
 ```js
 import { recoverDecryptor } from "vsslib";
 
-const { result } = await recoverDecryptor(ctx, shares, ciphertext, publicShares);
+const { recovered } = await recoverDecryptor(ctx, shares, ciphertext, publicShares);
 ```
 
 ```js
-const { result, blame } = await recoverDecryptor(ctx, shares, ciphertext, publicShares, { errorOnInvalid: false });
+const { recovered, blame } = await recoverDecryptor(ctx, shares, ciphertext, publicShares, { errorOnInvalid: false });
 ```
 
 
