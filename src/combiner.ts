@@ -113,7 +113,7 @@ export async function recoverPublic<P extends Point>(
     threshold?: number,
     errorOnInvalid?: boolean,
   },
-): Promise<{ result: Uint8Array, blame: number[] }> {
+): Promise<{ recovered: Uint8Array, blame: number[] }> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const nonce = opts ? (opts.nonce || undefined) : undefined;
   const threshold = opts ? opts.threshold : undefined;
@@ -139,8 +139,7 @@ export async function recoverPublic<P extends Point>(
       else throw err;
     }
   }
-  const result = acc.toBytes();
-  return { result, blame };
+  return { recovered: acc .toBytes(), blame };
 }
 
 
@@ -154,8 +153,8 @@ export async function recoverPublicKey<P extends Point>(
     errorOnInvalid?: boolean,
   },
 ): Promise<{ recovered: PublicKey<P>, blame: number[] }> {
-  const { result, blame } = await recoverPublic(ctx, packets, opts);
-  const recovered = new PublicKey(ctx, result);
+  const { recovered: value, blame } = await recoverPublic(ctx, packets, opts);
+  const recovered = new PublicKey(ctx, value);
   return { recovered, blame };
 }
 
@@ -171,7 +170,7 @@ export async function recoverDecryptor<P extends Point>(
     threshold?: number,
     errorOnInvalid?: boolean,
   },
-): Promise<{ result: Uint8Array, blame: number[] }> {
+): Promise<{ recovered: Uint8Array, blame: number[] }> {
   const threshold = opts ? opts.threshold : undefined;
   if (threshold && shares.length < threshold) throw new Error(
     'Insufficient number of shares'
@@ -210,8 +209,7 @@ export async function recoverDecryptor<P extends Point>(
     const curr = await exp(await unpackValid(value), lambda);
     acc = await operate(acc, curr);
   }
-  const result = acc.toBytes();
-  return { result, blame };
+  return { recovered: acc.toBytes(), blame };
 }
 
 
@@ -230,7 +228,7 @@ export async function thresholdDecrypt<P extends Point>(
     errorOnInvalid?: boolean
   },
 ): Promise<{ plaintext: Uint8Array, blame: number[] }> {
-  const { result: decryptor, blame } = await recoverDecryptor(
+  const { recovered: decryptor, blame } = await recoverDecryptor(
     ctx,
     decryptorShares,
     ciphertext,
