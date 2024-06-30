@@ -78,7 +78,7 @@ import { combineSecretShares } from 'vsslib';
 const combinedSecret = await combineSecretShares(ctx, shares, { threshold });
 ```
 
-### Public point recovery
+### Public recovery
 
 
 ```js
