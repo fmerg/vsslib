@@ -1,6 +1,6 @@
 # vsslib
 
-**Interfaces for Verifiable Secret Sharing**
+**Interfaces for Verifiable Secret Sharing (VSS)**
 
 ## Install
 
