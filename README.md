@@ -1,10 +1,10 @@
 # vsslib
 
-**Interfaces for Verifiable Secret Sharing**
+**Interfaces for Verifiable Secret Sharing (VSS)**
 
 ## Install
 
-## Cryptosystem initialization
+## Initialization
 
 ```js
 import { initBackend } from "vsslib";
@@ -78,7 +78,7 @@ import { combineSecretShares } from 'vsslib';
 const combinedSecret = await combineSecretShares(ctx, shares, { threshold });
 ```
 
-### Public point recovery
+### Public recovery
 
 
 ```js
@@ -184,6 +184,22 @@ const { recovered, blame } = await recoverDecryptor(ctx, shares, ciphertext, pub
 
 - [`vsslib.keys`](./src/keys)
 
+## Build
+
+```
+$ npm run build
+```
+
+## Examples
+
+```
+node examples/<file> run
+```
+
+```
+node examples/<file> --help
+```
+
 
 ## Development
 
@@ -205,12 +221,6 @@ $ ./test.sh --help
 
 ```
 $ npm run test[:reload]
-```
-
-## Build
-
-```
-$ npm run build
 ```
 
 ## Command line

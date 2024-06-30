@@ -1,6 +1,7 @@
 import { initBackend } from './backend';
 import { generateKey, extractPartialKey } from './keys';
 import {
+  combineSecretShares,
   combinePublicShares,
   recoverPublicKey,
   combinePartialDecryptors,
@@ -37,6 +38,7 @@ export {
   parsePedersenPacket,
   createPublicPacket,
   parsePublicPacket,
+  combineSecretShares,
   combinePublicShares,
   recoverPublicKey,
   combinePartialDecryptors,
