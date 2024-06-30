@@ -4,7 +4,7 @@
 
 ## Install
 
-## Cryptosystem initialization
+## Initialization
 
 ```js
 import { initBackend } from "vsslib";
