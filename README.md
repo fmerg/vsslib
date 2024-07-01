@@ -1,226 +1,229 @@
+
 # vsslib
 
 **Interfaces for Verifiable Secret Sharing (VSS)**
 
-## Install
+vsslib is a comprehensive library for implementing Verifiable Secret Sharing (VSS) schemes, providing robust cryptographic primitives for secure distributed systems.
+
+## Table of Contents
+- [Installation](#installation)
+- [Initialization](#initialization)
+- [Verifiable Secret Sharing](#verifiable-secret-sharing)
+  - [Shamir Sharing](#shamir-sharing)
+  - [Feldman VSS Scheme](#feldman-vss-scheme)
+  - [Pedersen VSS Scheme](#pedersen-vss-scheme)
+  - [Verifiable Public Shares](#verifiable-public-shares)
+- [Secret Recovery](#secret-recovery)
+- [Public Recovery](#public-recovery)
+- [Private Key Sharing](#private-key-sharing)
+- [Threshold Decryption](#threshold-decryption)
+- [Modules](#modules)
+- [Development](#development)
+- [Build](#build)
+- [Command Line Interface](#command-line-interface)
+- [Documentation](#documentation)
+
+## Installation
+
+Install vsslib using npm:
+
+```bash
+npm install vsslib
+```
 
 ## Initialization
 
-```js
+Initialize the vsslib backend with the desired cryptographic curve:
+
+```javascript
 import { initBackend } from "vsslib";
 
 const ctx = initBackend("ed25519");
 ```
 
-## Verifiable secret sharing
+## Verifiable Secret Sharing
 
-### Shamir sharing
+Verifiable Secret Sharing (VSS) allows a secret to be split into multiple shares, which can be distributed among participants. The shares can later be combined to reconstruct the secret.
 
-```js
+### Shamir Sharing
+
+Shamir's Secret Sharing is a cryptographic algorithm to split a secret into multiple parts:
+
+```javascript
 import { distributeSecret } from "vsslib";
 
 const secret = await ctx.randomSecret();
-
 const sharing = await distributeSecret(ctx, 5, 3, secret);
 ```
 
-#### Feldman VSS scheme
+### Feldman VSS Scheme
 
-```js
+Feldman's VSS scheme adds verifiability to Shamir's Secret Sharing:
+
+```javascript
+// Create Feldman packets
 const { packets, commitments } = await sharing.createFeldmanPackets();
-```
 
-```js
+// Parse Feldman packet
 import { parseFeldmanPacket } from "vsslib";
-
 const share = await parseFeldmanPacket(ctx, commitments, packet);
-```
 
-```js
+// Verify Feldman commitments
 import { verifyFeldmanCommitments } from "vsslib";
-
 await verifyFeldmanCommitments(ctx, share, commitments);
 ```
 
-#### Pedersen VSS scheme
+### Pedersen VSS Scheme
 
-```js
+Pedersen's VSS scheme provides information-theoretic security:
+
+```javascript
+// Create Pedersen packets
 const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
-```
 
-```js
+// Parse Pedersen packet
 import { parsePedersenPacket } from "vsslib";
-
 const { share, binding } = await parsePedersenPacket(ctx, commitments, publicBytes, packet);
-```
 
-```js
+// Verify Pedersen commitments
 import { verifyPedersenCommitments } from "vsslib";
-
-await verifyPedersenCommitments(ctx, share, bindng, publicBytes, commitments);
+await verifyPedersenCommitments(ctx, share, binding, publicBytes, commitments);
 ```
 
-#### Verifiable public shares
+### Verifiable Public Shares
 
-```js
+Create verifiable public shares for transparent sharing:
+
+```javascript
 import { createPublicPacket } from 'vsslib';
 
 const packet = await createPublicPacket(ctx, share, { algorithm, nonce });
 ```
 
-### Secret recovery
+## Secret Recovery
 
-```js
+Combine secret shares to reconstruct the original secret:
+
+```javascript
 import { combineSecretShares } from 'vsslib';
-```
 
-```js
 const combinedSecret = await combineSecretShares(ctx, shares, { threshold });
 ```
 
-### Public recovery
+## Public Recovery
 
+Recover public information from shared packets:
 
-```js
+```javascript
 import { recoverPublic } from 'vsslib';
-```
 
-```js
+// Basic recovery
 const { recovered } = await recoverPublic(ctx, packets, { algorithm });
-```
 
-```js
+// Recovery with error handling
 const { recovered, blame } = await recoverPublic(ctx, packets, { algorithm, errorOnInvalid: false});
-```
 
-#### Raw combination of public shares
-
-```js
+// Raw combination of public shares
 import { combinePublicShares } from 'vsslib';
-```
-
-```js
 const combinedPublic = await combinePublicShares(ctx, shares, { threshold });
 ```
 
-## Private key sharing
+## Private Key Sharing
 
-```js
+Share a private key among multiple parties:
+
+```javascript
 const { privateKey } = await generateKey(ctx);
-
 const sharing = await privateKey.generateSharing(5, 3);
-```
 
-### Feldman VSS scheme
-
-```js
+// Feldman VSS scheme
 const { packets, commitments } = await sharing.createFeldmanPackets();
-```
 
-```js
-import { extractPartialKey } from "vsslib";
-
-const privateShare = await extractPartialKey(ctx, commitments, packet);
-```
-
-### Pedersen VSS scheme
-
-```js
+// Pedersen VSS scheme
 const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
-```
 
-```js
+// Extract partial key
 import { extractPartialKey } from "vsslib";
-
 const privateShare = await extractPartialKey(ctx, commitments, packet);
-```
 
-### Public key recovery
-
-```js
+// Public key recovery
 import { recoverPublicKey } from "vsslib";
-```
-
-```js
 const { publicKey } = await recoverPublicKey(ctx, publicKeyShares, { algorithm });
-```
-
-```js
 const { publicKey, blame } = await recoverPublicKey(ctx, publicKeyShares, { algorithm, errorOnInvalid: false });
 ```
 
-## Threshold decryption
+## Threshold Decryption
 
-```js
+Perform threshold decryption using shared private keys:
+
+```javascript
+// Encrypt message
 const { ciphertext } = await publicKey.encrypt(message, { scheme: "ies" });
-```
 
-```js
+// Compute partial decryptor
 const decryptorShare = await privateShare.computePartialDecryptor(ciphertext);
-```
 
-```js
+// Threshold decryption
 const { plaintext } = await thresholdDecrypt(ctx, ciphertext, decryptorShares, publicShares, { scheme });
-```
-
-```js
 const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, decryptorShares, publicShares, { scheme, errorOnInvalid: false });
-```
 
-### Decryptor recovery
-
-```js
+// Decryptor recovery
 import { recoverDecryptor } from "vsslib";
-
 const { recovered } = await recoverDecryptor(ctx, shares, ciphertext, publicShares);
-```
-
-```js
 const { recovered, blame } = await recoverDecryptor(ctx, shares, ciphertext, publicShares, { errorOnInvalid: false });
 ```
 
-
 ## Modules
 
-- [`vsslib.keys`](./src/keys)
+Additional modules provided by vsslib:
 
+- [`vsslib.keys`](./src/keys): Module for key management and operations.
 
 ## Development
 
-```
-$ npm install
+Set up the development environment:
+
+```bash
+npm install
 ```
 
 ### Watch
 
-```
-$ npm run dev
+Run the development server with hot-reloading:
+
+```bash
+npm run dev
 ```
 
 ### Tests
 
-```
-$ ./test.sh --help
-```
+Run the test suite:
 
-```
-$ npm run test[:reload]
+```bash
+./test.sh --help
+npm run test[:reload]
 ```
 
 ## Build
 
-```
-$ npm run build
+Build the project for production:
+
+```bash
+npm run build
 ```
 
-## Command line
+## Command Line Interface
 
-```
-$ npm run vss [command] -- [options]
+Use vsslib from the command line:
+
+```bash
+npm run vss [command] -- [options]
 ```
 
 ## Documentation
 
-```
-$ npm run docs
+Generate documentation for the project:
+
+```bash
+npm run docs
 ```
