@@ -6,7 +6,6 @@ const {
   generateKey,
   parsePublicPacket,
   combinePublicShares,
-  distributeSecret,
   parseFeldmanPacket,
   parsePedersenPacket,
   createPublicPacket,

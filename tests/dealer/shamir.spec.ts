@@ -17,7 +17,7 @@ describe('Shamir secret sharing', () => {
     'ok - without predefined shares - over %s - (n, t): %s', async (system, [n, t]) => {
     const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
-    const sharing = await distributeSecret(ctx, n, t, secret);
+    const { sharing } = await distributeSecret(ctx, n, t, secret);
     const { nrShares, threshold, polynomial } = sharing;
     expect(nrShares).toEqual(n);
     expect(threshold).toEqual(t);
@@ -46,7 +46,7 @@ describe('Shamir secret sharing', () => {
       for (let i = 0; i < nrPredefined; i++) {
         predefined.push(await ctx.randomScalar());
       }
-      const sharing = await distributeSecret(ctx, n, t, secret, predefined);
+      const { sharing } = await distributeSecret(ctx, n, t, secret, predefined);
       const { nrShares, threshold, polynomial } = sharing;
       expect(nrShares).toEqual(n);
       expect(threshold).toEqual(t);

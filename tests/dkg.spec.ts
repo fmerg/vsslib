@@ -49,8 +49,9 @@ describe('Distributed Key Generation (DKG)', () => {
     }
 
     for (let party of parties) {
-      party.originalSecret = await ctx.randomSecret();
-      party.sharing = await distributeSecret(ctx, nrShares, threshold, party.originalSecret!);
+      const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
+      party.originalSecret = secret ;
+      party.sharing = sharing;
     }
 
     // Shares distribution

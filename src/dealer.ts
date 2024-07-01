@@ -26,9 +26,9 @@ export type PublicPacket = PublicShare & { proof: NizkProof };
 
 
 export async function distributeSecret<P extends Point>(
-  ctx: Group<P>, nrShares: number, threshold: number, secret: Uint8Array,
+  ctx: Group<P>, nrShares: number, threshold: number, secret?: Uint8Array,
   predefined?: [bigint, bigint][]
-): Promise<ShamirSharing<P>> {
+): Promise<{ secret: Uint8Array, sharing: ShamirSharing<P>}> {
   predefined = predefined || [];
   if (nrShares < 1) throw new ShamirError(
     `Number of shares must be at least one: ${nrShares}`
@@ -47,6 +47,7 @@ export async function distributeSecret<P extends Point>(
   );
 
   // TODO: validate secret as scalar?
+  secret = secret || await ctx.randomSecret()
 
   const xyPoints = new Array(threshold);
   xyPoints[0] = [__0n, ctx.leBuff2Scalar(secret)];
@@ -67,7 +68,8 @@ export async function distributeSecret<P extends Point>(
     );
     else throw err;
   }
-  return new ShamirSharing(ctx, nrShares, threshold, polynomial);
+  const sharing = new ShamirSharing(ctx, nrShares, threshold, polynomial);
+  return { secret, sharing };
 }
 
 

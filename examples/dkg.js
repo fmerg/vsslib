@@ -69,9 +69,10 @@ async function demo() {
   // Sharing computation
   for (const shareholder of shareholders) {
     console.time(`SHARING COMPUTATION ${shareholder.index}`);
-    shareholder.originalSecret = await ctx.randomSecret();
-    shareholder.sharing = await distributeSecret(ctx, nrShares, threshold, shareholder.originalSecret);
+    const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
     console.timeEnd(`SHARING COMPUTATION ${shareholder.index}`);
+    shareholder.originalSecret = secret;
+    shareholder.sharing = sharing;
   }
 
   // Shares distribution
