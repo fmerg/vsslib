@@ -11,8 +11,9 @@ const {
   enums,
   initBackend,
   distributeSecret,
-  combineSecretShares,
-  combinePublicShares,
+  parseFeldmanPacket,
+  createPublicPacket,
+  recoverPublic
 } = require('../dist');
 
 const DEFAULT_SYSTEM = enums.Systems.ED25519;
@@ -25,32 +26,43 @@ async function demo() {
   // Parse cli options
   let { system, nrShares: n, threshold: t, combine: qualifiedIndexes, verbose } = program.opts();
 
-  // Generate and share secret
+  // The dealer shares a secret and generates verifiable Feldman packets
   const ctx = initBackend(system);
   const { secret, sharing } = await distributeSecret(ctx, n, t);
+  const { commitments, packets } = await sharing.createFeldmanPackets();
 
+  // At this point, the dealer brodcasts the commitments and sends each packet to the
+  // respective shareholder
+
+  // Every shareholders verifies the received Feldman packet and extracts
+  // the respective share
+  const secretShares = [];
+  for (const packet of packets) {
+    const share = await parseFeldmanPacket(ctx, commitments, packet);
+    secretShares.push(share);
+  }
+
+  // Every shareholder creates a Shnorr proof for their respective secret share
+  const publicPackets = [];
+  for (const share of secretShares) {
+    const packet = await createPublicPacket(ctx, share);  // TODO: nonce
+    publicPackets.push(packet);
+  }
+
+  // Recover combined public from qualified packets
   qualifiedIndexes = qualifiedIndexes || Array.from({ length: t }, (_, i) => i + 1)
-  // Combine qualified secret shares to recover original secret
-  const secretShares = await sharing.getSecretShares();
-  const combinedSecret = await combineSecretShares(ctx, secretShares.filter(
-    share => qualifiedIndexes.includes(share.index)
-  ));
-  console.log(isEqualSecret(ctx, combinedSecret, secret));
-
-  // Combine qualified public shares to recover original public
-  const publicShares = await sharing.getPublicShares();
-  const combinedPublic = await combinePublicShares(ctx, publicShares.filter(
-    share => qualifiedIndexes.includes(share.index)
+  const { recovered } = await recoverPublic(ctx, publicPackets.filter(
+    packet => qualifiedIndexes.includes(packet.index)
   ));
   console.log(isEqualBuffer(
-    combinedPublic,
+    recovered,
     (await ctx.exp(ctx.generator, ctx.leBuff2Scalar(secret))).toBytes())  // TODO
   );
 }
 
 program
-  .name('node shamir.js')
-  .description('Shamir Secret Sharing (raw SSS) - demo')
+  .name('node feldman.js')
+  .description('Feldman Verifiable Secret Sharing (Feldman VSS) - demo')
   .option('-s, --system <SYSTEM>', 'Underlying cryptosystem', DEFAULT_SYSTEM)
   .option('-n, --nr-shares <NR>', 'Number of shareholders', parseDecimal, DEFAULT_NR_SHARES)
   .option('-t, --threshold <THRESHOLD>', 'Threshold paramer', parseDecimal, DEFAULT_THRESHOLD)
@@ -59,7 +71,7 @@ program
 
 program
   .command('run')
-  .description('Run raw SSS and recover combined keys')
+  .description('Run Feldman VSS and verifiably recover combined public')
   .action(demo)
 
 
