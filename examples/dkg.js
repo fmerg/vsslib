@@ -143,14 +143,14 @@ async function demo() {
 program
   .name('node dkg.js')
   .description('Distributed Key Generation (DKG) - demo')
-  .option('-s, --system <SYSTEM>', 'underlying cryptosystem', DEFAULT_SYSTEM)
-  .option('-n, --nr-shares <NR>', 'number of shareholders', parseDecimal, DEFAULT_NR_SHARES)
-  .option('-t, --threshold <THRESHOLD>', 'threshold parameter', parseDecimal, DEFAULT_THRESHOLD)
+  .option('-s, --system <SYSTEM>', 'Underlying cryptosystem', DEFAULT_SYSTEM)
+  .option('-n, --nr-shares <NR>', 'Number of shareholders', parseDecimal, DEFAULT_NR_SHARES)
+  .option('-t, --threshold <THRESHOLD>', 'Threshold paramer', parseDecimal, DEFAULT_THRESHOLD)
   .option('-v, --verbose', 'be verbose')
 
 program
   .command('run')
-  .description('Run demo DKG (Distributed Key Generation)')
+  .description('Run demo DKG (Distributed Key Generation) and recover combined public')
   .action(demo)
 
 

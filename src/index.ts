@@ -3,6 +3,7 @@ import { generateKey, extractPartialKey } from './keys';
 import {
   combineSecretShares,
   combinePublicShares,
+  recoverPublic,
   recoverPublicKey,
   combinePartialDecryptors,
   recoverDecryptor,
@@ -40,6 +41,7 @@ export {
   parsePublicPacket,
   combineSecretShares,
   combinePublicShares,
+  recoverPublic,
   recoverPublicKey,
   combinePartialDecryptors,
   recoverDecryptor,
