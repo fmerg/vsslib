@@ -49,7 +49,7 @@ export const createSharingSetup = async (opts: {
   const { system, nrShares, threshold } = opts;
   const ctx = initBackend(system);
   const { secret, publicBytes } = await randomDlogPair(ctx);
-  const sharing = await distributeSecret(ctx, nrShares, threshold, secret);
+  const { sharing } = await distributeSecret(ctx, nrShares, threshold, secret);
   const secretShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
   return { ctx, secret, publicBytes, sharing, secretShares, publicShares };

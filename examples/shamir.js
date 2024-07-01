@@ -37,24 +37,25 @@ async function demo() {
 
   // Generate and share secret
   const ctx = initBackend(system);
-  const secret = await ctx.randomSecret();
-  const sharing = await distributeSecret(ctx, n, t, secret);
+  const { secret, sharing } = await distributeSecret(ctx, n, t);
 
-  // Combine qualified secret shares to recover original secret
-  const secretShares = await sharing.getSecretShares();
-  const combinedSecret = await combineSecretShares(ctx, secretShares.filter(
-    share => qualifiedIndexes.includes(share.index)
-  ));
-  console.log(isEqualSecret(ctx, combinedSecret, secret));
+  if (qualifiedIndexes) {
+    // Combine qualified secret shares to recover original secret
+    const secretShares = await sharing.getSecretShares();
+    const combinedSecret = await combineSecretShares(ctx, secretShares.filter(
+      share => qualifiedIndexes.includes(share.index)
+    ));
+    console.log(isEqualSecret(ctx, combinedSecret, secret));
 
-  // Combine qualified public shares to recover original public
-  const publicShares = await sharing.getPublicShares();
-  const combinedPublic = await combinePublicShares(ctx, publicShares.filter(
-    share => qualifiedIndexes.includes(share.index)
-  ));
-  console.log(isEqualBuffer(combinedPublic,
-    (await ctx.exp(ctx.generator, ctx.leBuff2Scalar(secret))).toBytes())
-  );
+    // Combine qualified public shares to recover original public
+    const publicShares = await sharing.getPublicShares();
+    const combinedPublic = await combinePublicShares(ctx, publicShares.filter(
+      share => qualifiedIndexes.includes(share.index)
+    ));
+    console.log(isEqualBuffer(combinedPublic,
+      (await ctx.exp(ctx.generator, ctx.leBuff2Scalar(secret))).toBytes())
+    );
+  }
 }
 
 program

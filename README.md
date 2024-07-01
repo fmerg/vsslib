@@ -19,9 +19,7 @@ const ctx = initBackend("ed25519");
 ```js
 import { distributeSecret } from "vsslib";
 
-const secret = await ctx.randomSecret();
-
-const sharing = await distributeSecret(ctx, 5, 3, secret);
+const { secret, sharing } = await distributeSecret(ctx, 5, 3);
 ```
 
 #### Feldman VSS scheme
