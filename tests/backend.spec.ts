@@ -1,4 +1,4 @@
-import { Point } from '../src/backend/abstract';
+import { Point } from '../src/backend';
 import { Systems } from '../src/enums';
 import { initBackend } from '../src/backend';
 import { resolveTestConfig } from './environ';
@@ -19,9 +19,9 @@ describe('group initialization - success', () => {
 describe('group initialization - failure', () => {
   test('unsupported group', () => {
     const system = 'foo';
-    expect(() => initBackend(system).toThrow(
+    expect(() => initBackend(system)).toThrow(
       `Unsupported group: ${system}`
-    ))
+    )
   })
 })
 
@@ -112,8 +112,8 @@ describe('exponentiation', () => {
   it.each(systems)('random point - over %s', async (system) => {
     const ctx = initBackend(system);
     let s: bigint;
-    let current: Point;
-    let expected: Point
+    let current: any;
+    let expected: any
 
     const p = await ctx.randomPoint();                    // p
 

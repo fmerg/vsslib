@@ -1,4 +1,4 @@
-import { Point, Group } from '../backend/abstract';
+import { Point, Group } from '../backend';
 import { SignatureScheme, Algorithm } from '../types';
 
 import { Signature, SigDriver } from './driver';

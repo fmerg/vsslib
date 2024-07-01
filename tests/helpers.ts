@@ -1,4 +1,4 @@
-import { Group, Point } from '../src/backend/abstract';
+import { Group, Point } from '../src/backend';
 import { initBackend } from '../src/backend';
 import { generateKey } from '../src';
 import { ElgamalSchemes } from '../src/enums';
@@ -8,9 +8,14 @@ import { PartialKey, PartialPublic } from '../src/keys';
 import { leInt2Buff } from '../src/arith';
 import { randomIndex } from './utils';
 
-export async function randomDlogPair<P extends Point>(ctx: Group<P>): Promise<{
+export const buildMessage = async <P extends Point>(ctx: Group<P>, scheme: ElgamalScheme) =>
+  scheme == ElgamalSchemes.PLAIN ?
+    await ctx.randomPublic() :
+    Uint8Array.from(Buffer.from('destroy earth'));
+
+export const randomDlogPair = async <P extends Point>(ctx: Group<P>): Promise<{
   x: bigint, y: P, secret: Uint8Array, publicBytes: Uint8Array
-}> {
+}> => {
   const { randomScalar, exp, generator: g } = ctx;
   const x = await randomScalar();
   const y = await exp(g, x);
@@ -18,15 +23,11 @@ export async function randomDlogPair<P extends Point>(ctx: Group<P>): Promise<{
 }
 
 /** Check equality of byte arrays as secret scalars **/
-export const isEqualSecret = (
-  ctx: Group<Point>,
+export const isEqualSecret = <P extends Point>(
+  ctx: Group<P>,
   lhs: Uint8Array,
   rhs: Uint8Array,
 ): boolean => ctx.leBuff2Scalar(lhs) == ctx.leBuff2Scalar(rhs);
-
-export const buildMessage = async (ctx: Group<Point>, scheme: ElgamalScheme) =>
-  scheme == ElgamalSchemes.PLAIN ? await ctx.randomPublic() :
-    Uint8Array.from(Buffer.from('destroy earth'));
 
 export const selectSecretShare = (index: number, shares: SecretShare[]): SecretShare =>
   shares.filter(share => share.index == index)[0];
@@ -34,10 +35,10 @@ export const selectSecretShare = (index: number, shares: SecretShare[]): SecretS
 export const selectPublicShare = (index: number, shares: PublicShare[]): PublicShare =>
   shares.filter(share => share.index == index)[0];
 
-export const selectPartialKey = (index: number, shares: PartialKey<Point>[]) =>
+export const selectPartialKey = <P extends Point>(index: number, shares: PartialKey<P>[]) =>
   shares.filter(share => share.index == index)[0];
 
-export const selectPartialPublic = (index: number, shares: PartialPublic<Point>[]) =>
+export const selectPartialPublic = <P extends Point>(index: number, shares: PartialPublic<P>[]) =>
   shares.filter(share => share.index == index)[0];
 
 
@@ -56,8 +57,8 @@ export const createSharingSetup = async (opts: {
 }
 
 
-export const createPublicPackets = async (opts: {
-  ctx: Group<Point>,
+export const createPublicPackets = async <P extends Point>(opts: {
+  ctx: Group<P>,
   shares: SecretShare[],
   algorithm?: Algorithm,
   nrInvalidIndexes?: number,

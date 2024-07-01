@@ -1,5 +1,5 @@
 import { Algorithm } from '../../src/types';
-import { Point, Group } from '../../src/backend/abstract';
+import { Point, Group } from '../../src/backend';
 import { leInt2Buff, leBuff2Int } from '../../src/arith';
 import { DlogPair, DDHTuple, GenericLinear } from '../../src/nizk';
 import { hash } from '../../src/crypto';

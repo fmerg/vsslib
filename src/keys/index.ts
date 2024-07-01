@@ -1,4 +1,4 @@
-import { Point, Group } from '../backend/abstract';
+import { Point, Group } from '../backend';
 import { PrivateKey, PublicKey } from './core'
 import { PartialKey, PartialPublic, PartialDecryptor, extractPartialKey } from './shares';
 

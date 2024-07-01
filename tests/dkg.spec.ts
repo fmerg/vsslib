@@ -1,5 +1,5 @@
 import { initBackend } from '../src/backend';
-import { Group, Point } from '../src/backend/abstract';
+import { Group, Point } from '../src/backend';
 import { SecretShare, ShamirSharing, PublicShare } from '../src/dealer';
 import {
   distributeSecret,
@@ -36,7 +36,8 @@ class ShareHolder<P extends Point> {
 }
 
 
-const selectParty = (index: number, parties: ShareHolder<Point>[]) => parties.filter(p => p.index == index)[0];
+const selectParty = <P extends Point>(index: number, parties: ShareHolder<P>[]) =>
+  parties.filter(p => p.index == index)[0];
 
 
 describe('Distributed Key Generation (DKG)', () => {
@@ -106,7 +107,7 @@ describe('Distributed Key Generation (DKG)', () => {
     for (const party of parties) {
       const curr = await ctx.exp(
         ctx.generator,
-        ctx.leBuff2Scalar(party.originalSecret),
+        ctx.leBuff2Scalar(party.originalSecret!),
       );
       targetPublic = await ctx.operate(curr, targetPublic);
     }

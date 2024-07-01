@@ -1,4 +1,4 @@
-import { Point, Group } from '../backend/abstract';
+import { Point, Group } from '../backend';
 import { Algorithm } from '../types';
 
 

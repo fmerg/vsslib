@@ -1,4 +1,4 @@
-import { Point, Group } from '../backend/abstract';
+import { Point, Group } from '../backend';
 import { PolynomialEerror } from '../errors';
 import { BasePolynomial } from './base';
 

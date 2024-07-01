@@ -1,4 +1,4 @@
-import { Point, Group } from '../backend/abstract';
+import { Point, Group } from '../backend';
 import { leInt2Buff } from '../arith';
 import { Algorithms, BlockModes } from '../enums';
 import { Algorithm, BlockMode } from '../types';
