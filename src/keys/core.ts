@@ -1,4 +1,4 @@
-import { Group, Point } from '../backend/abstract';
+import { Group, Point } from '../backend';
 import {
   ShamirError,
   InvalidSignature,

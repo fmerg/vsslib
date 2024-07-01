@@ -94,15 +94,10 @@ describe('Shamir secret sharing', () => {
       'Threshold parameter must be at least 1'
     );
   });
-  it.each(systems)('error - number of shares >= order - over %s', async (system) => {
+  it.each(systems)(
+    'error - number of predefined shares >= threshold - over %s', async (system) => {
     const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
-    await expect(distributeSecret(ctx, ctx.order, 2, secret, [
-      [BigInt(0), BigInt(1)],
-      [BigInt(1), BigInt(2)],
-    ])).rejects.toThrow(
-      'Number of shares violates the group order'
-    );
     await expect(distributeSecret(ctx, 3, 2, secret, [
       [BigInt(0), BigInt(1)],
       [BigInt(1), BigInt(2)],

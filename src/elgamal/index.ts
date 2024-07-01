@@ -1,4 +1,4 @@
-import { Point, Group } from '../backend/abstract';
+import { Point, Group } from '../backend';
 import { ElgamalScheme, BlockMode, Algorithm } from '../types';
 
 import { Ciphertext, ElgamalDriver } from './driver';

@@ -1,5 +1,4 @@
 import {
-  Modular,
   Elliptic,
   Algorithms,
   BlockModes,
@@ -9,8 +8,6 @@ import {
 } from './enums';
 
 export type System =
-  | Modular.BITS_2048
-  | Modular.BITS_4096
   | Elliptic.ED25519
   | Elliptic.ED448
   | Elliptic.JUBJUB;

@@ -1,8 +1,3 @@
-export enum Modular {
-  BITS_2048 = 2048,
-  BITS_4096 = 4096,
-}
-
 export enum Elliptic {
   ED25519   = 'ed25519',
   ED448     = 'ed448',
@@ -17,7 +12,6 @@ export enum Elliptic {
 }
 
 export const Systems = {
-  // ...Modular,
   ...Elliptic,
 }
 

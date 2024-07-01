@@ -1,5 +1,5 @@
 import { leInt2Buff } from './arith';
-import { Point, Group } from './backend/abstract';
+import { Point, Group } from './backend';
 import { Ciphertext } from './elgamal';
 import {
   SecretShare,

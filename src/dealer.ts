@@ -1,4 +1,4 @@
-import { Point, Group } from './backend/abstract';
+import { Point, Group } from './backend';
 import { mod, modInv } from './arith';
 import { FieldPolynomial, randomPolynomial } from './polynomials';
 import {

@@ -1,4 +1,4 @@
-import { Point, Group } from './backend/abstract';
+import { Point, Group } from './backend';
 import { mod, modInv } from './arith';
 import { FieldPolynomial } from './polynomials';
 import { InverseNotExists, InterpolationError } from './errors';
@@ -79,10 +79,10 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
 }
 
 
-export const interpolate = async (
-  ctx: Group<Point>,
+export const interpolate = async <P extends Point>(
+  ctx: Group<P>,
   points: XYPoint[]
-): Promise<LagrangePolynomial<Point>> => {
+): Promise<LagrangePolynomial<P>> => {
   return new LagrangePolynomial(
     ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)])
   );

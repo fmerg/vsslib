@@ -1,5 +1,5 @@
 // TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
-import { Point, Group } from '../backend/abstract';
+import { Point, Group } from '../backend';
 import { Algorithms } from '../enums';
 import { Algorithm } from '../types';
 import { BaseSigner } from './base';

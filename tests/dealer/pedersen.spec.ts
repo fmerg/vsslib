@@ -1,5 +1,5 @@
 import { initBackend } from '../../src/backend';
-import { Point } from '../../src/backend/abstract';
+import { Point } from '../../src/backend';
 import { SecretShare, ShamirSharing } from '../../src/dealer';
 import { distributeSecret, verifyPedersenCommitments } from '../../src/dealer';
 import { resolveTestConfig } from '../environ';

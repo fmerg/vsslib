@@ -6,7 +6,7 @@ import { jubjub } from '@noble/curves/jubjub';
 import { Point, Group } from './abstract';
 import { Elliptic } from '../enums';
 import { System } from '../types';
-import { BadGroupError, BadPointError, BadScalarError } from '../errors';
+import { BadPointError, BadScalarError } from '../errors';
 import { mod, leBuff2Int } from '../arith';
 
 
@@ -114,22 +114,13 @@ export class EcGroup extends Group<EcPoint> {
 }
 
 
-const __curves = {
-  [Elliptic.ED25519]: ed25519,
-  [Elliptic.ED448]: ed448,
-  [Elliptic.JUBJUB]: jubjub,
-};
-
-export function initElliptic(system: System): EcGroup {
-  switch (system) {
-    case Elliptic.ED25519:
-    case Elliptic.ED448:
-    case Elliptic.JUBJUB:
-      return new EcGroup(system, __curves[system]);
-    default:
-      throw new BadGroupError(
-        `Unsupported goup: ${system}`
-    );
+export const initElliptic = (
+  system: Elliptic.ED25519 | Elliptic.ED448 | Elliptic.JUBJUB
+): EcGroup => {
+  const mapping = {
+    [Elliptic.ED25519]: ed25519,
+    [Elliptic.ED448]: ed448,
+    [Elliptic.JUBJUB]: jubjub,
   }
+  return new EcGroup(system, mapping[system]);
 }
-
