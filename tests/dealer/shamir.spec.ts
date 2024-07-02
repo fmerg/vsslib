@@ -1,5 +1,6 @@
 import { initBackend } from '../../src/backend';
 import { distributeSecret } from '../../src/dealer';
+import { leInt2Buff } from '../../src/arith';
 import { selectSecretShare, selectPublicShare } from '../helpers';
 import { resolveTestConfig } from '../environ';
 import { cartesian } from '../utils';
@@ -44,7 +45,7 @@ describe('Shamir secret sharing', () => {
     for (let nrPredefined = 1; nrPredefined < t; nrPredefined++) {
       const predefined = [];
       for (let i = 0; i < nrPredefined; i++) {
-        predefined.push(await ctx.randomScalar());
+        predefined.push(await ctx.randomSecret());
       }
       const { sharing } = await distributeSecret(ctx, n, t, secret, predefined);
       const { nrShares, threshold, polynomial } = sharing;
@@ -56,7 +57,8 @@ describe('Shamir secret sharing', () => {
       expect(publicShares.length).toEqual(n);
       for (let index = 1; index <= nrPredefined; index++) {
         const { value } = selectSecretShare(index, secretShares);
-        expect(ctx.leBuff2Scalar(value)).toEqual(predefined[index - 1]);
+        // TODO: isEqualScalar functionality
+        expect(ctx.leBuff2Scalar(value)).toEqual(ctx.leBuff2Scalar(predefined[index - 1]));
       }
       const { generator } = ctx;
       for (let index = 1; index < nrShares; index++) {
@@ -99,8 +101,8 @@ describe('Shamir secret sharing', () => {
     const ctx = initBackend(system);
     const secret = await ctx.randomSecret();
     await expect(distributeSecret(ctx, 3, 2, secret, [
-      [BigInt(0), BigInt(1)],
-      [BigInt(1), BigInt(2)],
+      leInt2Buff(BigInt(1)),
+      leInt2Buff(BigInt(2)),
     ])).rejects.toThrow(
       'Number of predefined shares violates threshold'
     );
