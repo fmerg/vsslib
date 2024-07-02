@@ -14,6 +14,7 @@ import { Signature } from '../signer';
 import { Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from '../enums';
 import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from '../types';
 import { toCanonical, fromCanonical, ctEqualBuffer } from '../common';
+import { generateSecret } from '../secrets';
 import { distributeSecret, ShamirSharing } from '../dealer';
 
 import elgamal from '../elgamal';
@@ -81,7 +82,7 @@ export class PrivateKey<P extends Point> {
   ): Promise<Signature> => {
     let { scheme, algorithm, nonce } = opts;
     return signer(this.ctx, scheme, algorithm || Algorithms.DEFAULT).signBytes(
-      this.asScalar(), message, nonce
+      this.bytes, message, nonce
     );
   }
 
@@ -97,8 +98,7 @@ export class PrivateKey<P extends Point> {
     algorithm = algorithm || Algorithms.DEFAULT;
     mode = mode || BlockModes.DEFAULT;
     return elgamal(this.ctx, scheme, algorithm, mode).decrypt(
-      ciphertext,
-      this.asScalar()
+      ciphertext, this.bytes
     );
   }
 
@@ -170,7 +170,7 @@ export class PrivateKey<P extends Point> {
 
   async signEncrypt<Q extends Point>(
     message: Uint8Array,
-    receiverPublic: PublicKey<Q>,
+    recipientPublic: PublicKey<Q>,
     opts: {
       encScheme: ElgamalSchemes.DHIES | ElgamalSchemes.HYBRID,
       sigScheme: SignatureScheme,
@@ -187,13 +187,13 @@ export class PrivateKey<P extends Point> {
     mode = mode || BlockModes.DEFAULT;
     const _signer = signer(this.ctx, sigScheme, algorithm);
     const _cipher = elgamal(this.ctx, encScheme, algorithm, mode);
-    const innerSignature = await _signer.signBytes(this.asScalar(), message, nonce);
-    const receiver = receiverPublic.asBytes();
+    const innerSignature = await _signer.signBytes(this.bytes, message, nonce);
+    const recipient = recipientPublic.asBytes();
     const { ciphertext } = await _cipher.encrypt(
-      toCanonical({ message, innerSignature }), receiver
+      toCanonical({ message, innerSignature }), recipient
     )
     const signature = await _signer.signBytes(
-      this.asScalar(), toCanonical({ ciphertext, receiver }), nonce
+      this.bytes, toCanonical({ ciphertext, recipient }), nonce
     )
     return { ciphertext, signature };
   }
@@ -215,14 +215,14 @@ export class PrivateKey<P extends Point> {
     mode = mode || BlockModes.DEFAULT;
     const _signer = signer(this.ctx, sigScheme, algorithm);
     const _cipher = elgamal(this.ctx, encScheme, algorithm, mode);
-    const receiver = await this.getPublicBytes();
+    const recipient = await this.getPublicBytes();
     const outerVerified = await _signer.verifyBytes(
-      senderPublic.asBytes(), toCanonical({ ciphertext, receiver }), signature, nonce
+      senderPublic.asBytes(), toCanonical({ ciphertext, recipient }), signature, nonce
     );
     if (!outerVerified) throw new InvalidSignature(
       `Invalid signature` // TODO
     );
-    const plaintext = await _cipher.decrypt(ciphertext, this.asScalar());
+    const plaintext = await _cipher.decrypt(ciphertext, this.bytes);
     const { message, innerSignature } = fromCanonical(plaintext);
     const innerVerified = await _signer.verifyBytes(
       senderPublic.asBytes(), message, innerSignature, nonce
@@ -364,5 +364,16 @@ export class PublicKey<P extends Point> {
       `Invalid decryptor`   // TODO
     );
     return verified;
+  }
+}
+
+
+export const generateKey = async <P extends Point>(ctx: Group<P>): Promise<
+  { privateKey: PrivateKey<P>, publicKey: PublicKey<P> }
+> => {
+  const { secret, publicBytes } = await generateSecret(ctx);
+  return {
+    privateKey: new PrivateKey(ctx, secret),
+    publicKey: new PublicKey(ctx, publicBytes),
   }
 }

@@ -1,19 +1,15 @@
 #!/usr/bin/node
 
 const { Command } = require('commander');
-const {
-  isEqualSecret,
-  isEqualBuffer,
-  parseDecimal,
-  parseCommaSeparatedDecimals,
-} = require('./utils');
+const { parseDecimal, parseCommaSeparatedDecimals } = require('./utils');
 const {
   enums,
   initBackend,
+  isKeypair,
   distributeSecret,
   parseFeldmanPacket,
   createPublicPacket,
-  recoverPublic
+  recoverPublic,
 } = require('../dist');
 
 const DEFAULT_SYSTEM = enums.Systems.ED25519;
@@ -23,12 +19,11 @@ const DEFAULT_THRESHOLD = 3;
 const program = new Command();
 
 async function demo() {
-  // Parse cli options
-  let { system, nrShares: n, threshold: t, combine: qualifiedIndexes, verbose } = program.opts();
+  let { system, nrShares: n, threshold: t, combine: qualified, verbose } = program.opts();
+  const ctx = initBackend(system);
 
   // The dealer shares a secret and generates verifiable Feldman packets
-  const ctx = initBackend(system);
-  const { secret, sharing } = await distributeSecret(ctx, n, t);
+  const { secret: originalSecret, sharing } = await distributeSecret(ctx, n, t);
   const { commitments, packets } = await sharing.createFeldmanPackets();
 
   // At this point, the dealer brodcasts the commitments and sends each packet to the
@@ -45,19 +40,15 @@ async function demo() {
   // Every shareholder creates a Shnorr proof for their respective secret share
   const publicPackets = [];
   for (const share of secretShares) {
-    const packet = await createPublicPacket(ctx, share);  // TODO: nonce
+    const packet = await createPublicPacket(ctx, share);
     publicPackets.push(packet);
   }
 
   // Recover combined public from qualified packets
-  qualifiedIndexes = qualifiedIndexes || Array.from({ length: t }, (_, i) => i + 1)
-  const { recovered } = await recoverPublic(ctx, publicPackets.filter(
-    packet => qualifiedIndexes.includes(packet.index)
-  ));
-  console.log(isEqualBuffer(
-    recovered,
-    (await ctx.exp(ctx.generator, ctx.leBuff2Scalar(secret))).toBytes())  // TODO
-  );
+  qualified = qualified || Array.from({ length: t }, (_, i) => i + 1)
+  const qualifiedPackets = publicPackets.filter(p => qualified.includes(p.index));
+  const { recovered: recoveredPublic} = await recoverPublic(ctx, qualifiedPackets);
+  console.log(await isKeypair(ctx, originalSecret, recoveredPublic));
 }
 
 program

@@ -2,6 +2,8 @@ import { initBackend } from '../src/backend';
 import { Group, Point } from '../src/backend';
 import { SecretShare, ShamirSharing, PublicShare } from '../src/dealer';
 import {
+  extractPublic,
+  isEqualPublic,
   distributeSecret,
   parseFeldmanPacket,
   parsePedersenPacket,
@@ -11,21 +13,20 @@ import {
 } from '../src';
 import { randomNonce } from '../src/crypto';
 import { resolveTestConfig } from './environ';
-import { isEqualBuffer } from './utils';
 import { mod, leInt2Buff } from '../src/arith';
 
 let { systems, nrShares, threshold } = resolveTestConfig();
 
-class ShareHolder<P extends Point> {
+class Party<P extends Point> {
   ctx: Group<P>;
   index: number;
   originalSecret?: Uint8Array;
   sharing?: ShamirSharing<P>;
   aggregates: SecretShare[];
-  share?: SecretShare;
+  localSecretShare?: SecretShare;
+  localPublicShare?: PublicShare;
   publicShares: PublicShare[];
-  localPublic?: PublicShare;
-  combinedPublic?: Uint8Array;
+  globalPublic?: Uint8Array;
 
   constructor(ctx: Group<P>, index: number) {
     this.ctx = ctx;
@@ -36,29 +37,31 @@ class ShareHolder<P extends Point> {
 }
 
 
-const selectParty = <P extends Point>(index: number, parties: ShareHolder<P>[]) =>
+const selectParty = <P extends Point>(index: number, parties: Party<P>[]) =>
   parties.filter(p => p.index == index)[0];
 
 
 describe('Distributed Key Generation (DKG)', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initBackend(system);
-    const publicBytes = await ctx.randomPublic();
     let parties = [];
     for (let index = 1; index <= nrShares; index++) {
-      parties.push(new ShareHolder(ctx, index));
+      parties.push(new Party(ctx, index));
     }
 
+    // Involved parties agree on some public reference
+    const publicBytes = await ctx.randomPublic();
+
+    // Computation of sharings
     for (let party of parties) {
       const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
       party.originalSecret = secret ;
       party.sharing = sharing;
     }
 
-    // Shares distribution
+    // Distribution of shares over the network
     for (const party of parties) {
-      const { packets, commitments } = await party.sharing!.createPedersenPackets(
-        publicBytes
+      const { packets, commitments } = await party.sharing!.createPedersenPackets(publicBytes
       );
       for (const packet of packets) {
         const { share, binding } = await parsePedersenPacket(
@@ -68,38 +71,33 @@ describe('Distributed Key Generation (DKG)', () => {
       }
     }
 
-    // Local summation
+    // Local summation of received shares
     for (let party of parties) {
-      party.share = { value: leInt2Buff(BigInt(0)), index: party.index };
+      party.localSecretShare = { value: leInt2Buff(BigInt(0)), index: party.index };
       for (const share of party.aggregates) {
-        const x = ctx.leBuff2Scalar(party.share.value);
+        const x = ctx.leBuff2Scalar(party.localSecretShare.value);
         const z = ctx.leBuff2Scalar(share.value);
-        party.share.value = leInt2Buff(mod(x + z, ctx.order));
+        party.localSecretShare.value = leInt2Buff(mod(x + z, ctx.order));
       }
-      party.localPublic = {
-        value: (
-          await ctx.exp(
-            ctx.generator,
-            ctx.leBuff2Scalar(party.share.value),
-          )
-        ).toBytes(),
+      party.localPublicShare = {
+        value: await extractPublic(ctx, party.localSecretShare.value),
         index: party.index,
       }
     }
 
     // Public key advertisement
     for (const sender of parties) {
-      for (const receiver of parties) {
+      for (const recipient of parties) {
         const nonce = await randomNonce();
-        const packet = await createPublicPacket(ctx, sender.share!, { nonce });
+        const packet = await createPublicPacket(ctx, sender.localSecretShare!, { nonce });
         const publicShare = await parsePublicPacket(ctx, packet, { nonce });
-        receiver.publicShares.push(publicShare);
+        recipient.publicShares.push(publicShare);
       }
     }
 
     // Local recovery of combined public
     for (let party of parties) {
-      party.combinedPublic = await combinePublicShares(ctx, party.publicShares);
+      party.globalPublic = await combinePublicShares(ctx, party.publicShares);
     }
 
     // Test consistency
@@ -112,7 +110,7 @@ describe('Distributed Key Generation (DKG)', () => {
       targetPublic = await ctx.operate(curr, targetPublic);
     }
     for (const party of parties) {
-      expect(isEqualBuffer(party.combinedPublic!, targetPublic.toBytes())).toBe(true);
+      expect(await isEqualPublic(ctx, party.globalPublic!, targetPublic.toBytes())).toBe(true);
     }
   });
 })

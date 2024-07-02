@@ -1,7 +1,7 @@
-import { combineSecretShares } from '../../src/combiner';
+import { combineSecretShares, isEqualSecret } from '../../src';
 import { partialPermutations } from '../utils';
 import { resolveTestConfig } from '../environ';
-import { isEqualSecret, createSharingSetup } from '../helpers';
+import { createSharingSetup } from '../helpers';
 
 let { systems, algorithms, nrShares, threshold } = resolveTestConfig();
 
@@ -12,7 +12,7 @@ describe('Combination of secret shares (scalars)', () => {
     });
     partialPermutations(secretShares).forEach(async (qualifiedShares) => {
       let result = await combineSecretShares(ctx, qualifiedShares);
-      expect(isEqualSecret(ctx, result, secret)).toBe(qualifiedShares.length >= threshold);
+      expect(await isEqualSecret(ctx, result, secret)).toBe(qualifiedShares.length >= threshold);
     });
   });
   it.each(systems)('threshold guard - over %s', async (system) => {
@@ -27,7 +27,7 @@ describe('Combination of secret shares (scalars)', () => {
     });
     partialPermutations(secretShares, threshold, nrShares).forEach(async (qualifiedShares) => {
       let result = await combineSecretShares(ctx, qualifiedShares, threshold);
-      expect(isEqualSecret(ctx, result, secret)).toBe(true);
+      expect(await isEqualSecret(ctx, result, secret)).toBe(true);
     });
   });
 });

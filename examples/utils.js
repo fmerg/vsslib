@@ -1,15 +1,6 @@
 const commander = require('commander');
 
-const isEqualSecret = (ctx, lhs, rhs) => ctx.leBuff2Scalar(lhs) == ctx.leBuff2Scalar(rhs);
-
-const isEqualBuffer = (a, b) => {
-  if (a.length != b.length) return false;
-  for (let i = 0; i < a.length; i++)
-    if (a[i] != b[i]) return false;
-  return true;
-}
-
-const parseDecimal = (value) => {
+exports.parseDecimal = (value) => {
   const parsedValue = parseInt(value, 10);
   if (isNaN(parsedValue)) {
     throw new commander.InvalidArgumentError('Not a number.');
@@ -17,11 +8,6 @@ const parseDecimal = (value) => {
   return parsedValue;
 }
 
-const parseCommaSeparatedDecimals = (values) => {
+exports.parseCommaSeparatedDecimals = (values) => {
   return values.split(',').map(v => parseDecimal(v))
 }
-
-exports.isEqualSecret = isEqualSecret;
-exports.isEqualBuffer = isEqualBuffer;
-exports.parseDecimal = parseDecimal;
-exports.parseCommaSeparatedDecimals = parseCommaSeparatedDecimals;

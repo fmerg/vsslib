@@ -18,6 +18,14 @@ import {
   parsePublicPacket,
 } from './dealer';
 
+import {
+  generateSecret,
+  extractPublic,
+  isEqualSecret,
+  isEqualPublic,
+  isKeypair,
+} from './secrets';
+
 
 const backend = require('./backend');
 const crypto = require('./crypto');
@@ -32,6 +40,11 @@ const signer = require('./signer');
 
 export {
   initBackend,
+  generateSecret,
+  isEqualSecret,
+  isEqualPublic,
+  extractPublic,
+  isKeypair,
   generateKey,
   extractPartialKey,
   distributeSecret,

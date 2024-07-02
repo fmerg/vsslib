@@ -1,10 +1,15 @@
 import { Group, Point } from '../src/backend';
-import { initBackend } from '../src/backend';
-import { generateKey } from '../src';
+import {
+  initBackend,
+  generateSecret,
+  distributeSecret,
+  generateKey,
+  createPublicPacket,
+} from '../src';
+import { SecretShare, PublicShare } from '../src/dealer';
+import { PartialKey, PartialPublic } from '../src/keys';
 import { ElgamalSchemes } from '../src/enums';
 import { ElgamalScheme, System, Algorithm } from '../src/types';
-import { distributeSecret, createPublicPacket, SecretShare, PublicShare } from '../src/dealer';
-import { PartialKey, PartialPublic } from '../src/keys';
 import { leInt2Buff } from '../src/arith';
 import { randomIndex } from './utils';
 
@@ -12,28 +17,6 @@ export const buildMessage = async <P extends Point>(ctx: Group<P>, scheme: Elgam
   scheme == ElgamalSchemes.PLAIN ?
     await ctx.randomPublic() :
     Uint8Array.from(Buffer.from('destroy earth'));
-
-export const randomDlogPair = async <P extends Point>(ctx: Group<P>): Promise<{
-  x: bigint, y: P, secret: Uint8Array, publicBytes: Uint8Array
-}> => {
-  const { randomScalar, exp, generator: g } = ctx;
-  const x = await randomScalar();
-  const y = await exp(g, x);
-  return { x, y, secret: leInt2Buff(x), publicBytes: y.toBytes() };
-}
-
-/** Check equality of byte arrays as secret scalars **/
-export const isEqualSecret = <P extends Point>(
-  ctx: Group<P>,
-  lhs: Uint8Array,
-  rhs: Uint8Array,
-): boolean => ctx.leBuff2Scalar(lhs) == ctx.leBuff2Scalar(rhs);
-
-export const selectSecretShare = (index: number, shares: SecretShare[]): SecretShare =>
-  shares.filter(share => share.index == index)[0];
-
-export const selectPublicShare = (index: number, shares: PublicShare[]): PublicShare =>
-  shares.filter(share => share.index == index)[0];
 
 export const selectPartialKey = <P extends Point>(index: number, shares: PartialKey<P>[]) =>
   shares.filter(share => share.index == index)[0];
@@ -49,7 +32,7 @@ export const createSharingSetup = async (opts: {
 }) => {
   const { system, nrShares, threshold } = opts;
   const ctx = initBackend(system);
-  const { secret, publicBytes } = await randomDlogPair(ctx);
+  const { secret, publicBytes } = await generateSecret(ctx);
   const { sharing } = await distributeSecret(ctx, nrShares, threshold, secret);
   const secretShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
