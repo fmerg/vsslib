@@ -70,7 +70,7 @@ describe('Signcryption', () => {
     expect(plaintext).toEqual(message);
   });
   it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
-    'failure - receiver substitution - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
+    'failure - recipient substitution - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey: alicePrivate, publicKey: alicePublic } = await generateKey(ctx);
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
@@ -92,9 +92,9 @@ describe('Signcryption', () => {
       }
     );
 
-    // Bob substitutes receiver and outer signature
+    // Bob substitutes recipient and outer signature
     const bobSignature = await bobPrivate.signMessage(
-      toCanonical({ ciphertext, receiver: carolPublic.bytes }), {
+      toCanonical({ ciphertext, recipient: carolPublic.bytes }), {
         scheme: sigScheme,
         algorithm,
       }

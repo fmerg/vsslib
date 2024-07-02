@@ -5,9 +5,9 @@ import { ElgamalSchemes } from '../enums';
 import { DhiesAlpha, HybridAlpha, plainElgamal, dhiesElgamal, hybridElgamal } from './core';
 
 
-type PlainCiphertext = { alpha: Uint8Array, beta: Uint8Array };
-type HybridCiphertext = { alpha: HybridAlpha, beta: Uint8Array };
-type DhiesCiphertext = { alpha: DhiesAlpha, beta: Uint8Array };
+export type PlainCiphertext = { alpha: Uint8Array, beta: Uint8Array };
+export type HybridCiphertext = { alpha: HybridAlpha, beta: Uint8Array };
+export type DhiesCiphertext = { alpha: DhiesAlpha, beta: Uint8Array };
 
 export type Ciphertext =
   PlainCiphertext |
@@ -33,35 +33,33 @@ export class ElgamalDriver<P extends Point>{
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
-    const pub = await this.ctx.unpackValid(pubBytes);
+    const y = await this.ctx.unpackValid(pubBytes);
     switch (this.scheme) {
       case ElgamalSchemes.PLAIN:
-        return plainElgamal(this.ctx).encrypt(message, pub);
+        return plainElgamal(this.ctx).encrypt(message, y);
       case ElgamalSchemes.HYBRID:
-        return hybridElgamal(this.ctx, this.mode).encrypt(message, pub);
+        return hybridElgamal(this.ctx, this.mode).encrypt(message, y);
       case ElgamalSchemes.DHIES:
         return dhiesElgamal(this.ctx, this.mode, this.algorithm).encrypt(
-          message, pub
+          message, y
       );
     }
   }
 
-  decrypt = async (ciphertext: Ciphertext, secret: bigint): Promise<Uint8Array> => {
+  decrypt = async (ciphertext: Ciphertext, secret: Uint8Array): Promise<Uint8Array> => {
+    const x = this.ctx.leBuff2Scalar(secret);
     switch (this.scheme) {
       case ElgamalSchemes.PLAIN:
         return plainElgamal(this.ctx).decrypt(
-          ciphertext as PlainCiphertext,
-          secret
+          ciphertext as PlainCiphertext, x
         );
       case ElgamalSchemes.HYBRID:
         return hybridElgamal(this.ctx, this.mode).decrypt(
-          ciphertext as HybridCiphertext,
-          secret
+          ciphertext as HybridCiphertext, x
         );
       case ElgamalSchemes.DHIES:
         return dhiesElgamal(this.ctx, this.mode, this.algorithm).decrypt(
-          ciphertext as DhiesCiphertext,
-          secret
+          ciphertext as DhiesCiphertext, x
         );
       }
   }
@@ -72,18 +70,35 @@ export class ElgamalDriver<P extends Point>{
     switch (this.scheme) {
       case ElgamalSchemes.PLAIN:
         return plainElgamal(this.ctx).decryptWithDecryptor(
-          ciphertext as PlainCiphertext,
-          decryptor
+          ciphertext as PlainCiphertext, decryptor
         );
       case ElgamalSchemes.HYBRID:
         return hybridElgamal(this.ctx, this.mode).decryptWithDecryptor(
-          ciphertext as HybridCiphertext,
-          decryptor
+          ciphertext as HybridCiphertext, decryptor
         );
       case ElgamalSchemes.DHIES:
         return dhiesElgamal(this.ctx, this.mode, this.algorithm).decryptWithDecryptor(
-          ciphertext as DhiesCiphertext,
-          decryptor
+          ciphertext as DhiesCiphertext, decryptor
+        );
+      }
+  }
+
+  decryptWithRandomness = async (
+    ciphertext: Ciphertext, publicBytes: Uint8Array, randomness: Uint8Array
+  ): Promise<Uint8Array> => {
+    const y = await this.ctx.unpackValid(publicBytes);
+    switch (this.scheme) {
+      case ElgamalSchemes.PLAIN:
+        return plainElgamal(this.ctx).decryptWithRandomness(
+          ciphertext as PlainCiphertext, y, randomness
+        );
+      case ElgamalSchemes.HYBRID:
+        return hybridElgamal(this.ctx, this.mode).decryptWithRandomness(
+          ciphertext as HybridCiphertext, y, randomness
+        );
+      case ElgamalSchemes.DHIES:
+        return dhiesElgamal(this.ctx, this.mode, this.algorithm).decryptWithRandomness(
+          ciphertext as DhiesCiphertext, y, randomness
         );
       }
   }

@@ -11,6 +11,6 @@ export abstract class BaseSigner<P extends Point, S> {
     this.algorithm = algorithm;
   }
 
-  abstract signBytes: (secret: bigint, message: Uint8Array, nonce?: Uint8Array) => Promise<S>;
-  abstract verifyBytes: (pub: P, message: Uint8Array, signature: S, nonce?: Uint8Array) => Promise<boolean>;
+  abstract signBytes: (secret: Uint8Array, message: Uint8Array, nonce?: Uint8Array) => Promise<S>;
+  abstract verifyBytes: (publicBytes: Uint8Array, message: Uint8Array, signature: S, nonce?: Uint8Array) => Promise<boolean>;
 }

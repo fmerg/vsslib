@@ -107,6 +107,25 @@ export class ShamirSharing<P extends Point> {
     return shares;
   }
 
+  getShare = async (index: number): Promise<{
+    secretShare: SecretShare,
+    publicShare: PublicShare
+  }> => {
+    const g = this.ctx.generator;
+    const x = await this.polynomial.evaluate(index);
+    const y = await this.ctx.exp(g, x);
+    return {
+      secretShare: {
+        value: leInt2Buff(x),
+        index,
+      },
+      publicShare: {
+        value: y.toBytes(),
+        index,
+      }
+    };
+  }
+
   createFeldmanPackets = async (): Promise<{
     packets: SecretPacket[],
     commitments: Uint8Array[],

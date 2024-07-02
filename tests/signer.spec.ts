@@ -1,8 +1,7 @@
-import { initBackend } from '../src/backend';
+import { initBackend, generateSecret } from '../src';
 import { randomNonce } from '../src/crypto';
 
 import { cartesian } from './utils';
-import { randomDlogPair } from './helpers';
 import { resolveTestConfig } from './environ';
 
 import signer from '../src/signer';
@@ -13,7 +12,7 @@ describe('Signing operation', () => {
   it.each(cartesian([systems, schemes, algorithms]))(
     'success - without nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
-    const { x: secret, publicBytes } = await randomDlogPair(ctx);
+    const { secret, publicBytes } = await generateSecret(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message
@@ -26,7 +25,7 @@ describe('Signing operation', () => {
   it.each(cartesian([systems, schemes, algorithms]))(
     'success - with nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
-    const { x: secret, publicBytes } = await randomDlogPair(ctx);
+    const { secret, publicBytes } = await generateSecret(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
     const signature = await signer(ctx, scheme, algorithm).signBytes(
@@ -40,7 +39,7 @@ describe('Signing operation', () => {
   it.each(cartesian([systems, schemes, algorithms]))(
     'failure - forged message - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
-    const { x: secret, publicBytes } = await randomDlogPair(ctx);
+    const { secret, publicBytes } = await generateSecret(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message
@@ -54,9 +53,9 @@ describe('Signing operation', () => {
   it.each(cartesian([systems, schemes, algorithms]))(
     'failure - forged key - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
-    const { x: secret, publicBytes } = await randomDlogPair(ctx);
+    const { secret, publicBytes } = await generateSecret(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const forgedSecret = await ctx.randomScalar();
+    const { secret: forgedSecret } = await generateSecret(ctx);
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       forgedSecret, message
     );
@@ -68,7 +67,7 @@ describe('Signing operation', () => {
   it.each(cartesian([systems, schemes, algorithms]))(
     'failure - forged signature - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
-    const { x: secret, publicBytes } = await randomDlogPair(ctx);
+    const { secret, publicBytes } = await generateSecret(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await signer(ctx, scheme, algorithm).signBytes(
       secret, message
@@ -82,7 +81,7 @@ describe('Signing operation', () => {
   it.each(cartesian([systems, schemes, algorithms]))(
     'failure - forged nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
-    const { x: secret, publicBytes } = await randomDlogPair(ctx);
+    const { secret, publicBytes } = await generateSecret(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
     const signature = await signer(ctx, scheme, algorithm).signBytes(
@@ -97,7 +96,7 @@ describe('Signing operation', () => {
   it.each(cartesian([systems, schemes, algorithms]))(
     'failure - missing nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
     const ctx = initBackend(system);
-    const { x: secret, publicBytes } = await randomDlogPair(ctx);
+    const { secret, publicBytes } = await generateSecret(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
     const signature = await signer(ctx, scheme, algorithm).signBytes(

@@ -14,16 +14,17 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
     super(ctx, algorithm);
   }
 
-  signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<
+  signBytes = async (secret: Uint8Array, message: Uint8Array, nonce?: Uint8Array): Promise<
     SchnorrSignature
   > => {
     const { generator: g, exp } = this.ctx;
-    const pub = await exp(g, secret);
+    const x = await this.ctx.leBuff2Scalar(secret);
+    const y = await exp(g, x);
     const { commitment, response } = await nizk(this.ctx, this.algorithm).proveLinear(
-      [secret],
+      [x],
       {
         us: [[g]],
-        vs: [pub]
+        vs: [y]
       },
       nonce,
       [message],
@@ -32,14 +33,15 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
   }
 
   verifyBytes = async (
-    pub: P, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array
+    publicBytes: Uint8Array, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array
   ): Promise<boolean> => {
     const { generator: g } = this.ctx;
     const { c, r } = signature;
+    const y = await this.ctx.unpackValid(publicBytes);
     return nizk(this.ctx, this.algorithm).verifyLinear(
       {
         us: [[g]],
-        vs: [pub]
+        vs: [y]
       },
       {
         commitment: [c],

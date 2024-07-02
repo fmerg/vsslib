@@ -21,7 +21,7 @@ export class SigDriver<P extends Point> {
     this.algorithm = algorithm;
   }
 
-  signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<
+  signBytes = async (secret: Uint8Array, message: Uint8Array, nonce?: Uint8Array): Promise<
     Signature
   > => {
     switch (this.scheme) {
@@ -31,13 +31,12 @@ export class SigDriver<P extends Point> {
   }
 
   verifyBytes = async (
-    pubBytes: Uint8Array, message: Uint8Array, signature: Signature, nonce?: Uint8Array
+    publicBytes: Uint8Array, message: Uint8Array, signature: Signature, nonce?: Uint8Array
   ): Promise<boolean> => {
-    const pub = await this.ctx.unpackValid(pubBytes);
     switch (this.scheme) {
       case SignatureSchemes.SCHNORR:
         return schnorr(this.ctx, this.algorithm).verifyBytes(
-          pub,
+          publicBytes,
           message,
           signature as SchnorrSignature,
           nonce

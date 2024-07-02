@@ -1,15 +1,12 @@
 #!/usr/bin/node
 
 const { Command } = require('commander');
-const {
-  isEqualSecret,
-  isEqualBuffer,
-  parseDecimal,
-  parseCommaSeparatedDecimals,
-} = require('./utils');
+const { parseDecimal, parseCommaSeparatedDecimals } = require('./utils');
 const {
   enums,
   initBackend,
+  isEqualSecret,
+  isKeypair,
   distributeSecret,
   combineSecretShares,
   combinePublicShares,
@@ -22,30 +19,19 @@ const DEFAULT_THRESHOLD = 3;
 const program = new Command();
 
 async function demo() {
-  // Parse cli options
-  let { system, nrShares: n, threshold: t, combine: qualifiedIndexes, verbose } = program.opts();
-
-  // Generate and share secret
+  let { system, nrShares: n, threshold: t, combine: qualified, verbose } = program.opts();
   const ctx = initBackend(system);
-  const { secret, sharing } = await distributeSecret(ctx, n, t);
+  const { secret: originalSecret, sharing } = await distributeSecret(ctx, n, t);
 
-  qualifiedIndexes = qualifiedIndexes || Array.from({ length: t }, (_, i) => i + 1)
-  // Combine qualified secret shares to recover original secret
-  const secretShares = await sharing.getSecretShares();
-  const combinedSecret = await combineSecretShares(ctx, secretShares.filter(
-    share => qualifiedIndexes.includes(share.index)
-  ));
-  console.log(isEqualSecret(ctx, combinedSecret, secret));
+  qualified = qualified || Array.from({ length: t }, (_, i) => i + 1);
 
-  // Combine qualified public shares to recover original public
-  const publicShares = await sharing.getPublicShares();
-  const combinedPublic = await combinePublicShares(ctx, publicShares.filter(
-    share => qualifiedIndexes.includes(share.index)
-  ));
-  console.log(isEqualBuffer(
-    combinedPublic,
-    (await ctx.exp(ctx.generator, ctx.leBuff2Scalar(secret))).toBytes())  // TODO
-  );
+  const secretShares = (await sharing.getSecretShares()).filter(s => qualified.includes(s.index));
+  const combinedSecret = await combineSecretShares(ctx, secretShares);
+  console.log(await isEqualSecret(ctx, combinedSecret, originalSecret));
+
+  const publicShares = (await sharing.getPublicShares()).filter(s => qualified.includes(s.index));
+  const combinedPublic = await combinePublicShares(ctx, publicShares);
+  console.log(await isKeypair(ctx, originalSecret, combinedPublic));
 }
 
 program
