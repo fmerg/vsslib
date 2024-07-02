@@ -26,8 +26,7 @@ export type PublicPacket = PublicShare & { proof: NizkProof };
 
 
 export async function distributeSecret<P extends Point>(
-  ctx: Group<P>, nrShares: number, threshold: number, secret?: Uint8Array,
-  predefined?: [bigint, bigint][]
+  ctx: Group<P>, nrShares: number, threshold: number, secret?: Uint8Array, predefined?: Uint8Array[]
 ): Promise<{ secret: Uint8Array, sharing: ShamirSharing<P>}> {
   predefined = predefined || [];
   if (nrShares < 1) throw new ShamirError(
@@ -46,15 +45,14 @@ export async function distributeSecret<P extends Point>(
     `Number of predefined shares violates threshold: ${predefined.length} >= ${threshold}`,
   );
 
-  // TODO: validate secret as scalar?
   secret = secret || await ctx.randomSecret()
-
   const xyPoints = new Array(threshold);
   xyPoints[0] = [__0n, ctx.leBuff2Scalar(secret)];
   let index = 1;
   while (index < threshold) {
     const x = index;
-    const y = index > predefined.length ? await ctx.randomScalar() : predefined[index - 1];
+    const y = index > predefined.length ? await ctx.randomScalar() :
+      ctx.leBuff2Scalar(predefined[index - 1]);
     xyPoints[index] = [x, y];
     index++;
   }
