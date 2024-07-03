@@ -1,5 +1,5 @@
-import { ElgamalSchemes } from '../../src/enums';
-import { initBackend, generateKey } from '../../src';
+import { ElgamalSchemes } from 'vsslib/enums';
+import { initBackend, generateKey } from 'vsslib';
 import { cartesian } from '../utils';
 import { buildMessage } from '../helpers';
 import { resolveTestConfig } from '../environ';

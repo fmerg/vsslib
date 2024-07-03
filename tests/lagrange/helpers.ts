@@ -1,6 +1,6 @@
-import { BasePolynomial } from '../../src/polynomials/base';
-import { XYPoint } from '../../src/lagrange';
-import { modInv } from '../../src/arith';
+import { BasePolynomial } from 'vsslib/polynomials/base';
+import { XYPoint } from 'vsslib/lagrange';
+import { modInv } from 'vsslib/arith';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);

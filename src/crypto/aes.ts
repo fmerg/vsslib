@@ -1,10 +1,10 @@
 // TODO: browser
 const { createCipheriv, createDecipheriv } = require('node:crypto');
 
-import { BlockMode } from '../types';
-import { BlockModes } from '../enums';
+import { BlockMode } from 'vsslib/types';
+import { BlockModes } from 'vsslib/enums';
 import { randomBytes } from './random';
-import { AesError } from '../errors';
+import { AesError } from 'vsslib/errors';
 
 class AesCipher {
   mode: BlockMode;

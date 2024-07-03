@@ -1,6 +1,6 @@
-import { Point, Group } from '../backend';
-import { ElgamalScheme, BlockMode, Algorithm } from '../types';
-import { ElgamalSchemes } from '../enums';
+import { Point, Group } from 'vsslib/backend';
+import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
+import { ElgamalSchemes } from 'vsslib/enums';
 
 import { DhiesAlpha, HybridAlpha, plainElgamal, dhiesElgamal, hybridElgamal } from './core';
 

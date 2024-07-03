@@ -1,17 +1,17 @@
-import { Group, Point } from '../backend';
-import { Ciphertext } from '../elgamal';
-import { NizkProof } from '../nizk';
-import { Signature } from '../signer';
-import { generateSecret, extractPublic, isEqualSecret, isEqualPublic } from '../secrets';
-import { distributeSecret, ShamirSharing } from '../dealer';
-import { InvalidDecryptor, InvalidEncryption, InvalidSecret, InvalidSignature } from '../errors';
-import { Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from '../enums';
-import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from '../types';
-import { toCanonical, fromCanonical, ctEqualBuffer } from '../common';
+import { Group, Point } from 'vsslib/backend';
+import { Ciphertext } from 'vsslib/elgamal';
+import { NizkProof } from 'vsslib/nizk';
+import { Signature } from 'vsslib/signer';
+import { generateSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
+import { distributeSecret, ShamirSharing } from 'vsslib/dealer';
+import { InvalidDecryptor, InvalidEncryption, InvalidSecret, InvalidSignature } from 'vsslib/errors';
+import { Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from 'vsslib/enums';
+import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from 'vsslib/types';
+import { toCanonical, fromCanonical, ctEqualBuffer } from 'vsslib/common';
 
-import elgamal from '../elgamal';
-import nizk from '../nizk';
-import signer from '../signer';
+import elgamal from 'vsslib/elgamal';
+import nizk from 'vsslib/nizk';
+import signer from 'vsslib/signer';
 
 
 export class PrivateKey<P extends Point> {

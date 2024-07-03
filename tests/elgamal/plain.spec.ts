@@ -1,9 +1,9 @@
-import { Systems } from '../../src/enums';
-import { leInt2Buff } from '../../src/arith';
-import { initBackend, generateSecret } from '../../src';
-import { ElgamalSchemes } from '../../src/enums';
+import { Systems } from 'vsslib/enums';
+import { leInt2Buff } from 'vsslib/arith';
+import { initBackend, generateSecret } from 'vsslib';
+import { ElgamalSchemes } from 'vsslib/enums';
 
-import elgamal from '../../src/elgamal';
+import elgamal from 'vsslib/elgamal';
 
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';

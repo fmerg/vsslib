@@ -1,10 +1,10 @@
 // TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
-import { Point, Group } from '../backend';
-import { Algorithms } from '../enums';
-import { Algorithm } from '../types';
+import { Point, Group } from 'vsslib/backend';
+import { Algorithms } from 'vsslib/enums';
+import { Algorithm } from 'vsslib/types';
 import { BaseSigner } from './base';
 
-import nizk from '../nizk';
+import nizk from 'vsslib/nizk';
 
 
 export type SchnorrSignature = { c: Uint8Array, r: Uint8Array };

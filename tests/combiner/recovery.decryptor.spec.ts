@@ -1,4 +1,4 @@
-import { recoverDecryptor } from '../../src/combiner';
+import { recoverDecryptor } from 'vsslib/combiner';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
 import { createThresholdDecryptionSetup } from '../helpers';
 import { resolveTestConfig } from '../environ';

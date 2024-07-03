@@ -1,16 +1,16 @@
-import { Group, Point } from '../src/backend';
+import { Group, Point } from 'vsslib/backend';
 import {
   initBackend,
   generateSecret,
   distributeSecret,
   generateKey,
   createPublicPacket,
-} from '../src';
-import { SecretShare, PublicShare } from '../src/dealer';
-import { PartialKey, PartialPublic } from '../src/keys';
-import { ElgamalSchemes } from '../src/enums';
-import { ElgamalScheme, System, Algorithm } from '../src/types';
-import { leInt2Buff } from '../src/arith';
+} from 'vsslib';
+import { SecretShare, PublicShare } from 'vsslib/dealer';
+import { PartialKey, PartialPublic } from 'vsslib/keys';
+import { ElgamalSchemes } from 'vsslib/enums';
+import { ElgamalScheme, System, Algorithm } from 'vsslib/types';
+import { leInt2Buff } from 'vsslib/arith';
 import { randomIndex } from './utils';
 
 export const buildMessage = async <P extends Point>(ctx: Group<P>, scheme: ElgamalScheme) =>

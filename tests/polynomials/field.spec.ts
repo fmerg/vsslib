@@ -1,5 +1,5 @@
-import { initBackend } from '../../src/backend';
-import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
+import { initBackend } from 'vsslib/backend';
+import { FieldPolynomial, randomPolynomial } from 'vsslib/polynomials';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 

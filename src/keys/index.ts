@@ -1,4 +1,4 @@
-import { Point, Group } from '../backend';
+import { Point, Group } from 'vsslib/backend';
 import { PrivateKey, PublicKey, generateKey } from './core'
 import { PartialKey, PartialPublic, PartialDecryptor, extractPartialKey } from './shares';
 

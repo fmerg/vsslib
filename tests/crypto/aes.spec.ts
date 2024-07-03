@@ -1,5 +1,5 @@
-import { BlockModes } from '../../src/enums';
-import { aes, randomBytes } from '../../src/crypto';
+import { BlockModes } from 'vsslib/enums';
+import { aes, randomBytes } from 'vsslib/crypto';
 
 import { resolveTestConfig } from '../environ';
 

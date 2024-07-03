@@ -1,5 +1,5 @@
-import { Point, Group } from '../backend';
-import { Algorithm } from '../types';
+import { Point, Group } from 'vsslib/backend';
+import { Algorithm } from 'vsslib/types';
 
 
 export abstract class BaseSigner<P extends Point, S> {

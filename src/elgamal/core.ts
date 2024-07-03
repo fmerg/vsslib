@@ -1,10 +1,10 @@
-import { Point, Group } from '../backend';
-import { leInt2Buff } from '../arith';
-import { Algorithms, BlockModes } from '../enums';
-import { Algorithm, BlockMode } from '../types';
-import { AesError, ElgamalError } from '../errors';
+import { Point, Group } from 'vsslib/backend';
+import { leInt2Buff } from 'vsslib/arith';
+import { Algorithms, BlockModes } from 'vsslib/enums';
+import { Algorithm, BlockMode } from 'vsslib/types';
+import { AesError, ElgamalError } from 'vsslib/errors';
 
-import { hash, hmac, aes } from '../crypto';
+import { hash, hmac, aes } from 'vsslib/crypto';
 
 /** First component of a HYBRID-Elgamal ciphertext */
 export type HybridAlpha = {

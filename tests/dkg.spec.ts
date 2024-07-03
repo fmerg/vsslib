@@ -1,6 +1,6 @@
-import { initBackend } from '../src/backend';
-import { Group, Point } from '../src/backend';
-import { SecretShare, ShamirSharing, PublicShare } from '../src/dealer';
+import { initBackend } from 'vsslib/backend';
+import { Group, Point } from 'vsslib/backend';
+import { SecretShare, ShamirSharing, PublicShare } from 'vsslib/dealer';
 import {
   extractPublic,
   isEqualPublic,
@@ -10,10 +10,10 @@ import {
   createPublicPacket,
   parsePublicPacket,
   combinePublicShares,
-} from '../src';
-import { randomNonce } from '../src/crypto';
+} from 'vsslib';
+import { randomNonce } from 'vsslib/crypto';
 import { resolveTestConfig } from './environ';
-import { mod, leInt2Buff } from '../src/arith';
+import { mod, leInt2Buff } from 'vsslib/arith';
 
 let { systems, nrShares, threshold } = resolveTestConfig();
 

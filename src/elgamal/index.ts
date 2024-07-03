@@ -1,6 +1,6 @@
-import { Point, Group } from '../backend';
-import { ElgamalScheme, BlockMode, Algorithm } from '../types';
-import { Algorithms, BlockModes, } from '../enums';
+import { Point, Group } from 'vsslib/backend';
+import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
+import { Algorithms, BlockModes, } from 'vsslib/enums';
 
 import { Ciphertext, ElgamalDriver } from './driver';
 

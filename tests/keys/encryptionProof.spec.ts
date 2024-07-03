@@ -1,6 +1,6 @@
-import { Algorithms, ElgamalSchemes } from '../../src/enums';
-import { initBackend, generateKey } from '../../src';
-import { randomNonce } from '../../src/crypto';
+import { Algorithms, ElgamalSchemes } from 'vsslib/enums';
+import { initBackend, generateKey } from 'vsslib';
+import { randomNonce } from 'vsslib/crypto';
 import { cartesian, isEqualBuffer } from '../utils';
 import { buildMessage } from '../helpers';
 import { resolveTestConfig } from '../environ';

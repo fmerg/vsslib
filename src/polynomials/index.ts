@@ -1,5 +1,5 @@
-import { Point, Group } from '../backend';
-import { PolynomialEerror } from '../errors';
+import { Point, Group } from 'vsslib/backend';
+import { PolynomialEerror } from 'vsslib/errors';
 import { BasePolynomial } from './base';
 
 

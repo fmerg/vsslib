@@ -1,4 +1,4 @@
-import { recoverPublicKey } from '../../src/combiner';
+import { recoverPublicKey } from 'vsslib/combiner';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createSharingSetup, createPublicPackets } from '../helpers';

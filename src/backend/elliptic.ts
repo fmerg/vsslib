@@ -4,10 +4,10 @@ import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
 
 import { Point, Group } from './abstract';
-import { Elliptic } from '../enums';
-import { System } from '../types';
-import { BadPointError, BadScalarError } from '../errors';
-import { mod, leBuff2Int } from '../arith';
+import { Elliptic } from 'vsslib/enums';
+import { System } from 'vsslib/types';
+import { BadPointError, BadScalarError } from 'vsslib/errors';
+import { mod, leBuff2Int } from 'vsslib/arith';
 
 
 const __0n = BigInt(0);

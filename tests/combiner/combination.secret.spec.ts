@@ -1,4 +1,4 @@
-import { combineSecretShares, isEqualSecret } from '../../src';
+import { combineSecretShares, isEqualSecret } from 'vsslib';
 import { partialPermutations } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createSharingSetup } from '../helpers';

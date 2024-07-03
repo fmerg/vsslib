@@ -1,8 +1,8 @@
-import { initBackend } from '../../src/backend';
-import { PartialKey } from '../../src/keys/shares';
-import { Algorithms } from '../../src/enums';
-import { System, ElgamalScheme, Algorithm } from '../../src/types';
-import { randomNonce } from '../../src/crypto';
+import { initBackend } from 'vsslib/backend';
+import { PartialKey } from 'vsslib/keys/shares';
+import { Algorithms } from 'vsslib/enums';
+import { System, ElgamalScheme, Algorithm } from 'vsslib/types';
+import { randomNonce } from 'vsslib/crypto';
 import { cartesian } from '../utils';
 import { buildMessage } from '../helpers';
 import { resolveTestConfig } from '../environ';

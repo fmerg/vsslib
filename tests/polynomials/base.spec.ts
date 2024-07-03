@@ -1,8 +1,8 @@
-import { Systems } from '../../src/enums';
-import { initBackend } from '../../src/backend';
-import { lagrange } from '../../src';
-import { FieldPolynomial, randomPolynomial } from '../../src/polynomials';
-import { BasePolynomial } from '../../src/polynomials/base';
+import { Systems } from 'vsslib/enums';
+import { initBackend } from 'vsslib/backend';
+import { lagrange } from 'vsslib';
+import { FieldPolynomial, randomPolynomial } from 'vsslib/polynomials';
+import { BasePolynomial } from 'vsslib/polynomials/base';
 import { cartesian, trimZeroes } from '../utils';
 import { resolveTestConfig } from '../environ';
 

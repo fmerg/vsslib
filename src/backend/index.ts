@@ -1,6 +1,6 @@
-import { System } from '../types';
-import { Elliptic } from '../enums';
-import { BadGroupError } from '../errors';
+import { System } from 'vsslib/types';
+import { Elliptic } from 'vsslib/enums';
+import { BadGroupError } from 'vsslib/errors';
 import { initElliptic } from './elliptic';
 
 export { Group, Point } from './abstract'

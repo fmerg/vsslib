@@ -1,5 +1,5 @@
-import { extractPartialKey } from '../../src/keys';
-import { SecretPacket } from '../../src/dealer';
+import { extractPartialKey } from 'vsslib/keys';
+import { SecretPacket } from 'vsslib/dealer';
 import { resolveTestConfig } from '../environ';
 import { selectPartialKey, createKeySharingSetup } from '../helpers';
 

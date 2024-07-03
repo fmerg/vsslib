@@ -1,5 +1,5 @@
-import { Point, Group } from '../backend';
-import { SignatureScheme, Algorithm } from '../types';
+import { Point, Group } from 'vsslib/backend';
+import { SignatureScheme, Algorithm } from 'vsslib/types';
 
 import { Signature, SigDriver } from './driver';
 
