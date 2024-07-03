@@ -114,6 +114,27 @@ export class PrivateKey<P extends Point> {
     return isValid;
   }
 
+  verifyDecrypt = async (
+    ciphertext: Ciphertext,
+    proof: NizkProof,
+    opts: {
+      scheme: ElgamalScheme,
+      encAlgorithm?: Algorithm,
+      mode?: BlockMode,
+      verAlgorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
+  ): Promise<{ plaintext: Uint8Array, proof: NizkProof }> => {
+    const { scheme, encAlgorithm, mode, verAlgorithm, nonce } = opts;
+    await this.verifyEncryption(ciphertext, proof, {
+      algorithm: verAlgorithm, nonce
+    });
+    const plaintext = await this.decrypt(ciphertext, {
+      scheme, algorithm: encAlgorithm, mode
+    });
+    return { plaintext, proof };
+  }
+
   proveDecryptor = async (
     ciphertext: Ciphertext,
     decryptor: Uint8Array,
@@ -336,6 +357,26 @@ export class PublicKey<P extends Point> {
       },
       nonce
     );
+  }
+
+  encryptProve = async (
+    message: Uint8Array,
+    opts: {
+      scheme: ElgamalScheme,
+      encAlgorithm?: Algorithm,
+      mode?: BlockMode,
+      verAlgorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
+  ): Promise<{ ciphertext: Ciphertext, proof: NizkProof }> => {
+    const { scheme, encAlgorithm, mode, verAlgorithm, nonce } = opts;
+    const { ciphertext, randomness } = await this.encrypt(message, {
+      scheme, algorithm: encAlgorithm, mode
+    });
+    const proof = await this.proveEncryption(ciphertext, randomness, {
+      algorithm: verAlgorithm, nonce
+    });
+    return { ciphertext, proof };
   }
 
   verifyDecryptor = async (
