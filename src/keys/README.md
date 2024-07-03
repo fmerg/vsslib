@@ -19,7 +19,7 @@ const { privateKey, publicKey } = await generateKey(ctx);
 const publicKey = await privateKey.getPublicKey();
 ```
 
-## Schnorr identification
+## Schnorr identification (Proof-of-Secret)
 
 ```js
 const proof = await privateKey.proveSecret({ algorithm: "sha256" });
@@ -27,20 +27,6 @@ const proof = await privateKey.proveSecret({ algorithm: "sha256" });
 
 ```js
 await publicKey.verifySecret(proof, { algorithm: "sha256" });
-```
-
-## Signatures
-
-```js
-const message = Uint8Array.from(Buffer.from("destroy earth"));
-```
-
-```js
-const signature = await privateKey.signMessage(message, { scheme: "schnorr", algorithm: "sha256" });
-```
-
-```js
-await publicKey.verifySignature(message, signature, { scheme: "schnorr", algorithm: "sha256" });
 ```
 
 ## Elgamal encryption
@@ -85,7 +71,7 @@ const plaintext = privateKey.decrypt(ciphertext, {
 });
 ```
 
-### Decryptors
+## Verifiable decryptors
 
 ```js
 const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext, { algorithm: "sha256" });
@@ -95,7 +81,23 @@ const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext, { alg
 await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm: "sha256" });
 ```
 
-### Encrypt-then-prove
+### Standalone proof-of-decryptor
+
+```js
+const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm: "sha256" })
+```
+
+## Verifiable encryption (Encrypt-then-Prove)
+
+```js
+const { ciphertext, proof } = await publicKey.encryptProve(message, { scheme: "dhies" })
+```
+
+```js
+const { plaintext } = await privateKey.verifyDecrypt(ciphertext, proof, { scheme: "dhies" })
+```
+
+### Standalone proof-of-randomness
 
 ```js
 const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: "sha256" });
@@ -103,6 +105,20 @@ const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorith
 
 ```js
 await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
+```
+
+## Signatures
+
+```js
+const message = Uint8Array.from(Buffer.from("destroy earth"));
+```
+
+```js
+const signature = await privateKey.signMessage(message, { scheme: "schnorr", algorithm: "sha256" });
+```
+
+```js
+await publicKey.verifySignature(message, signature, { scheme: "schnorr", algorithm: "sha256" });
 ```
 
 ## Signcryption
