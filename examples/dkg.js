@@ -13,8 +13,8 @@ const {
   parsePedersenPacket,
   createPublicPacket,
 } = require('../dist');
-const { Systems } = require('../dist/enums');v
-const { leInt2Buff, mod } = require('../dist/iarith');
+const { Systems } = require('../dist/enums');
+const { leInt2Buff, mod } = require('../dist/arith');
 const enums = require('../dist/enums')
 const crypto = require('../dist/crypto')
 const program = new Command();

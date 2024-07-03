@@ -25,8 +25,8 @@ describe('Decryptor', () => {
     const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm });
-    const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm });
-    expect(verified).toBe(true);
+    const isValid = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm });
+    expect(isValid).toBe(true);
   });
   it.each(cartesian([systems, schemes, algorithms]))(
     'verification - success - over %s/%s', async (system, scheme, algorithm) => {
@@ -36,8 +36,8 @@ describe('Decryptor', () => {
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const nonce = await randomNonce();
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm, nonce });
-    const verified = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm, nonce });
-    expect(verified).toBe(true);
+    const isValid = await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm, nonce });
+    expect(isValid).toBe(true);
   });
   it.each(cartesian([systems, schemes]))(
     'verification - failure - forged proof - over %s', async (system, scheme) => {

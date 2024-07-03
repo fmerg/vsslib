@@ -36,8 +36,8 @@ describe('Partial decryptor', () => {
     const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
       system, scheme, algorithm
     });
-    const verified = await publicKey.verifyPartialDecryptor(ciphertext, decryptor, { algorithm });
-    expect(verified).toBe(true);
+    const isValid = await publicKey.verifyPartialDecryptor(ciphertext, decryptor, { algorithm });
+    expect(isValid).toBe(true);
   });
   it.each(cartesian([systems, schemes, algorithms]))(
     'verification - success - with nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
@@ -45,10 +45,10 @@ describe('Partial decryptor', () => {
     const { publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
       system, scheme, algorithm, nonce
     });
-    const verified = await publicKey.verifyPartialDecryptor(ciphertext, decryptor, {
+    const isValid = await publicKey.verifyPartialDecryptor(ciphertext, decryptor, {
       algorithm, nonce
     });
-    expect(verified).toBe(true);
+    expect(isValid).toBe(true);
   });
   it.each(cartesian([systems, schemes, algorithms]))(
     'verification - failure - forged proof - over %s/%s/%s', async (system, scheme, algorithm) => {

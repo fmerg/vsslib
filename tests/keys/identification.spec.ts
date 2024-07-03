@@ -9,20 +9,20 @@ const { systems, algorithms } = resolveTestConfig();
 
 describe('Schnorr identification', () => {
   it.each(cartesian([systems, algorithms]))(
-    'success - without nonce over %s/%s', async (system, algorithm) => {
+    'success - without nonce - over %s/%s', async (system, algorithm) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const proof = await privateKey.proveSecret({ algorithm });
-    const verified = await publicKey.verifySecret(proof, { algorithm });
-    expect(verified).toBe(true);
+    const isValid = await publicKey.verifySecret(proof, { algorithm });
+    expect(isValid).toBe(true);
   });
   it.each(systems)('success - with nonce - over %s', async (system) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
-    const verified = await publicKey.verifySecret(proof, { nonce });
-    expect(verified).toBe(true);
+    const isValid = await publicKey.verifySecret(proof, { nonce });
+    expect(isValid).toBe(true);
   });
   it.each(systems)('failure - forged proof - over %s', async (system) => {
     const ctx = initBackend(system);

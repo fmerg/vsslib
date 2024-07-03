@@ -15,7 +15,7 @@ describe('Public key recovery', () => {
     const { packets } = await createPublicPackets({ ctx, shares, algorithm });
     partialPermutations(packets).forEach(async (qualifiedPackets) => {
       let { recovered, blame } = await recoverPublicKey(ctx, qualifiedPackets, { algorithm });
-      expect(isEqualBuffer(recovered.bytes, publicBytes)).toBe(qualifiedPackets.length >= threshold);
+      expect(isEqualBuffer(recovered.asBytes(), publicBytes)).toBe(qualifiedPackets.length >= threshold);
       expect(blame).toEqual([]);
     });
   });
@@ -32,7 +32,7 @@ describe('Public key recovery', () => {
     });
     partialPermutations(packets, threshold, nrShares).forEach(async (qualifiedPackets) => {
       let { recovered, blame } = await recoverPublicKey(ctx, qualifiedPackets, { algorithm, threshold });
-      expect(isEqualBuffer(recovered.bytes, publicBytes)).toBe(qualifiedPackets.length >= threshold);
+      expect(isEqualBuffer(recovered.asBytes(), publicBytes)).toBe(qualifiedPackets.length >= threshold);
       expect(blame).toEqual([]);
     });
   });
@@ -59,7 +59,7 @@ describe('Public key recovery', () => {
     let { recovered, blame } = await recoverPublicKey(ctx, invalidPackets, {
       algorithm, threshold, errorOnInvalid: false
     });
-    expect(isEqualBuffer(recovered.bytes, publicBytes)).toBe(false);
+    expect(isEqualBuffer(recovered.asBytes(), publicBytes)).toBe(false);
     expect(blame.sort()).toEqual(targetBlame.sort());
   });
 });

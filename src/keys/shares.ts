@@ -1,9 +1,8 @@
 import { Point, Group } from '../backend';
 import { Ciphertext } from '../elgamal';
 import { NizkProof } from '../nizk';
-import {
-  PublicShare, SecretPacket, parseFeldmanPacket, parsePedersenPacket
-} from '../dealer';
+import { SecretPacket, parseFeldmanPacket, parsePedersenPacket } from '../dealer';
+import { extractPublic } from '../secrets';
 import { InvalidDecryptor, InvalidPartialDecryptor } from '../errors';
 import { Algorithm } from '../types';
 import { PrivateKey, PublicKey } from './core';
@@ -33,16 +32,14 @@ export async function extractPartialKey<P extends Point>(
 export class PartialKey<P extends Point> extends PrivateKey<P> {
   index: number;
 
-  constructor(ctx: Group<P>, bytes: Uint8Array, index: number) {
-    super(ctx, bytes);
+  constructor(ctx: Group<P>, secret: Uint8Array, index: number) {
+    super(ctx, secret);
     this.index = index;
   }
 
-  async getPublicShare(): Promise<PartialPublic<P>> {
-    return new PartialPublic(
-      this.ctx, await this.getPublicBytes(), this.index
-    );
-  }
+  getPublicShare = async (): Promise<PartialPublic<P>> => new PartialPublic(
+    this.ctx, await extractPublic(this.ctx, this.secret), this.index
+  );
 
   async computePartialDecryptor(
     ciphertext: Ciphertext,
@@ -63,33 +60,24 @@ export class PartialKey<P extends Point> extends PrivateKey<P> {
 export class PartialPublic<P extends Point> extends PublicKey<P> {
   index: number;
 
-  constructor(ctx: Group<P>, bytes: Uint8Array, index: number) {
-    super(ctx, bytes);
+  constructor(ctx: Group<P>, publicBytes: Uint8Array, index: number) {
+    super(ctx, publicBytes);
     this.index = index;
-  }
-
-  asPublicShare = (): PublicShare => {
-    return {
-      value: this.bytes,
-      index: this.index,
-    }
   }
 
   async verifyPartialDecryptor<A>(
     ciphertext: Ciphertext,
-    decryptor: PartialDecryptor,
+    share: PartialDecryptor,
     opts?: {
       algorithm?: Algorithm,
       nonce?: Uint8Array,
     },
   ): Promise<boolean> {
-    const { ctx, index } = this;
-    const { value, proof } = decryptor;
-    const nonce = opts ? opts.nonce : undefined;
+    const { value: decryptor, proof } = share;
     try {
       await this.verifyDecryptor(
         ciphertext,
-        value,
+        decryptor,
         proof,
         opts
       );

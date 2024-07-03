@@ -94,7 +94,7 @@ describe('Signcryption', () => {
 
     // Bob substitutes recipient and outer signature
     const bobSignature = await bobPrivate.signMessage(
-      toCanonical({ ciphertext, recipient: carolPublic.bytes }), {
+      toCanonical({ ciphertext, recipient: carolPublic.asBytes() }), {
         scheme: sigScheme,
         algorithm,
       }
