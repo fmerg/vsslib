@@ -1,10 +1,10 @@
-import { Algorithms } from '../../src/enums';
-import { initBackend } from '../../src/backend';
-import { randomNonce } from '../../src/crypto';
+import { Algorithms } from 'vsslib/enums';
+import { initBackend } from 'vsslib/backend';
+import { randomNonce } from 'vsslib/crypto';
 import { cartesian } from '../utils';
 import { createDlogPair } from './helpers';
 import { resolveTestConfig } from '../environ';
-import nizk from '../../src/nizk';
+import nizk from 'vsslib/nizk';
 
 let { systems, algorithms } = resolveTestConfig();
 

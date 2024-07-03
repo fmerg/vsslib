@@ -3,6 +3,15 @@
     "target": "es2016",
     "module": "commonjs",
     "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "vsslib/*": [
+        "./src/*"
+      ],
+      "vsslib": [
+        "./src"
+      ]
+    },
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,

@@ -3,7 +3,7 @@ import {
   byteLen,
   leBuff2Int,
   leInt2Buff
-} from '../../src/arith';
+} from 'vsslib/arith';
 
 describe('bits & bytes length', () => {
   it.each([

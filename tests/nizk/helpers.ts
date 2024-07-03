@@ -1,6 +1,6 @@
-import { Point, Group } from '../../src/backend';
-import { DlogPair, DDHTuple, GenericLinear } from '../../src/nizk';
-import { hash } from '../../src/crypto';
+import { Point, Group } from 'vsslib/backend';
+import { DlogPair, DDHTuple, GenericLinear } from 'vsslib/nizk';
+import { hash } from 'vsslib/crypto';
 
 
 const __0n = BigInt(0);

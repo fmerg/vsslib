@@ -1,10 +1,10 @@
-import { initBackend, generateSecret } from '../src';
-import { randomNonce } from '../src/crypto';
+import { initBackend, generateSecret } from 'vsslib';
+import { randomNonce } from 'vsslib/crypto';
 
 import { cartesian } from './utils';
 import { resolveTestConfig } from './environ';
 
-import signer from '../src/signer';
+import signer from 'vsslib/signer';
 
 const { systems, algorithms, signatureSchemes: schemes} = resolveTestConfig();
 

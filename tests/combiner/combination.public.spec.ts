@@ -1,4 +1,4 @@
-import { combinePublicShares } from '../../src/combiner';
+import { combinePublicShares } from 'vsslib/combiner';
 import { partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createSharingSetup } from '../helpers';

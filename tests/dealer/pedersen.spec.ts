@@ -1,9 +1,9 @@
-import { initBackend } from '../../src/backend';
-import { Point } from '../../src/backend';
-import { SecretShare, ShamirSharing } from '../../src/dealer';
-import { distributeSecret, verifyPedersenCommitments } from '../../src/dealer';
+import { initBackend } from 'vsslib/backend';
+import { Point } from 'vsslib/backend';
+import { SecretShare, ShamirSharing } from 'vsslib/dealer';
+import { distributeSecret, verifyPedersenCommitments } from 'vsslib/dealer';
 import { resolveTestConfig } from '../environ';
-import { leInt2Buff } from '../../src/arith';
+import { leInt2Buff } from 'vsslib/arith';
 
 let { systems, nrShares, threshold } = resolveTestConfig();
 

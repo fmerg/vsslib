@@ -1,6 +1,6 @@
-import { initBackend } from '../../src/backend';
-import { SecretShare, ShamirSharing } from '../../src/dealer';
-import { distributeSecret, verifyFeldmanCommitments } from '../../src/dealer';
+import { initBackend } from 'vsslib/backend';
+import { SecretShare, ShamirSharing } from 'vsslib/dealer';
+import { distributeSecret, verifyFeldmanCommitments } from 'vsslib/dealer';
 import { resolveTestConfig } from '../environ';
 
 let { systems, nrShares, threshold } = resolveTestConfig();

@@ -1,6 +1,6 @@
-import { Point } from '../src/backend';
-import { Systems } from '../src/enums';
-import { initBackend } from '../src/backend';
+import { Point } from 'vsslib/backend';
+import { Systems } from 'vsslib/enums';
+import { initBackend } from 'vsslib/backend';
 import { resolveTestConfig } from './environ';
 
 const __0n = BigInt(0)

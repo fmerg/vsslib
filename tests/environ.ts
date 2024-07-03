@@ -5,7 +5,7 @@ import {
   Systems,
   ElgamalSchemes,
   SignatureSchemes,
-} from '../src/enums';
+} from 'vsslib/enums';
 import {
   BlockMode,
   Algorithm,
@@ -13,7 +13,7 @@ import {
   System,
   ElgamalScheme,
   SignatureScheme,
-} from '../src/types';
+} from 'vsslib/types';
 import { removeItem } from './utils';
 
 const __modes = removeItem([...Object.values(BlockModes)], BlockModes.DEFAULT);

@@ -1,5 +1,5 @@
-import { initBackend, generateKey } from '../../src';
-import { PrivateKey, PublicKey } from '../../src/keys';
+import { initBackend, generateKey } from 'vsslib';
+import { PrivateKey, PublicKey } from 'vsslib/keys';
 import { resolveTestConfig } from '../environ';
 
 const { systems } = resolveTestConfig();

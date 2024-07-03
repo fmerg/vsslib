@@ -2,7 +2,7 @@ import {
   mod,
   gcd,
   modInv,
-} from '../../src/arith';
+} from 'vsslib/arith';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);

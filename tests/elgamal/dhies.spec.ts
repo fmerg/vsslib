@@ -1,11 +1,11 @@
-import { Algorithms, BlockModes } from '../../src/enums';
-import { randomBytes } from '../../src/crypto';
-import { leInt2Buff } from '../../src/arith';
-import { initBackend, generateSecret } from '../../src';
-import { ElgamalSchemes } from '../../src/enums';
-import { DhiesCiphertext } from '../../src/elgamal/driver';
+import { Algorithms, BlockModes } from 'vsslib/enums';
+import { randomBytes } from 'vsslib/crypto';
+import { leInt2Buff } from 'vsslib/arith';
+import { initBackend, generateSecret } from 'vsslib';
+import { ElgamalSchemes } from 'vsslib/enums';
+import { DhiesCiphertext } from 'vsslib/elgamal/driver';
 
-import elgamal from '../../src/elgamal';
+import elgamal from 'vsslib/elgamal';
 
 import { cartesian } from '../utils';
 import { buildMessage } from '../helpers';

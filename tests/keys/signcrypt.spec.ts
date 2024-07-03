@@ -1,8 +1,8 @@
-import { Algorithms, ElgamalSchemes } from '../../src/enums';
-import { System } from '../../src/types';
-import { initBackend, generateKey } from '../../src';
-import { toCanonical } from '../../src/common';
-import { randomNonce } from '../../src/crypto';
+import { Algorithms, ElgamalSchemes } from 'vsslib/enums';
+import { System } from 'vsslib/types';
+import { initBackend, generateKey } from 'vsslib';
+import { toCanonical } from 'vsslib/common';
+import { randomNonce } from 'vsslib/crypto';
 import { cartesian, removeItem } from '../utils';
 import { resolveTestConfig } from '../environ';
 

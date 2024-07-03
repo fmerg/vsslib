@@ -1,6 +1,6 @@
-import { System } from '../../src/types';
-import { initBackend } from '../../src/backend';
-import { lagrange } from '../../src';
+import { System } from 'vsslib/types';
+import { initBackend } from 'vsslib/backend';
+import { lagrange } from 'vsslib';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { interpolate } from './helpers';

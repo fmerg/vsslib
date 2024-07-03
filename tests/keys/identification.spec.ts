@@ -1,6 +1,6 @@
-import { Algorithms } from '../../src/enums';
-import { initBackend, generateKey } from '../../src';
-import { randomNonce } from '../../src/crypto';
+import { Algorithms } from 'vsslib/enums';
+import { initBackend, generateKey } from 'vsslib';
+import { randomNonce } from 'vsslib/crypto';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 

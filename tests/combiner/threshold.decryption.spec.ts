@@ -1,5 +1,5 @@
-import { ElgamalSchemes } from '../../src/enums';
-import { thresholdDecrypt } from '../../src/combiner';
+import { ElgamalSchemes } from 'vsslib/enums';
+import { thresholdDecrypt } from 'vsslib/combiner';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
 import { createThresholdDecryptionSetup } from '../helpers';
 import { resolveTestConfig } from '../environ';

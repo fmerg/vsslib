@@ -4,9 +4,9 @@ import {
   isEqualSecret,
   isEqualPublic,
   isKeypair,
-} from '../src/secrets';
+} from 'vsslib/secrets';
 
-import { initBackend } from '../src/backend';
+import { initBackend } from 'vsslib/backend';
 import { resolveTestConfig } from './environ';
 
 const { systems } = resolveTestConfig();

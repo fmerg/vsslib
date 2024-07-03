@@ -1,4 +1,4 @@
-import { recoverPublic } from '../../src/combiner';
+import { recoverPublic } from 'vsslib/combiner';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createSharingSetup, createPublicPackets } from '../helpers';
