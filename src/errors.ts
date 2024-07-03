@@ -26,7 +26,7 @@ export class InvalidDecryptor extends Error {}
 
 export class InvalidPartialDecryptor extends Error {}
 
-export class InvalidEncryptionProof extends Error {}
+export class InvalidEncryption extends Error {}
 
 export class InvalidSecretShare extends Error {}
 

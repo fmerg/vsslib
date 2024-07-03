@@ -43,8 +43,8 @@ describe('Encrypt-then-prove', () => {
     const message = await buildMessage(ctx, scheme);
     const { ciphertext, randomness } = await publicKey.encrypt(message, { scheme });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    const verified = await privateKey.verifyEncryption(ciphertext, proof, { algorithm });
-    expect(verified).toBe(true);
+    const isValid = await privateKey.verifyEncryption(ciphertext, proof, { algorithm });
+    expect(isValid).toBe(true);
   });
   it.each(cartesian([systems, schemes, algorithms]))(
     'success - with nonce - over %s/%s/%s', async (system, scheme, algorithm) => {
@@ -54,8 +54,8 @@ describe('Encrypt-then-prove', () => {
     const { ciphertext, randomness } = await publicKey.encrypt(message, { scheme });
     const nonce = await randomNonce();
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm, nonce });
-    const verified = await privateKey.verifyEncryption(ciphertext, proof, { algorithm, nonce });
-    expect(verified).toBe(true);
+    const isValid = await privateKey.verifyEncryption(ciphertext, proof, { algorithm, nonce });
+    expect(isValid).toBe(true);
   });
   it.each(cartesian([systems, schemes, algorithms]))(
     'failure - forged proof - over %s/%s/%s', async (system, scheme, algorithm) => {

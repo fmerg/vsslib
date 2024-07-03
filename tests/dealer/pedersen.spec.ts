@@ -17,14 +17,14 @@ describe('Pedersen VSS scheme', () => {
     const secretShares = await sharing.getSecretShares();
     secretShares.forEach(async (share: SecretShare) => {
       const binding = bindings[share.index - 1];
-      const verified = await verifyPedersenCommitments(
+      const isValid = await verifyPedersenCommitments(
         ctx,
         share,
         binding,
         publicBytes,
         commitments
       );
-      expect(verified).toBe(true);
+      expect(isValid).toBe(true);
     });
   });
   it.each(systems)('failure over %s', async (system) => {

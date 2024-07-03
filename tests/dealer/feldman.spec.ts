@@ -14,12 +14,12 @@ describe('Feldman VSS scheme', () => {
     const { commitments } = await sharing.createFeldmanPackets();
     secretShares.forEach(async (share: SecretShare) => {
       const { value: secret, index } = share;
-      const verified = await verifyFeldmanCommitments(
+      const isValid = await verifyFeldmanCommitments(
         ctx,
         share,
         commitments,
       );
-      expect(verified).toBe(true);
+      expect(isValid).toBe(true);
     });
   });
 

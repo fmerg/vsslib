@@ -11,8 +11,8 @@ describe('Structure of asymmetric keys', () => {
     const { privateKey, publicKey } = await generateKey(ctx);
 
     const g = ctx.generator;
-    const x = ctx.leBuff2Scalar(privateKey.bytes);
-    const y = await ctx.unpackValid(publicKey.bytes);
+    const x = ctx.leBuff2Scalar(privateKey.asBytes());
+    const y = await ctx.unpackValid(publicKey.asBytes());
     expect(await y.equals(await ctx.exp(g, x))).toBe(true);
   });
   it.each(systems)('public key extraction - over %s', async (system) => {
@@ -23,16 +23,16 @@ describe('Structure of asymmetric keys', () => {
     expect(await publicKey.equals(targetPublic)).toBe(true);
 
     const g = ctx.generator;
-    const x = ctx.leBuff2Scalar(privateKey.bytes);
-    const y = await ctx.unpackValid(publicKey.bytes);
+    const x = ctx.leBuff2Scalar(privateKey.asBytes());
+    const y = await ctx.unpackValid(publicKey.asBytes());
     expect(await y.equals(await ctx.exp(g, x))).toBe(true);
   });
   it.each(systems)('keypair equality - over %s', async (system) => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
 
-    const sameKey = new PrivateKey(ctx, privateKey.bytes);
-    const samePublic = new PublicKey(ctx, publicKey.bytes);
+    const sameKey = new PrivateKey(ctx, privateKey.asBytes());
+    const samePublic = new PublicKey(ctx, publicKey.asBytes());
 
     expect(await sameKey.equals(privateKey)).toBe(true);
     expect(await samePublic.equals(publicKey)).toBe(true);
