@@ -112,9 +112,9 @@ const message = Uint8Array.from(Buffer.from("destroy earth"));
 ```
 
 ```js
-const { ciphertext, signature } = await senderPrivate.signEncrypt(message, recipientPublic, { encScheme: "hybrid", sigScheme: "schnorr" });
+const { ciphertext, signature } = await senderPrivate.sigEncrypt(message, recipientPublic, { encScheme: "hybrid", sigScheme: "schnorr" });
 ```
 
 ```js
-const { plaintext } = await recipientPrivate.verifyDecrypt(ciphertext, signature, senderPublic, { encScheme: "hybrid", sigScheme: "schnorr" });
+const { plaintext } = await recipientPrivate.sigDecrypt(ciphertext, signature, senderPublic, { encScheme: "hybrid", sigScheme: "schnorr" });
 ```

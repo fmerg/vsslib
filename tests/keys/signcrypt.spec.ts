@@ -27,14 +27,14 @@ describe('Signcryption', () => {
     const { privateKey: bobPrivate, publicKey: bobPublic } = await generateKey(ctx);
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext, signature } = await alicePrivate.signEncrypt(
+    const { ciphertext, signature } = await alicePrivate.sigEncrypt(
       message, bobPublic, {
         encScheme,
         sigScheme,
         algorithm,
       }
     );
-    const { message: plaintext } = await bobPrivate.verifyDecrypt(
+    const { message: plaintext } = await bobPrivate.sigDecrypt(
       ciphertext, signature, alicePublic, {
         encScheme,
         sigScheme,
@@ -51,7 +51,7 @@ describe('Signcryption', () => {
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
-    const { ciphertext, signature } = await alicePrivate.signEncrypt(
+    const { ciphertext, signature } = await alicePrivate.sigEncrypt(
       message, bobPublic, {
         encScheme,
         sigScheme,
@@ -59,7 +59,7 @@ describe('Signcryption', () => {
         nonce,
       }
     );
-    const { message: plaintext } = await bobPrivate.verifyDecrypt(
+    const { message: plaintext } = await bobPrivate.sigDecrypt(
       ciphertext, signature, alicePublic, {
         encScheme,
         sigScheme,
@@ -77,14 +77,14 @@ describe('Signcryption', () => {
     const { privateKey: carolPrivate, publicKey: carolPublic } = await generateKey(ctx);
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext, signature } = await alicePrivate.signEncrypt(
+    const { ciphertext, signature } = await alicePrivate.sigEncrypt(
       message, bobPublic, {
         encScheme,
         sigScheme,
         algorithm,
       }
     );
-    const { message: original, innerSignature } = await bobPrivate.verifyDecrypt(
+    const { message: original, innerSignature } = await bobPrivate.sigDecrypt(
       ciphertext, signature, alicePublic, {
         encScheme,
         sigScheme,
@@ -100,7 +100,7 @@ describe('Signcryption', () => {
       }
     );
     expect(
-      carolPrivate.verifyDecrypt(
+      carolPrivate.sigDecrypt(
         ciphertext, bobSignature, alicePublic, {
           encScheme,
           sigScheme,
@@ -117,14 +117,14 @@ describe('Signcryption', () => {
     const { privateKey: carolPrivate, publicKey: carolPublic } = await generateKey(ctx);
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
-    const { ciphertext, signature } = await alicePrivate.signEncrypt(
+    const { ciphertext, signature } = await alicePrivate.sigEncrypt(
       message, bobPublic, {
         encScheme,
         sigScheme,
         algorithm,
       }
     );
-    const { message: original, innerSignature } = await bobPrivate.verifyDecrypt(
+    const { message: original, innerSignature } = await bobPrivate.sigDecrypt(
       ciphertext, signature, alicePublic, {
         encScheme,
         sigScheme,
@@ -145,7 +145,7 @@ describe('Signcryption', () => {
       }
     );
     expect(
-      carolPrivate.verifyDecrypt(
+      carolPrivate.sigDecrypt(
         bobCiphertext, signature, alicePublic, {
           encScheme,
           sigScheme,
@@ -162,7 +162,7 @@ describe('Signcryption', () => {
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
-    const { ciphertext, signature } = await alicePrivate.signEncrypt(
+    const { ciphertext, signature } = await alicePrivate.sigEncrypt(
       message, bobPublic, {
         encScheme,
         sigScheme,
@@ -171,7 +171,7 @@ describe('Signcryption', () => {
       }
     );
     expect(
-      bobPrivate.verifyDecrypt(
+      bobPrivate.sigDecrypt(
         ciphertext, signature, alicePublic, {
           encScheme,
           sigScheme,
@@ -188,7 +188,7 @@ describe('Signcryption', () => {
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
-    const { ciphertext, signature } = await alicePrivate.signEncrypt(
+    const { ciphertext, signature } = await alicePrivate.sigEncrypt(
       message, bobPublic, {
         encScheme,
         sigScheme,
@@ -197,7 +197,7 @@ describe('Signcryption', () => {
       }
     );
     expect(
-      bobPrivate.verifyDecrypt(
+      bobPrivate.sigDecrypt(
         ciphertext, signature, alicePublic, {
           encScheme,
           sigScheme,
@@ -215,7 +215,7 @@ describe('Signcryption', () => {
 
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const nonce = await randomNonce();
-    const { ciphertext, signature } = await alicePrivate.signEncrypt(
+    const { ciphertext, signature } = await alicePrivate.sigEncrypt(
       message, bobPublic, {
         encScheme,
         sigScheme,
@@ -224,7 +224,7 @@ describe('Signcryption', () => {
       }
     );
     expect(
-      bobPrivate.verifyDecrypt(
+      bobPrivate.sigDecrypt(
         ciphertext, signature, alicePublic, {
           encScheme,
           sigScheme,
