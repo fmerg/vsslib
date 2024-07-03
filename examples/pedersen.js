@@ -1,8 +1,6 @@
-#!/usr/bin/node
-
-const { Command } = require('commander');
-const { parseDecimal, parseCommaSeparatedDecimals } = require('./utils');
-const {
+import { Command } from 'commander';
+import { parseDecimal, parseCommaSeparatedDecimals } from './utils';
+import {
   enums,
   initBackend,
   isKeypair,
@@ -10,7 +8,7 @@ const {
   parsePedersenPacket,
   createPublicPacket,
   recoverPublic
-} = require('../dist');
+} from 'vsslib';
 
 const DEFAULT_SYSTEM = enums.Systems.ED25519;
 const DEFAULT_NR_SHARES = 5;

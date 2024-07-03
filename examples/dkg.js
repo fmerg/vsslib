@@ -1,8 +1,6 @@
-#!/usr/bin/node
-
-const { Command, Option } = require('commander');
-const { parseDecimal } = require('./utils');
-const {
+import { Command, Option } from 'commander';
+import { parseDecimal } from './utils';
+import {
   initBackend,
   extractPublic,
   isEqualPublic,
@@ -12,11 +10,11 @@ const {
   parseFeldmanPacket,
   parsePedersenPacket,
   createPublicPacket,
-} = require('../dist');
-const { Systems } = require('../dist/enums');
-const { leInt2Buff, mod } = require('../dist/arith');
-const enums = require('../dist/enums')
-const crypto = require('../dist/crypto')
+} from 'vsslib';
+import { Systems } from 'vsslib/enums';
+import { leInt2Buff, mod } from 'vsslib/arith';
+import { randomNonce } from 'vsslib/crypto';
+
 const program = new Command();
 
 const DEFAULT_SYSTEM = Systems.ED25519;
@@ -91,7 +89,7 @@ async function demo() {
   console.time("PUBLIC SHARE ADVERTISEMENT");
   for (sender of parties) {
     for (recipient of parties) {
-      const nonce = await crypto.randomNonce();
+      const nonce = await randomNonce();
       const packet = await createPublicPacket(ctx, sender.localSecretShare, { nonce });
       const pubShare = await parsePublicPacket(ctx, packet, { nonce });
       recipient.publicShares.push(pubShare);

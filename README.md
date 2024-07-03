@@ -191,11 +191,11 @@ $ npm run build
 ## Examples
 
 ```
-node examples/<file> run
+npx tsx examples/<file> run
 ```
 
 ```
-node examples/<file> --help
+npx tsx examples/<file> --help
 ```
 
 
