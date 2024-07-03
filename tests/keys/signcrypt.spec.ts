@@ -6,17 +6,14 @@ import { randomNonce } from '../../src/crypto';
 import { cartesian, removeItem } from '../utils';
 import { resolveTestConfig } from '../environ';
 
-let {
-  systems,
-  algorithms,
-  signatureSchemes: sigSchemes,
-  elgamalSchemes: encSchemes,
-} = resolveTestConfig();
+let { systems, algorithms, signatureSchemes: sigSchemes, elgamalSchemes: encSchemes} = resolveTestConfig();
 
-algorithms  = [...algorithms, undefined];
-
-// Signcryption is only defined for HYBRID and DHIES ElGamal encryption schemes
-encSchemes = removeItem(encSchemes, ElgamalSchemes.PLAIN);
+// Signcryption is only defined for HYBRID and DHIES ElGamal encryption
+// schemes; avoid the case of empty encryption schemes in PLAIN is specified
+// from the command line
+encSchemes = removeItem(encSchemes, ElgamalSchemes.PLAIN).length == 0 ?
+  [ElgamalSchemes.DHIES, ElgamalSchemes.HYBRID] :
+  removeItem(encSchemes, ElgamalSchemes.PLAIN);
 
 
 describe('Signcryption', () => {
