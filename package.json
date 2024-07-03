@@ -8,8 +8,7 @@
     "/dist"
   ],
   "scripts": {
-    "vss": "node cli.js",
-    "dev": "npx tsc --watch",
+    "dev": "tsc --watch",
     "test": "jest tests --maxWorkers=1",
     "test:reload": "jest tests --watch --maxWorkers=1",
     "build": "rm -rf ./build && tsc",

@@ -1,13 +1,13 @@
-const commander = require('commander');
+import { InvalidArgumentError } from 'commander';
 
-exports.parseDecimal = (value) => {
+export const parseDecimal = (value) => {
   const parsedValue = parseInt(value, 10);
   if (isNaN(parsedValue)) {
-    throw new commander.InvalidArgumentError('Not a number.');
+    throw new InvalidArgumentError('Not a number.');
   }
   return parsedValue;
 }
 
-exports.parseCommaSeparatedDecimals = (values) => {
+export const parseCommaSeparatedDecimals = (values) => {
   return values.split(',').map(v => parseDecimal(v))
 }
