@@ -157,7 +157,7 @@ export class PrivateKey<P extends Point> {
     return { decryptor, proof };
   }
 
-  async signEncrypt<Q extends Point>(
+  async sigEncrypt<Q extends Point>(
     message: Uint8Array,
     recipientPublic: PublicKey<Q>,
     opts: {
@@ -167,19 +167,23 @@ export class PrivateKey<P extends Point> {
       mode?: BlockMode,
       nonce?: Uint8Array,
     },
-  ): Promise<{
-    ciphertext: Ciphertext,
-    signature: Signature,
-  }> {
+  ): Promise<{ ciphertext: Ciphertext, signature: Signature }> {
     let { encScheme, sigScheme, algorithm, mode, nonce } = opts;
     algorithm = algorithm || Algorithms.DEFAULT;
     mode = mode || BlockModes.DEFAULT;
     const _signer = signer(this.ctx, sigScheme, algorithm);
     const _cipher = elgamal(this.ctx, encScheme, algorithm, mode);
-    const innerSignature = await _signer.signBytes(this.secret, message, nonce);
     const recipient = recipientPublic.asBytes();
     const { ciphertext } = await _cipher.encrypt(
-      toCanonical({ message, innerSignature }), recipient
+      toCanonical({
+        message,
+        innerSignature: await _signer.signBytes(
+          this.secret,
+          message,
+          nonce
+        )
+      }),
+      recipient
     )
     const signature = await _signer.signBytes(
       this.secret, toCanonical({ ciphertext, recipient }), nonce
@@ -187,7 +191,7 @@ export class PrivateKey<P extends Point> {
     return { ciphertext, signature };
   }
 
-  async verifyDecrypt<Q extends Point>(
+  async sigDecrypt<Q extends Point>(
     ciphertext: Ciphertext,
     signature: Signature,
     senderPublic: PublicKey<Q>,
@@ -206,7 +210,13 @@ export class PrivateKey<P extends Point> {
     const _cipher = elgamal(this.ctx, encScheme, algorithm, mode);
     const recipient = await extractPublic(this.ctx, this.secret);
     const isOuterValid = await _signer.verifyBytes(
-      senderPublic.asBytes(), toCanonical({ ciphertext, recipient }), signature, nonce
+      senderPublic.asBytes(),
+      toCanonical({
+        ciphertext,
+        recipient
+      }),
+      signature,
+      nonce
     );
     if (!isOuterValid) throw new InvalidSignature(
       `Invalid signature` // TODO
