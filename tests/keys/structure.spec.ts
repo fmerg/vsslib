@@ -5,7 +5,6 @@ import { resolveTestConfig } from '../environ';
 
 const { systems } = resolveTestConfig();
 
-
 describe('Structure of asymmetric keys', () => {
   it.each(systems)('key generation - over %s', async (system) => {
     const ctx = initBackend(system);

@@ -6,12 +6,9 @@
     "rootDir": "./src",
     "baseUrl": ".",
     "paths": {
-      "vsslib/*": [
-        "./src/*"
-      ],
-      "vsslib": [
-        "./src"
-      ],
+      "vsslib/*": ["./src/*"],
+      "vsslib": ["./src"],
+      "tests": ["./tests"],
       "examples": ["./examples"]
     },
     "esModuleInterop": true,
@@ -25,6 +22,7 @@
   "exclude": [
     "node_modules",
     "tests",
+    "examples",
     "**/*.spec.ts",
     "./dist"
   ],
