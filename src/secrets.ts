@@ -23,9 +23,12 @@ export async function extractPublic<P extends Point>(
 export async function isEqualSecret<P extends Point>(
   ctx: Group<P>, lhs: Uint8Array, rhs: Uint8Array
 ): Promise<boolean> {
+  // TODO: Make this constant-time
   return ctx.leBuff2Scalar(lhs) == ctx.leBuff2Scalar(rhs);
 }
 
+
+// TODO: Ensure that this is constant-time, or apply ctEqualBuffer instead
 export async function isEqualPublic<P extends Point>(
   ctx: Group<P>, lhs: Uint8Array, rhs: Uint8Array
 ): Promise<boolean> {
@@ -34,6 +37,7 @@ export async function isEqualPublic<P extends Point>(
   return y.equals(u);
 }
 
+// TODO: Ensure that this is constant-time, or apply ctEqualBuffer instead
 export async function isKeypair<P extends Point>(
   ctx: Group<P>, secret: Uint8Array, publicBytes: Uint8Array
 ): Promise<boolean> {

@@ -23,10 +23,6 @@ export class PrivateKey<P extends Point> {
     this.secret = secret;
   }
 
-  async equals<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
-    return isEqualSecret(this.ctx, this.secret, other.secret);  // TODO
-  }
-
   asBytes = (): Uint8Array => this.secret;
 
   getPublicKey = async (): Promise<PublicKey<P>> => new PublicKey(
@@ -264,9 +260,8 @@ export class PublicKey<P extends Point> {
     this.publicBytes = publicBytes;
   }
 
-  async equals<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
-    // return isEqualPublic(this.ctx, this.publicBytes, other.publicBytes);  // TODO
-    return ctEqualBuffer(this.publicBytes, other.publicBytes);  // TODO
+  async equals(other: PublicKey<P>): Promise<boolean> {
+     return isEqualPublic(this.ctx, this.publicBytes, other.publicBytes);
   }
 
   asBytes = (): Uint8Array => this.publicBytes;

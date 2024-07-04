@@ -24,6 +24,7 @@ class EcPoint implements Point {
   }
 
   async equals<Q extends Point>(other: Q): Promise<boolean> {
+    // TODO: Ensure that this is constant time
     return (other instanceof EcPoint) && (this.wrapped.equals(other.wrapped));
   }
 }

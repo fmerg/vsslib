@@ -1,5 +1,6 @@
 import { initBackend, generateKey } from 'vsslib';
 import { PrivateKey, PublicKey } from 'vsslib/keys';
+import { isEqualSecret } from 'vsslib/secrets';
 import { resolveTestConfig } from '../environ';
 
 const { systems } = resolveTestConfig();
@@ -34,7 +35,7 @@ describe('Structure of asymmetric keys', () => {
     const sameKey = new PrivateKey(ctx, privateKey.asBytes());
     const samePublic = new PublicKey(ctx, publicKey.asBytes());
 
-    expect(await sameKey.equals(privateKey)).toBe(true);
+    expect(await isEqualSecret(ctx, sameKey.secret, privateKey.secret)).toBe(true);
     expect(await samePublic.equals(publicKey)).toBe(true);
   });
   it.each(systems)('keypair disparity - over %s', async (system) => {
@@ -42,7 +43,7 @@ describe('Structure of asymmetric keys', () => {
     const { privateKey, publicKey } = await generateKey(ctx);
     const { privateKey: otherKey, publicKey: otherPublic } = await generateKey(ctx);
 
-    expect(await otherKey.equals(privateKey)).toBe(false);
+    expect(await isEqualSecret(ctx, otherKey.secret, privateKey.secret)).toBe(false);
     expect(await otherPublic.equals(publicKey)).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import { extractPartialKey } from 'vsslib/keys';
 import { SecretPacket } from 'vsslib/dealer';
+import { isEqualSecret } from 'vsslib/secrets';
 import { resolveTestConfig } from '../environ';
 import { selectPartialKey, createKeySharingSetup } from '../helpers';
 
@@ -15,7 +16,9 @@ describe('Feldman VSS scheme - success', () => {
     packets.forEach(async (packet: SecretPacket) => {
       const privateShare = await extractPartialKey(ctx, commitments, packet);
       const targetShare = selectPartialKey(privateShare.index, shares);
-      expect(await privateShare.equals(targetShare)).toBe(true);
+      expect(
+        await isEqualSecret(ctx, privateShare.secret, targetShare.secret)
+      ).toBe(true);
     })
   });
   it.each(systems)('failure - over %s', async (system) => {
