@@ -7,6 +7,7 @@ import {
   parsePublicPacket,
   combinePublicShares,
   distributeSecret,
+  extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
   createPublicPacket,
@@ -78,10 +79,9 @@ async function demo() {
       party.localSecretShare.value = leInt2Buff(mod(x + z, ctx.order));
     }
     // TODO: extractPublicShare
-    party.localPublicShare = {
-      value: await extractPublic(ctx, party.localSecretShare.value),
-      index: party.index,
-    }
+    party.localPublicShare = await extractPublicShare(
+      ctx, party.localSecretShare
+    );
     console.timeEnd(`LOCAL SUMMATION ${party.index}`);
   }
 

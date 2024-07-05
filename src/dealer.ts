@@ -8,6 +8,7 @@ import {
   InvalidPublicShare,
 } from './errors';
 import { leInt2Buff } from './arith';
+import { extractPublic } from './secrets';
 import { NizkProof } from './nizk';
 import { Algorithm } from './types';
 import { Algorithms } from './enums';
@@ -23,6 +24,14 @@ export type SecretPacket = SecretShare & { binding?: Uint8Array };
 
 export type PublicShare = { value: Uint8Array, index: number };
 export type PublicPacket = PublicShare & { proof: NizkProof };
+
+
+export async function extractPublicShare<P extends Point>(
+  ctx: Group<P>, share: SecretShare
+): Promise<PublicShare> {
+  const { value: secret, index } = share;
+  return { value: await extractPublic(ctx, secret), index };
+}
 
 
 export async function distributeSecret<P extends Point>(

@@ -12,6 +12,7 @@ import {
 
 import {
   distributeSecret,
+  extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
   createPublicPacket,
@@ -48,6 +49,7 @@ export {
   generateKey,
   extractPartialKey,
   distributeSecret,
+  extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
   createPublicPacket,

@@ -8,26 +8,47 @@ in Typescript**
 ## Quick example
 
 ```js
-import { initBackend, parseFeldmanPacket, combineSecretShares } from "vsslib";
+import {
+  initBackend,
+  distributeSecret,
+  parseFeldmanPacket,
+  extractPublicShare,
+  combineSecretShares,
+  combinePublicShares,
+} from "vsslib";
 
+// Involved parties agree upon a cryptosystem
 const ctx = initBackend("ed25519");
 
+// Dealer generates and (5, 3)-shares a secret
+const { secret, sharing } = await distributeSecret(ctx, 5, 3);
+const publicBytes = await extractPublic(ctx, secret);
 
-import { generateSecret, distributeSecret } from "vsslib";
-
-const { secret } = await genrerateSecret(ctx);
-const { sharing } = await distributeSecret(ctx, 5, 3, secret);
-
+// Dealer generates verifiable Feldman packets for each shareholder
+// and broadcasts the commitments
 const { packets, commitments } = await sharing.createFeldmanPackets();
 
+// Each shareholder verifiably extracts their respective secret share from the
+// received packet
 const secretShares = [];
 for (const packet of packets) {
-  const share = await parseFeldmanPacket(ctx, commitments, packet);
+  const secretShare = await parseFeldmanPacket(ctx, commitments, packet);
+  secretShares.push(secretShare);
 }
 
-import { combinedSecret } from "vsslib";
+// Each shareholder infers their respective public share from the received
+// secret
+const publicShares = [];
+fr (const secretShare of secretShares) {
+  const publicShare = await extractPublicShare(ctx, secretShare);
+  const publicShares.push(publicShare);
+}
 
-const combinedSecret = await combineSecretShares(ctx, secretShares.slice(0, 3));
+// Recover the original secret from a qualified collection of secret shares
+const combinedSecret = await combineSecretShares(ctx, secretShares.slice(0, 3));  // equals secret
+
+// Recover the original public from a qualified collection of public shares
+const combinedPublic = await combinePublicShares(ctx, publicShares.slice(0, 3));  // equals publicBytes
 ```
 
 ## Overview

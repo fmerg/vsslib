@@ -5,6 +5,7 @@ import {
   extractPublic,
   isEqualPublic,
   distributeSecret,
+  extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
   createPublicPacket,
@@ -79,10 +80,9 @@ describe('Distributed Key Generation (DKG)', () => {
         const z = ctx.leBuff2Scalar(share.value);
         party.localSecretShare.value = leInt2Buff(mod(x + z, ctx.order));
       }
-      party.localPublicShare = {
-        value: await extractPublic(ctx, party.localSecretShare.value),
-        index: party.index,
-      }
+      party.localPublicShare = await extractPublicShare(
+        ctx, party.localSecretShare
+      );
     }
 
     // Public key advertisement
