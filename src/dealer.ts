@@ -8,7 +8,7 @@ import {
   InvalidPublicShare,
 } from './errors';
 import { leInt2Buff } from './arith';
-import { extractPublic } from './secrets';
+import { validateSecret, extractPublic } from './secrets';
 import { NizkProof } from './nizk';
 import { Algorithm } from './types';
 import { Algorithms } from './enums';
@@ -55,6 +55,11 @@ export async function distributeSecret<P extends Point>(
   );
 
   secret = secret || await ctx.randomSecret()
+  try {
+    await validateSecret(ctx, secret);
+  } catch (err) {
+    throw new Error('Invalid secret provided');
+  }
   const xyPoints = new Array(threshold);
   xyPoints[0] = [__0n, ctx.leBuff2Scalar(secret)];
   let index = 1;
@@ -93,6 +98,10 @@ export class ShamirSharing<P extends Point> {
     this.threshold = threshold;
     this.nrShares = nrShares;
     this.polynomial = polynomial;
+  }
+
+  getOriginalSecret = (): Uint8Array => {
+    return leInt2Buff(this.polynomial.evaluate(__0n));
   }
 
   getSecretShares = async (): Promise<SecretShare[]> => {

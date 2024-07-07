@@ -11,6 +11,13 @@ export async function generateSecret<P extends Point>(ctx: Group<P>): Promise<{
   return { secret, publicBytes };
 }
 
+export async function validateSecret<P extends Point>(
+  ctx: Group<P>, secret: Uint8Array
+): Promise<boolean> {
+  return ctx.validateScalar(ctx.leBuff2Scalar(secret));
+
+}
+
 export async function extractPublic<P extends Point>(
   ctx: Group<P>, secret: Uint8Array
 ): Promise<Uint8Array> {

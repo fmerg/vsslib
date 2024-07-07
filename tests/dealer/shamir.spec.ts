@@ -21,6 +21,7 @@ describe('Shamir secret sharing', () => {
     const { secret, sharing } = await distributeSecret(ctx, n, t, original);
     expect(sharing.polynomial.degree).toEqual(t - 1);
     expect(sharing.polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(original));
+    expect(await isEqualSecret(ctx, sharing.getOriginalSecret(), original)).toBe(true);
     expect(await isEqualSecret(ctx, secret, original)).toBe(true);
     expect(n).toEqual(sharing.nrShares);
     expect(n).toEqual((await sharing.getSecretShares()).length);
@@ -49,6 +50,7 @@ describe('Shamir secret sharing', () => {
       );
       expect(sharing.polynomial.degree).toEqual(t - 1);
       expect(sharing.polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(original));
+      expect(await isEqualSecret(ctx, sharing.getOriginalSecret(), original)).toBe(true);
       expect(await isEqualSecret(ctx, secret, original)).toBe(true);
       expect(n).toEqual(sharing.nrShares);
       expect(n).toEqual((await sharing.getSecretShares()).length);
@@ -95,6 +97,14 @@ describe('Shamir secret sharing', () => {
     const predefined = [leInt2Buff(BigInt(1)), leInt2Buff(BigInt(2))];
     await expect(distributeSecret(ctx, 3, 2, undefined, predefined)).rejects.toThrow(
       'Number of predefined shares violates threshold'
+    );
+  });
+  it.each(systems)(
+    'error - invalid secret - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const secret = Uint8Array.from([0]);
+    await expect(distributeSecret(ctx, 3, 2, secret)).rejects.toThrow(
+      'Invalid secret provided'
     );
   });
 })

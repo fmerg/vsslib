@@ -200,7 +200,24 @@ const { sharing } = await distributeSecret(ctx, n, t, secret);
 ```
 
 > **Warning**
-> Throws error if the condition `1<=t<=n<ctx.order` is not satisfied.
+> Throws error if the condition `1<=t<=n<q` is not satisfied, where `q` stands
+> for the underlying group's order, or if the provided secret is unvalid with
+> respect to `ctx`.
+
+If not provided, the secret is created on the fly and can be returned
+along with the sharing.
+
+```js
+const { secret, sharing } = await distributeSecret(ctx, n, t);
+```
+
+#### Extraction of original secret
+
+Access the original secret in raw-bytes mode as follows.
+
+```js
+const secret = sharing.getOriginalSecret();
+```
 
 #### Extraction of secret shares
 
@@ -287,7 +304,7 @@ for an operation that includes verification.
 
 ## <a name="verifiable-secret-sharing"></a>Verifiable secret sharing (VSS)
 
-In most distributed protocols, sharholders need to defend
+In most distributed protocols, shareholders need to defend
 against malicious dealers and verify the consistency of their
 shares (i.e., ensure that these combine indeed to some reconstructible secret).
 This is attained by means of additional information used to verify
