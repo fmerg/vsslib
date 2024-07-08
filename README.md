@@ -89,6 +89,8 @@ Both operate with the same sharing abstraction layer.
 
 *This library is currently a prototype and requires security audit. Use at your own risk for the moment.*
 
+#### Replay attacks
+
 #### Remark on the selection of parameters
 
 Vsslib is unopinionated on the selection of cryptographic parameters
@@ -117,6 +119,8 @@ is attained in a particular context by other means.
     * [Feldman scheme](#feldman-scheme-1)
     * [Pedersen scheme](#pedersen-scheme-1)
   * [Verifiable public recovery](#verifiable-public-recovery)
+    * [Verifiable share packets](#verifiable-share-packets)
+    * [Recovery operation](#recovery-operation)
     * [Recovery with accurate blaming](#recovery-with-accurate-blaming)
   * [Key sharing](#key-sharing)
     * [Feldman VSS scheme](#TODO)
@@ -211,7 +215,7 @@ along with the sharing.
 const { secret, sharing } = await distributeSecret(ctx, n, t);
 ```
 
-#### Extraction of original secret
+### Share extraction
 
 Access the original secret in raw-bytes mode as follows.
 
@@ -219,15 +223,11 @@ Access the original secret in raw-bytes mode as follows.
 const secret = sharing.getOriginalSecret();
 ```
 
-#### Extraction of secret shares
-
 Access the totality of secret shares in raw-bytes mode as follows.
 
 ```js
 const secretShares = await sharing.getSecretShares();
 ```
-
-#### Extraction of public shares
 
 Access the totality of public shares in raw-bytes mode as follows.
 
@@ -235,15 +235,11 @@ Access the totality of public shares in raw-bytes mode as follows.
 const publicShares = await sharing.getPublicShares();
 ```
 
-#### Extraction of i-th share (counting from one)
-
 Access the i-th share in raw-bytes mode as follows.
 
 ```js
 const { secretShare, publicShare } = await sharing.getShare(i);
 ```
-
-#### Extraction of public counterpart of secret share
 
 Access the public counterpart of a secret share in raw-bytes mode as follows.
 
@@ -263,12 +259,12 @@ Combine any collection of secret shares using interpolation coefficients as
 follows.
 
 ```js
-import { combineSecretShares } from 'vsslib';
+import { combineSecretShares } from "vsslib";
 
 const combinedSecret = await combineSecretShares(ctx, secretShares);
 ```
 
-This yields the original secret only if the number of shares is at least equal
+This yields the original secret only if the number of provided shares is at least equal
 to threshold.
 In order to ensure that the operation completes only if at least `t` shares are
 provided, make sure to pass the threshold parameter explicitly.
@@ -277,19 +273,27 @@ provided, make sure to pass the threshold parameter explicitly.
 const combinedSecret = await combineSecretShares(ctx, secretShares, t);
 ```
 
+> **Warning**
+> Throws error if less than `t` shares are provided.
+
 ### Raw combination of public shares
 
 Combine any collection of public shares using interpolation in the exponent as
 follows.
 
 ```js
-import { combinePublicShares } from 'vsslib';
+import { combinePublicShares } from "vsslib";
 
 const combinedPublic = await combinePublicShares(ctx, publicShares);
 ```
 
+> **Warning**
+> This does not verify the shares during the combination process in any sense.
+Refer to section [Verifiable public recovery](#verifiable-public-recovery)
+for an operation that includes verification of public shares.
+
 This yields the public counterpart of the original secret only if
-the number of shares is at least equal to threshold.
+the number of provided shares is at least equal to threshold.
 In order to ensure that the operation completes only if at least `t` shares are
 provided, make sure to pass the threshold parameter explicitly.
 
@@ -298,9 +302,7 @@ const combinedPublic = await combinePublicShares(ctx, publicShares, t);
 ```
 
 > **Warning**
-> This does not verify the shares during the combination process in any sense.
-Refer to section [Verifiable public recovery](#verifiable-public-recovery)
-for an operation that includes verification.
+> Throws error if less than `t` shares are provided.
 
 ## <a name="verifiable-secret-sharing"></a>Verifiable secret sharing (VSS)
 
@@ -325,8 +327,8 @@ non-byzantine parties end up with a share.
 
 ### <a name="feldman-scheme-1"></a>Feldman scheme
 
-Generate verifiable packets for the totality of shares along with Feldman
-commitments as follows.
+Generate Feldman commitments and verifiable packets for the totality of secret
+shares as follows.
 
 ```js
 const { packets, commitments } = await sharing.createFeldmanPackets();
@@ -363,8 +365,8 @@ Involved parties agree first on some public reference:
 const publicBytes = await ctx.randomPublic();
 ```
 
-Generate verifiable packets for the totality of shares along with Pedersen
-commitments as follows.
+Generate Pedersen commitments and verifiable packets for the totality of secret
+shares as follows.
 
 ```js
 const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
@@ -378,18 +380,17 @@ import { parsePedersenPacket } from "vsslib";
 const { share, binding } = await parsePedersenPacket(ctx, commitments, publicBytes, packet);
 ```
 
-> **Note**
-> The secret `binding` is used used during the implicit verification operation and can be
-> discarded.
-
 > **Warning**
 > Throws error if the included share is found invalid
 against the provided commitments and public reference.
 
+The included secret `binding` is implicitly used during verification and can be
+discarded.
+
 #### Standalone verification of secret share
 
-If sent through different channels, a share can be directly verified against the
-broadcast commitments and public referece using the secret binding.
+A share can be directly verified against the broadcast commitments
+and public referece using the included binding.
 
 ```js
 import { verifyPedersenCommitments } from "vsslib";
@@ -399,23 +400,63 @@ await verifyPedersenCommitments(ctx, share, binding, publicBytes, commitments);
 
 ## Verifiable public recovery
 
-```js
-import { createPublicPacket } from 'vsslib';
+When reconstructing the public counterpart of a distributed secret, the
+combiner usually needs to verify the aggregated public shares. Specifically, acclaimed
+shareholders are expected to prove knowledge of their respective secret shares
+in a zero-knowledge (ZK) fashion.
 
-const packet = await createPublicPacket(ctx, share, { algorithm, nonce });
+> **Note**
+> Refer to section [Raw combination](#raw-combination-of-public-shares) for an
+> operation that bypasses verification of public shares.
+
+### Verifiable share packets
+
+Create a verifiable packet for a secret share as follows.
+
+```js
+import { createPublicPacket } from "vsslib";
+
+const packet = await createPublicPacket(ctx, share, { algorithm: "sha256" });
 ```
 
+This consists of the public share and a NIZK (Schnorr) proof-of-knowledge of
+the secret counterart.
+The optional `algorithm` parameter specifies the hash function used for proof
+generation (defaults to SHA256).
+
+>  **Note**
+> Involved shareholders are expected to use the same hash function.
+
+### Recovery operation
+
+After aggregating the packets, recover the combined public as follows.
 
 ```js
-import { recoverPublic } from 'vsslib';
+import { recoverPublic } from "vsslib";
 
-const { recovered } = await recoverPublic(ctx, packets, { algorithm });
+const { recovered } = await recoverPublic(ctx, packets, { algorithm: "sha256", threshold: t });
 ```
+
+This verifies the attached Schnorr proofs against the respective public
+shares and combines the latter applying interpolation in the exponent.
+It throws `InvalidPublicShare` if at least one of the included proofs fails to verify.
+The optional `threshold` parameter ensures that the operation completes only if
+at least `t` packets are provided.
+The optional `algorithm` parameter specifies
+the hash function used by the combiner for the verification of individual
+proofs (defaults to SHA256).
 
 ### Recovery with accurate blaming
 
+For security investigation purposes, the combiner may want to trace potentially
+cheating shareholders. This presupposes that the recovery operation completes
+irrespective of potential verification failures and malicious shareholders are listed
+in a blame index.
+
 ```js
-const { recovered, blame } = await recoverPublic(ctx, packets, { algorithm, errorOnInvalid: false});
+const { recovered, blame } = await recoverPublic(ctx, packets, {
+  algorithm: "sha256", threshold: t, errorOnInvalid: false
+});
 ```
 
 ## Key sharing

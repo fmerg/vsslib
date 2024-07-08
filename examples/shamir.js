@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { parseDecimal, parseCommaSeparatedDecimals } from './utils.mjs';
+import { parseDecimal, parseCommaSeparatedDecimals } from './utils.js';
 import {
   enums,
   initBackend,

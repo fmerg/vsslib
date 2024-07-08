@@ -306,14 +306,14 @@ export async function parsePublicPacket<P extends Point>(
   const { value, index, proof } = packet;
   const y = await ctx.unpackValid(value);
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? (opts.nonce || undefined) : undefined;
+  const nonce = opts ? opts.nonce : undefined;
   const isValid = await nizk(ctx, algorithm).verifyDlog(
     {
       u: ctx.generator,
       v: y,
     },
     proof,
-    nonce
+    nonce,
   );
   if (!isValid)
     throw new InvalidPublicShare(`Invalid packet with index ${index}`);

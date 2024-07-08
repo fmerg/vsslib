@@ -103,20 +103,21 @@ export async function combinePartialDecryptors<P extends Point>(
   return acc.toBytes();
 }
 
+export type IndexedNonce = { nonce: Uint8Array, index: number };
 
 export async function recoverPublic<P extends Point>(
   ctx: Group<P>,
   packets: PublicPacket[],
   opts?: {
     algorithm?: Algorithm,
-    nonce?: Uint8Array, // TODO: Individual nonces
+    nonces?: IndexedNonce[],
     threshold?: number,
     errorOnInvalid?: boolean,
   },
 ): Promise<{ recovered: Uint8Array, blame: number[] }> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? (opts.nonce || undefined) : undefined;
   const threshold = opts ? opts.threshold : undefined;
+  const nonces = opts ? opts.nonces : undefined;
   const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
   if (threshold && packets.length < threshold) throw new Error(
     'Insufficient number of shares'
@@ -127,6 +128,13 @@ export async function recoverPublic<P extends Point>(
   const blame = [];
   for (const packet of packets) {
     try {
+      let nonce = undefined;
+      if (nonces) {
+        const indexedNonce = nonces.filter((n: IndexedNonce) => n.index == packet.index)[0];  // TODO: pop
+        if (!indexedNonce)
+          throw new Error(`No nonce for index ${packet.index}`);
+        nonce = indexedNonce.nonce;
+      }
       const { value, index } = await parsePublicPacket(ctx, packet, { algorithm, nonce });
       const lambda = computeLambda(ctx, index, indexes);
       const curr = await unpackValid(value);
@@ -148,13 +156,13 @@ export async function recoverPublicKey<P extends Point>(
   packets: PublicPacket[],
   opts?: {
     algorithm?: Algorithm,
-    nonce?: Uint8Array, // TODO: Individual nonces
+    nonces?: IndexedNonce[],
     threshold?: number,
     errorOnInvalid?: boolean,
   },
 ): Promise<{ recovered: PublicKey<P>, blame: number[] }> {
-  const { recovered: value, blame } = await recoverPublic(ctx, packets, opts);
-  const recovered = new PublicKey(ctx, value);
+  const { recovered: publicBytes, blame } = await recoverPublic(ctx, packets, opts);
+  const recovered = new PublicKey(ctx, publicBytes);
   return { recovered, blame };
 }
 
@@ -166,12 +174,15 @@ export async function recoverDecryptor<P extends Point>(
   publicShares: PartialPublic<P>[],
   opts?: {
     algorithm?: Algorithm,
-    nonce?: Uint8Array, // TODO: Individual decryptor nonces
+    nonces?: IndexedNonce[],
     threshold?: number,
     errorOnInvalid?: boolean,
   },
 ): Promise<{ recovered: Uint8Array, blame: number[] }> {
+  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const threshold = opts ? opts.threshold : undefined;
+  const nonces = opts ? opts.nonces : undefined;
+  const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
   if (threshold && shares.length < threshold) throw new Error(
     'Insufficient number of shares'
   );
@@ -179,14 +190,21 @@ export async function recoverDecryptor<P extends Point>(
   const qualifiedIndexes = shares.map(share => share.index);
   let blame = [];
   let acc = neutral;
-  const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
   for (const partialDecryptor of shares) {
     const { value, index } = partialDecryptor;
-    const publicShare = publicShares.filter(s => s.index == index)[0];
-    if (!publicShare) throw new Error(`No public share with index ${index}`);
+    // select respective public share
+    const publicShare = publicShares.filter(s => s.index == index)[0];  // TODO: pop
+    if (!publicShare)
+      throw new Error(`No public share with index ${index}`);
+    // select respective nonce
+    let nonce = undefined;
+    if (nonces) {
+      const indexedNonce = nonces.filter((n: IndexedNonce) => n.index == index)[0];  // TODO: pop
+      if (!indexedNonce)
+        throw new Error(`No nonce for index ${index}`);
+      nonce = indexedNonce.nonce;
+    }
     try {
-      const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-      const nonce = opts ? (opts.nonce || undefined) : undefined;
       await publicShare.verifyPartialDecryptor(
         ciphertext,
         partialDecryptor,
@@ -223,7 +241,7 @@ export async function thresholdDecrypt<P extends Point>(
     mode?: BlockMode,
     encAlgorithm?: Algorithm,
     vrfAlgorithm?: Algorithm,
-    nonce?: Uint8Array,
+    nonces?: IndexedNonce[],
     threshold?: number,
     errorOnInvalid?: boolean
   },
@@ -235,7 +253,7 @@ export async function thresholdDecrypt<P extends Point>(
     publicShares,
     {
       algorithm: opts.vrfAlgorithm || Algorithms.DEFAULT,
-      nonce: opts.nonce,
+      nonces: opts.nonces,
       threshold: opts.threshold,
       errorOnInvalid: opts.errorOnInvalid,
     }

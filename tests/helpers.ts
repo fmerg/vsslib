@@ -6,6 +6,8 @@ import {
   generateKey,
   createPublicPacket,
 } from 'vsslib';
+import { IndexedNonce }  from 'vsslib/combiner';
+import { randomNonce } from 'vsslib/crypto';
 import { SecretShare, PublicShare } from 'vsslib/dealer';
 import { PartialKey, PartialPublic } from 'vsslib/keys';
 import { ElgamalSchemes } from 'vsslib/enums';
@@ -40,21 +42,29 @@ export const createSharingSetup = async (opts: {
 }
 
 
+// TODO: createPublicRecoverySetup
 export const createPublicPackets = async <P extends Point>(opts: {
   ctx: Group<P>,
   shares: SecretShare[],
   algorithm?: Algorithm,
-  nrInvalidIndexes?: number,
+  withNonce?: boolean,
+  nrInvalid?: number,
 }) => {
-  let { ctx, shares, algorithm, nrInvalidIndexes } = opts;
+  let { ctx, shares, algorithm, nrInvalid, withNonce } = opts;
+  withNonce = withNonce || false;
   const packets = [];
+  const nonces: IndexedNonce[] = [];
   for (const share of shares) {
-    const packet = await createPublicPacket(ctx, share, { algorithm });
+    const nonce = withNonce ? await randomNonce() : undefined;
+    const packet = await createPublicPacket(ctx, share, { algorithm, nonce });
     packets.push(packet);
+    if (nonce) {
+      nonces.push({ nonce, index: share.index });
+    }
   }
   let blame: number[] = [];
-  nrInvalidIndexes = nrInvalidIndexes || 0;
-  while (blame.length < nrInvalidIndexes) {
+  nrInvalid = nrInvalid || 0;
+  while (blame.length < nrInvalid) {
     const index = randomIndex(1, shares.length);
     if (blame.includes(index)) continue;
     blame.push(index);
@@ -62,14 +72,25 @@ export const createPublicPackets = async <P extends Point>(opts: {
   const invalidPackets = [];
   if (blame) {
     for (const packet of packets) {
-      invalidPackets.push(!(blame.includes(packet.index)) ? packet : {
-        value: await ctx.randomPublic(),
-        index: packet.index,
-        proof: packet.proof,
-      });
+      if(!blame.includes(packet.index)) {
+        invalidPackets.push(packet);
+      } else {
+        if (withNonce) {
+          invalidPackets.push(packet);
+          nonces.filter(
+            (n: IndexedNonce) => n.index == packet.index
+          )[0].nonce = await randomNonce();
+        } else {
+          invalidPackets.push({
+            value: await ctx.randomPublic(),
+            index: packet.index,
+            proof: packet.proof,
+          });
+        }
+      }
     }
   }
-  return { packets, invalidPackets, blame };
+  return { packets, invalidPackets, blame, nonces };
 }
 
 
@@ -108,9 +129,11 @@ export const createThresholdDecryptionSetup = async (opts: {
   scheme: ElgamalScheme,
   nrShares: number,
   threshold: number,
-  nrInvalidIndexes?: number,
+  withNonce?: boolean,
+  nrInvalid?: number,
 }) => {
-  let { scheme, system, nrShares, threshold, nrInvalidIndexes } = opts;
+  let { scheme, system, nrShares, threshold, withNonce, nrInvalid } = opts;
+  withNonce = withNonce || false;
   const {
     privateKey,
     publicKey,
@@ -121,13 +144,18 @@ export const createThresholdDecryptionSetup = async (opts: {
   const message = await buildMessage(ctx, scheme);
   const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
   const partialDecryptors = [];
+  const nonces: IndexedNonce[] = [];
   for (const privateShare of privateShares) {
-    const share = await privateShare.computePartialDecryptor(ciphertext);
+    const nonce = withNonce ? await randomNonce() : undefined;
+    const share = await privateShare.computePartialDecryptor(ciphertext, { nonce });
     partialDecryptors.push(share);
+    if (nonce) {
+      nonces.push({ nonce, index: share.index });
+    }
   }
   let blame: number[] = [];
-  nrInvalidIndexes = nrInvalidIndexes || 0;
-  while (blame.length < nrInvalidIndexes) {
+  nrInvalid = nrInvalid || 0;
+  while (blame.length < nrInvalid) {
     const index = randomIndex(1, nrShares);
     if (blame.includes(index)) continue;
     blame.push(index);
@@ -135,11 +163,22 @@ export const createThresholdDecryptionSetup = async (opts: {
   const invalidDecryptors = [];
   if (blame) {
     for (const share of partialDecryptors) {
-      invalidDecryptors.push(!(blame.includes(share.index)) ? share : {
-        value: await ctx.randomPublic(),
-        index: share.index,
-        proof: share.proof,
-      });
+      if(!blame.includes(share.index)) {
+        invalidDecryptors.push(share);
+      } else {
+        if (withNonce) {
+          invalidDecryptors.push(share);
+          nonces.filter(
+            (n: IndexedNonce) => n.index == share.index
+          )[0].nonce = await randomNonce();
+        } else {
+          invalidDecryptors.push({
+            value: await ctx.randomPublic(),
+            index: share.index,
+            proof: share.proof,
+          });
+        }
+      }
     }
   }
   return {
@@ -154,5 +193,6 @@ export const createThresholdDecryptionSetup = async (opts: {
     partialDecryptors,
     invalidDecryptors,
     blame,
+    nonces,
   }
 }
