@@ -98,7 +98,7 @@ describe('Public point recovery', () => {
       ctx, packets, { algorithm, threshold, errorOnInvalid: false }
     );
     expect(isEqualBuffer(recovered, publicBytes)).toBe(false);
-    expect(blame.sort()).toEqual(targetBlame.sort());
+    expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
   });
   it.each(cartesian([systems, algorithms])
   )('failure - accurate blaming - forged nonces - over %s/%s', async (system, algorithm) => {
@@ -112,7 +112,7 @@ describe('Public point recovery', () => {
       ctx, packets, { algorithm, threshold, nonces, errorOnInvalid: false }
     );
     expect(isEqualBuffer(recovered, publicBytes)).toBe(false);
-    expect(blame.sort()).toEqual(targetBlame.sort());
+    expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
   });
 });
 

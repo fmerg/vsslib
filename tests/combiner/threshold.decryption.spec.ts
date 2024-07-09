@@ -117,7 +117,7 @@ describe('Threshold decryption', () => {
       scheme, threshold, errorOnInvalid: false
     });
     expect(isEqualBuffer(plaintext, Uint8Array.from([]))).toBe(true);
-    expect(blame.sort()).toEqual(targetBlame.sort());
+    expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
   });
   it.each(cartesian([systems, schemes]))
   ('failure - accurate blaming - forged nonce - over %s/%s', async (system, scheme) => {
@@ -130,7 +130,7 @@ describe('Threshold decryption', () => {
       scheme, threshold, errorOnInvalid: false, nonces
     });
     expect(isEqualBuffer(plaintext, Uint8Array.from([]))).toBe(true);
-    expect(blame.sort()).toEqual(targetBlame.sort());
+    expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
   });
   it.each(cartesian([systems, schemes]))(
     'failure - missing public - over %s/%s', async (system, scheme) => {

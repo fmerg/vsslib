@@ -83,7 +83,7 @@ describe('Decryptor recovery', () => {
     const { recovered, blame } = await recoverDecryptor(
       ctx, partialDecryptors, ciphertext, partialPublicKeys, { errorOnInvalid: false }
     );
-    expect(blame.sort()).toEqual(targetBlame.sort());
+    expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
   });
   it.each(cartesian([systems, schemes]))
   ('failure - accurate blaming - forged nonce - over %s/%s', async (system, scheme) => {
@@ -96,7 +96,7 @@ describe('Decryptor recovery', () => {
       ctx, partialDecryptors, ciphertext, partialPublicKeys, { errorOnInvalid: false, nonces }
     );
     expect(isEqualBuffer(recovered, decryptor)).toBe(true);
-    expect(blame.sort()).toEqual(targetBlame.sort());
+    expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
   });
   it.each(cartesian([systems, schemes]))(
     'failure - missing public - over %s/%s', async (system, scheme) => {

@@ -116,7 +116,7 @@ export async function recoverPublic<P extends Point>(
     threshold?: number,
     errorOnInvalid?: boolean,
   },
-): Promise<{ recovered: Uint8Array, blame: number[] }> {
+): Promise<{ recovered: Uint8Array, blame: PublicShare[] }> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const threshold = opts ? opts.threshold : undefined;
   const nonces = opts ? opts.nonces : undefined;
@@ -144,7 +144,10 @@ export async function recoverPublic<P extends Point>(
     } catch (err: any) {
       if (err instanceof InvalidPublicShare) {
         if (errorOnInvalid) throw err;
-        blame.push(packet.index);
+        blame.push({
+          value: packet.value,
+          index: packet.index,
+        });
       }
       else throw err;
     }
@@ -162,7 +165,7 @@ export async function recoverPublicKey<P extends Point>(
     threshold?: number,
     errorOnInvalid?: boolean,
   },
-): Promise<{ recovered: PublicKey<P>, blame: number[] }> {
+): Promise<{ recovered: PublicKey<P>, blame: PublicShare[] }> {
   const { recovered: publicBytes, blame } = await recoverPublic(ctx, packets, opts);
   const recovered = new PublicKey(ctx, publicBytes);
   return { recovered, blame };
@@ -180,7 +183,7 @@ export async function recoverDecryptor<P extends Point>(
     threshold?: number,
     errorOnInvalid?: boolean,
   },
-): Promise<{ recovered: Uint8Array, blame: number[] }> {
+): Promise<{ recovered: Uint8Array, blame: PartialPublic<P>[] }> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const threshold = opts ? opts.threshold : undefined;
   const nonces = opts ? opts.nonces : undefined;
@@ -195,8 +198,8 @@ export async function recoverDecryptor<P extends Point>(
   for (const partialDecryptor of partialDecryptors) {
     const { value, index } = partialDecryptor;
     // select respective public share
-    const publicShare = partialPublicKeys.filter(s => s.index == index)[0];  // TODO: pop
-    if (!publicShare)
+    const partialPublicKey = partialPublicKeys.filter(s => s.index == index)[0];  // TODO: pop
+    if (!partialPublicKey)
       throw new Error(`No public share with index ${index}`);
     // select respective nonce
     let nonce = undefined;
@@ -207,7 +210,7 @@ export async function recoverDecryptor<P extends Point>(
       nonce = indexedNonce.nonce;
     }
     try {
-      await publicShare.verifyPartialDecryptor(
+      await partialPublicKey.verifyPartialDecryptor(
         ciphertext,
         partialDecryptor,
         {
@@ -220,7 +223,7 @@ export async function recoverDecryptor<P extends Point>(
         if (errorOnInvalid) throw new Error(
           `Invalid partial decryptor with index ${index}`
         );
-        blame.push(index);
+        blame.push(partialPublicKey);
       } else {
         throw err;
       }
@@ -247,7 +250,7 @@ export async function thresholdDecrypt<P extends Point>(
     threshold?: number,
     errorOnInvalid?: boolean
   },
-): Promise<{ plaintext: Uint8Array, blame: number[] }> {
+): Promise<{ plaintext: Uint8Array, blame: PartialPublic<P>[] }> {
   const { recovered: decryptor, blame } = await recoverDecryptor(
     ctx,
     partialDecryptors,
