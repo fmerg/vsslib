@@ -1,6 +1,6 @@
 import { combinePartialDecryptors } from 'vsslib/combiner';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
-import { createThresholdDecryptionSetup } from '../helpers';
+import { mockThresholdDecryptionSetup } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const { systems, nrShares, threshold, elgamalSchemes: schemes} = resolveTestConfig();
@@ -8,7 +8,7 @@ const { systems, nrShares, threshold, elgamalSchemes: schemes} = resolveTestConf
 
 describe('Combination of partial decryptors - unconditioned', () => {
   it.each(cartesian([systems, schemes]))('unconditioned - over %s/%s', async (system, scheme) => {
-    const { ctx, ciphertext, decryptor: target, partialDecryptors } = await createThresholdDecryptionSetup({
+    const { ctx, ciphertext, decryptor: target, partialDecryptors } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
     partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
@@ -19,7 +19,7 @@ describe('Combination of partial decryptors - unconditioned', () => {
     });
   });
   it.each(cartesian([systems, schemes]))('threshold guard - over %s/%s', async (system, scheme) => {
-    const { ctx, ciphertext, decryptor: target, partialDecryptors } = await createThresholdDecryptionSetup({
+    const { ctx, ciphertext, decryptor: target, partialDecryptors } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
     partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedShares) => {

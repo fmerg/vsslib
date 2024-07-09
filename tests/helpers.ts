@@ -8,17 +8,20 @@ import {
 } from 'vsslib';
 import { IndexedNonce }  from 'vsslib/combiner';
 import { randomNonce } from 'vsslib/crypto';
-import { SecretShare, PublicShare } from 'vsslib/dealer';
-import { PartialKey, PartialPublic } from 'vsslib/keys';
+import { SecretShare, PublicShare, PublicPacket } from 'vsslib/dealer';
+import { PartialKey, PartialPublic, PartialDecryptor } from 'vsslib/keys';
 import { ElgamalSchemes } from 'vsslib/enums';
 import { ElgamalScheme, System, Algorithm } from 'vsslib/types';
 import { leInt2Buff } from 'vsslib/arith';
 import { randomIndex } from './utils';
 
-export const buildMessage = async <P extends Point>(ctx: Group<P>, scheme: ElgamalScheme) =>
-  scheme == ElgamalSchemes.PLAIN ?
-    await ctx.randomPublic() :
-    Uint8Array.from(Buffer.from('destroy earth'));
+export const buildMessage = async <P extends Point>(ctx: Group<P>, scheme: ElgamalScheme) => {
+  if (scheme == ElgamalSchemes.PLAIN) {
+    return await ctx.randomPublic();
+  } else {
+    return Uint8Array.from(Buffer.from('destroy earth'));
+  }
+}
 
 export const selectPartialKey = <P extends Point>(index: number, shares: PartialKey<P>[]) =>
   shares.filter(share => share.index == index)[0];
@@ -27,12 +30,7 @@ export const selectPartialPublic = <P extends Point>(index: number, shares: Part
   shares.filter(share => share.index == index)[0];
 
 
-export const createSharingSetup = async (opts: {
-  system: System,
-  nrShares: number,
-  threshold: number,
-}) => {
-  const { system, nrShares, threshold } = opts;
+export const createRawSharing = async (system: System, nrShares: number, threshold: number) => {
   const ctx = initBackend(system);
   const { secret, publicBytes } = await generateSecret(ctx);
   const { sharing } = await distributeSecret(ctx, nrShares, threshold, secret);
@@ -42,8 +40,32 @@ export const createSharingSetup = async (opts: {
 }
 
 
-// TODO: createPublicRecoverySetup
-export const createPublicPackets = async <P extends Point>(opts: {
+export const createKeySharingSetup = async (system: System, nrShares: number, threshold: number) => {
+  const ctx = initBackend(system)
+  const { privateKey, publicKey } = await generateKey(ctx);
+  const sharing = await privateKey.generateSharing(nrShares, threshold);
+  const polynomial = sharing.polynomial;
+  const secretShares = await sharing.getSecretShares();
+  const partialKeys = secretShares.map(({ value, index }: SecretShare) => {
+    return new PartialKey(ctx, value, index);
+  });
+  const partialPublicKeys = []
+  for (const key of partialKeys) {
+    partialPublicKeys.push(await key.getPublicShare());
+  }
+  return {
+    ctx,
+    privateKey,
+    publicKey,
+    sharing,
+    polynomial,
+    partialKeys,
+    partialPublicKeys,
+  };
+}
+
+
+export const mockPublicRecoverySetup = async <P extends Point>(opts: {
   ctx: Group<P>,
   shares: SecretShare[],
   algorithm?: Algorithm,
@@ -69,62 +91,18 @@ export const createPublicPackets = async <P extends Point>(opts: {
     if (blame.includes(index)) continue;
     blame.push(index);
   }
-  const invalidPackets = [];
-  if (blame) {
-    for (const packet of packets) {
-      if(!blame.includes(packet.index)) {
-        invalidPackets.push(packet);
-      } else {
-        if (withNonce) {
-          invalidPackets.push(packet);
-          nonces.filter(
-            (n: IndexedNonce) => n.index == packet.index
-          )[0].nonce = await randomNonce();
-        } else {
-          invalidPackets.push({
-            value: await ctx.randomPublic(),
-            index: packet.index,
-            proof: packet.proof,
-          });
-        }
-      }
-    }
+  for (const index of blame) {
+    if (withNonce) {
+      nonces.filter((n: IndexedNonce) => n.index == index)[0].nonce = await randomNonce();
+    } else {
+      packets.filter((p: PublicPacket) => p.index == index)[0].value = await ctx.randomPublic();
+    } 
   }
-  return { packets, invalidPackets, blame, nonces };
+  return { packets, blame, nonces };
 }
 
 
-export const createKeySharingSetup = async (opts: {
-  system: System,
-  nrShares: number,
-  threshold: number,
-}) => {
-  const { system, nrShares, threshold } = opts;
-  const ctx = initBackend(system)
-  const { privateKey, publicKey } = await generateKey(ctx);
-  const sharing = await privateKey.generateSharing(nrShares, threshold);
-  const polynomial = sharing.polynomial;
-  const secretShares = await sharing.getSecretShares();
-  const privateShares = secretShares.map(({ value, index }: SecretShare) => {
-    return new PartialKey(ctx, value, index);
-  });
-  const publicShares = []
-  for (const share of privateShares) {
-    publicShares.push(await share.getPublicShare());
-  }
-  return {
-    ctx,
-    privateKey,
-    publicKey,
-    sharing,
-    polynomial,
-    privateShares,
-    publicShares,
-  };
-}
-
-
-export const createThresholdDecryptionSetup = async (opts: {
+export const mockThresholdDecryptionSetup = async (opts: {
   system: System,
   scheme: ElgamalScheme,
   nrShares: number,
@@ -137,17 +115,17 @@ export const createThresholdDecryptionSetup = async (opts: {
   const {
     privateKey,
     publicKey,
-    privateShares,
-    publicShares,
+    partialKeys,
+    partialPublicKeys,
     ctx,
-  } = await createKeySharingSetup({ system, nrShares, threshold, });
+  } = await createKeySharingSetup(system, nrShares, threshold);
   const message = await buildMessage(ctx, scheme);
   const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
   const partialDecryptors = [];
   const nonces: IndexedNonce[] = [];
-  for (const privateShare of privateShares) {
+  for (const key of partialKeys) {
     const nonce = withNonce ? await randomNonce() : undefined;
-    const share = await privateShare.computePartialDecryptor(ciphertext, { nonce });
+    const share = await key.computePartialDecryptor(ciphertext, { nonce });
     partialDecryptors.push(share);
     if (nonce) {
       nonces.push({ nonce, index: share.index });
@@ -160,38 +138,23 @@ export const createThresholdDecryptionSetup = async (opts: {
     if (blame.includes(index)) continue;
     blame.push(index);
   }
-  const invalidDecryptors = [];
-  if (blame) {
-    for (const share of partialDecryptors) {
-      if(!blame.includes(share.index)) {
-        invalidDecryptors.push(share);
-      } else {
-        if (withNonce) {
-          invalidDecryptors.push(share);
-          nonces.filter(
-            (n: IndexedNonce) => n.index == share.index
-          )[0].nonce = await randomNonce();
-        } else {
-          invalidDecryptors.push({
-            value: await ctx.randomPublic(),
-            index: share.index,
-            proof: share.proof,
-          });
-        }
-      }
-    }
+  for (const index of blame) {
+    if (withNonce) {
+      nonces.filter((n: IndexedNonce) => n.index == index)[0].nonce = await randomNonce();
+    } else {
+      partialDecryptors.filter((d: PartialDecryptor) => d.index == index)[0].value = await ctx.randomPublic();
+    } 
   }
   return {
     ctx,
     privateKey,
     publicKey,
-    privateShares,
-    publicShares,
+    partialKeys,
+    partialPublicKeys,
     message,
     ciphertext,
     decryptor,
     partialDecryptors,
-    invalidDecryptors,
     blame,
     nonces,
   }

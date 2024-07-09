@@ -9,32 +9,22 @@ const { systems, nrShares, threshold } = resolveTestConfig();
 
 describe('Feldman VSS scheme - success', () => {
   it.each(systems)('success - over %s', async (system) => {
-    const { ctx, sharing, privateShares: shares } = await createKeySharingSetup({
-      system, nrShares, threshold
-    });
+    const { ctx, sharing, partialKeys } = await createKeySharingSetup(system, nrShares, threshold);
     const { packets, commitments } = await sharing.createFeldmanPackets();
     packets.forEach(async (packet: SecretPacket) => {
-      const privateShare = await extractPartialKey(ctx, commitments, packet);
-      const targetShare = selectPartialKey(privateShare.index, shares);
+      const partialKey = await extractPartialKey(ctx, commitments, packet);
+      const targetKey = selectPartialKey(partialKey.index, partialKeys);
       expect(
-        await isEqualSecret(ctx, privateShare.secret, targetShare.secret)
+        await isEqualSecret(ctx, partialKey.secret, targetKey.secret)
       ).toBe(true);
     })
   });
   it.each(systems)('failure - over %s', async (system) => {
-    const { ctx, sharing, privateShares: shares } = await createKeySharingSetup({
-      system, nrShares, threshold
-    });
+    const { ctx, sharing } = await createKeySharingSetup(system, nrShares, threshold);
     const { packets, commitments } = await sharing.createFeldmanPackets();
-    const forgedCommitmnets = [
-      ...commitments.slice(0, commitments.length - 1),
-      await ctx.randomPublic()
-    ];
+    commitments[0] = await ctx.randomPublic();  // tamper first commitment
     packets.forEach(async (packet: SecretPacket) => {
-      const privateShare = await extractPartialKey(ctx, commitments, packet);
-      await expect(
-        extractPartialKey(ctx, forgedCommitmnets, packet)
-      ).rejects.toThrow(
+      await expect(extractPartialKey(ctx, commitments, packet)).rejects.toThrow(
         'Invalid share'
       );
     })

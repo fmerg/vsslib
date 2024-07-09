@@ -26,6 +26,9 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
+export type IndexedNonce = { nonce: Uint8Array, index: number };
+
+
 export function computeLambda<P extends Point>(
   ctx: Group<P>,
   index: number,
@@ -85,16 +88,16 @@ export async function combinePublicShares<P extends Point>(
 
 export async function combinePartialDecryptors<P extends Point>(
   ctx: Group<P>,
-  shares: PartialDecryptor[],
+  partialDecryptors: PartialDecryptor[],
   threshold?: number,
 ): Promise<Uint8Array> {
-  if (threshold && shares.length < threshold) throw new Error(
+  if (threshold && partialDecryptors.length < threshold) throw new Error(
     'Insufficient number of shares'
   );
   const { order, neutral, exp, operate, unpackValid } = ctx;
-  const qualifiedIndexes = shares.map(share => share.index);
+  const qualifiedIndexes = partialDecryptors.map(share => share.index);
   let acc = neutral;
-  for (const share of shares) {
+  for (const share of partialDecryptors) {
     const { value, index } = share;
     const lambda = computeLambda(ctx, index, qualifiedIndexes);
     const curr = await exp(await unpackValid(value), lambda);
@@ -103,7 +106,6 @@ export async function combinePartialDecryptors<P extends Point>(
   return acc.toBytes();
 }
 
-export type IndexedNonce = { nonce: Uint8Array, index: number };
 
 export async function recoverPublic<P extends Point>(
   ctx: Group<P>,
@@ -169,9 +171,9 @@ export async function recoverPublicKey<P extends Point>(
 
 export async function recoverDecryptor<P extends Point>(
   ctx: Group<P>,
-  shares: PartialDecryptor[],
+  partialDecryptors: PartialDecryptor[],
   ciphertext: Ciphertext,
-  publicShares: PartialPublic<P>[],
+  partialPublicKeys: PartialPublic<P>[],
   opts?: {
     algorithm?: Algorithm,
     nonces?: IndexedNonce[],
@@ -183,17 +185,17 @@ export async function recoverDecryptor<P extends Point>(
   const threshold = opts ? opts.threshold : undefined;
   const nonces = opts ? opts.nonces : undefined;
   const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
-  if (threshold && shares.length < threshold) throw new Error(
+  if (threshold && partialDecryptors.length < threshold) throw new Error(
     'Insufficient number of shares'
   );
   const { order, neutral, exp, operate, unpackValid } = ctx;
-  const qualifiedIndexes = shares.map(share => share.index);
+  const qualifiedIndexes = partialDecryptors.map(share => share.index);
   let blame = [];
   let acc = neutral;
-  for (const partialDecryptor of shares) {
+  for (const partialDecryptor of partialDecryptors) {
     const { value, index } = partialDecryptor;
     // select respective public share
-    const publicShare = publicShares.filter(s => s.index == index)[0];  // TODO: pop
+    const publicShare = partialPublicKeys.filter(s => s.index == index)[0];  // TODO: pop
     if (!publicShare)
       throw new Error(`No public share with index ${index}`);
     // select respective nonce
@@ -234,8 +236,8 @@ export async function recoverDecryptor<P extends Point>(
 export async function thresholdDecrypt<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext,
-  decryptorShares: PartialDecryptor[],
-  publicShares: PartialPublic<P>[],
+  partialDecryptors: PartialDecryptor[],
+  partialPublicKeys: PartialPublic<P>[],
   opts: {
     scheme: ElgamalScheme,
     mode?: BlockMode,
@@ -248,9 +250,9 @@ export async function thresholdDecrypt<P extends Point>(
 ): Promise<{ plaintext: Uint8Array, blame: number[] }> {
   const { recovered: decryptor, blame } = await recoverDecryptor(
     ctx,
-    decryptorShares,
+    partialDecryptors,
     ciphertext,
-    publicShares,
+    partialPublicKeys,
     {
       algorithm: opts.vrfAlgorithm || Algorithms.DEFAULT,
       nonces: opts.nonces,

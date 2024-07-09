@@ -9,41 +9,24 @@ const { systems, nrShares, threshold } = resolveTestConfig();
 
 describe('Pedersen VSS scheme', () => {
   it.each(systems)('success - over %s', async (system) => {
-    const { ctx, sharing, privateShares: shares } = await createKeySharingSetup({
-      system, nrShares, threshold
-    });
+    const { ctx, sharing, partialKeys } = await createKeySharingSetup(system, nrShares, threshold);
     const publicBytes = await ctx.randomPublic();
-    const { packets, commitments } = await sharing.createPedersenPackets(
-      publicBytes
-    );
+    const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
     packets.forEach(async (packet: SecretPacket) => {
-      const privateShare = await extractPartialKey(
-        ctx, commitments, packet, publicBytes,
-      );
-      const targetShare = selectPartialKey(privateShare.index, shares);
+      const partialKey = await extractPartialKey(ctx, commitments, packet, publicBytes);
+      const targetKey = selectPartialKey(partialKey.index, partialKeys);
       expect(
-        await isEqualSecret(ctx, privateShare.secret, targetShare.secret)
+        await isEqualSecret(ctx, partialKey.secret, targetKey.secret)
       ).toBe(true);
     })
   })
   it.each(systems)('failure - over %s', async (system) => {
-    const { ctx, sharing, privateShares: shares } = await createKeySharingSetup({
-      system, nrShares, threshold
-    });
+    const { ctx, sharing } = await createKeySharingSetup(system, nrShares, threshold);
     const publicBytes = await ctx.randomPublic();
-    const { packets, commitments } = await sharing.createPedersenPackets(
-      publicBytes
-    );
-    const forgedCommitments = [
-      ...commitments.slice(0, commitments.length - 1),
-      await ctx.randomPublic()
-    ];
+    const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
+    commitments[0] = await ctx.randomPublic();  // tamper first commitment
     packets.forEach(async (packet: SecretPacket) => {
-      await expect(
-        extractPartialKey(
-          ctx, forgedCommitments, packet, publicBytes,
-        )
-      ).rejects.toThrow(
+      await expect(extractPartialKey(ctx, commitments, packet, publicBytes)).rejects.toThrow(
         'Invalid share'
       );
     })
