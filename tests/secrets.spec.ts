@@ -4,9 +4,12 @@ import {
   isEqualSecret,
   isEqualPublic,
   isKeypair,
+  addSecrets,
+  combinePublics,
 } from 'vsslib/secrets';
-
 import { initBackend } from 'vsslib/backend';
+import { leInt2Buff } from 'vsslib/arith';
+
 import { resolveTestConfig } from './environ';
 
 const { systems } = resolveTestConfig();
@@ -56,6 +59,37 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     expect(await isEqualPublic(ctx, otherPublic, publicBytes)).toBe(false);
     expect(await isKeypair(ctx, secret, otherPublic)).toBe(false);
     expect(await isKeypair(ctx, otherSecret, publicBytes)).toBe(false);
+  });
+  it.each(systems)('summation of secrets - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const secrets = [];
+    const publics = [];
+    const nrTotal = 10;
+    for (let i = 0; i < nrTotal; i++) {
+      const { secret, publicBytes } = await generateSecret(ctx);
+      secrets.push(secret);
+      publics.push(publicBytes);
+    }
+
+    // Examine zero secrets edge case
+    const zeroSum = await addSecrets(ctx, []);
+    const unitPublic = await combinePublics(ctx, []);
+    expect(await isEqualSecret(ctx, zeroSum, leInt2Buff(BigInt(0))));
+    expect(await isEqualPublic(ctx, unitPublic, ctx.neutral.toBytes())).toBe(true);
+
+    // Examine single secret edge case
+    const cloneSecret = await addSecrets(ctx, secrets.slice(0, 1));
+    const clonePublic = await combinePublics(ctx, publics.slice(0, 1));
+    expect(await isEqualSecret(ctx, cloneSecret, secrets[0])).toBe(true);
+    expect(await isEqualPublic(ctx, clonePublic, publics[0])).toBe(true);
+
+    // Check commutation between addition of secrets and combination of publics
+    for (let nr = 0; nr < nrTotal; nr++) {
+      const secretSum = await addSecrets(ctx, secrets.slice(0, nr));
+      const targetPublic = await extractPublic(ctx, secretSum);
+      const overallPublic = await combinePublics(ctx, publics.slice(0, nr))
+      expect(await isEqualPublic(ctx, overallPublic, targetPublic)).toBe(true);
+    }
   });
 })
 

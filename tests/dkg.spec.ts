@@ -6,15 +6,15 @@ import {
   isEqualPublic,
   distributeSecret,
   extractPublicShare,
-  parseFeldmanPacket,
   parsePedersenPacket,
   createPublicPacket,
   parsePublicPacket,
   combinePublicShares,
+  addSecrets,
+  combinePublics,
 } from 'vsslib';
 import { randomNonce } from 'vsslib/crypto';
 import { resolveTestConfig } from './environ';
-import { mod, leInt2Buff } from 'vsslib/arith';
 
 let { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -22,6 +22,7 @@ class Party<P extends Point> {
   ctx: Group<P>;
   index: number;
   originalSecret?: Uint8Array;
+  originalPublic?: Uint8Array;
   sharing?: ShamirSharing<P>;
   aggregates: SecretShare[];
   localSecretShare?: SecretShare;
@@ -45,72 +46,55 @@ const selectParty = <P extends Point>(index: number, parties: Party<P>[]) =>
 describe('Distributed Key Generation (DKG)', () => {
   it.each(systems)('over %s', async (system) => {
     const ctx = initBackend(system);
-    let parties = [];
-    for (let index = 1; index <= nrShares; index++) {
-      parties.push(new Party(ctx, index));
-    }
 
-    // Involved parties agree on some public reference
+    // Public reference for Pedersen VSS Scheme
     const publicBytes = await ctx.randomPublic();
+
+    // Involved parties initialization
+    const parties = [];
+    for (let index = 1; index <= nrShares; index++) {
+      const party = new Party(ctx, index);
+      parties.push(party);
+    }
 
     // Computation of sharings
     for (let party of parties) {
       const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
       party.originalSecret = secret ;
+      party.originalPublic = await extractPublic(ctx, party.originalSecret);
       party.sharing = sharing;
-    }
-
-    // Distribution of shares over the network
-    for (const party of parties) {
-      const { packets, commitments } = await party.sharing!.createPedersenPackets(publicBytes
-      );
+      const { packets, commitments } = await party.sharing.createPedersenPackets(publicBytes);
+      // Distribution of shares over the network
       for (const packet of packets) {
+        const recipient = selectParty(packet.index, parties);
         const { share, binding } = await parsePedersenPacket(
           ctx, commitments, publicBytes, packet
         );
-        selectParty(share.index, parties).aggregates.push(share);
+        recipient.aggregates.push(share);
       }
     }
 
     // Local summation of received shares
     for (let party of parties) {
-      party.localSecretShare = { value: leInt2Buff(BigInt(0)), index: party.index };
-      for (const share of party.aggregates) {
-        const x = ctx.leBuff2Scalar(party.localSecretShare.value);
-        const z = ctx.leBuff2Scalar(share.value);
-        party.localSecretShare.value = leInt2Buff(mod(x + z, ctx.order));
-      }
-      party.localPublicShare = await extractPublicShare(
-        ctx, party.localSecretShare
-      );
-    }
-
-    // Public key advertisement
-    for (const sender of parties) {
+      const localSum = await addSecrets(ctx, party.aggregates.map(s => s.value));
+      party.localSecretShare = { value: localSum, index: party.index };
+      party.localPublicShare = await extractPublicShare(ctx, party.localSecretShare);
+      // Public share advertisement
       for (const recipient of parties) {
         const nonce = await randomNonce();
-        const packet = await createPublicPacket(ctx, sender.localSecretShare!, { nonce });
+        const packet = await createPublicPacket(ctx, party.localSecretShare!, { nonce });
         const publicShare = await parsePublicPacket(ctx, packet, { nonce });
         recipient.publicShares.push(publicShare);
       }
     }
 
+    // All parties should locally recover this global public
+    const targetGlobalPublic = await combinePublics(ctx, parties.map(p => p.originalPublic!));
     // Local recovery of combined public
     for (let party of parties) {
       party.globalPublic = await combinePublicShares(ctx, party.publicShares);
-    }
-
-    // Test consistency
-    let targetPublic = ctx.neutral;
-    for (const party of parties) {
-      const curr = await ctx.exp(
-        ctx.generator,
-        ctx.leBuff2Scalar(party.originalSecret!),
-      );
-      targetPublic = await ctx.operate(curr, targetPublic);
-    }
-    for (const party of parties) {
-      expect(await isEqualPublic(ctx, party.globalPublic!, targetPublic.toBytes())).toBe(true);
+      // Check consistency
+      expect(await isEqualPublic(ctx, party.globalPublic, targetGlobalPublic)).toBe(true);
     }
   });
 })

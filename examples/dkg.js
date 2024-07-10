@@ -11,9 +11,10 @@ import {
   parseFeldmanPacket,
   parsePedersenPacket,
   createPublicPacket,
+  addSecrets,
+  combinePublics,
 } from 'vsslib';
 import { Systems } from 'vsslib/enums';
-import { leInt2Buff, mod } from 'vsslib/arith';
 import { randomNonce } from 'vsslib/crypto';
 
 const program = new Command();
@@ -36,86 +37,74 @@ class Party {
 }
 
 
+const selectParty = (index, parties) => parties.filter(p => p.index == index)[0];
+
 async function demo() {
   const { system, nrShares, threshold, verbose } = program.opts();
-  const ctx = initBackend(system);
-  const parties = [];
-  for (let index = 1; index <= nrShares; index++) {
-    parties.push(new Party(ctx, index));
-  }
 
-  // Involved parties agree on some public reference
+  const ctx = initBackend(system);
+
+  // Public reference for Pedersen VSS Scheme
   const publicBytes = await ctx.randomPublic();
 
+  // Involved parties initialization
+  const parties = [];
+  for (let index = 1; index <= nrShares; index++) {
+    const party = new Party(ctx, index);
+    parties.push(party);
+  }
+
   // Computation of sharings
-  for (const party of parties) {
-    console.time(`SHARING COMPUTATION ${party.index}`);
+  for (let party of parties) {
+    console.time(`SHARING ${party.index}`);
     const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
-    console.timeEnd(`SHARING COMPUTATION ${party.index}`);
-    party.originalSecret = secret;
+    console.timeEnd(`SHARING ${party.index}`);
+    party.originalSecret = secret ;
+    party.originalPublic = await extractPublic(ctx, party.originalSecret);
     party.sharing = sharing;
   }
 
-  // Distribution of shares over the network
-  const selectParty = (index, parties) => parties.filter(p => p.index == index)[0];
-  for (const party of parties) {
-    console.time(`SHARE DISTRIBUTION ${party.index}`);
+  // Distribution of packets
+  for (let party of parties) {
+    console.time(`DISTRIBUTION ${party.index}`);
     const { packets, commitments } = await party.sharing.createPedersenPackets(publicBytes);
-    for (packet of packets) {
-      const { share, binding } = await parsePedersenPacket(ctx, commitments, publicBytes, packet);
-      selectParty(share.index, parties).aggregates.push(share);
+    for (const packet of packets) {
+      const recipient = selectParty(packet.index, parties);
+      const { share, binding } = await parsePedersenPacket(
+        ctx, commitments, publicBytes, packet
+      );
+      recipient.aggregates.push(share);
     }
-    console.timeEnd(`SHARE DISTRIBUTION ${party.index}`);
+    console.timeEnd(`DISTRIBUTION ${party.index}`);
   }
 
   // Local summation of received shares
   for (let party of parties) {
-    console.time(`LOCAL SUMMATION ${party.index}`);
-    party.localSecretShare = { value: leInt2Buff(BigInt(0)), index: party.index };
-    // TODO: // add secrets
-    for (const share of party.aggregates) {
-      const x = ctx.leBuff2Scalar(party.localSecretShare.value);
-      const z = ctx.leBuff2Scalar(share.value);
-      party.localSecretShare.value = leInt2Buff(mod(x + z, ctx.order));
-    }
-    // TODO: extractPublicShare
-    party.localPublicShare = await extractPublicShare(
-      ctx, party.localSecretShare
-    );
-    console.timeEnd(`LOCAL SUMMATION ${party.index}`);
-  }
-
-  // Public key advertisement
-  console.time("PUBLIC SHARE ADVERTISEMENT");
-  for (sender of parties) {
-    for (recipient of parties) {
+    console.time(`SUMMATION ${party.index}`);
+    const localSum = await addSecrets(ctx, party.aggregates.map(s => s.value));
+    console.timeEnd(`SUMMATION ${party.index}`);
+    party.localSecretShare = { value: localSum, index: party.index };
+    party.localPublicShare = await extractPublicShare(ctx, party.localSecretShare);
+    // Public share advertisement
+    for (const recipient of parties) {
       const nonce = await randomNonce();
-      const packet = await createPublicPacket(ctx, sender.localSecretShare, { nonce });
-      const pubShare = await parsePublicPacket(ctx, packet, { nonce });
-      recipient.publicShares.push(pubShare);
+      const packet = await createPublicPacket(ctx, party.localSecretShare, { nonce });
+      const publicShare = await parsePublicPacket(ctx, packet, { nonce });
+      recipient.publicShares.push(publicShare);
     }
   }
-  console.timeEnd("PUBLIC SHARE ADVERTISEMENT");
 
-  // Local computation of global public
+  // All parties should locally recover this global public
+  const targetGlobalPublic = await combinePublics(ctx, parties.map(p => p.originalPublic));
+  // Local recovery of combined public
   for (let party of parties) {
     party.globalPublic = await combinePublicShares(ctx, party.publicShares);
-  }
-
-  // Test correctness
-  let targetPublic = ctx.neutral;
-  // TODO: mulitply publics
-  for (party of parties) {
-    const curr = await ctx.exp(
-      ctx.generator,
-      ctx.leBuff2Scalar(party.originalSecret),
-    );
-    targetPublic = await ctx.operate(targetPublic, curr);
-  }
-  for (party of parties) {
-    if(!isEqualPublic(ctx, party.globalPublic, targetPublic.toBytes())) {
+    // Check consistency
+    const isConsistent = await isEqualPublic(ctx, party.globalPublic, targetGlobalPublic);
+    if(!isConsistent) {
       throw new Error(`Inconsistency at location {party.index}`);
     }
+    console.log(`ok ${party.index}`);
   }
 }
 

@@ -22,6 +22,8 @@ import {
 import {
   generateSecret,
   extractPublic,
+  addSecrets,
+  combinePublics,
   isEqualSecret,
   isEqualPublic,
   isKeypair,
@@ -42,6 +44,8 @@ const signer = require('./signer');
 export {
   initBackend,
   generateSecret,
+  addSecrets,
+  combinePublics,
   isEqualSecret,
   isEqualPublic,
   extractPublic,
