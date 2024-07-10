@@ -1,16 +1,16 @@
 import { Command } from 'commander';
 import { parseDecimal, parseCommaSeparatedDecimals } from './utils';
 import {
-  enums,
+  Systems,
   initBackend,
   isKeypair,
   distributeSecret,
   parseFeldmanPacket,
-  createPublicPacket,
+  createScnorrPacket,
   recoverPublic,
 } from 'vsslib';
 
-const DEFAULT_SYSTEM = enums.Systems.ED25519;
+const DEFAULT_SYSTEM = Systems.ED25519;
 const DEFAULT_NR_SHARES = 5;
 const DEFAULT_THRESHOLD = 3;
 
@@ -38,7 +38,7 @@ async function demo() {
   // Every shareholder creates a Shnorr proof for their respective secret share
   const publicPackets = [];
   for (const share of secretShares) {
-    const packet = await createPublicPacket(ctx, share);
+    const packet = await createScnorrPacket(ctx, share);
     publicPackets.push(packet);
   }
 

@@ -44,10 +44,10 @@ abstract class BaseCipher<P extends Point, A> {
     decryptor: Uint8Array,
     randomness: Uint8Array,
   }> {
-    const { ctx: { generator, randomScalar, exp }, encapsulate } = this;
-    const randomness = await randomScalar();
-    const { alpha, decryptor } = await encapsulate(pub, randomness, message);
-    const beta = await exp(generator, randomness);
+    const g = this.ctx.generator;
+    const randomness = await this.ctx.randomScalar();
+    const { alpha, decryptor } = await this.encapsulate(pub, randomness, message);
+    const beta = await this.ctx.exp(g, randomness);
     return {
       ciphertext: {
         alpha,
@@ -59,10 +59,9 @@ abstract class BaseCipher<P extends Point, A> {
   }
 
   async decrypt(ciphertext: { alpha: A, beta: Uint8Array}, secret: bigint): Promise<Uint8Array> {
-    const { alpha, beta: betaBytes} = ciphertext;
     let beta;
     try {
-      beta = await this.ctx.unpackValid(betaBytes);
+      beta = await this.ctx.unpackValid(ciphertext.beta);
     } catch (err: any) {
       throw new ElgamalError(
         'Could not decrypt: ' + err.message // TODO
@@ -70,7 +69,7 @@ abstract class BaseCipher<P extends Point, A> {
     }
     const decryptor = await this.ctx.exp(beta, secret);
     try {
-      return await this.decapsulate(alpha, decryptor);
+      return await this.decapsulate(ciphertext.alpha, decryptor);
     } catch (err: any) {
       throw new Error('Could not decrypt: ' + err.message);
     }
@@ -114,7 +113,7 @@ abstract class BaseCipher<P extends Point, A> {
 }
 
 
-/** Plain Elgamal encryption, assuming messages to be valid byte representations
+/** Plain Elgamal encryption, assuming messages to be isValid byte representations
  * of group elements. This not CCA-secure; do *not* use it directly, unless you
  * know what you do. */
 export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {

@@ -1,6 +1,38 @@
-import { initBackend } from './backend';
-import { generateKey, extractPartialKey } from './keys';
-import {
+export { initBackend } from 'vsslib/backend';
+
+export {
+  Systems,
+  Algorithms,
+  BlockModes,
+  ElgamalSchemes,
+  SignatureSchemes,
+} from 'vsslib/enums';
+
+export {
+  generateSecret,
+  extractPublic,
+  isEqualSecret,
+  isEqualPublic,
+  isKeypair,
+  addSecrets,
+  combinePublics,
+} from 'vsslib/secrets';
+
+export {
+  generateKey,
+  extractPartialKey,
+} from 'vsslib/keys';
+
+export {
+  distributeSecret,
+  extractPublicShare,
+  parseFeldmanPacket,
+  parsePedersenPacket,
+  createScnorrPacket,
+  parseScnorrPacket,
+} from 'vsslib/dealer';
+
+export {
   combineSecretShares,
   combinePublicShares,
   recoverPublic,
@@ -8,70 +40,4 @@ import {
   combinePartialDecryptors,
   recoverDecryptor,
   thresholdDecrypt
-} from './combiner';
-
-import {
-  distributeSecret,
-  extractPublicShare,
-  parseFeldmanPacket,
-  parsePedersenPacket,
-  createPublicPacket,
-  parsePublicPacket,
-} from './dealer';
-
-import {
-  generateSecret,
-  extractPublic,
-  addSecrets,
-  combinePublics,
-  isEqualSecret,
-  isEqualPublic,
-  isKeypair,
-} from './secrets';
-
-
-const backend = require('./backend');
-const crypto = require('./crypto');
-const elgamal = require('./elgamal');
-const enums = require('./enums');
-const keys = require('./keys');
-const lagrange = require('./lagrange');
-const nizk = require('./nizk');
-const dealer = require('./dealer');
-const signer = require('./signer');
-
-
-export {
-  initBackend,
-  generateSecret,
-  addSecrets,
-  combinePublics,
-  isEqualSecret,
-  isEqualPublic,
-  extractPublic,
-  isKeypair,
-  generateKey,
-  extractPartialKey,
-  distributeSecret,
-  extractPublicShare,
-  parseFeldmanPacket,
-  parsePedersenPacket,
-  createPublicPacket,
-  parsePublicPacket,
-  combineSecretShares,
-  combinePublicShares,
-  recoverPublic,
-  recoverPublicKey,
-  combinePartialDecryptors,
-  recoverDecryptor,
-  thresholdDecrypt,
-  backend,
-  crypto,
-  elgamal,
-  enums,
-  keys,
-  lagrange,
-  nizk,
-  dealer,
-  signer,
-}
+} from 'vsslib/combiner';

@@ -1,11 +1,4 @@
-import {
-  Elliptic,
-  Algorithms,
-  BlockModes,
-  ElgamalSchemes,
-  SignatureSchemes,
-  Encodings,
-} from './enums';
+import { Elliptic, Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from 'vsslib/enums';
 
 export type System =
   | Elliptic.ED25519
@@ -36,7 +29,3 @@ export type ElgamalScheme =
 
 export type SignatureScheme =
   | SignatureSchemes.SCHNORR;
-
-export type Encoding =
-  | Encodings.HEX
-  | Encodings.BASE64;

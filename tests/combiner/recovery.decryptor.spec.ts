@@ -12,9 +12,9 @@ describe('Decryptor recovery', () => {
     const { ctx, partialPublicKeys, ciphertext, partialDecryptors, decryptor } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
-    partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-      const { recovered, blame } = await recoverDecryptor(ctx, qualifiedShares, ciphertext, partialPublicKeys);
-      expect(isEqualBuffer(recovered, decryptor)).toBe(qualifiedShares.length >= threshold);
+    partialPermutations(partialDecryptors).forEach(async (shares) => {
+      const { recovered, blame } = await recoverDecryptor(ctx, shares, ciphertext, partialPublicKeys);
+      expect(isEqualBuffer(recovered, decryptor)).toBe(shares.length >= threshold);
       expect(blame).toEqual([]);
     });
   });
@@ -23,11 +23,11 @@ describe('Decryptor recovery', () => {
     const { ctx, partialPublicKeys, ciphertext, partialDecryptors, decryptor, nonces } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold, withNonce: true
     });
-    partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
+    partialPermutations(partialDecryptors).forEach(async (shares) => {
       const { recovered, blame } = await recoverDecryptor(
-        ctx, qualifiedShares, ciphertext, partialPublicKeys, { nonces }
+        ctx, shares, ciphertext, partialPublicKeys, { nonces }
       );
-      expect(isEqualBuffer(recovered, decryptor)).toBe(qualifiedShares.length >= threshold);
+      expect(isEqualBuffer(recovered, decryptor)).toBe(shares.length >= threshold);
       expect(blame).toEqual([]);
     });
   });
@@ -36,14 +36,14 @@ describe('Decryptor recovery', () => {
     const { ctx, partialPublicKeys, ciphertext, partialDecryptors, decryptor} = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
-    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedShares) => {
-      await expect(recoverDecryptor(ctx, qualifiedShares, ciphertext, partialPublicKeys, { threshold })).rejects.toThrow(
+    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (shares) => {
+      await expect(recoverDecryptor(ctx, shares, ciphertext, partialPublicKeys, { threshold })).rejects.toThrow(
         'Insufficient number of shares'
       );
     });
-    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const { recovered, blame } = await recoverDecryptor(ctx, qualifiedShares, ciphertext, partialPublicKeys);
-      expect(isEqualBuffer(recovered, decryptor)).toBe(qualifiedShares.length >= threshold);
+    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (shares) => {
+      const { recovered, blame } = await recoverDecryptor(ctx, shares, ciphertext, partialPublicKeys);
+      expect(isEqualBuffer(recovered, decryptor)).toBe(shares.length >= threshold);
       expect(blame).toEqual([]);
     });
   });

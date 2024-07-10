@@ -15,8 +15,8 @@ describe('NIZK Dlog proof (Schnorr protocol)', () => {
     const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const proof = await nizk(ctx, algorithm).proveDlog(x, { u, v });
-    const valid = await nizk(ctx, algorithm).verifyDlog({ u, v }, proof);
-    expect(valid).toBe(true);
+    const isValid = await nizk(ctx, algorithm).verifyDlog({ u, v }, proof);
+    expect(isValid).toBe(true);
   });
   it.each(cartesian([systems, algorithms]))(
     'success - with nonce - over %s/%s', async (system, algorithm) => {
@@ -24,31 +24,31 @@ describe('NIZK Dlog proof (Schnorr protocol)', () => {
     const [x, { u, v }] = await createDlogPair(ctx);
     const nonce = await randomNonce();
     const proof = await nizk(ctx, algorithm).proveDlog(x, { u, v }, nonce);
-    const valid = await nizk(ctx, algorithm).verifyDlog({ u, v }, proof, nonce);
-    expect(valid).toBe(true);
+    const isValid = await nizk(ctx, algorithm).verifyDlog({ u, v }, proof, nonce);
+    expect(isValid).toBe(true);
   });
   it.each(systems)('failure - forged secret - over %s', async (system) => {
     const ctx = initBackend(system);
     const [_, { u, v }] = await createDlogPair(ctx);
     const [x, __] = await createDlogPair(ctx);
     const proof = await nizk(ctx, Algorithms.SHA256).proveDlog(x, { u, v });
-    const valid = await nizk(ctx, Algorithms.SHA256).verifyDlog({ u, v }, proof);
-    expect(valid).toBe(false);
+    const isValid = await nizk(ctx, Algorithms.SHA256).verifyDlog({ u, v }, proof);
+    expect(isValid).toBe(false);
   });
   it.each(systems)('failure - forged nonce - over %s', async (system) => {
     const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveDlog(x, { u, v }, nonce);
-    const valid = await nizk(ctx, Algorithms.SHA256).verifyDlog({ u, v }, proof, await randomNonce());
-    expect(valid).toBe(false);
+    const isValid = await nizk(ctx, Algorithms.SHA256).verifyDlog({ u, v }, proof, await randomNonce());
+    expect(isValid).toBe(false);
   });
   it.each(systems)('failure - missing nonce - over %s', async (system) => {
     const ctx = initBackend(system);
     const [x, { u, v }] = await createDlogPair(ctx);
     const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveDlog(x, { u, v }, nonce);
-    const valid = await nizk(ctx, Algorithms.SHA256).verifyDlog({ u, v }, proof);
-    expect(valid).toBe(false);
+    const isValid = await nizk(ctx, Algorithms.SHA256).verifyDlog({ u, v }, proof);
+    expect(isValid).toBe(false);
   });
 });

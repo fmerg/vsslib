@@ -3,8 +3,8 @@ const { createCipheriv, createDecipheriv } = require('node:crypto');
 
 import { BlockMode } from 'vsslib/types';
 import { BlockModes } from 'vsslib/enums';
-import { randomBytes } from './random';
 import { AesError } from 'vsslib/errors';
+import { randomBytes } from 'vsslib/crypto/random';
 
 class AesCipher {
   mode: BlockMode;

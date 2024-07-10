@@ -51,62 +51,13 @@ import { combinePublicShares } from "vsslib";
 const combinedPublic = await combinePublicShares(ctx, publicShares.slice(0, 3));
 ```
 
-## Overview
-
-Vsslib provides modular building blocks for implementing threshold-cryptographic protocols
-based on Shamir's Secret Sharing. It focuses on primitives that make the
-sharing process verifiable on behalf of involved parties
-([Feldman](#feldman-scheme-1) and [Pedersen](#pedersen-scheme-1) VSS schemes)
-and as such applicable in contexts with zero or low trust assumptions
-(e.g., Distributed Key Generation (DKG) protocols).
-
-### Backend
-
-Vsslib is designed to be agnostic with respect to the underlying cryptosystem
-and to admit pluggable backends.
-It abstracts away algebraic details by internally interacting with a generic cryptosystem interface,
-which backend implementations are expected to conform with.
-
-Vsslib comes with several backends based on
-[noble-curves](https://github.com/paulmillr/noble-curves),
-but any implementation wrapped with the prescribed interface
-should do the job. Refer to section [Pluggable backend](#pluggable-backend) for details.
-
-### Interface 
-
-Vsslib exposes two separate APIs. The ["raw bytes"](#shamir-secret-sharing) interface is intended
-for applications where more freedom is required on how
-to directly access and use secrets
-(e.g., distributed generation of ephemeral secrets, or under the constraints imposed
-by a pre-existing public-key interface).
-The ["keys"](#key-sharing) interface is a public-key API that provides asymmetric operations
-at the high-level and is compatible with
-ready-made solutions for verifiable key recovery and
-[threshold decryption](#threshold-decryption).
-Both operate with the same sharing abstraction layer.
-
-### Security 
-
-*This library is currently a prototype and requires security audit. Use at your own risk for the moment.*
-
-#### Replay attacks
-
-#### Remark on the selection of parameters
-
-Vsslib is unopinionated on the selection of cryptographic parameters
-(underlying cryptosystem, hash function for ZK-proofs,
-encryption scheme, etc.), allowing complete freedom on how to
-orthogonally combine them.
-
-For example, the provided threshold decryption mechanism is operable with
-plain Elgamal encryption even if this combination is per se insecure
-against chosen-ciphertext attacks.
-It is the user's responsibility to decide if the desired level of security
-is attained in a particular context by other means.
-
 ## Table of contents
 
 * [Installation](#installation)
+* [Overview](#overview)
+  * [Backend](#backend-overview)
+  * [Interface](#interface-overview)
+  * [Security](#security-overview)
 * [Usage](#usage)
   * [Preliminaries](#preliminaries)
     * [Cryptosystem setup](#cryptosystem-setup)
@@ -137,6 +88,65 @@ is attained in a particular context by other means.
 ```
 npm install TODO
 ```
+
+## Overview
+
+Vsslib provides modular building blocks for implementing threshold-cryptographic protocols
+based on Shamir's Secret Sharing. It focuses on primitives that make the
+sharing process verifiable on behalf of involved parties
+([Feldman](#feldman-scheme-1) and [Pedersen](#pedersen-scheme-1) VSS schemes)
+and as such applicable in contexts with zero or low trust assumptions
+(e.g., Distributed Key Generation (DKG) protocols).
+
+### <a name="backend-overview"></a>Backend
+
+Vsslib is designed to be agnostic with respect to the underlying cryptosystem
+and to admit pluggable backends.
+It abstracts away algebraic details by internally interacting with a generic cryptosystem interface,
+which backend implementations are expected to conform with.
+
+Vsslib comes with several backends based on
+[noble-curves](https://github.com/paulmillr/noble-curves),
+but any implementation wrapped with the prescribed interface
+should do the job. Refer to section [Pluggable backend](#pluggable-backend) for details.
+
+### <a name="interface-overview"></a>Interface
+
+Vsslib exposes two separate APIs. The ["raw bytes"](#shamir-secret-sharing) interface is intended
+for applications where more freedom is required on how
+to directly access and use secrets
+(e.g., distributed generation of ephemeral secrets, or under the constraints imposed
+by a pre-existing public-key interface).
+The ["keys"](#key-sharing) interface is a public-key API that provides asymmetric operations
+at the high-level and is compatible with
+ready-made solutions for verifiable key recovery and
+[threshold decryption](#threshold-decryption).
+Both operate with the same sharing abstraction layer.
+
+### <a name="security-overview"></a>Security
+
+:warning: **This library requires security audit. Use at your own risk for the moment.**
+
+#### <a name="input-validation-overview"></a>Input validation
+
+#### <a name="constant-time-comparisons-validation-overview"></a>Constant-time comparisons
+
+#### <a name="replay-attacks-overview"></a>Defence against replay attacks
+
+#### <a name="knwon-weakeness-overview"></a>Known weaknesses
+
+#### <a name="selection-of-parameters-overview"></a>Remark on the selection of parameters
+
+Vsslib is unopinionated on the selection of cryptographic parameters
+(underlying cryptosystem, hash function for ZK-proofs,
+encryption scheme, etc.), allowing complete freedom on how to
+orthogonally combine them.
+
+For example, the provided threshold decryption mechanism is operable with
+plain Elgamal encryption even if this combination is per se insecure
+against chosen-ciphertext attacks.
+It is the user's responsibility to decide if the desired level of security
+is attained in a particular context by other means.
 
 # Usage
 
@@ -414,9 +424,9 @@ in a zero-knowledge (ZK) fashion.
 Create a verifiable packet for a secret share as follows.
 
 ```js
-import { createPublicPacket } from "vsslib";
+import { createScnorrPacket } from "vsslib";
 
-const packet = await createPublicPacket(ctx, share, { algorithm: "sha256" });
+const packet = await createScnorrPacket(ctx, share, { algorithm: "sha256" });
 ```
 
 This consists of the public share and a NIZK (Schnorr) proof-of-knowledge of

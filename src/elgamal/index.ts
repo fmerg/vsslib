@@ -1,12 +1,10 @@
 import { Point, Group } from 'vsslib/backend';
 import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
 import { Algorithms, BlockModes, } from 'vsslib/enums';
+import { ElgamalDriver } from 'vsslib/elgamal/driver';
+export { Ciphertext } from 'vsslib/elgamal/driver';
 
-import { Ciphertext, ElgamalDriver } from './driver';
-
-export { Ciphertext };
-
-export default function foteinos<P extends Point>(
+export default function <P extends Point>(
   ctx: Group<P>,
   scheme: ElgamalScheme,
   algorithm?: Algorithm,

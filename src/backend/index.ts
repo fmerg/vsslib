@@ -1,9 +1,8 @@
 import { System } from 'vsslib/types';
 import { Elliptic } from 'vsslib/enums';
 import { BadGroupError } from 'vsslib/errors';
-import { initElliptic } from './elliptic';
-
-export { Group, Point } from './abstract'
+export { Group, Point } from 'vsslib/backend/abstract'
+import { initElliptic } from 'vsslib/backend/elliptic';
 
 export const initBackend = (system: System | string) => {
   system  = system as System;

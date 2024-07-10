@@ -4,12 +4,12 @@ import {
   generateSecret,
   distributeSecret,
   generateKey,
-  createPublicPacket,
+  createScnorrPacket,
 } from 'vsslib';
 import { IndexedNonce }  from 'vsslib/combiner';
 import { randomNonce } from 'vsslib/crypto';
-import { SecretShare, PublicShare, PublicPacket } from 'vsslib/dealer';
-import { PartialKey, PartialPublic, PartialDecryptor } from 'vsslib/keys';
+import { SecretShare, PublicShare, ScnorrPacket } from 'vsslib/dealer';
+import { PartialKey, PartialPublicKey, PartialDecryptor } from 'vsslib/keys';
 import { ElgamalSchemes } from 'vsslib/enums';
 import { ElgamalScheme, System, Algorithm } from 'vsslib/types';
 import { leInt2Buff } from 'vsslib/arith';
@@ -26,7 +26,7 @@ export const buildMessage = async <P extends Point>(ctx: Group<P>, scheme: Elgam
 export const selectPartialKey = <P extends Point>(index: number, shares: PartialKey<P>[]) =>
   shares.filter(share => share.index == index)[0];
 
-export const selectPartialPublic = <P extends Point>(index: number, shares: PartialPublic<P>[]) =>
+export const selectPartialPublic = <P extends Point>(index: number, shares: PartialPublicKey<P>[]) =>
   shares.filter(share => share.index == index)[0];
 
 
@@ -78,7 +78,7 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
   const nonces: IndexedNonce[] = [];
   for (const share of shares) {
     const nonce = withNonce ? await randomNonce() : undefined;
-    const packet = await createPublicPacket(ctx, share, { algorithm, nonce });
+    const packet = await createScnorrPacket(ctx, share, { algorithm, nonce });
     packets.push(packet);
     if (nonce) {
       nonces.push({ nonce, index: share.index });
@@ -95,7 +95,7 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
     if (withNonce) {
       nonces.filter((n: IndexedNonce) => n.index == index)[0].nonce = await randomNonce();
     } else {
-      packets.filter((p: PublicPacket) => p.index == index)[0].value = await ctx.randomPublic();
+      packets.filter((p: ScnorrPacket) => p.index == index)[0].value = await ctx.randomPublic();
     } 
   }
   return { packets, blame, nonces };

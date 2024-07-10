@@ -1,8 +1,7 @@
 import { Point, Group } from 'vsslib/backend';
 import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
 import { ElgamalSchemes } from 'vsslib/enums';
-
-import { DhiesAlpha, HybridAlpha, plainElgamal, dhiesElgamal, hybridElgamal } from './core';
+import { DhiesAlpha, HybridAlpha, plainElgamal, dhiesElgamal, hybridElgamal } from 'vsslib/elgamal/core';
 
 
 export type PlainCiphertext = { alpha: Uint8Array, beta: Uint8Array };

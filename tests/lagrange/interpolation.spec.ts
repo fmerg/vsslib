@@ -1,9 +1,10 @@
 import { System } from 'vsslib/types';
 import { initBackend } from 'vsslib/backend';
-import { lagrange } from 'vsslib';
 import { cartesian } from '../utils';
+import { interpolate as textbooxInterpolate } from './helpers';
 import { resolveTestConfig } from '../environ';
-import { interpolate } from './helpers';
+
+import lagrange from 'vsslib/lagrange';
 
 const { systems } = resolveTestConfig();
 
@@ -34,8 +35,8 @@ describe('Lagrange interpolation', () => {
       const y = await randomScalar();
       points[i] = [x, y];
     }
-    const poly1 = await lagrange.interpolate(ctx, points);
-    const poly2 = interpolate(points, order);
+    const poly1 = await lagrange(ctx).interpolate(points);
+    const poly2 = textbooxInterpolate(points, order);
     expect(poly2.equals(poly1)).toBe(true);
     for (const [x, y] of points) {
       expect(poly1.evaluate(x)).toEqual(y % order);
@@ -47,8 +48,8 @@ describe('Lagrange interpolation', () => {
   it.each(systems)('ok - fixed points - over %s', async (system) => {
     const ctx = initBackend(system);
     for (const points of collectionPairs) {
-      const poly1 = await lagrange.interpolate(ctx, points);
-      const poly2 = interpolate(points, ctx.order);
+      const poly1 = await lagrange(ctx).interpolate(points);
+      const poly2 = textbooxInterpolate(points, ctx.order);
       expect(poly2.equals(poly1)).toBe(true);
       for (const [x, y] of points) {
         expect(poly1.evaluate(x)).toEqual(BigInt(y) % ctx.order);
@@ -58,7 +59,7 @@ describe('Lagrange interpolation', () => {
   it.each(systems)('error - non-distinct x\'s - over %s', async (system) => {
     const ctx = initBackend(system);
     const points: [number, number][] = [[1, 2], [1, 3]];
-    await expect(lagrange.interpolate(ctx, points)).rejects.toThrow(
+    await expect(lagrange(ctx).interpolate(points)).rejects.toThrow(
       'Not all provided x\'s are distinct modulo order'
     );
   });

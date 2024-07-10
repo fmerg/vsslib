@@ -163,9 +163,9 @@ export class PrivateKey<P extends Point> {
     decryptor: Uint8Array,
     proof: NizkProof
   }> => {
-    const beta = await this.ctx.unpackValid(ciphertext.beta);
+    const b = await this.ctx.unpackValid(ciphertext.beta);
     const x = this.ctx.leBuff2Scalar(this.secret);
-    const decryptor = (await this.ctx.exp(beta, x)).toBytes();
+    const decryptor = (await this.ctx.exp(b, x)).toBytes();
     const proof = await this.proveDecryptor(
       ciphertext,
       decryptor,

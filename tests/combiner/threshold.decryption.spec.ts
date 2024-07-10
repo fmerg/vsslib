@@ -14,19 +14,19 @@ describe('Threshold decryption', () => {
     });
     switch(scheme) {
       case ElgamalSchemes.PLAIN:
-        partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-          const { plaintext } = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, partialPublicKeys, { scheme });
-          expect(isEqualBuffer(plaintext, message)).toBe(qualifiedShares.length >= threshold);
+        partialPermutations(partialDecryptors).forEach(async (shares) => {
+          const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, { scheme });
+          expect(isEqualBuffer(plaintext, message)).toBe(shares.length >= threshold);
         });
         break;
       case ElgamalSchemes.DHIES:
       case ElgamalSchemes.HYBRID:
-        partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-          if (qualifiedShares.length >= threshold) {
-            const { plaintext } = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, partialPublicKeys, { scheme });
+        partialPermutations(partialDecryptors).forEach(async (shares) => {
+          if (shares.length >= threshold) {
+            const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, { scheme });
             expect(plaintext).toEqual(message);
           } else {
-            await expect(thresholdDecrypt(ctx, ciphertext, qualifiedShares, partialPublicKeys, { scheme })).rejects.toThrow(
+            await expect(thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, { scheme })).rejects.toThrow(
               scheme == ElgamalSchemes.HYBRID ?
                 'Could not decrypt: AES decryption failure' :
                 'Could not decrypt: Invalid MAC'
@@ -42,25 +42,25 @@ describe('Threshold decryption', () => {
     });
     switch(scheme) {
       case ElgamalSchemes.PLAIN:
-        partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
+        partialPermutations(partialDecryptors).forEach(async (shares) => {
           const { plaintext } = await thresholdDecrypt(
-            ctx, ciphertext, qualifiedShares, partialPublicKeys, { scheme, nonces }
+            ctx, ciphertext, shares, partialPublicKeys, { scheme, nonces }
           );
-          expect(isEqualBuffer(plaintext, message)).toBe(qualifiedShares.length >= threshold);
+          expect(isEqualBuffer(plaintext, message)).toBe(shares.length >= threshold);
         });
         break;
       case ElgamalSchemes.DHIES:
       case ElgamalSchemes.HYBRID:
-        partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-          if (qualifiedShares.length >= threshold) {
+        partialPermutations(partialDecryptors).forEach(async (shares) => {
+          if (shares.length >= threshold) {
             const { plaintext } = await thresholdDecrypt(
-              ctx, ciphertext, qualifiedShares, partialPublicKeys, { scheme, nonces }
+              ctx, ciphertext, shares, partialPublicKeys, { scheme, nonces }
             );
             expect(plaintext).toEqual(message);
           } else {
             await expect(
               thresholdDecrypt(
-                ctx, ciphertext, qualifiedShares, partialPublicKeys, { scheme, nonces }
+                ctx, ciphertext, shares, partialPublicKeys, { scheme, nonces }
               )
             ).rejects.toThrow(
               scheme == ElgamalSchemes.HYBRID ?
@@ -76,13 +76,13 @@ describe('Threshold decryption', () => {
     const { privateKey, message, ciphertext, partialPublicKeys, partialDecryptors, ctx } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
-    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedShares) => {
+    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (shares) => {
       await expect(
-        thresholdDecrypt(ctx, ciphertext, qualifiedShares, partialPublicKeys, { scheme, threshold })
+        thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, { scheme, threshold })
       ).rejects.toThrow('Insufficient number of shares');
     });
-    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const { plaintext } = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, partialPublicKeys, {
+    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (shares) => {
+      const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, {
         scheme, threshold
       });
       expect(plaintext).toEqual(message);

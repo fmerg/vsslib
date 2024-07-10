@@ -5,7 +5,7 @@ import { SecretPacket, parseFeldmanPacket, parsePedersenPacket } from 'vsslib/de
 import { extractPublic } from 'vsslib/secrets';
 import { InvalidDecryptor, InvalidPartialDecryptor } from 'vsslib/errors';
 import { Algorithm } from 'vsslib/types';
-import { PrivateKey, PublicKey } from './core';
+import { PrivateKey, PublicKey } from 'vsslib/keys/core';
 
 
 export type PartialDecryptor = { value: Uint8Array, index: number, proof: NizkProof };
@@ -37,7 +37,7 @@ export class PartialKey<P extends Point> extends PrivateKey<P> {
     this.index = index;
   }
 
-  getPublicShare = async (): Promise<PartialPublic<P>> => new PartialPublic(
+  getPublicShare = async (): Promise<PartialPublicKey<P>> => new PartialPublicKey(
     this.ctx, await extractPublic(this.ctx, this.secret), this.index
   );
 
@@ -57,7 +57,7 @@ export class PartialKey<P extends Point> extends PrivateKey<P> {
 }
 
 
-export class PartialPublic<P extends Point> extends PublicKey<P> {
+export class PartialPublicKey<P extends Point> extends PublicKey<P> {
   index: number;
 
   constructor(ctx: Group<P>, publicBytes: Uint8Array, index: number) {

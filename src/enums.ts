@@ -27,6 +27,7 @@ export enum Algorithms {
   SHA3_512  = 'sha3-512',
 }
 
+// TODO: Remove cryptographically insecure block-mode
 export enum BlockModes {
   DEFAULT     = 'aes-256-cbc',
   AES_256_CBC = 'aes-256-cbc',
@@ -47,9 +48,3 @@ export enum SignatureSchemes {
   DEFAULT   = 'schnorr',
   SCHNORR   = 'schnorr',
 }
-
-export enum Encodings {
-  HEX       = 'hex',
-  BASE64    = 'base64',
-}
-

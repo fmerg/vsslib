@@ -7,8 +7,8 @@ import {
   distributeSecret,
   extractPublicShare,
   parsePedersenPacket,
-  createPublicPacket,
-  parsePublicPacket,
+  createScnorrPacket,
+  parseScnorrPacket,
   combinePublicShares,
   addSecrets,
   combinePublics,
@@ -82,8 +82,8 @@ describe('Distributed Key Generation (DKG)', () => {
       // Public share advertisement
       for (const recipient of parties) {
         const nonce = await randomNonce();
-        const packet = await createPublicPacket(ctx, party.localSecretShare!, { nonce });
-        const publicShare = await parsePublicPacket(ctx, packet, { nonce });
+        const packet = await createScnorrPacket(ctx, party.localSecretShare!, { nonce });
+        const publicShare = await parseScnorrPacket(ctx, packet, { nonce });
         recipient.publicShares.push(publicShare);
       }
     }

@@ -1,13 +1,12 @@
 import { Systems } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
-import { lagrange } from 'vsslib';
-import { FieldPolynomial, randomPolynomial } from 'vsslib/polynomials';
 import { BasePolynomial } from 'vsslib/polynomials/base';
 import { cartesian, trimZeroes } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
+
 const { systems } = resolveTestConfig();
 
 const __coeffs_and_degree = [

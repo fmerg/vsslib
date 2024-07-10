@@ -2,7 +2,7 @@
 import { Point, Group } from 'vsslib/backend';
 import { Algorithms } from 'vsslib/enums';
 import { Algorithm } from 'vsslib/types';
-import { BaseSigner } from './base';
+import { BaseSigner } from 'vsslib/signer/base';
 
 import nizk from 'vsslib/nizk';
 
@@ -17,9 +17,9 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
   signBytes = async (secret: Uint8Array, message: Uint8Array, nonce?: Uint8Array): Promise<
     SchnorrSignature
   > => {
-    const { generator: g, exp } = this.ctx;
+    const g = this.ctx.generator;
     const x = await this.ctx.leBuff2Scalar(secret);
-    const y = await exp(g, x);
+    const y = await this.ctx.exp(g, x);
     const { commitment, response } = await nizk(this.ctx, this.algorithm).proveLinear(
       [x],
       {
@@ -35,7 +35,7 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
   verifyBytes = async (
     publicBytes: Uint8Array, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array
   ): Promise<boolean> => {
-    const { generator: g } = this.ctx;
+    const g = this.ctx.generator;
     const { c, r } = signature;
     const y = await this.ctx.unpackValid(publicBytes);
     return nizk(this.ctx, this.algorithm).verifyLinear(

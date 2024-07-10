@@ -1,7 +1,7 @@
 import { Command } from 'commander';
 import { parseDecimal, parseCommaSeparatedDecimals } from './utils.js';
 import {
-  enums,
+  Systems,
   initBackend,
   isEqualSecret,
   isKeypair,
@@ -10,7 +10,7 @@ import {
   combinePublicShares,
 } from 'vsslib';
 
-const DEFAULT_SYSTEM = enums.Systems.ED25519;
+const DEFAULT_SYSTEM = Systems.ED25519;
 const DEFAULT_NR_SHARES = 5;
 const DEFAULT_THRESHOLD = 3;
 

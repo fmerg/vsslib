@@ -1,7 +1,7 @@
-import { Point, Group } from './backend';
-import { mod, modInv } from './arith';
-import { FieldPolynomial } from './polynomials';
-import { InverseNotExists, InterpolationError } from './errors';
+import { Point, Group } from 'vsslib/backend';
+import { mod, modInv } from 'vsslib/arith';
+import { FieldPolynomial } from 'vsslib/polynomials';
+import { InverseNotExists, InterpolationError } from 'vsslib/errors';
 
 
 const __0n = BigInt(0);
@@ -16,7 +16,7 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
 
   constructor(ctx: Group<P>, points: [bigint, bigint][]) {
     const k = points.length;
-    const { order } = ctx;
+    const order = ctx.order;
     if (k > order) throw new InterpolationError(
       'Number of provided points exceeds order'
     );
@@ -79,11 +79,18 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
 }
 
 
-export const interpolate = async <P extends Point>(
-  ctx: Group<P>,
-  points: XYPoint[]
-): Promise<LagrangePolynomial<P>> => {
-  return new LagrangePolynomial(
-    ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)])
-  );
+export class LagrangeInterpolator<P extends Point> {
+  ctx: Group<P>;
+
+  constructor(ctx: Group<P>) {
+    this.ctx = ctx;
+  }
+
+  interpolate = async (points: XYPoint[]) => new LagrangePolynomial(
+    this.ctx, points.map(([x, y]: XYPoint)=> [BigInt(x), BigInt(y)])
+  )
+}
+
+export default function<P extends Point>(ctx: Group<P>) {
+  return new LagrangeInterpolator(ctx);
 }

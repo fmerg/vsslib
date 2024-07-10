@@ -3,11 +3,11 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
 
-import { Point, Group } from './abstract';
 import { Elliptic } from 'vsslib/enums';
 import { System } from 'vsslib/types';
 import { BadPointError, BadScalarError } from 'vsslib/errors';
 import { mod, leBuff2Int } from 'vsslib/arith';
+import { Point, Group } from 'vsslib/backend/abstract';
 
 
 const __0n = BigInt(0);

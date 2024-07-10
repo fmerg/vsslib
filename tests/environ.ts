@@ -1,7 +1,6 @@
 import {
   BlockModes,
   Algorithms,
-  Encodings,
   Systems,
   ElgamalSchemes,
   SignatureSchemes,
@@ -9,7 +8,6 @@ import {
 import {
   BlockMode,
   Algorithm,
-  Encoding,
   System,
   ElgamalScheme,
   SignatureScheme,
@@ -28,7 +26,6 @@ export const resolveTestConfig = () => {
   const algorithms = process.env.ALGORITHM ? [process.env.ALGORITHM as Algorithm] : __algorithms;
   const elgamalSchemes = process.env.ELGAMAL_SCHEME ? [process.env.ELGAMAL_SCHEME as ElgamalScheme] : __elgamalSchemes;
   const signatureSchemes = process.env.SIGNATURE_SCHEME ? [process.env.SIGNATURE_SCHEME as SignatureScheme] : __signatureSchemes;
-  const encodings = [...Object.values(Encodings)]
   const systems = process.env.SYSTEM ? [process.env.SYSTEM as System] : [...Object.values(Systems)];
   const nrShares = process.env.NR_SHARES ? parseInt(process.env.NR_SHARES) : __nrShares;
   const threshold = process.env.THRESHOLD ? parseInt(process.env.THRESHOLD) : __threshold;
@@ -37,7 +34,6 @@ export const resolveTestConfig = () => {
     algorithms,
     elgamalSchemes,
     signatureSchemes,
-    encodings,
     systems,
     nrShares,
     threshold

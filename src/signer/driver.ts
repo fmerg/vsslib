@@ -1,9 +1,9 @@
 import { Point, Group } from 'vsslib/backend';
 import { SignatureScheme, Algorithm } from 'vsslib/types';
 import { SignatureSchemes } from 'vsslib/enums';
-import { SchnorrSignature } from './schnorr';
+import { SchnorrSignature } from 'vsslib/signer/schnorr';
 
-import schnorr from './schnorr';
+import schnorr from 'vsslib/signer/schnorr';
 
 
 export type Signature =

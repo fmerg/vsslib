@@ -11,10 +11,10 @@ describe('Combination of partial decryptors - unconditioned', () => {
     const { ctx, ciphertext, decryptor: target, partialDecryptors } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
-    partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-      const decryptor = await combinePartialDecryptors(ctx, qualifiedShares);
+    partialPermutations(partialDecryptors).forEach(async (shares) => {
+      const decryptor = await combinePartialDecryptors(ctx, shares);
       expect(isEqualBuffer(decryptor, target)).toBe(
-        qualifiedShares.length >= threshold
+        shares.length >= threshold
       );
     });
   });
@@ -22,13 +22,13 @@ describe('Combination of partial decryptors - unconditioned', () => {
     const { ctx, ciphertext, decryptor: target, partialDecryptors } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
-    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedShares) => {
-      await expect(combinePartialDecryptors(ctx, qualifiedShares, threshold)).rejects.toThrow(
+    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (shares) => {
+      await expect(combinePartialDecryptors(ctx, shares, threshold)).rejects.toThrow(
         'Insufficient number of shares'
       );
     });
-    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const decryptor = await combinePartialDecryptors(ctx, qualifiedShares, threshold);
+    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (shares) => {
+      const decryptor = await combinePartialDecryptors(ctx, shares, threshold);
       expect(isEqualBuffer(decryptor, target)).toBe(true);
     });
   });

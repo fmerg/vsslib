@@ -4,13 +4,13 @@ import {
   initBackend,
   extractPublic,
   isEqualPublic,
-  parsePublicPacket,
+  parseScnorrPacket,
   combinePublicShares,
   distributeSecret,
   extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
-  createPublicPacket,
+  createScnorrPacket,
   addSecrets,
   combinePublics,
 } from 'vsslib';
@@ -88,8 +88,8 @@ async function demo() {
     // Public share advertisement
     for (const recipient of parties) {
       const nonce = await randomNonce();
-      const packet = await createPublicPacket(ctx, party.localSecretShare, { nonce });
-      const publicShare = await parsePublicPacket(ctx, packet, { nonce });
+      const packet = await createScnorrPacket(ctx, party.localSecretShare, { nonce });
+      const publicShare = await parseScnorrPacket(ctx, packet, { nonce });
       recipient.publicShares.push(publicShare);
     }
   }
