@@ -4,11 +4,12 @@ import {
   generateSecret,
   distributeSecret,
   generateKey,
-  createScnorrPacket,
+  createSchnorrPacket,
 } from 'vsslib';
 import { IndexedNonce }  from 'vsslib/combiner';
 import { randomNonce } from 'vsslib/crypto';
-import { SecretShare, PublicShare, ScnorrPacket } from 'vsslib/dealer';
+import { SecretShare, PublicShare } from 'vsslib/dealer';
+import { SchnorrPacket } from 'vsslib/shareholder';
 import { PartialKey, PartialPublicKey, PartialDecryptor } from 'vsslib/keys';
 import { ElgamalSchemes } from 'vsslib/enums';
 import { ElgamalScheme, System, Algorithm } from 'vsslib/types';
@@ -78,7 +79,7 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
   const nonces: IndexedNonce[] = [];
   for (const share of shares) {
     const nonce = withNonce ? await randomNonce() : undefined;
-    const packet = await createScnorrPacket(ctx, share, { algorithm, nonce });
+    const packet = await createSchnorrPacket(ctx, share, { algorithm, nonce });
     packets.push(packet);
     if (nonce) {
       nonces.push({ nonce, index: share.index });
@@ -95,7 +96,7 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
     if (withNonce) {
       nonces.filter((n: IndexedNonce) => n.index == index)[0].nonce = await randomNonce();
     } else {
-      packets.filter((p: ScnorrPacket) => p.index == index)[0].value = await ctx.randomPublic();
+      packets.filter((p: SchnorrPacket) => p.index == index)[0].value = await ctx.randomPublic();
     } 
   }
   return { packets, blame, nonces };

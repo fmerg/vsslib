@@ -1,7 +1,7 @@
 import { initBackend } from 'vsslib/backend';
 import { Point } from 'vsslib/backend';
-import { SecretShare, ShamirSharing } from 'vsslib/dealer';
-import { distributeSecret, verifyPedersenCommitments } from 'vsslib/dealer';
+import { distributeSecret, SecretShare, ShamirSharing } from 'vsslib/dealer';
+import { verifyPedersenCommitments } from 'vsslib/shareholder';
 import { resolveTestConfig } from '../environ';
 import { leInt2Buff } from 'vsslib/arith';
 

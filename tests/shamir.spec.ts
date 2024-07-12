@@ -2,8 +2,8 @@ import { initBackend } from 'vsslib/backend';
 import { leInt2Buff } from 'vsslib/arith';
 import { generateSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib';
 import { distributeSecret } from 'vsslib/dealer';
-import { resolveTestConfig } from '../environ';
-import { cartesian } from '../utils';
+import { resolveTestConfig } from './environ';
+import { cartesian } from './utils';
 
 let { systems } = resolveTestConfig();
 

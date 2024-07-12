@@ -1,7 +1,8 @@
 import { Point, Group } from 'vsslib/backend';
 import { Ciphertext } from 'vsslib/elgamal';
 import { NizkProof } from 'vsslib/nizk';
-import { SecretPacket, parseFeldmanPacket, parsePedersenPacket } from 'vsslib/dealer';
+import { SecretPacket } from 'vsslib/dealer';
+import { parseFeldmanPacket, parsePedersenPacket } from 'vsslib/shareholder';
 import { extractPublic } from 'vsslib/secrets';
 import { InvalidDecryptor, InvalidPartialDecryptor } from 'vsslib/errors';
 import { Algorithm } from 'vsslib/types';

@@ -424,9 +424,9 @@ in a zero-knowledge (ZK) fashion.
 Create a verifiable packet for a secret share as follows.
 
 ```js
-import { createScnorrPacket } from "vsslib";
+import { createSchnorrPacket } from "vsslib";
 
-const packet = await createScnorrPacket(ctx, share, { algorithm: "sha256" });
+const packet = await createSchnorrPacket(ctx, share, { algorithm: "sha256" });
 ```
 
 This consists of the public share and a NIZK (Schnorr) proof-of-knowledge of

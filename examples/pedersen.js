@@ -6,7 +6,7 @@ import {
   isKeypair,
   distributeSecret,
   parsePedersenPacket,
-  createScnorrPacket,
+  createSchnorrPacket,
   recoverPublic
 } from 'vsslib';
 
@@ -43,7 +43,7 @@ async function demo() {
   // Every shareholder creates a Shnorr proof for their respective secret share
   const publicPackets = [];
   for (const share of secretShares) {
-    const packet = await createScnorrPacket(ctx, share);
+    const packet = await createSchnorrPacket(ctx, share);
     publicPackets.push(packet);
   }
 

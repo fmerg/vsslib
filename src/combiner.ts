@@ -1,6 +1,8 @@
 import { leInt2Buff, mod, modInv } from 'vsslib/arith';
 import { Point, Group } from 'vsslib/backend';
-import { SecretShare, PublicShare, ScnorrPacket, parseScnorrPacket } from 'vsslib/dealer';
+import { SecretShare } from 'vsslib/dealer';
+import { PublicShare } from 'vsslib/dealer';
+import { SchnorrPacket } from 'vsslib/shareholder';
 import { Ciphertext } from 'vsslib/elgamal';
 import { InvalidPublicShare, InvalidPartialDecryptor } from 'vsslib/errors';
 import { PrivateKey, PublicKey, PartialKey, PartialPublicKey, PartialDecryptor } from 'vsslib/keys';
@@ -8,6 +10,7 @@ import { BlockModes, Algorithms } from 'vsslib/enums';
 import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
 
 import elgamal from 'vsslib/elgamal';
+import nizk from 'vsslib/nizk';
 
 
 const __0n = BigInt(0);
@@ -96,9 +99,35 @@ export async function combinePartialDecryptors<P extends Point>(
 }
 
 
+export async function parseSchnorrPacket<P extends Point>(
+  ctx: Group<P>,
+  packet: SchnorrPacket,
+  opts?: {
+    algorithm?: Algorithm,
+    nonce?: Uint8Array,
+  },
+): Promise<PublicShare> {
+  const { value, index, proof } = packet;
+  const y = await ctx.unpackValid(value);
+  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+  const nonce = opts ? opts.nonce : undefined;
+  const isValid = await nizk(ctx, algorithm).verifyDlog(
+    {
+      u: ctx.generator,
+      v: y,
+    },
+    proof,
+    nonce,
+  );
+  if (!isValid)
+    throw new InvalidPublicShare(`Invalid packet with index ${index}`);
+  return { value, index };
+}
+
+
 export async function recoverPublic<P extends Point>(
   ctx: Group<P>,
-  packets: ScnorrPacket[],
+  packets: SchnorrPacket[],
   opts?: {
     algorithm?: Algorithm,
     nonces?: IndexedNonce[],
@@ -128,7 +157,7 @@ export async function recoverPublic<P extends Point>(
     try {
       // TODO: Improve this interface so as to remove lambda computation
       // outside the present block
-      const { value, index } = await parseScnorrPacket(ctx, packet, { algorithm, nonce });
+      const { value, index } = await parseSchnorrPacket(ctx, packet, { algorithm, nonce });
       const li = computeLambda(ctx, index, indexes);
       const yi = await ctx.unpackValid(value);
       y = await ctx.operate(y, await exp(yi, li));
@@ -150,7 +179,7 @@ export async function recoverPublic<P extends Point>(
 
 export async function recoverPublicKey<P extends Point>(
   ctx: Group<P>,
-  packets: ScnorrPacket[],
+  packets: SchnorrPacket[],
   opts?: {
     algorithm?: Algorithm,
     nonces?: IndexedNonce[],

@@ -18,26 +18,25 @@ export {
   combinePublics,
 } from 'vsslib/secrets';
 
-export {
-  generateKey,
-  extractPartialKey,
-} from 'vsslib/keys';
+export { generateKey, extractPartialKey } from 'vsslib/keys';
+
+export { distributeSecret } from 'vsslib/dealer';
 
 export {
-  distributeSecret,
   extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
-  createScnorrPacket,
-  parseScnorrPacket,
-} from 'vsslib/dealer';
+  createSchnorrPacket,
+} from 'vsslib/shareholder';
 
 export {
+  computeLambda,
   combineSecretShares,
   combinePublicShares,
+  combinePartialDecryptors,
+  parseSchnorrPacket,
   recoverPublic,
   recoverPublicKey,
-  combinePartialDecryptors,
   recoverDecryptor,
   thresholdDecrypt
 } from 'vsslib/combiner';
