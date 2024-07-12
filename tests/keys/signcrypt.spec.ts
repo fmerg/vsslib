@@ -104,7 +104,7 @@ describe('Signcryption', () => {
           algorithm,
         }
       )
-    ).rejects.toThrow('Invalid signature')
+    ).rejects.toThrow('Invalid outer signature')
   });
   it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
     'failure - inner signature substitution - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
@@ -149,7 +149,7 @@ describe('Signcryption', () => {
           algorithm,
         }
       )
-    ).rejects.toThrow('Invalid signature')
+    ).rejects.toThrow('Invalid outer signature')
   });
   it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
     'failure - missing nonce - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
@@ -175,7 +175,7 @@ describe('Signcryption', () => {
           algorithm,
         }
       )
-    ).rejects.toThrow('Invalid signature');
+    ).rejects.toThrow('Invalid outer signature');
   });
   it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
     'failure - forged nonce - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
@@ -202,7 +202,7 @@ describe('Signcryption', () => {
           nonce: await randomNonce()
         }
       )
-    ).rejects.toThrow('Invalid signature');
+    ).rejects.toThrow('Invalid outer signature');
   });
   it.each(cartesian([systems, encSchemes, sigSchemes, algorithms]))(
     'failure - wrong algorithm - over %s/%s/%s/%s', async (system, encScheme, sigScheme, algorithm) => {
@@ -231,6 +231,6 @@ describe('Signcryption', () => {
           nonce,
         }
       )
-    ).rejects.toThrow('Invalid signature');
+    ).rejects.toThrow('Invalid outer signature');
   });
 });

@@ -105,7 +105,7 @@ export class PrivateKey<P extends Point> {
       nonce,
     );
     if (!isValid) throw new InvalidEncryption(
-      `Invalid encryption`  // TODO
+      `Invalid encryption`  // TODO: More informative message?
     );
     return isValid;
   }
@@ -236,7 +236,7 @@ export class PrivateKey<P extends Point> {
       nonce
     );
     if (!isOuterValid) throw new InvalidSignature(
-      `Invalid signature` // TODO
+      `Invalid outer signature`
     );
     const plaintext = await _cipher.decrypt(ciphertext, this.secret);
     const { message, innerSignature } = fromCanonical(plaintext);
@@ -244,7 +244,7 @@ export class PrivateKey<P extends Point> {
       senderPublic.asBytes(), message, innerSignature, nonce
     );
     if (!isInnerValid) throw new InvalidSignature(
-      `Invalid signature` // TODO
+      `Invalid inner signature`
     );
     return { message, innerSignature };
   }
@@ -286,7 +286,7 @@ export class PublicKey<P extends Point> {
       nonce,
     );
     if (!isValid) throw new InvalidSecret(
-      `Invalid secret` // TODO
+      `Invalid Schnorr proof`
     );
     return isValid;
   }
@@ -306,7 +306,7 @@ export class PublicKey<P extends Point> {
       this.publicBytes, message, signature, nonce
     );
     if (!isValid) throw new InvalidSignature(
-      `Invalid signature` // TODO
+      `Invalid signature` // TODO: More informative message
     );
     return isValid;
   }
@@ -398,7 +398,7 @@ export class PublicKey<P extends Point> {
       nonce,
     );
     if (!isValid) throw new InvalidDecryptor(
-      `Invalid decryptor`   // TODO
+      `Invalid decryptor` // TODO: More informative message?
     );
     return isValid;
   }

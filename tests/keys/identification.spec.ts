@@ -30,7 +30,7 @@ describe('Schnorr identification', () => {
     const proof = await privateKey.proveSecret();
     proof.commitment[0] = await ctx.randomPublic();
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
-      'Invalid secret'
+      'Invalid Schnorr proof'
     );
   });
   it.each(systems)('failure - forged nonce - over %s', async (system) => {
@@ -41,7 +41,7 @@ describe('Schnorr identification', () => {
     await expect(
       publicKey.verifySecret(proof, { nonce: await randomNonce() })
     ).rejects.toThrow(
-      'Invalid secret'
+      'Invalid Schnorr proof'
     );
   });
   it.each(systems)('failure - missing nonce - over %s', async (system) => {
@@ -50,7 +50,7 @@ describe('Schnorr identification', () => {
     const nonce = await randomNonce();
     const proof = await privateKey.proveSecret({ nonce });
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
-      'Invalid secret'
+      'Invalid Schnorr proof'
     );
   });
   it.each(cartesian([systems, algorithms]))(
@@ -65,7 +65,7 @@ describe('Schnorr identification', () => {
           Algorithms.SHA256
       })
     ).rejects.toThrow(
-      'Invalid secret'
+      'Invalid Schnorr proof'
     );
   });
 });

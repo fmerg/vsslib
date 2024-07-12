@@ -4,7 +4,7 @@ import { SecretShare } from 'vsslib/dealer';
 import { PublicShare } from 'vsslib/dealer';
 import { SchnorrPacket } from 'vsslib/shareholder';
 import { Ciphertext } from 'vsslib/elgamal';
-import { InvalidPublicShare, InvalidPartialDecryptor } from 'vsslib/errors';
+import { InvalidPublicShare, InvalidPartialDecryptor, InvalidInput } from 'vsslib/errors';
 import { PrivateKey, PublicKey, PartialKey, PartialPublicKey, PartialDecryptor } from 'vsslib/keys';
 import { BlockModes, Algorithms } from 'vsslib/enums';
 import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
@@ -44,7 +44,7 @@ export async function combineSecretShares<P extends Point>(
   threshold?: number
 ): Promise<Uint8Array> {
   if (threshold && shares.length < threshold)
-    throw new Error('Insufficient number of shares');
+    throw new InvalidInput('Insufficient number of shares');
   const order = ctx.order;
   const indexes = shares.map(share => share.index);
   let x = __0n;
@@ -63,7 +63,7 @@ export async function combinePublicShares<P extends Point>(
   threshold?: number
 ): Promise<Uint8Array> {
   if (threshold && shares.length < threshold)
-    throw new Error('Insufficient number of shares');
+    throw new InvalidInput('Insufficient number of shares');
   const order = ctx.order
   const exp = ctx.exp;
   const indexes = shares.map(share => share.index);
@@ -82,7 +82,7 @@ export async function combinePartialDecryptors<P extends Point>(
   shares: PartialDecryptor[],
   threshold?: number,
 ): Promise<Uint8Array> {
-  if (threshold && shares.length < threshold) throw new Error(
+  if (threshold && shares.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
   const order = ctx.order;
@@ -139,7 +139,7 @@ export async function recoverPublic<P extends Point>(
   const threshold = opts ? opts.threshold : undefined;
   const nonces = opts ? opts.nonces : undefined;
   const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
-  if (threshold && packets.length < threshold) throw new Error(
+  if (threshold && packets.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
   const exp = ctx.exp;
@@ -151,7 +151,7 @@ export async function recoverPublic<P extends Point>(
     if (nonces) {
       const indexedNonce = nonces.filter((n: IndexedNonce) => n.index == packet.index)[0];  // TODO: pop
       if (!indexedNonce)
-        throw new Error(`No nonce for index ${packet.index}`);
+        throw new InvalidInput(`No nonce for index ${packet.index}`);
       nonce = indexedNonce.nonce;
     }
     try {
@@ -209,7 +209,7 @@ export async function recoverDecryptor<P extends Point>(
   const threshold = opts ? opts.threshold : undefined;
   const nonces = opts ? opts.nonces : undefined;
   const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
-  if (threshold && sares.length < threshold) throw new Error(
+  if (threshold && sares.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
   const exp = ctx.exp;
@@ -220,12 +220,12 @@ export async function recoverDecryptor<P extends Point>(
     const { value, index } = share;
     const partialPublic = partialPublicKeys.filter(s => s.index == index)[0];  // TODO: pop
     if (!partialPublic)
-      throw new Error(`No public share with index ${index}`);
+      throw new InvalidInput(`No public share with index ${index}`);
     let nonce = undefined;
     if (nonces) {
       const indexedNonce = nonces.filter((n: IndexedNonce) => n.index == index)[0];  // TODO: pop
       if (!indexedNonce)
-        throw new Error(`No nonce for index ${index}`);
+        throw new InvalidInput(`No nonce for index ${index}`);
       nonce = indexedNonce.nonce;
     }
     try {
@@ -239,9 +239,10 @@ export async function recoverDecryptor<P extends Point>(
       );
     } catch (err: any) {
       if (err instanceof InvalidPartialDecryptor) {
-        if (errorOnInvalid) throw new Error(
-          `Invalid partial decryptor with index ${index}`
-        );
+        if (errorOnInvalid) {
+          err.message += ` with index ${index}`
+          throw err;
+        }
         blame.push(partialPublic);
       } else {
         throw err;

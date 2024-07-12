@@ -1,5 +1,6 @@
 import { Group, Point } from 'vsslib/backend';
 import { Algorithm } from 'vsslib/types';
+import { InvalidInput } from 'vsslib/errors';
 import { mod, leInt2Buff, leBuff2Int } from 'vsslib/arith';
 import { hash } from 'vsslib/crypto';
 
@@ -72,7 +73,7 @@ export class NizkProtocol<P extends Point>{
     const commitment = new Array<P>(m);
     for (let i = 0; i < m; i++) {
       if (us[i].length !== n)
-        throw new Error('Incompatible lengths');
+        throw new InvalidInput('Incompatible lengths');
       let ci = this.ctx.neutral;
       for (let j = 0; j < n; j++) {
         ci = await this.ctx.operate(
@@ -99,12 +100,12 @@ export class NizkProtocol<P extends Point>{
     const { us, vs } = relation;
     const { commitment, response } = await this._toInner(proof);
     if (vs.length !== commitment.length)
-      throw new Error('Incompatible lengths');
+      throw new InvalidInput('Incompatible lengths');
     const challenge = await this._computeChallenge(relation, commitment, extras, nonce);
     let flag = true;
     for (const [i, v] of vs.entries()) {
       if (us[i].length !== response.length)
-        throw new Error('Incompatible lengths');
+        throw new InvalidInput('Incompatible lengths');
       const rhs = await this.ctx.operate(
         commitment[i],
         await exp(v, challenge)

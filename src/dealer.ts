@@ -1,6 +1,6 @@
 import { Point, Group } from 'vsslib/backend';
 import { FieldPolynomial, randomPolynomial } from 'vsslib/polynomials';
-import { InterpolationError, ShamirError } from 'vsslib/errors';
+import { InterpolationError, ShamirError, InvalidInput } from 'vsslib/errors';
 import { leInt2Buff } from 'vsslib/arith';
 import { validateSecret } from 'vsslib/secrets';
 
@@ -156,8 +156,11 @@ export async function distributeSecret<P extends Point>(
   secret = secret || await ctx.randomSecret()
   try {
     await validateSecret(ctx, secret);
-  } catch (err) {
-    throw new Error('Invalid secret provided');
+  } catch (err: any) {
+    if (err instanceof InvalidInput)
+      throw new ShamirError(err.message);
+    else
+      throw err;
   }
   const xyPoints = new Array(threshold);
   xyPoints[0] = [__0n, ctx.leBuff2Scalar(secret)];

@@ -64,14 +64,16 @@ abstract class BaseCipher<P extends Point, A> {
       beta = await this.ctx.unpackValid(ciphertext.beta);
     } catch (err: any) {
       throw new ElgamalError(
-        'Could not decrypt: ' + err.message // TODO
+        'Could not decrypt: ' + err.message
       );
     }
     const decryptor = await this.ctx.exp(beta, secret);
     try {
       return await this.decapsulate(ciphertext.alpha, decryptor);
     } catch (err: any) {
-      throw new Error('Could not decrypt: ' + err.message);
+      throw new ElgamalError(
+        'Could not decrypt: ' + err.message
+      );
     }
   }
 
@@ -137,14 +139,9 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
   }
 
   decapsulate = async (alpha: Uint8Array, decryptor: P): Promise<Uint8Array> => {
-    let alphaUnpacked;
-    try {
-      alphaUnpacked = await this.ctx.unpackValid(alpha);
-    } catch (err: any) {
-      throw new ElgamalError(err.message);
-    }
-    const decryptorInverse = await this.ctx.invert(decryptor);
-    const plaintext = await this.ctx.operate(alphaUnpacked, decryptorInverse);
+    const a = await this.ctx.unpackValid(alpha);
+    const dInv = await this.ctx.invert(decryptor);
+    const plaintext = await this.ctx.operate(a, dInv);
     return plaintext.toBytes();
   }
 }
@@ -169,7 +166,7 @@ export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
       aesCiphertext = aes(this.mode).encrypt(key, message);
     } catch (err: any) {
       if (err instanceof AesError) throw new ElgamalError(
-        'Could not encrypt' // TODO
+        'Could not encrypt: ' + err.message
       );
       else throw err;
     }
@@ -180,14 +177,7 @@ export class HybridCipher<P extends Point> extends BaseCipher<P, HybridAlpha> {
   decapsulate = async (alpha: HybridAlpha, decryptor: P): Promise<Uint8Array> => {
     const { ciphered, iv, tag } = alpha;
     const key = await hash(Algorithms.SHA256).digest(decryptor.toBytes());
-    try {
-      return aes(this.mode).decrypt(key, ciphered, iv, tag);
-    } catch (err: any) {
-      if (err instanceof AesError) throw new ElgamalError(
-        err.message // TODO
-      );
-      else throw err;
-    }
+    return aes(this.mode).decrypt(key, ciphered, iv, tag);
   }
 }
 
@@ -216,7 +206,7 @@ export class DhiesCipher<P extends Point> extends BaseCipher<P, DhiesAlpha> {
       aesCiphertext = aes(this.mode).encrypt(keyAes, message);
     } catch (err: any) {
       if (err instanceof AesError) throw new ElgamalError(
-        'Could not encrypt' // TODO
+        'Could not encrypt' + err.message
       );
       else throw err;
     }
@@ -239,14 +229,7 @@ export class DhiesCipher<P extends Point> extends BaseCipher<P, DhiesAlpha> {
     if (!isMacValid) throw new ElgamalError(
       'Invalid MAC'
     );
-    try {
-      return aes(this.mode).decrypt(keyAes, ciphered, iv, tag);
-    } catch (err: any) {
-      if (err instanceof AesError) throw new ElgamalError(
-        err.message // TODO
-      );
-      else throw err;
-    }
+    return aes(this.mode).decrypt(keyAes, ciphered, iv, tag);
   }
 }
 

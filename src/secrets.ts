@@ -1,5 +1,6 @@
 import { Group, Point } from 'vsslib/backend';
 import { mod, leInt2Buff } from 'vsslib/arith';
+import { BadScalarError, InvalidInput } from 'vsslib/errors';
 
 export const generateSecret = async <P extends Point>(ctx: Group<P>): Promise<{
   secret: Uint8Array, publicBytes: Uint8Array
@@ -12,11 +13,18 @@ export const generateSecret = async <P extends Point>(ctx: Group<P>): Promise<{
   return { secret, publicBytes };
 }
 
-export const validateSecret = <P extends Point>(
+export const validateSecret = async <P extends Point>(
   ctx: Group<P>,
   secret: Uint8Array
 ): Promise<boolean> => {
-  return ctx.validateScalar(ctx.leBuff2Scalar(secret));
+  try {
+    await ctx.validateScalar(ctx.leBuff2Scalar(secret));
+  } catch (err: any) {
+    if (err instanceof BadScalarError) throw new InvalidInput(
+      'Invalid secret provided: ' + err.message
+    )
+  }
+  return true;
 }
 
 export const extractPublic = async <P extends Point>(

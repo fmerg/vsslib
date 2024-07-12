@@ -18,6 +18,8 @@ export class AesError extends Error {}
 
 export class ElgamalError extends Error {}
 
+export class InvalidInput extends Error {}
+
 export class InvalidSecret extends Error {}
 
 export class InvalidSignature extends Error {}

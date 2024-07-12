@@ -1,6 +1,6 @@
 import { Point, Group } from 'vsslib/backend';
 import { mod, modInv } from 'vsslib/arith';
-import { InvalidSecretShare, InvalidPublicShare } from 'vsslib/errors';
+import { InvalidSecretShare, InvalidPublicShare, InvalidInput } from 'vsslib/errors';
 import { leInt2Buff } from 'vsslib/arith';
 import { SecretShare, PublicShare, SecretPacket } from 'vsslib/dealer';
 import { extractPublic } from 'vsslib/secrets';
@@ -89,7 +89,7 @@ export async function parsePedersenPacket<P extends Point>(
 ): Promise<{ share: SecretShare, binding: Uint8Array }> {
   const { value, index, binding } = packet;
   if (!binding)
-    throw new Error(
+    throw new InvalidInput(
       `No binding found for index ${index}`
     );
   const share = { value, index }
