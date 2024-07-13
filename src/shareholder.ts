@@ -73,11 +73,11 @@ export async function parseFeldmanPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
   packet: SecretPacket,
-): Promise<SecretShare> {
+): Promise<{ share: SecretShare }> {
   const { value, index } = packet;
   const share = { value, index };
   await verifyFeldmanCommitments(ctx, share, commitments);
-  return share;
+  return { share };
 }
 
 

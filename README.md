@@ -1,98 +1,65 @@
 # vsslib
 
-Primitives for Verifiable Secret Sharing (VSS) and Threshold Cryptography
+Interfaces for Verifiable Secret Sharing (VSS) and Threshold Cryptography
 in TS/JS
 
 :warning: **This library requires security audit. Use at you own risk for
 the moment.**
 
+Vsslib provides modular building blocks for implementing threshold-cryptographic protocols
+based on Verifiable Secret Sharing (VSS), e.g., Distributed Key Generation (DKG) schemes.
+
 ## Quick example
 
-**Crypto setup**
+**Local setup**
+
+Involved parties agree on a common cryptosystem.
+
 ```js
 import { initBackend } from "vsslib";
 
+// Initiate cryptosystem instance over the ED25519 elliptic curve
 const ctx = initBackend("ed25519");
 ```
 
 **Dealer's side**
 ```js
-import { distributeSecret, extractPublic, createFeldmanPackets } from "vsslib";
+import { distributeSecret, createFeldmanPackets } from "vsslib";
 
-// Generate Shamir (5, 3)-sharing for some random secret
-const { secret, sharing } = await distributeSecret(ctx, 5, 3);
-
-// Extract public counterpart if needed
-const publicBytes = await extractPublic(ctx, secret);
+// Generate a Shamir (5, 3)-sharing for some uniformly random secret
+const { sharing } = await distributeSecret(ctx, 5, 3);
 
 // Generate verifiable packets for the totality of secret shares
 const { packets, commitments } = await sharing.createFeldmanPackets();
-
-// Send packets to respective shareholders and broadcast commitments
 ```
 
-**Shareholder's side**
+Broadcast the commitments and send the packets to the respective shareholders
+in private.
+
+**Shareholders' side**
+
 ```js
-import { parseFeldmanPacket, extractPublicShare } from "vsslib";
+import { parseFeldmanPacket, InvalidSecretShare } from "vsslib";
 
 // Extract and verify secret share from received packet
-const secretShare = await parseFeldmanPacket(ctx, commitments, packet);
-
-// Infer public counterpart if needed
-const publicShare = await extractPublicShare(ctx, secretShare);
-```
-
-**Combiner's side**
-
-```js
-import { combinePublicShares } from "vsslib";
-
-// Recover `publicBytes` from a qualified collection of public shares
-const combinedPublic = await combinePublicShares(ctx, publicShares.slice(0, 3));
-```
-
-## Table of contents
-
-* [Installation](#installation)
-* [Overview](#overview)
-  * [Backend](#backend-overview)
-  * [Interface](#interface-overview)
-  * [Security](#security-overview)
-* [Usage](#usage)
-  * [Preliminaries](#preliminaries)
-    * [Cryptosystem setup](#cryptosystem-setup)
-    * [Secret generation](#secret-generation)
-  * [Shamir's secret sharing (SSS)](#shamir-secret-sharing)
-    * [Distribution of secret](#distribution-of-secret)
-    * [Combination of secret shares](#combination-of-secret-shares)
-    * [Raw combination of public shares](#raw-combination-of-public-shares)
-  * [Verifiable secret sharing (VSS)](#verifiable-secret-sharing)
-    * [Feldman scheme](#feldman-scheme-1)
-    * [Pedersen scheme](#pedersen-scheme-1)
-  * [Verifiable public recovery](#verifiable-public-recovery)
-    * [Verifiable share packets](#verifiable-share-packets)
-    * [Recovery operation](#recovery-operation)
-    * [Recovery with accurate blaming](#recovery-with-accurate-blaming)
-  * [Key sharing](#key-sharing)
-    * [Feldman VSS scheme](#TODO)
-    * [Pedersen VSS scheme](#TODO)
-    * [Public key recovery](#public-key-recovery)
-  * [Threshold decryption](#threshold-decryption)
-    * [Accurate blaming](#accurate-blaming)
-* [Pluggable backend](#pluggable-backend)
-* [Security](#security)
-* [Development](#development)
-
-## Installation
-
-```
-npm install TODO
+try {
+  const { share } = await parseFeldmanPacket(ctx, commitments, packet);
+  // Store retrieved share locally
+  ...
+} catch (err) {
+  if (err instanceof InvalidSecretShare) {
+    // Follow rejection policy as specified by context
+    ...
+  } else {
+    ...
+  }
+}
 ```
 
 ## Overview
 
 Vsslib provides modular building blocks for implementing threshold-cryptographic protocols
-based on Shamir's Secret Sharing. It focuses on primitives that make the
+based on Shamir's Secret Sharing (SSS). It focuses on primitives that make the
 sharing process verifiable on behalf of involved parties
 ([Feldman](#feldman-scheme-1) and [Pedersen](#pedersen-scheme-1) VSS schemes)
 and as such applicable in contexts with zero or low trust assumptions
@@ -112,34 +79,32 @@ should do the job. Refer to section [Pluggable backend](#pluggable-backend) for 
 
 ### <a name="interface-overview"></a>Interface
 
-Vsslib exposes two separate APIs. The ["raw bytes"](#shamir-secret-sharing) interface is intended
+Vsslib exposes two separate APIs.
+
+The [bytes](#shamir-secret-sharing) interface is intended
 for applications where more freedom is required on how
-to directly access and use secrets
+to directly handle the secret bytes
 (e.g., distributed generation of ephemeral secrets, or under the constraints imposed
-by a pre-existing public-key interface).
-The ["keys"](#key-sharing) interface is a public-key API that provides asymmetric operations
-at the high-level and is compatible with
-ready-made solutions for verifiable key recovery and
-[threshold decryption](#threshold-decryption).
+by a pre-existing public-key API).
+
+The "key" interface builds on top of a public-key API
+([`vsslib/keys`](./src/keys)),
+which exposes assymetric operations at the high-level and is compatible with a
+ready-made solution for [threshold decryption](#threshold-decryption).
+
 Both operate with the same sharing abstraction layer.
 
 ### <a name="security-overview"></a>Security
 
 :warning: **This library requires security audit. Use at your own risk for the moment.**
 
-#### <a name="input-validation-overview"></a>Input validation
-
-#### <a name="constant-time-comparisons-validation-overview"></a>Constant-time comparisons
-
-#### <a name="replay-attacks-overview"></a>Defence against replay attacks
-
-#### <a name="knwon-weakeness-overview"></a>Known weaknesses
+See [Security](#security-main) for details.
 
 #### <a name="selection-of-parameters-overview"></a>Remark on the selection of parameters
 
 Vsslib is unopinionated on the selection of cryptographic parameters
-(underlying cryptosystem, hash function for ZK-proofs,
-encryption scheme, etc.), allowing complete freedom on how to
+(DL-cryptosystem, hash function for NIZK-proofs,
+Elgamal encryption scheme, AES block-mode for hybrid encryption etc.), allowing complete freedom on how to
 orthogonally combine them.
 
 For example, the provided threshold decryption mechanism is operable with
@@ -147,6 +112,38 @@ plain Elgamal encryption even if this combination is per se insecure
 against chosen-ciphertext attacks.
 It is the user's responsibility to decide if the desired level of security
 is attained in a particular context by other means.
+
+## Table of contents
+
+* [Installation](#installation)
+* [Usage](#usage)
+  * [Preliminaries](#preliminaries)
+    * [Cryptosystem setup](#cryptosystem-setup)
+    * [Secret generation](#secret-generation)
+  * [Shamir's secret sharing (SSS)](#shamir-secret-sharing)
+    * [Distributing the secret](#distributing the secret)
+    * [Basic interface](#basic-interface)
+    * [Combination of secret shares](#combination-of-secret-shares)
+    * [Combination of public shares](#combination-of-public-shares)
+  * [Verifiable secret sharing (VSS)](#verifiable-secret-sharing)
+    * [Feldman scheme](#feldman-scheme-1)
+    * [Pedersen scheme](#pedersen-scheme-1)
+  * [Verifiable public recovery](#verifiable-public-recovery)
+    * [Verifiable share packets](#verifiable-share-packets)
+    * [Recovery operation](#recovery-operation)
+    * [Recovery with accurate blaming](#recovery-with-accurate-blaming)
+  * [Threshold decryption](#threshold-decryption)
+    * [Accurate blaming](#accurate-blaming)
+  * [Implementing a Distributed Key Generation (DKG) scheme](#dkg-implementation)
+  * [Pluggable backend](#pluggable-backend)
+* [Security](#security)
+* [Development](#development)
+
+## Installation
+
+```
+npm install TODO
+```
 
 # Usage
 
@@ -169,7 +166,7 @@ const ctx = initBackend("ed25519");
 The currently provided backends are  `ed25519`, `ed448` and `jubjub`.
 
 > **Note**
-> You can use any custom or other implementation in place of `initBackend`,
+> You can use any custom or other implementation,
 provided that it conforms to or has been wrapped with the internally
 prescribed interface.
 Refer to Sec. [Pluggable backend](#pluggable-backend) for details.
@@ -203,7 +200,7 @@ with respect to `ctx`.
 
 ## <a name="shamir-secret-sharing"></a>Shamir's secret sharing (SSS)
 
-### Distribution of secret
+### Distributing the secret
 
 Generate a (n, t)-sharing of a given secret as follows.
 
@@ -225,33 +222,33 @@ along with the sharing.
 const { secret, sharing } = await distributeSecret(ctx, n, t);
 ```
 
-### Share extraction
+### Basic interface
 
-Access the original secret in raw-bytes mode as follows.
+Access of original secret in raw-bytes mode:
 
 ```js
 const secret = sharing.getOriginalSecret();
 ```
 
-Access the totality of secret shares in raw-bytes mode as follows.
+Access all secret shares in raw-bytes mode:
 
 ```js
 const secretShares = await sharing.getSecretShares();
 ```
 
-Access the totality of public shares in raw-bytes mode as follows.
+Access all public shares in raw-bytes mode:
 
 ```js
 const publicShares = await sharing.getPublicShares();
 ```
 
-Access the i-th share in raw-bytes mode as follows.
+Access the i-th share in raw-bytes mode:
 
 ```js
 const { secretShare, publicShare } = await sharing.getShare(i);
 ```
 
-Access the public counterpart of a secret share in raw-bytes mode as follows.
+Access the public counterpart of a secret share in raw-bytes mode:
 
 ```js
 import { extractPublicShare } from "vsslib";
@@ -286,7 +283,7 @@ const combinedSecret = await combineSecretShares(ctx, secretShares, t);
 > **Warning**
 > Throws error if less than `t` shares are provided.
 
-### Raw combination of public shares
+### Combination of public shares
 
 Combine any collection of public shares using interpolation in the exponent as
 follows.
@@ -316,55 +313,90 @@ const combinedPublic = await combinePublicShares(ctx, publicShares, t);
 
 ## <a name="verifiable-secret-sharing"></a>Verifiable secret sharing (VSS)
 
-In most distributed protocols, shareholders need to defend
+In practice, shareholders need to defend
 against malicious dealers and verify the consistency of their
-shares (i.e., ensure that these combine indeed to some reconstructible secret).
+shares, i.e., ensure that they have indeed occured from the same sharing.
 This is attained by means of additional information used to verify
 individual shares against some public quantity related to the sharing process.
-Verifiable secret sharing (VSS) schemes extend Shamir's sharing by including
-this information to the secret packets sent to the shareholders.
+Verifiable secret sharing (VSS) schemes extend Shamir's sharing by attaching
+this information to the distributed shares.
 
 Vsslib provides implementations of the
 [Feldman](#feldman-scheme-1) and [Pedersen](#pedersen-scheme-1) VSS schemes,
 which are the most widely used in practice. Verifiable packets
-are directly extracted from the sharing instance.
+are directly extracted from the secret sharing instance.
 
 > **Warning**
 > Correctly applying VSS when implementing DKG protocols is out of the library's scope.
 It is the user's responsibility to handle verification errors 
 in order to adhere to the prescribed complaint policy and ensure that only
-non-byzantine parties end up with a share.
+non-byzantine parties end up with a secret share.
 
 ### <a name="feldman-scheme-1"></a>Feldman scheme
 
-Generate Feldman commitments and verifiable packets for the totality of secret
+#### Generation of Feldman commitments and packets
+
+Given a sharing,
+generate Feldman commitments and verifiable packets for the totality of secret
 shares as follows.
 
 ```js
 const { packets, commitments } = await sharing.createFeldmanPackets();
 ```
 
+> **Note**
+> Commitments are intended for broadcast while packets
+> are sent to the respective shareholders by the dealer in private.
+
+#### Verification and extraction of secret share
+
 Extract and verify secret share from the received packet as follows.
 
 ```js
 import { parseFeldmanPacket } from "vsslib";
 
-const share = await parseFeldmanPacket(ctx, commitments, packet);
+const { share } = await parseFeldmanPacket(ctx, commitments, packet);
 ```
 
-> **Warning**
-> Throws error if the included share is found invalid
-against the provided commitments.
+This throws `vsslib.InvalidSecretShare` if the included share is found to
+be invalid against the provided commitments. You will usually have to handle
+this error in order to adhere to some specified rejection policy:
+
+```js
+import { InvalidSecretShare } from "vsslib";
+
+try {
+  const { share } = await parseFeldmanPacket(ctx, commitments, packet);
+  // Store locally the retrieved secret share
+  ...
+} catch (err) {
+  if (err instanceof InvalidSecretShare) {
+    // Follow rejection policy as specified by context
+    ...
+  } else {
+    ... 
+  }
+}
+```
 
 #### Standalone verification of secret share
 
-A share can be directly verified against the broadcast commitments as
-follows.
+If already available through different channels, a secret share can be directly
+verified against the commitments as follows.
 
 ```js
-import { verifyFeldmanCommitments } from "vsslib";
+import { verifyFeldmanCommitments, InvalidSecretShare } from "vsslib";
 
-await verifyFeldmanCommitments(ctx, share, commitments);
+try {
+  await verifyFeldmanCommitments(ctx, share, commitments);
+} catch (err) {
+  if (err instanceof InvalidSecretShare) {
+    // Handle verification failure
+    ...
+  } else {
+    ... 
+  }
+}
 ```
 
 ### <a name="pedersen-scheme-1"></a>Pedersen scheme
@@ -377,12 +409,20 @@ import { randomPublic } from 'vsslib';
 const publicBytes = await randomPublic(ctx);
 ```
 
-Generate Pedersen commitments and verifiable packets for the totality of secret
+#### Generation of Pedersen commitments and packets
+
+Given a sharing, generate Pedersen commitments and verifiable packets for the totality of secret
 shares as follows.
 
 ```js
 const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
 ```
+
+> **Note**
+> Commitments are intended for broadcast while packets
+> are sent to the respective shareholders by the dealer in private.
+
+#### Verification and extraction of secret share
 
 Extract and verify secret share from the received packet as follows.
 
@@ -392,36 +432,68 @@ import { parsePedersenPacket } from "vsslib";
 const { share, binding } = await parsePedersenPacket(ctx, commitments, publicBytes, packet);
 ```
 
-> **Warning**
-> Throws error if the included share is found invalid
-against the provided commitments and public reference.
+> **Note**
+> The included secret `binding` is implicitly used during verification and can be
+> discarded.
 
-The included secret `binding` is implicitly used during verification and can be
-discarded.
+This throws `vsslib.InvalidSecretShare` if the included share is found to
+be invalid against the provided commitments. You will usually have to handle
+this error in order to adhere to some specified rejection policy:
+
+```js
+import { InvalidSecretShare } from "vsslib";
+
+try {
+  const { share, binding } = await parsePedersenPacket(ctx, commitments, publicBytes, packet);
+  // Store locally the retrieved secret share
+  ...
+} catch (err) {
+  if (err instanceof InvalidSecretShare) {
+    // Follow rejection policy as specified by context
+    ...
+  } else {
+    ... 
+  }
+}
+```
 
 #### Standalone verification of secret share
 
-A share can be directly verified against the broadcast commitments
-and public referece using the included binding.
+If already available through different channels, a secret share can be directly
+verified along with its binding against the commitments as follows.
 
 ```js
-import { verifyPedersenCommitments } from "vsslib";
+import { verifyPedersenCommitments, InvalidSecretShare } from "vsslib";
 
-await verifyPedersenCommitments(ctx, share, binding, publicBytes, commitments);
+try {
+  await verifyPedersenCommitments(ctx, share, binding, publicBytes, commitments);
+} catch (err) {
+  if (err instanceof InvalidSecretShare) {
+    // Handle verification failure
+    ...
+  } else {
+    ... 
+  }
+}
 ```
 
 ## Verifiable public recovery
 
 When reconstructing the public counterpart of a distributed secret, the
 combiner usually needs to verify the aggregated public shares. Specifically, acclaimed
-shareholders are expected to prove knowledge of their respective secret shares
+shareholders may be expected to prove knowledge of their respective secret shares
 in a zero-knowledge (ZK) fashion.
 
+> **Warning**
+> This operation does not verify per se the consistency of the public shares.
+> Specifically, it does not ensure that they combine to the public counterpart
+> of a secret that has indeed been distributed.
+
 > **Note**
-> Refer to section [Raw combination](#raw-combination-of-public-shares) for an
+> Refer to Sec [Combination of public shares](#combination-of-public-shares) for an
 > operation that bypasses verification of public shares.
 
-### Verifiable share packets
+### Generation of packets
 
 Create a verifiable packet for a secret share as follows.
 
@@ -439,6 +511,20 @@ generation (defaults to SHA256).
 >  **Note**
 > Involved shareholders are expected to use the same hash function.
 
+#### Nonce inclusion
+
+The combiner may need to defend against replay attacks by
+maintaining some kind of state between itself and individual shareholders.
+
+It can do so by storing a cryptographically secure nonce per session and
+shareholder.
+Upon receiving its respective nonce through some secure channel, the
+shareholder includes it in packet generation as follows.
+
+```js
+const packet = await createSchnorrPacket(ctx, share, { ..., nonce });
+```
+
 ### Recovery operation
 
 After aggregating the packets, recover the combined public as follows.
@@ -451,12 +537,65 @@ const { recovered } = await recoverPublic(ctx, packets, { algorithm: "sha256", t
 
 This verifies the attached Schnorr proofs against the respective public
 shares and combines the latter applying interpolation in the exponent.
-It throws `InvalidPublicShare` if at least one of the included proofs fails to verify.
-The optional `threshold` parameter ensures that the operation completes only if
-at least `t` packets are provided.
 The optional `algorithm` parameter specifies
-the hash function used by the combiner for the verification of individual
+the hash function used for the verification of individual
 proofs (defaults to SHA256).
+The operation throws `InvalidPublicShare` upon the first proof that fails to verify.
+The optional `threshold` parameter ensures that the operation completes only if
+at least `t` packets are provided, otherwise it throws `InvalidInput` error.
+
+You will usually have to handle error in order to adhere to some specified rejection policy:
+
+```js
+import { InvalidPublicShare, InvalidInput } from "vsslib";
+
+try {
+  const { recovered } = await recoverPublic(ctx, packets, { algorithm: "sha256", threshold: t });
+  ...
+} catch (err) {
+  if (err instanceof InvalidPublicShare) {
+    // Abort and follow policy as specified by context
+    ...
+  } else if (err instanceof InvalidInput) {
+    // Abort and follow policy as specified by context; makes sense only
+    // if the `threshold` parameter has been provided.
+    ...
+  } else {
+    ...
+  }
+}
+```
+
+
+#### Nonce-based recovery
+
+If certain shareholders are expected to have included a nonce when generating
+their packets, these must be explicitly passed into the recovery operation so
+that the respective proofs verify.
+
+This can be done as follows, where the `index` field stands for the respective
+shareholder's index.
+
+```js
+try {
+  const { recovered } = await recoverPublic(ctx, packets, {
+    ...,
+    nonces: [
+      { nonce: ..., index: 1 },
+      { nonce: ..., index: 2 },
+      ...
+    ]
+  });
+  ...
+} catch (err) {
+  if (err instanceof InvalidPublicShare) {
+    // Abort and follow policy as specified by context
+    ...
+  } else {
+    ...
+  }
+}
+```
 
 ### Recovery with accurate blaming
 
@@ -465,59 +604,22 @@ cheating shareholders. This presupposes that the recovery operation completes
 irrespective of potential verification failures and malicious shareholders are listed
 in a blame index.
 
-```js
-const { recovered, blame } = await recoverPublic(ctx, packets, {
-  algorithm: "sha256", threshold: t, errorOnInvalid: false
-});
-```
-
-## Key sharing
+Disable early abort as follows:
 
 ```js
-const { privateKey } = await generateKey(ctx);
+const { recovered, blame } = await recoverPublic(ctx, packets, { ..., errorOnInvalid: false });
 
-const sharing = await privateKey.generateSharing(5, 3);
+if (blame.length > 0) {
+  // Hold cheating shareholders accountable according to specified policy
+  ...
+}
 ```
 
-### Feldman VSS scheme
+This returns the combination result along with a (potentially empty) list `blame`,
+containing the public shares of cheating shareholders.
 
-```js
-const { packets, commitments } = await sharing.createFeldmanPackets();
-```
-
-```js
-import { extractPartialKey } from "vsslib";
-
-const privateShare = await extractPartialKey(ctx, commitments, packet);
-```
-
-### Pedersen VSS scheme
-
-```js
-const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
-```
-
-```js
-import { extractPartialKey } from "vsslib";
-
-const privateShare = await extractPartialKey(ctx, commitments, packet);
-```
-
-### Public key recovery
-
-```js
-import { recoverPublicKey } from "vsslib";
-```
-
-```js
-const { publicKey } = await recoverPublicKey(ctx, publicKeyShares, { algorithm });
-```
-
-#### Recovery with accurate blaming
-
-```js
-const { publicKey, blame } = await recoverPublicKey(ctx, publicKeyShares, { algorithm, errorOnInvalid: false });
-```
+> **Warning**
+> Make sure to always check the `blame` index when using the `errorOnInvalid: false` option.
 
 ## Threshold decryption
 
@@ -539,9 +641,56 @@ const { plaintext } = await thresholdDecrypt(ctx, ciphertext, partialDrecryptors
 const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, partialDrecryptor, partialPublics, { scheme, errorOnInvalid: false });
 ```
 
+## <a name="dkg-implementation"></a>Implementing a Distributed Key Generation (DKG) Scheme
+
 ## Pluggable backend
 
-# Security
+# <a name="security-main"></a>Security
+
+:warning: **This library requires security audit. Use at your own risk for the moment.**
+
+#### <a name="input-validation-overview"></a>Input validation
+
+TODO
+
+#### <a name="nizk-overview"></a>Support for NIZK proofs
+
+Threshold-cryptographic security against malicious shareholders
+is attained by means of non-interactive zero-knowledge (NIZK) proofs
+(e.g., decoupled Chaum-Pederesen protocols in a threshold decryption scheme).
+
+Vsslib provides NIZK infrastructure ([`vsslib/nizk`](./src/nizk.ts))
+for proving knowledge of generic discrete-log based linear relations
+over arbitrary groups and hash
+functions. It takes care to avoid the
+weak Fiat-Shamir transform [pitfall](https://eprint.iacr.org/2016/771.pdf)
+by default.
+
+It is the user's responsibility to properly utilize NIZKs when implementing
+a protocol from scratch.
+
+#### <a name="replay-attacks-overview"></a>Defence against replay attacks
+
+In practice, plain usage of NIZK proofs is usually susceptible to replay
+attack.
+The combiner may need to defend against it by maintaining some kind
+of state between itself and individual shareholders.
+
+Vsslib allows inclusion of nonces when generating a NIZK proof, which must in
+turn be included when verifying proofs from the combiner's side.
+A nonce can be any bytestring capable of mutually maintaining state,
+e.g. cryptographically secure random bytes, unique session identifiers,
+synchronized counters, or combinations thereof.
+It is the user's responsibility to ensure that its design is secure in the
+particular application context.
+
+#### <a name="constant-time-comparisons-validation-overview"></a>Constant-time comparisons
+
+TODO
+
+#### <a name="knwon-weakeness-overview"></a>Known weaknesses
+
+TODO
 
 # Development
 
@@ -584,6 +733,10 @@ $ npm run test[:reload]
 ```
 
 ## Benchmarks
+
+```
+$ ts-node bench/sample.ts
+```
 
 ## Documentation
 
