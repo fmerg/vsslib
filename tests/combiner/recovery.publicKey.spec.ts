@@ -60,7 +60,7 @@ describe('Public key recovery', () => {
       recoverPublicKey(
         ctx, packets, { algorithm, threshold, nonces: nonces.slice(0, nrShares - 1)}
       )
-    ).rejects.toThrow('No nonce for index')
+    ).rejects.toThrow('Invalid packet with index')
   });
   it.each(cartesian([systems, algorithms])
   )('failure - error on invalid - forged proof - over %s/%s', async (system, algorithm) => {
