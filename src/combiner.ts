@@ -138,7 +138,7 @@ export async function recoverPublic<P extends Point>(
 ): Promise<{ recovered: Uint8Array, blame: PublicShare[] }> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const threshold = opts ? opts.threshold : undefined;
-  const nonces = opts ? opts.nonces : undefined;
+  const nonces = opts ? (opts.nonces || [] ) : [];
   const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
   if (threshold && packets.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
@@ -148,13 +148,8 @@ export async function recoverPublic<P extends Point>(
   const blame = [];
   let y = ctx.neutral;
   for (const packet of packets) {
-    let nonce = undefined;
-    if (nonces) {
-      const indexedNonce = nonces.filter((n: IndexedNonce) => n.index == packet.index)[0];  // TODO: pop
-      if (!indexedNonce)
-        throw new InvalidInput(`No nonce for index ${packet.index}`);
-      nonce = indexedNonce.nonce;
-    }
+    const packetNonce = nonces.filter((n: IndexedNonce) => n.index == packet.index)[0];  // TODO: pop
+    const nonce = packetNonce ? packetNonce.nonce : undefined;
     try {
       // TODO: Improve this interface so as to remove lambda computation
       // outside the present block
