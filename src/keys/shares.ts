@@ -23,7 +23,7 @@ export async function extractPartialKey<P extends Point>(
     );
     return new PartialKey(ctx, value, index);
   } else {
-    const { value, index } = await parseFeldmanPacket(
+    const { share: { value, index } } = await parseFeldmanPacket(
       ctx, commitments, packet
     );
     return new PartialKey(ctx, value, index);

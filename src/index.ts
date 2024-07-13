@@ -43,3 +43,9 @@ export {
   recoverDecryptor,
   thresholdDecrypt
 } from 'vsslib/combiner';
+
+export {
+  InvalidSecretShare,
+  InvalidPublicShare,
+  InvalidInput,
+} from 'vsslib/errors';

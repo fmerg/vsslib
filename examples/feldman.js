@@ -1,14 +1,22 @@
 import { Command } from 'commander';
-import { parseDecimal, parseCommaSeparatedDecimals } from './utils';
 import {
-  Systems,
+  parseDecimal,
+  parseCommaSeparatedDecimals,
+  Party,
+  Combiner,
+  selectParty,
+} from './utils';
+import {
   initBackend,
   isKeypair,
   distributeSecret,
   parseFeldmanPacket,
   createSchnorrPacket,
   recoverPublic,
+  InvalidSecretShare,
+  InvalidPublicShare,
 } from 'vsslib';
+import { Systems } from 'vsslib/enums';
 
 const DEFAULT_SYSTEM = Systems.ED25519;
 const DEFAULT_NR_SHARES = 5;
@@ -16,37 +24,75 @@ const DEFAULT_THRESHOLD = 3;
 
 const program = new Command();
 
+
 async function demo() {
   let { system, nrShares: n, threshold: t, combine: qualified, verbose } = program.opts();
+  qualified = qualified || Array.from({ length: t }, (_, i) => i + 1);
+
+  // Cryptosystem setup
   const ctx = initBackend(system);
 
-  // The dealer shares a secret and generates verifiable Feldman packets
+  // Initialization of shareholders
+  const parties = [];
+  for (let index = 1; index <= n; index++) {
+    const party = new Party(ctx, index);
+    parties.push(party);
+  }
+
+  // VSS phase ----------------------------------------------------------------
+
+  // The dealer shares some uniformly sampled secret
   const { secret: originalSecret, sharing } = await distributeSecret(ctx, n, t);
+  // The dealer generates Feldman commitments and verifiable packets for the
+  // secret shares
   const { commitments, packets } = await sharing.createFeldmanPackets();
 
-  // At this point, the dealer brodcasts the commitments and sends each packet to the
-  // respective shareholder
+  // At this point, the dealer broadcasts the commitments and sends each packet to the
+  // respective shareholder in private
 
-  // Every shareholders verifies the received Feldman packet and extracts
-  // the respective share
-  const secretShares = [];
+  // Shareholders verify the received packets and extract their respective share
   for (const packet of packets) {
-    const share = await parseFeldmanPacket(ctx, commitments, packet);
-    secretShares.push(share);
+    const recipient = selectParty(packet.index, parties);
+    try {
+      const { share } = await parseFeldmanPacket(recipient.ctx, commitments, packet);
+      // Store the retrieved share locally
+      recipient.share = share;
+    } catch (err) {
+      if (err instanceof InvalidSecretShare) {
+        // The recipient shareholder rejects the packet and follows some policy
+      } else {
+        throw err;
+      }
+    }
   }
 
-  // Every shareholder creates a Shnorr proof for their respective secret share
-  const publicPackets = [];
-  for (const share of secretShares) {
-    const packet = await createSchnorrPacket(ctx, share);
-    publicPackets.push(packet);
+  // Public recovery phase ----------------------------------------------------
+
+  // Initialization of combiner
+  const combiner = new Combiner(ctx);
+
+  // A coalition of shareholders create Schnorr packets for their respective secret shares and
+  // send them to the combiner
+  for (const sender of parties.filter(p => qualified.includes(p.index))) {
+    const packet = await createSchnorrPacket(sender.ctx, sender.share);
+    combiner.aggreagated.push(packet);
   }
 
-  // Recover combined public from qualified packets
-  qualified = qualified || Array.from({ length: t }, (_, i) => i + 1)
-  const qualifiedPackets = publicPackets.filter(p => qualified.includes(p.index));
-  const { recovered: recoveredPublic} = await recoverPublic(ctx, qualifiedPackets);
-  console.log(await isKeypair(ctx, originalSecret, recoveredPublic));
+  // The combiner verifies the received Schnorr packets, extracts the included
+  // public shares and applies interpolation in the exponent in order to
+  // recover the public counterpart of the original secret
+  try {
+    const { recovered: recoveredPublic } = await recoverPublic(ctx, combiner.aggreagated);
+    // Check consistency with original secret
+    const ok = await isKeypair(ctx, originalSecret, recoveredPublic);
+    console.log({ ok });
+  } catch (err) {
+    if (err instanceof InvalidPublicShare) {
+      // The aborts and follows some policy
+    } else {
+      throw err;
+    }
+  }
 }
 
 program
