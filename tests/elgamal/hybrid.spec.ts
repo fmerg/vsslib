@@ -1,7 +1,8 @@
 import { Algorithms, BlockModes } from 'vsslib/enums';
 import { leInt2Buff } from 'vsslib/arith';
 import { randomBytes } from 'vsslib/crypto';
-import { initBackend, generateSecret } from 'vsslib';
+import { initBackend } from 'vsslib/backend';
+import { randomSecret, randomPublic } from 'vsslib/secrets';
 import { HybridCiphertext } from 'vsslib/elgamal/driver';
 import { ElgamalSchemes } from 'vsslib/enums';
 
@@ -21,7 +22,7 @@ describe('Hybrid encryption (Key Encapsulation Mechanism)', () => {
   it.each(cartesian([systems, modes]))(
     'success - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
-    const { secret, publicBytes } = await generateSecret(ctx);
+    const { secret, publicBytes } = await randomSecret(ctx);
     const message = await buildMessage(ctx, HYBRID);
     const { ciphertext } = await elgamal(ctx, HYBRID, undefined, mode).encrypt(message, publicBytes);
     const plaintext = await elgamal(ctx, HYBRID, undefined, mode).decrypt(ciphertext, secret);
@@ -30,10 +31,10 @@ describe('Hybrid encryption (Key Encapsulation Mechanism)', () => {
   it.each(cartesian([systems, modes]))(
     'failure - foged secret - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
-    const { secret, publicBytes } = await generateSecret(ctx);
+    const { secret, publicBytes } = await randomSecret(ctx);
     const message = await buildMessage(ctx, HYBRID);
     const { ciphertext } = await elgamal(ctx, HYBRID, undefined, mode).encrypt(message, publicBytes);
-    const { secret: forgedSecret } = await generateSecret(ctx);
+    const { secret: forgedSecret } = await randomSecret(ctx);
     if (!mode || [BlockModes.AES_256_CBC, BlockModes.AES_256_GCM].includes(mode)) {
       await expect(elgamal(ctx, HYBRID, undefined, mode).decrypt(ciphertext, forgedSecret)).rejects.toThrow(
         'Could not decrypt: AES decryption failure'
@@ -46,7 +47,7 @@ describe('Hybrid encryption (Key Encapsulation Mechanism)', () => {
   it.each(cartesian([systems, modes]))(
     'failure - forged IV - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
-    const { secret, publicBytes } = await generateSecret(ctx);
+    const { secret, publicBytes } = await randomSecret(ctx);
     const message = await buildMessage(ctx, HYBRID);
     const { ciphertext } = await elgamal(ctx, HYBRID, undefined, mode).encrypt(message, publicBytes);
     (ciphertext as HybridCiphertext).alpha.iv = await randomBytes(mode == BlockModes.AES_256_GCM ? 12 : 16)
@@ -62,7 +63,7 @@ describe('Hybrid encryption (Key Encapsulation Mechanism)', () => {
   it.each(cartesian([systems, modes]))(
     'decrypt with decryptor - success - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
-    const { secret, publicBytes } = await generateSecret(ctx);
+    const { secret, publicBytes } = await randomSecret(ctx);
     const message = await buildMessage(ctx, HYBRID);
     const { ciphertext, decryptor } = await elgamal(ctx, HYBRID, undefined, mode).encrypt(message, publicBytes);
     const plaintext = await elgamal(ctx, HYBRID, undefined ,mode).decryptWithDecryptor(ciphertext, decryptor);
@@ -71,10 +72,10 @@ describe('Hybrid encryption (Key Encapsulation Mechanism)', () => {
   it.each(cartesian([systems, modes]))(
     'decrypt with decryptor - failure - if forged decryptor - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
-    const { secret, publicBytes } = await generateSecret(ctx);
+    const { secret, publicBytes } = await randomSecret(ctx);
     const message = await buildMessage(ctx, HYBRID);
     const { ciphertext, decryptor } = await elgamal(ctx, HYBRID, undefined, mode).encrypt(message, publicBytes);
-    const forgedDecryptor = await ctx.randomPublic();
+    const forgedDecryptor = await randomPublic(ctx);
     if (!mode || [BlockModes.AES_256_CBC, BlockModes.AES_256_GCM].includes(mode)) {
       await expect(
         elgamal(ctx, HYBRID, undefined, mode).decryptWithDecryptor(ciphertext, forgedDecryptor)
@@ -91,7 +92,7 @@ describe('Hybrid encryption (Key Encapsulation Mechanism)', () => {
   it.each(cartesian([systems, modes]))(
     'decrypt with randomness - success - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
-    const { secret, publicBytes } = await generateSecret(ctx);
+    const { secret, publicBytes } = await randomSecret(ctx);
     const message = await buildMessage(ctx, HYBRID);
     const { ciphertext, randomness } = await elgamal(ctx, HYBRID, undefined, mode).encrypt(message, publicBytes);
     const plaintext = await elgamal(ctx, HYBRID, undefined, mode).decryptWithRandomness(
@@ -102,10 +103,10 @@ describe('Hybrid encryption (Key Encapsulation Mechanism)', () => {
   it.each(cartesian([systems, modes]))(
     'decrypt with decryptor - failure - forged randomness - over %s/%s', async (system, mode) => {
     const ctx = initBackend(system);
-    const { secret, publicBytes } = await generateSecret(ctx);
+    const { secret, publicBytes } = await randomSecret(ctx);
     const message = await buildMessage(ctx, HYBRID);
     const { ciphertext, randomness } = await elgamal(ctx, HYBRID, undefined, mode).encrypt(message, publicBytes)
-    const forgedRandomness = await ctx.randomSecret();
+    const forgedRandomness = await ctx.generateSecret();
     if (!mode || [BlockModes.AES_256_CBC, BlockModes.AES_256_GCM].includes(mode)) {
       await expect(
         elgamal(ctx, HYBRID, undefined, mode).decryptWithRandomness(ciphertext, publicBytes, forgedRandomness)

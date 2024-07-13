@@ -1,4 +1,5 @@
 import { initBackend } from 'vsslib/backend';
+import { randomPublic } from 'vsslib/secrets';
 import { distributeSecret, SecretShare, ShamirSharing } from 'vsslib/dealer';
 import { verifyFeldmanCommitments } from 'vsslib/shareholder';
 import { resolveTestConfig } from '../environ';
@@ -28,15 +29,12 @@ describe('Feldman VSS scheme', () => {
     const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
     const secretShares = await sharing.getSecretShares();
     const { commitments } = await sharing.createFeldmanPackets();
-    const forgedCommitmnets = [
-      ...commitments.slice(0, commitments.length - 1),
-      await ctx.randomPublic()
-    ];
+    commitments[0] = await randomPublic(ctx);
     secretShares.forEach(async (share: SecretShare) => {
       const verification = verifyFeldmanCommitments(
         ctx,
         share,
-        forgedCommitmnets
+        commitments,
       );
       await expect(verification).rejects.toThrow('Invalid share');
     });

@@ -9,13 +9,16 @@ export {
 } from 'vsslib/enums';
 
 export {
-  generateSecret,
+  randomSecret,
+  randomPublic,
   extractPublic,
   isEqualSecret,
   isEqualPublic,
   isKeypair,
   addSecrets,
   combinePublics,
+  unpackScalar,
+  unpackPoint,
 } from 'vsslib/secrets';
 
 export { generateKey, extractPartialKey } from 'vsslib/keys';

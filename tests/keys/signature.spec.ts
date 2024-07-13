@@ -1,6 +1,8 @@
 import { Algorithms, SignatureSchemes } from 'vsslib/enums';
 import { Algorithm } from 'vsslib/types';
-import { initBackend, generateKey } from 'vsslib';
+import { initBackend } from 'vsslib/backend';
+import { generateKey } from 'vsslib/keys';
+import { randomPublic } from 'vsslib/secrets';
 import { randomNonce } from 'vsslib/crypto';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -66,7 +68,7 @@ describe('Signing and verification', () => {
     const { privateKey, publicKey } = await generateKey(ctx);
     const message = Uint8Array.from(Buffer.from('destroy earth'));
     const signature = await privateKey.signMessage(message, { scheme, algorithm });
-    signature.c! = await ctx.randomPublic();
+    signature.c! = await randomPublic(ctx);
     await expect(
       publicKey.verifySignature(
         message, signature, {

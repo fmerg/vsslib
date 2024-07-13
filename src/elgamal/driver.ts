@@ -1,6 +1,7 @@
 import { Point, Group } from 'vsslib/backend';
 import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
 import { ElgamalSchemes } from 'vsslib/enums';
+import { unpackScalar, unpackPoint } from 'vsslib/secrets';
 import { DhiesAlpha, HybridAlpha, plainElgamal, dhiesElgamal, hybridElgamal } from 'vsslib/elgamal/core';
 
 
@@ -32,7 +33,7 @@ export class ElgamalDriver<P extends Point>{
     randomness: Uint8Array,
     decryptor: Uint8Array,
   }> => {
-    const y = await this.ctx.unpackValid(pubBytes);
+    const y = await unpackPoint(this.ctx, pubBytes);
     switch (this.scheme) {
       case ElgamalSchemes.PLAIN:
         return plainElgamal(this.ctx).encrypt(message, y);
@@ -46,7 +47,7 @@ export class ElgamalDriver<P extends Point>{
   }
 
   decrypt = async (ciphertext: Ciphertext, secret: Uint8Array): Promise<Uint8Array> => {
-    const x = this.ctx.leBuff2Scalar(secret);
+    const x = await unpackScalar(this.ctx, secret);
     switch (this.scheme) {
       case ElgamalSchemes.PLAIN:
         return plainElgamal(this.ctx).decrypt(
@@ -85,7 +86,7 @@ export class ElgamalDriver<P extends Point>{
   decryptWithRandomness = async (
     ciphertext: Ciphertext, publicBytes: Uint8Array, randomness: Uint8Array
   ): Promise<Uint8Array> => {
-    const y = await this.ctx.unpackValid(publicBytes);
+    const y = await unpackPoint(this.ctx, publicBytes);
     switch (this.scheme) {
       case ElgamalSchemes.PLAIN:
         return plainElgamal(this.ctx).decryptWithRandomness(

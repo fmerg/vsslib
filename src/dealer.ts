@@ -2,7 +2,7 @@ import { Point, Group } from 'vsslib/backend';
 import { FieldPolynomial, randomPolynomial } from 'vsslib/polynomials';
 import { InterpolationError, ShamirError, InvalidInput } from 'vsslib/errors';
 import { leInt2Buff } from 'vsslib/arith';
-import { validateSecret } from 'vsslib/secrets';
+import { unpackScalar, unpackPoint } from 'vsslib/secrets';
 
 import lagrange from 'vsslib/lagrange';
 
@@ -104,7 +104,7 @@ export class ShamirSharing<P extends Point> {
     const polynomial = this.polynomial;
     const degree = polynomial.degree;
     const g = this.ctx.generator;
-    const h = await this.ctx.unpackValid(publicBytes);
+    const h = await unpackPoint(this.ctx, publicBytes);
     const exp = this.ctx.exp;
     const commitments = new Array(degree + 1);
     const bindings = new Array(degree + 1);
@@ -134,7 +134,11 @@ export class ShamirSharing<P extends Point> {
 
 
 export async function distributeSecret<P extends Point>(
-  ctx: Group<P>, nrShares: number, threshold: number, secret?: Uint8Array, predefined?: Uint8Array[]
+  ctx: Group<P>,
+  nrShares: number,
+  threshold: number,
+  secret?: Uint8Array,
+  predefined?: Uint8Array[],
 ): Promise<{ secret: Uint8Array, sharing: ShamirSharing<P>}> {
   predefined = predefined || [];
   if (nrShares < 1) throw new ShamirError(
@@ -153,24 +157,25 @@ export async function distributeSecret<P extends Point>(
     `Number of predefined shares violates threshold: ${predefined.length} >= ${threshold}`,
   );
 
-  secret = secret || await ctx.randomSecret()
+  secret = secret || await ctx.generateSecret()
+  const xyPoints = new Array(threshold);
   try {
-    await validateSecret(ctx, secret);
+    const scalarSecret = await unpackScalar(ctx, secret);
+    xyPoints[0] = [__0n, scalarSecret];
+    let index = 1;
+    while (index < threshold) {
+      const x = index;
+      const y = index > predefined.length ?
+        await ctx.randomScalar() :
+        await unpackScalar(ctx, predefined[index - 1]); // TODO: test invalid predefined
+      xyPoints[index] = [x, y];
+      index++;
+    }
   } catch (err: any) {
     if (err instanceof InvalidInput)
       throw new ShamirError(err.message);
     else
       throw err;
-  }
-  const xyPoints = new Array(threshold);
-  xyPoints[0] = [__0n, ctx.leBuff2Scalar(secret)];
-  let index = 1;
-  while (index < threshold) {
-    const x = index;
-    const y = index > predefined.length ? await ctx.randomScalar() :
-      ctx.leBuff2Scalar(predefined[index - 1]);
-    xyPoints[index] = [x, y];
-    index++;
   }
 
   let polynomial;

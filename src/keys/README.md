@@ -79,7 +79,8 @@ const { ciphertext, randomness, decryptor } = await publicKey.encrypt(message, {
 ### <a name="plain-encryption"></a>Plain encryption
 
 ```js
-const message = await ctx.randomPublic();
+import { randomPublic } from 'vsslib';
+const message = await randomPublic(ctx);
 ```
 
 ```js

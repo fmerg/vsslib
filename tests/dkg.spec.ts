@@ -2,6 +2,7 @@ import { initBackend } from 'vsslib/backend';
 import { Group, Point } from 'vsslib/backend';
 import { SecretShare, ShamirSharing, PublicShare } from 'vsslib/dealer';
 import {
+  randomPublic,
   extractPublic,
   isEqualPublic,
   distributeSecret,
@@ -48,7 +49,7 @@ describe('Distributed Key Generation (DKG)', () => {
     const ctx = initBackend(system);
 
     // Public reference for Pedersen VSS Scheme
-    const publicBytes = await ctx.randomPublic();
+    const publicBytes = await randomPublic(ctx);
 
     // Involved parties initialization
     const parties = [];

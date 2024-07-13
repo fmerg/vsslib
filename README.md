@@ -179,9 +179,9 @@ Refer to Sec. [Pluggable backend](#pluggable-backend) for details.
 Generate a keypair in raw-bytes mode as follows.
 
 ```js
-import { generateSecret } from "vsslib";
+import { randomSecret } from "vsslib";
 
-const { secret, publicBytes } = await generateSecret(ctx);
+const { secret, publicBytes } = await randomSecret(ctx);
 ```
 
 > **Note** 
@@ -372,7 +372,9 @@ await verifyFeldmanCommitments(ctx, share, commitments);
 Involved parties agree first on some public reference:
 
 ```js
-const publicBytes = await ctx.randomPublic();
+import { randomPublic } from 'vsslib';
+
+const publicBytes = await randomPublic(ctx);
 ```
 
 Generate Pedersen commitments and verifiable packets for the totality of secret

@@ -1,5 +1,5 @@
 import { initBackend } from 'vsslib/backend';
-import { Point } from 'vsslib/backend';
+import { randomSecret, randomPublic } from 'vsslib/secrets';
 import { distributeSecret, SecretShare, ShamirSharing } from 'vsslib/dealer';
 import { verifyPedersenCommitments } from 'vsslib/shareholder';
 import { resolveTestConfig } from '../environ';
@@ -12,7 +12,7 @@ describe('Pedersen VSS scheme', () => {
   it.each(systems)('success over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
-    const publicBytes = await ctx.randomPublic();
+    const publicBytes = await randomPublic(ctx);
     const { commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
     const secretShares = await sharing.getSecretShares();
     secretShares.forEach(async (share: SecretShare) => {
@@ -30,15 +30,15 @@ describe('Pedersen VSS scheme', () => {
   it.each(systems)('failure over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
-    const publicBytes = await ctx.randomPublic();
+    const publicBytes = await randomPublic(ctx);
     const { commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
     const secretShares = await sharing.getSecretShares();
     secretShares.forEach(async (share: SecretShare) => {
-      const forgedBinding = leInt2Buff(await ctx.randomScalar());
+      const { secret: binding } = await randomSecret(ctx);  // forge binding
       const verification = verifyPedersenCommitments(
         ctx,
         share,
-        forgedBinding,
+        binding,
         publicBytes,
         commitments
       );

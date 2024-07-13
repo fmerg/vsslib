@@ -3,6 +3,7 @@ import { parseDecimal, parseCommaSeparatedDecimals } from './utils';
 import {
   Systems,
   initBackend,
+  randomPublic,
   isKeypair,
   distributeSecret,
   parsePedersenPacket,
@@ -21,7 +22,7 @@ async function demo() {
   const ctx = initBackend(system);
 
   // Involved parties agree on some public reference
-  const publicBytes = await ctx.randomPublic();   // TODO: proper name
+  const publicBytes = await randomPublic(ctx);   // TODO: proper name
 
   // The dealer shares a secret and generates verifiable Pedersen packets
   const { secret: originalSecret, sharing } = await distributeSecret(ctx, n, t);

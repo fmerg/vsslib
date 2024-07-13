@@ -2,7 +2,7 @@ import { Group, Point } from 'vsslib/backend';
 import { Ciphertext } from 'vsslib/elgamal';
 import { NizkProof } from 'vsslib/nizk';
 import { Signature } from 'vsslib/signer';
-import { generateSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
+import { randomSecret, unpackScalar, unpackPoint, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
 import { distributeSecret, ShamirSharing } from 'vsslib/dealer';
 import { InvalidDecryptor, InvalidEncryption, InvalidSecret, InvalidSignature } from 'vsslib/errors';
 import { Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from 'vsslib/enums';
@@ -35,7 +35,7 @@ export class PrivateKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
     const g = this.ctx.generator;
-    const x = this.ctx.leBuff2Scalar(this.secret);
+    const x = await unpackScalar(this.ctx, this.secret);
     const y = await this.ctx.exp(g, x);
     return nizk(this.ctx, algorithm).proveDlog(
       x,
@@ -95,7 +95,7 @@ export class PrivateKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? opts.nonce : undefined;
     const g = this.ctx.generator;
-    const b = await this.ctx.unpackValid(ciphertext.beta);
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
     const isValid = await nizk(this.ctx, algorithm).verifyDlog(
       {
         u: g,
@@ -142,10 +142,10 @@ export class PrivateKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
     const g = this.ctx.generator;
-    const x = this.ctx.leBuff2Scalar(this.secret);
+    const x = await unpackScalar(this.ctx, this.secret);
     const y = await this.ctx.exp(g, x);
-    const b = await this.ctx.unpackValid(ciphertext.beta);
-    const d = await this.ctx.unpackValid(decryptor);
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
+    const d = await unpackPoint(this.ctx, decryptor);
     return nizk(this.ctx, algorithm).proveDDH(
       x,
       {
@@ -163,8 +163,8 @@ export class PrivateKey<P extends Point> {
     decryptor: Uint8Array,
     proof: NizkProof
   }> => {
-    const b = await this.ctx.unpackValid(ciphertext.beta);
-    const x = this.ctx.leBuff2Scalar(this.secret);
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
+    const x = await unpackScalar(this.ctx, this.secret);
     const decryptor = (await this.ctx.exp(b, x)).toBytes();
     const proof = await this.proveDecryptor(
       ciphertext,
@@ -276,7 +276,7 @@ export class PublicKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
     const g = this.ctx.generator;
-    const y = await this.ctx.unpackValid(this.publicBytes);
+    const y = await unpackPoint(this.ctx, this.publicBytes);
     const isValid = await nizk(this.ctx, algorithm).verifyDlog(
       {
         u: g,
@@ -342,8 +342,8 @@ export class PublicKey<P extends Point> {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
     const g = this.ctx.generator;
-    const r = this.ctx.leBuff2Scalar(randomness);
-    const b = await this.ctx.unpackValid(ciphertext.beta);
+    const r = await unpackScalar(this.ctx, randomness);
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
     return nizk(this.ctx, algorithm).proveDlog(
       r,
       {
@@ -385,9 +385,9 @@ export class PublicKey<P extends Point> {
   ): Promise<boolean> => {
     const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    const b = await this.ctx.unpackValid(ciphertext.beta);
-    const y = await this.ctx.unpackValid(this.publicBytes);
-    const d = await this.ctx.unpackValid(decryptor);
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
+    const y = await unpackPoint(this.ctx, this.publicBytes);
+    const d = await unpackPoint(this.ctx, decryptor);
     const isValid = await nizk(this.ctx, algorithm).verifyDDH(
       {
         u: b,
@@ -408,7 +408,7 @@ export class PublicKey<P extends Point> {
 export const generateKey = async <P extends Point>(ctx: Group<P>): Promise<
   { privateKey: PrivateKey<P>, publicKey: PublicKey<P> }
 > => {
-  const { secret } = await generateSecret(ctx);
+  const { secret } = await randomSecret(ctx);
   const privateKey = new PrivateKey(ctx, secret);
   const publicKey = await privateKey.getPublicKey();
   return { privateKey, publicKey };

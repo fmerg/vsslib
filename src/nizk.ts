@@ -2,6 +2,7 @@ import { Group, Point } from 'vsslib/backend';
 import { Algorithm } from 'vsslib/types';
 import { InvalidInput } from 'vsslib/errors';
 import { mod, leInt2Buff, leBuff2Int } from 'vsslib/arith';
+import { unpackScalar, unpackPoint } from 'vsslib/secrets';
 import { hash } from 'vsslib/crypto';
 
 
@@ -20,18 +21,18 @@ export class NizkProtocol<P extends Point>{
     this.algorithm = algorithm;
   }
 
-  _toInner = async (proof: NizkProof): Promise<{ commitment: P[], response: bigint[] }> => {
+  _unpackProof = async (proof: NizkProof): Promise<{ commitment: P[], response: bigint[] }> => {
     const { commitment, response } = proof;
     const m = commitment.length;
     const n = response.length;
     const innerComm = new Array(m);
     const innerResp = new Array(n);
-    for (let i = 0; i < m; i++) innerComm[i] = await this.ctx.unpackValid(commitment[i]);
-    for (let i = 0; i < n; i++) innerResp[i] = this.ctx.leBuff2Scalar(response[i]);
+    for (let i = 0; i < m; i++) innerComm[i] = await unpackPoint(this.ctx, commitment[i]);
+    for (let i = 0; i < n; i++) innerResp[i] = await unpackScalar(this.ctx, response[i]);
     return { commitment: innerComm, response: innerResp };
   }
 
-  _toOuter = async (proof: { commitment: P[], response: bigint[] }): Promise<NizkProof> => {
+  _packProof = async (proof: { commitment: P[], response: bigint[] }): Promise<NizkProof> => {
     const commitment = proof.commitment.map(c => c.toBytes());
     const response = proof.response.map(r => leInt2Buff(r));
     return { commitment, response };
@@ -57,7 +58,7 @@ export class NizkProtocol<P extends Point>{
         ...config, ...statement, ...extrasBuff, ...nonce
       ])
     );
-    return this.ctx.leBuff2Scalar(digest);
+    return unpackScalar(this.ctx, digest);
   }
 
    _proveLinear = async (
@@ -90,7 +91,7 @@ export class NizkProtocol<P extends Point>{
     for (const [j, x] of witness.entries()) {
       response[j] = mod(rs[j] + x * challenge, order);
     }
-    return this._toOuter({ commitment, response });
+    return this._packProof({ commitment, response });
   }
 
   _verifyLinear = async (
@@ -98,7 +99,7 @@ export class NizkProtocol<P extends Point>{
   ): Promise<boolean> => {
     const exp = this.ctx.exp;
     const { us, vs } = relation;
-    const { commitment, response } = await this._toInner(proof);
+    const { commitment, response } = await this._unpackProof(proof);
     if (vs.length !== commitment.length)
       throw new InvalidInput('Incompatible lengths');
     const challenge = await this._computeChallenge(relation, commitment, extras, nonce);

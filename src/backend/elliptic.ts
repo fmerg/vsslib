@@ -48,13 +48,13 @@ export class EcGroup extends Group<EcPoint> {
     this.curve = curve;
   }
 
+  generateSecret = async (): Promise<Uint8Array> =>
+    this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
+
   randomScalar = async (): Promise<bigint> => mod(
     leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
     this.order
   );
-
-  randomSecret = async (): Promise<Uint8Array> =>
-    this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
 
   randomPoint = async (): Promise<EcPoint> => new EcPoint(
     this._base.multiply(mod(
@@ -62,9 +62,6 @@ export class EcGroup extends Group<EcPoint> {
       this.order
     ))
   );
-
-  randomPublic = async (): Promise<Uint8Array> => (
-    await this.randomPoint()).toBytes();
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
@@ -97,20 +94,14 @@ export class EcGroup extends Group<EcPoint> {
     point.wrapped.negate()
   );
 
-  unpack = (bytes: Uint8Array): EcPoint => {
-    let unpacked;
+  buff2Point = (bytes: Uint8Array): EcPoint => {
+    let point;
     try {
-      unpacked = new EcPoint(this.curve.ExtendedPoint.fromHex(bytes));
+      point = new EcPoint(this.curve.ExtendedPoint.fromHex(bytes));
     } catch (err: any) {
       throw new BadPointError(`bad encoding: ${err.message}`)
     }
-    return unpacked;
-  }
-
-  unpackValid = async (bytes: Uint8Array): Promise<EcPoint> => {
-    const unpacked = this.unpack(bytes);
-    await this.validatePoint(unpacked);
-    return unpacked;
+    return point;
   }
 }
 

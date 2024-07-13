@@ -2,6 +2,7 @@ import { Command, Option } from 'commander';
 import { parseDecimal } from './utils';
 import {
   initBackend,
+  randomPublic,
   extractPublic,
   isEqualPublic,
   parseSchnorrPacket,
@@ -45,7 +46,7 @@ async function demo() {
   const ctx = initBackend(system);
 
   // Public reference for Pedersen VSS Scheme
-  const publicBytes = await ctx.randomPublic();
+  const publicBytes = await randomPublic(ctx);
 
   // Involved parties initialization
   const parties = [];

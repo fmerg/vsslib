@@ -3,7 +3,7 @@ import { mod, modInv } from 'vsslib/arith';
 import { InvalidSecretShare, InvalidPublicShare, InvalidInput } from 'vsslib/errors';
 import { leInt2Buff } from 'vsslib/arith';
 import { SecretShare, PublicShare, SecretPacket } from 'vsslib/dealer';
-import { extractPublic } from 'vsslib/secrets';
+import { unpackScalar, unpackPoint, extractPublic } from 'vsslib/secrets';
 import { NizkProof } from 'vsslib/nizk';
 import { Algorithm } from 'vsslib/types';
 import { Algorithms } from 'vsslib/enums';
@@ -19,13 +19,13 @@ export async function verifyFeldmanCommitments<P extends Point>(
   commitments: Uint8Array[],
 ): Promise<boolean> {
   const { value, index } = share;
-  const x = ctx.leBuff2Scalar(share.value);
+  const x = await unpackScalar(ctx, share.value);
   const g = ctx.generator;
   const order = ctx.order;
   const lhs = await ctx.exp(g, x);
   let rhs = ctx.neutral;
   for (const [j, commitment] of commitments.entries()) {
-    const c = await ctx.unpackValid(commitment);
+    const c = await unpackPoint(ctx, commitment);
     const curr = await ctx.exp(c, mod(BigInt(index ** j), order));
     rhs = await ctx.operate(rhs, curr);
   }
@@ -48,16 +48,16 @@ export async function verifyPedersenCommitments<P extends Point>(
   const exp = ctx.exp;
   const order = ctx.order;
   const g = ctx.generator;
-  const h = await ctx.unpackValid(publicBytes);
-  const x = ctx.leBuff2Scalar(value);
-  const s = ctx.leBuff2Scalar(binding);
+  const h = await unpackPoint(ctx, publicBytes);
+  const x = await unpackScalar(ctx, value);
+  const s = await unpackScalar(ctx, binding);
   const lhs = await ctx.operate(
     await exp(g, x),
     await exp(h, s)
   );
   let rhs = ctx.neutral;
   for (const [j, commitment] of commitments.entries()) {
-    const c = await ctx.unpackValid(commitment);
+    const c = await unpackPoint(ctx, commitment);
     const curr = await exp(c, mod(BigInt(index ** j), order));
     rhs = await ctx.operate(rhs, curr);
   }
@@ -117,7 +117,7 @@ export async function createSchnorrPacket<P extends Point>(
   const g = ctx.generator;
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const nonce = opts ? (opts.nonce || undefined) : undefined;
-  const x = ctx.leBuff2Scalar(value);
+  const x = await unpackScalar(ctx, value);
   const y = await ctx.exp(g, x);
   const proof = await nizk(ctx, algorithm).proveDlog(x, { u: g, v: y }, nonce);
   return { value: y.toBytes(), index, proof };

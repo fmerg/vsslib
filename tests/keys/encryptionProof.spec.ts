@@ -1,5 +1,7 @@
 import { Algorithms, ElgamalSchemes } from 'vsslib/enums';
-import { initBackend, generateKey } from 'vsslib';
+import { initBackend } from 'vsslib/backend';
+import { generateKey } from 'vsslib/keys';
+import { randomPublic } from 'vsslib/secrets';
 import { randomNonce } from 'vsslib/crypto';
 import { cartesian, isEqualBuffer } from '../utils';
 import { buildMessage } from '../helpers';
@@ -36,7 +38,7 @@ describe('Unified encrypt-then-prove', () => {
     const message = await buildMessage(ctx, scheme);
     const opts = { scheme, verAlgorithm: algorithm };
     const { ciphertext, proof } = await publicKey.encryptProve(message, opts)
-    proof.commitment[0] = await ctx.randomPublic();
+    proof.commitment[0] = await randomPublic(ctx);
     await expect(
       privateKey.verifyDecrypt(ciphertext, proof, opts)
     ).rejects.toThrow(
@@ -124,7 +126,7 @@ describe('Standalone proof-of-encryption', () => {
     const message = await buildMessage(ctx, scheme);
     const { ciphertext, randomness } = await publicKey.encrypt(message, { scheme });
     const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm });
-    proof.commitment[0] = await ctx.randomPublic();
+    proof.commitment[0] = await randomPublic(ctx);
     await expect(privateKey.verifyEncryption(ciphertext, proof)).rejects.toThrow(
       'Invalid encryption'
     );

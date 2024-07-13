@@ -1,7 +1,8 @@
 import { Group, Point } from 'vsslib/backend';
 import {
   initBackend,
-  generateSecret,
+  randomSecret,
+  randomPublic,
   distributeSecret,
   generateKey,
   createSchnorrPacket,
@@ -18,7 +19,7 @@ import { randomIndex } from './utils';
 
 export const buildMessage = async <P extends Point>(ctx: Group<P>, scheme: ElgamalScheme) => {
   if (scheme == ElgamalSchemes.PLAIN) {
-    return await ctx.randomPublic();
+    return await randomPublic(ctx);
   } else {
     return Uint8Array.from(Buffer.from('destroy earth'));
   }
@@ -33,7 +34,7 @@ export const selectPartialPublic = <P extends Point>(index: number, shares: Part
 
 export const createRawSharing = async (system: System, nrShares: number, threshold: number) => {
   const ctx = initBackend(system);
-  const { secret, publicBytes } = await generateSecret(ctx);
+  const { secret, publicBytes } = await randomSecret(ctx);
   const { sharing } = await distributeSecret(ctx, nrShares, threshold, secret);
   const secretShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
@@ -96,7 +97,7 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
     if (withNonce) {
       nonces.filter((n: IndexedNonce) => n.index == index)[0].nonce = await randomNonce();
     } else {
-      packets.filter((p: SchnorrPacket) => p.index == index)[0].value = await ctx.randomPublic();
+      packets.filter((p: SchnorrPacket) => p.index == index)[0].value = await randomPublic(ctx);
     } 
   }
   return { packets, blame, nonces };
@@ -143,7 +144,7 @@ export const mockThresholdDecryptionSetup = async (opts: {
     if (withNonce) {
       nonces.filter((n: IndexedNonce) => n.index == index)[0].nonce = await randomNonce();
     } else {
-      partialDecryptors.filter((d: PartialDecryptor) => d.index == index)[0].value = await ctx.randomPublic();
+      partialDecryptors.filter((d: PartialDecryptor) => d.index == index)[0].value = await randomPublic(ctx);
     } 
   }
   return {

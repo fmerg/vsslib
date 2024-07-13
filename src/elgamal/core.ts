@@ -1,5 +1,6 @@
 import { Point, Group } from 'vsslib/backend';
 import { leInt2Buff } from 'vsslib/arith';
+import { unpackScalar, unpackPoint } from 'vsslib/secrets';
 import { Algorithms, BlockModes } from 'vsslib/enums';
 import { Algorithm, BlockMode } from 'vsslib/types';
 import { AesError, ElgamalError } from 'vsslib/errors';
@@ -61,7 +62,7 @@ abstract class BaseCipher<P extends Point, A> {
   async decrypt(ciphertext: { alpha: A, beta: Uint8Array}, secret: bigint): Promise<Uint8Array> {
     let beta;
     try {
-      beta = await this.ctx.unpackValid(ciphertext.beta);
+      beta = await unpackPoint(this.ctx, ciphertext.beta);
     } catch (err: any) {
       throw new ElgamalError(
         'Could not decrypt: ' + err.message
@@ -86,7 +87,7 @@ abstract class BaseCipher<P extends Point, A> {
   ): Promise<Uint8Array> {
     try {
       return await this.decapsulate(
-        ciphertext.alpha, await this.ctx.unpackValid(decryptor)
+        ciphertext.alpha, await unpackPoint(this.ctx, decryptor)
       );
     } catch (err: any) {
       throw new ElgamalError(
@@ -103,7 +104,8 @@ abstract class BaseCipher<P extends Point, A> {
     pub: P,
     randomness: Uint8Array
   ): Promise<Uint8Array> {
-    const decryptor = await this.ctx.exp(pub, this.ctx.leBuff2Scalar(randomness));
+    const r = await unpackScalar(this.ctx, randomness);
+    const decryptor = await this.ctx.exp(pub, r);
     try {
       return await this.decapsulate(ciphertext.alpha, decryptor);
     } catch (err: any) {
@@ -129,7 +131,7 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
   }> => {
     let messageUnpacked;
     try {
-      messageUnpacked = await this.ctx.unpackValid(message);
+      messageUnpacked = await unpackPoint(this.ctx, message);
     } catch (err: any) {
       throw new ElgamalError(err.message);
     }
@@ -139,7 +141,7 @@ export class PlainCipher<P extends Point> extends BaseCipher<P, Uint8Array> {
   }
 
   decapsulate = async (alpha: Uint8Array, decryptor: P): Promise<Uint8Array> => {
-    const a = await this.ctx.unpackValid(alpha);
+    const a = await unpackPoint(this.ctx, alpha);
     const dInv = await this.ctx.invert(decryptor);
     const plaintext = await this.ctx.operate(a, dInv);
     return plaintext.toBytes();

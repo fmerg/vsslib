@@ -1,5 +1,6 @@
 import { leInt2Buff, mod, modInv } from 'vsslib/arith';
 import { Point, Group } from 'vsslib/backend';
+import { unpackScalar, unpackPoint } from 'vsslib/secrets'
 import { SecretShare } from 'vsslib/dealer';
 import { PublicShare } from 'vsslib/dealer';
 import { SchnorrPacket } from 'vsslib/shareholder';
@@ -50,7 +51,7 @@ export async function combineSecretShares<P extends Point>(
   let x = __0n;
   for (const { value, index } of shares) {
     const li = computeLambda(ctx, index, indexes);
-    const xi = ctx.leBuff2Scalar(value);
+    const xi = await unpackScalar(ctx, value);
     x = mod(x + li * xi, order);
   }
   return leInt2Buff(x);
@@ -70,7 +71,7 @@ export async function combinePublicShares<P extends Point>(
   let y = ctx.neutral;
   for (const { value, index } of shares) {
     const li = computeLambda(ctx, index, indexes);
-    const yi = await ctx.unpackValid(value);
+    const yi = await unpackPoint(ctx, value)
     y = await ctx.operate(y, await exp(yi, li));
   }
   return y.toBytes();
@@ -92,7 +93,7 @@ export async function combinePartialDecryptors<P extends Point>(
   for (const share of shares) {
     const { value, index } = share;
     const li = computeLambda(ctx, index, indexes);
-    const di = await ctx.unpackValid(value);
+    const di = await unpackPoint(ctx, value)
     d = await ctx.operate(d, await exp(di, li));
   }
   return d.toBytes();
@@ -108,7 +109,7 @@ export async function parseSchnorrPacket<P extends Point>(
   },
 ): Promise<PublicShare> {
   const { value, index, proof } = packet;
-  const y = await ctx.unpackValid(value);
+  const y = await unpackPoint(ctx, value)
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const nonce = opts ? opts.nonce : undefined;
   const isValid = await nizk(ctx, algorithm).verifyDlog(
@@ -159,7 +160,7 @@ export async function recoverPublic<P extends Point>(
       // outside the present block
       const { value, index } = await parseSchnorrPacket(ctx, packet, { algorithm, nonce });
       const li = computeLambda(ctx, index, indexes);
-      const yi = await ctx.unpackValid(value);
+      const yi = await unpackPoint(ctx, value)
       y = await ctx.operate(y, await exp(yi, li));
     } catch (err: any) {
       if (err instanceof InvalidPublicShare) {
@@ -249,7 +250,7 @@ export async function recoverDecryptor<P extends Point>(
       }
     }
     const li = computeLambda(ctx, index, indexes);
-    const di = await ctx.unpackValid(value);
+    const di = await unpackPoint(ctx, value);
     d = await ctx.operate(d, await exp(di, li));
   }
   const recovered = d.toBytes();

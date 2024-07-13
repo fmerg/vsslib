@@ -1,5 +1,7 @@
 import { Algorithms } from 'vsslib/enums';
-import { initBackend, generateKey } from 'vsslib';
+import { initBackend } from 'vsslib/backend';
+import { generateKey } from 'vsslib/keys';
+import { randomPublic } from 'vsslib/secrets';
 import { randomNonce } from 'vsslib/crypto';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
@@ -28,7 +30,7 @@ describe('Schnorr identification', () => {
     const ctx = initBackend(system);
     const { privateKey, publicKey } = await generateKey(ctx);
     const proof = await privateKey.proveSecret();
-    proof.commitment[0] = await ctx.randomPublic();
+    proof.commitment[0] = await randomPublic(ctx);
     await expect(publicKey.verifySecret(proof)).rejects.toThrow(
       'Invalid Schnorr proof'
     );

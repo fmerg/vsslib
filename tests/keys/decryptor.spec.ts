@@ -1,5 +1,7 @@
 import { Algorithms } from 'vsslib/enums';
-import { initBackend, generateKey } from 'vsslib';
+import { initBackend } from 'vsslib/backend';
+import { generateKey } from 'vsslib/keys';
+import { randomPublic } from 'vsslib/secrets';
 import { randomNonce } from 'vsslib/crypto';
 import { cartesian } from '../utils';
 import { buildMessage } from '../helpers';
@@ -46,7 +48,7 @@ describe('Decryptor', () => {
     const message = await buildMessage(ctx, scheme);
     const { ciphertext, decryptor } = await publicKey.encrypt(message, { scheme });
     const proof = await privateKey.proveDecryptor(ciphertext, decryptor);
-    proof.commitment[0] = await ctx.randomPublic();
+    proof.commitment[0] = await randomPublic(ctx);
     await expect(publicKey.verifyDecryptor(ciphertext, decryptor, proof)).rejects.toThrow(
       'Invalid decryptor'
     );

@@ -1,6 +1,6 @@
 import { initBackend, generateKey } from 'vsslib';
 import { PrivateKey, PublicKey } from 'vsslib/keys';
-import { isEqualSecret } from 'vsslib/secrets';
+import { unpackScalar, unpackPoint, isEqualSecret } from 'vsslib/secrets';
 import { resolveTestConfig } from '../environ';
 
 const { systems } = resolveTestConfig();
@@ -11,8 +11,8 @@ describe('Structure of asymmetric keys', () => {
     const { privateKey, publicKey } = await generateKey(ctx);
 
     const g = ctx.generator;
-    const x = ctx.leBuff2Scalar(privateKey.asBytes());
-    const y = await ctx.unpackValid(publicKey.asBytes());
+    const x = await unpackScalar(ctx, privateKey.asBytes());
+    const y = await unpackPoint(ctx, publicKey.asBytes());
     expect(await y.equals(await ctx.exp(g, x))).toBe(true);
   });
   it.each(systems)('public key extraction - over %s', async (system) => {
@@ -23,8 +23,8 @@ describe('Structure of asymmetric keys', () => {
     expect(await publicKey.equals(targetPublic)).toBe(true);
 
     const g = ctx.generator;
-    const x = ctx.leBuff2Scalar(privateKey.asBytes());
-    const y = await ctx.unpackValid(publicKey.asBytes());
+    const x = await unpackScalar(ctx, privateKey.asBytes());
+    const y = await unpackPoint(ctx, publicKey.asBytes());
     expect(await y.equals(await ctx.exp(g, x))).toBe(true);
   });
   it.each(systems)('keypair equality - over %s', async (system) => {

@@ -1,4 +1,5 @@
 import { initBackend } from 'vsslib/backend';
+import { randomPublic } from 'vsslib/secrets';
 import { PartialKey } from 'vsslib/keys/shares';
 import { Algorithms } from 'vsslib/enums';
 import { System, ElgamalScheme, Algorithm } from 'vsslib/types';
@@ -12,7 +13,7 @@ const createPartialDecryptorSetup = async (opts: {
 }) => {
   const { system, scheme, algorithm, nonce } = opts;
   const ctx = initBackend(system);
-  const privateKey = new PartialKey(ctx, await ctx.randomSecret(), 666);
+  const privateKey = new PartialKey(ctx, await ctx.generateSecret(), 666);
   const publicKey = await privateKey.getPublicShare();
   const message = await buildMessage(ctx, scheme);
   const { ciphertext } = await publicKey.encrypt(message, { scheme });
@@ -55,7 +56,7 @@ describe('Partial decryptor', () => {
     const { ctx, publicKey, ciphertext, decryptor } = await createPartialDecryptorSetup({
       system, scheme, algorithm
     });
-    decryptor.proof.commitment[0] = await ctx.randomPublic();
+    decryptor.proof.commitment[0] = await randomPublic(ctx);
     await expect(
       publicKey.verifyPartialDecryptor(ciphertext, decryptor, { algorithm })
     ).rejects.toThrow(

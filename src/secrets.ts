@@ -1,11 +1,12 @@
 import { Group, Point } from 'vsslib/backend';
 import { mod, leInt2Buff } from 'vsslib/arith';
-import { BadScalarError, InvalidInput } from 'vsslib/errors';
+import { BadScalarError, BadPointError, InvalidInput } from 'vsslib/errors';
 
-export const generateSecret = async <P extends Point>(ctx: Group<P>): Promise<{
+
+export const randomSecret = async <P extends Point>(ctx: Group<P>): Promise<{
   secret: Uint8Array, publicBytes: Uint8Array
 }> => {
-  const secret = await ctx.randomSecret();
+  const secret = await ctx.generateSecret();
   const g = ctx.generator;
   const x = ctx.leBuff2Scalar(secret);
   const y = await ctx.exp(g, x);
@@ -13,19 +14,6 @@ export const generateSecret = async <P extends Point>(ctx: Group<P>): Promise<{
   return { secret, publicBytes };
 }
 
-export const validateSecret = async <P extends Point>(
-  ctx: Group<P>,
-  secret: Uint8Array
-): Promise<boolean> => {
-  try {
-    await ctx.validateScalar(ctx.leBuff2Scalar(secret));
-  } catch (err: any) {
-    if (err instanceof BadScalarError) throw new InvalidInput(
-      'Invalid secret provided: ' + err.message
-    )
-  }
-  return true;
-}
 
 export const extractPublic = async <P extends Point>(
   ctx: Group<P>,
@@ -36,6 +24,46 @@ export const extractPublic = async <P extends Point>(
   const y = await ctx.exp(g, x);
   return y.toBytes();
 }
+
+
+export const randomPublic = async <P extends Point>(
+  ctx: Group<P>
+): Promise<Uint8Array> => {
+  return (await ctx.randomPoint()).toBytes();
+}
+
+
+export const unpackScalar = async <P extends Point>(
+  ctx: Group<P>,
+  secret: Uint8Array
+): Promise<bigint> => {
+  const scalar = ctx.leBuff2Scalar(secret);
+  try {
+    await ctx.validateScalar(scalar);
+  } catch (err: any) {
+    if (err instanceof BadScalarError) throw new InvalidInput(
+      'Invalid scalar provided: ' + err.message
+    )
+  }
+  return scalar;
+}
+
+
+export const unpackPoint = async <P extends Point>(
+  ctx: Group<P>,
+  publicBytes: Uint8Array
+): Promise<P> => {
+  const point = ctx.buff2Point(publicBytes);
+  try {
+    await ctx.validatePoint(point);
+  } catch (err: any) {
+    if (err instanceof BadPointError) throw new InvalidInput(
+      'Invalid point provided: ' + err.message
+    )
+  }
+  return point;
+}
+
 
 export const isEqualSecret = async <P extends Point>(
   ctx: Group<P>,
@@ -53,8 +81,8 @@ export const isEqualPublic = async <P extends Point>(
   rhs: Uint8Array
 ): Promise<boolean> => {
   // TODO: Ensure that this is constant-time, or apply ctEqualBuffer instead
-  const y = await ctx.unpackValid(lhs);
-  const u = await ctx.unpackValid(rhs);
+  const y = await unpackPoint(ctx, lhs);
+  const u = await unpackPoint(ctx, rhs);
   return y.equals(u);
 }
 
@@ -66,7 +94,7 @@ export const isKeypair = async <P extends Point>(
   // TODO: Ensure that this is constant-time, or apply ctEqualBuffer instead
   const g = ctx.generator;
   const x = ctx.leBuff2Scalar(secret);
-  const u = await ctx.unpackValid(publicBytes);
+  const u = await unpackPoint(ctx, publicBytes);
   const y = await ctx.exp(g, x);
   return y.equals(u);
 }
@@ -83,12 +111,13 @@ export const addSecrets = <P extends Point>(
   return leInt2Buff(result);
 }
 
+
 export const combinePublics = async <P extends Point>(
   ctx: Group<P>,
   publics: Uint8Array[]
 ): Promise<Uint8Array> => {
   let acc = ctx.neutral;
-  for (const y of publics.map(async p => ctx.unpackValid(p))) {
+  for (const y of publics.map(async p => unpackPoint(ctx, p))) {
     acc = await ctx.operate(acc, await y);
   }
   return acc.toBytes();

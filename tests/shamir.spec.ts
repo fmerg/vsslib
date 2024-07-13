@@ -1,6 +1,6 @@
 import { initBackend } from 'vsslib/backend';
 import { leInt2Buff } from 'vsslib/arith';
-import { generateSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib';
+import { unpackScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
 import { distributeSecret } from 'vsslib/dealer';
 import { resolveTestConfig } from './environ';
 import { cartesian } from './utils';
@@ -17,10 +17,10 @@ describe('Shamir secret sharing', () => {
   it.each(cartesian([systems, thresholdParams]))(
     'ok - without predefined shares - over %s - (n, t): %s', async (system, [n, t]) => {
     const ctx = initBackend(system);
-    const { secret: original } = await generateSecret(ctx);
+    const { secret: original } = await randomSecret(ctx);
     const { secret, sharing } = await distributeSecret(ctx, n, t, original);
     expect(sharing.polynomial.degree).toEqual(t - 1);
-    expect(sharing.polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(original));
+    expect(sharing.polynomial.evaluate(0)).toEqual(await unpackScalar(ctx, original));
     expect(await isEqualSecret(ctx, sharing.getOriginalSecret(), original)).toBe(true);
     expect(await isEqualSecret(ctx, secret, original)).toBe(true);
     expect(n).toEqual(sharing.nrShares);
@@ -41,15 +41,15 @@ describe('Shamir secret sharing', () => {
     const ctx = initBackend(system);
     const predefined: Uint8Array[] = [];
     for (let i = 0; i < t; i++) {
-      predefined.push((await generateSecret(ctx)).secret);
+      predefined.push((await randomSecret(ctx)).secret);
     }
-    const { secret: original } = await generateSecret(ctx);
+    const { secret: original } = await randomSecret(ctx);
     [0, t - 1].forEach(async (nrPredefined) => {
       const { secret, sharing } = await distributeSecret(
         ctx, n, t, original, predefined.slice(0, nrPredefined)
       );
       expect(sharing.polynomial.degree).toEqual(t - 1);
-      expect(sharing.polynomial.evaluate(0)).toEqual(ctx.leBuff2Scalar(original));
+      expect(sharing.polynomial.evaluate(0)).toEqual(await unpackScalar(ctx, original));
       expect(await isEqualSecret(ctx, sharing.getOriginalSecret(), original)).toBe(true);
       expect(await isEqualSecret(ctx, secret, original)).toBe(true);
       expect(n).toEqual(sharing.nrShares);
@@ -104,7 +104,15 @@ describe('Shamir secret sharing', () => {
     const ctx = initBackend(system);
     const secret = Uint8Array.from([0]);
     await expect(distributeSecret(ctx, 3, 2, secret)).rejects.toThrow(
-      'Invalid secret provided'
+      'Invalid scalar provided'
+    );
+  });
+  it.each(systems)(
+    'error - invalid predefined provided - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const secret = Uint8Array.from([0]);
+    await expect(distributeSecret(ctx, 3, 2, undefined, [secret])).rejects.toThrow(
+      'Invalid scalar provided'
     );
   });
 })
