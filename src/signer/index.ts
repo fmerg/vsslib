@@ -4,7 +4,7 @@ import { SigDriver } from 'vsslib/signer/driver';
 
 export { Signature } from 'vsslib/signer/driver';
 
-export default function<P extends Point, S>(
+export default function<P extends Point>(
   ctx: Group<P>,
   scheme: SignatureScheme,
   algorithm: Algorithm,

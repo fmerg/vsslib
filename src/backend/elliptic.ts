@@ -72,7 +72,7 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   validatePoint = async (point: EcPoint): Promise<boolean> => {
-    let flag = true;
+    const flag = true;
     if (await point.wrapped.equals(this._zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: any) {
       if (err.message.startsWith('bad point: ')) throw new BadPointError(

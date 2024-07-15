@@ -712,6 +712,12 @@ $ npm run dev
 $ npm run build
 ```
 
+### Lint
+
+```
+$ npm run lint
+```
+
 ### Examples
 
 ```

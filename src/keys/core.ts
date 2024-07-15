@@ -2,12 +2,12 @@ import { Group, Point } from 'vsslib/backend';
 import { Ciphertext } from 'vsslib/elgamal';
 import { NizkProof } from 'vsslib/nizk';
 import { Signature } from 'vsslib/signer';
-import { randomSecret, unpackScalar, unpackPoint, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
+import { randomSecret, unpackScalar, unpackPoint, extractPublic, isEqualPublic } from 'vsslib/secrets';
 import { distributeSecret, ShamirSharing } from 'vsslib/dealer';
 import { InvalidDecryptor, InvalidEncryption, InvalidSecret, InvalidSignature } from 'vsslib/errors';
-import { Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from 'vsslib/enums';
+import { Algorithms, BlockModes, ElgamalSchemes } from 'vsslib/enums';
 import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from 'vsslib/types';
-import { toCanonical, fromCanonical, ctEqualBuffer } from 'vsslib/common';
+import { toCanonical, fromCanonical } from 'vsslib/common';
 
 import elgamal from 'vsslib/elgamal';
 import nizk from 'vsslib/nizk';

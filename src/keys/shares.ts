@@ -66,7 +66,7 @@ export class PartialPublicKey<P extends Point> extends PublicKey<P> {
     this.index = index;
   }
 
-  async verifyPartialDecryptor<A>(
+  async verifyPartialDecryptor(
     ciphertext: Ciphertext,
     share: PartialDecryptor,
     opts?: {

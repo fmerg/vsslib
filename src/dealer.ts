@@ -7,7 +7,6 @@ import { unpackScalar, unpackPoint } from 'vsslib/secrets';
 import lagrange from 'vsslib/lagrange';
 
 const __0n = BigInt(0);
-const __1n = BigInt(1);
 
 export type SecretShare = { value: Uint8Array, index: number };
 export type SecretPacket = SecretShare & { binding?: Uint8Array };

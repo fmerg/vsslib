@@ -6,7 +6,7 @@ import { PublicShare } from 'vsslib/dealer';
 import { SchnorrPacket } from 'vsslib/shareholder';
 import { Ciphertext } from 'vsslib/elgamal';
 import { InvalidPublicShare, InvalidPartialDecryptor, InvalidInput } from 'vsslib/errors';
-import { PrivateKey, PublicKey, PartialKey, PartialPublicKey, PartialDecryptor } from 'vsslib/keys';
+import { PublicKey, PartialPublicKey, PartialDecryptor } from 'vsslib/keys';
 import { BlockModes, Algorithms } from 'vsslib/enums';
 import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
 
@@ -65,7 +65,6 @@ export async function combinePublicShares<P extends Point>(
 ): Promise<Uint8Array> {
   if (threshold && shares.length < threshold)
     throw new InvalidInput('Insufficient number of shares');
-  const order = ctx.order
   const exp = ctx.exp;
   const indexes = shares.map(share => share.index);
   let y = ctx.neutral;
@@ -86,7 +85,6 @@ export async function combinePartialDecryptors<P extends Point>(
   if (threshold && shares.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
-  const order = ctx.order;
   const exp = ctx.exp;
   const indexes = shares.map(share => share.index);
   let d = ctx.neutral;

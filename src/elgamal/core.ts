@@ -1,7 +1,7 @@
 import { Point, Group } from 'vsslib/backend';
 import { leInt2Buff } from 'vsslib/arith';
 import { unpackScalar, unpackPoint } from 'vsslib/secrets';
-import { Algorithms, BlockModes } from 'vsslib/enums';
+import { Algorithms } from 'vsslib/enums';
 import { Algorithm, BlockMode } from 'vsslib/types';
 import { AesError, ElgamalError } from 'vsslib/errors';
 
@@ -198,8 +198,7 @@ export class DhiesCipher<P extends Point> extends BaseCipher<P, DhiesAlpha> {
     alpha: DhiesAlpha,
     decryptor: P
   }> => {
-    const { ctx: { generator, randomScalar, exp } } = this;
-    const decryptor = await exp(pub, randomness);
+    const decryptor = await this.ctx.exp(pub, randomness);
     const key = await hash(Algorithms.SHA512).digest(decryptor.toBytes());
     const keyAes = key.slice(0, 32);
     const keyMac = key.slice(32, 64);

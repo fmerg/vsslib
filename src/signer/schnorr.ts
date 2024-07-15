@@ -1,6 +1,5 @@
 // TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
 import { Point, Group } from 'vsslib/backend';
-import { Algorithms } from 'vsslib/enums';
 import { Algorithm } from 'vsslib/types';
 import { unpackScalar, unpackPoint } from 'vsslib/secrets';
 import { BaseSigner } from 'vsslib/signer/base';

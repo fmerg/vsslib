@@ -1,7 +1,6 @@
 import { Point, Group } from 'vsslib/backend';
-import { mod, modInv } from 'vsslib/arith';
-import { InvalidSecretShare, InvalidPublicShare, InvalidInput } from 'vsslib/errors';
-import { leInt2Buff } from 'vsslib/arith';
+import { mod } from 'vsslib/arith';
+import { InvalidSecretShare, InvalidInput } from 'vsslib/errors';
 import { SecretShare, PublicShare, SecretPacket } from 'vsslib/dealer';
 import { unpackScalar, unpackPoint, extractPublic } from 'vsslib/secrets';
 import { NizkProof } from 'vsslib/nizk';
@@ -19,7 +18,7 @@ export async function verifyFeldmanCommitments<P extends Point>(
   commitments: Uint8Array[],
 ): Promise<boolean> {
   const { value, index } = share;
-  const x = await unpackScalar(ctx, share.value);
+  const x = await unpackScalar(ctx, value);
   const g = ctx.generator;
   const order = ctx.order;
   const lhs = await ctx.exp(g, x);
