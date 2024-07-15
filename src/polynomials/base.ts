@@ -60,7 +60,7 @@ export class BasePolynomial {
     );
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     if (short.isZero()) return long.clone();
-    let newCoeffs = new Array(long.degree).fill(__0n);
+    const newCoeffs = new Array(long.degree).fill(__0n);
     for (let i = 0; i < short.degree + 1; i++) {
       newCoeffs[i] = short.coeffs[i] + long.coeffs[i];
     }
@@ -77,7 +77,7 @@ export class BasePolynomial {
     if (this.isZero() || other.isZero())
       return new BasePolynomial([], this.order);
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
-    let newCoeffs = new Array(long.degree + short.degree + 1).fill(__0n);
+    const newCoeffs = new Array(long.degree + short.degree + 1).fill(__0n);
     for (let i = 0; i < long.degree + 1; i++) {
       for (let j = 0; j < short.degree + 1; j++) {
         newCoeffs[i + j] += long.coeffs[i] * short.coeffs[j];

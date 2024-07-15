@@ -62,7 +62,7 @@ export class PrivateKey<P extends Point> {
       nonce?: Uint8Array,
     }
   ): Promise<Signature> => {
-    let { scheme, algorithm, nonce } = opts;
+    const { scheme, algorithm, nonce } = opts;
     return signer(this.ctx, scheme, algorithm || Algorithms.DEFAULT).signBytes(
       this.secret, message, nonce
     );

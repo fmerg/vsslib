@@ -5,12 +5,12 @@ const __1n      = BigInt(1);
 const __hexLen  = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4];
 
 
-const nrBits = (num: BigInt | bigint): number => {
+const nrBits = (num: bigint | bigint): number => {
   const numHex = num.toString(16);
   return (numHex.length - 1) * 4 + __hexLen[parseInt(numHex[0], 16)];
 }
 
-const nrBytes = (num: BigInt | bigint): number => {
+const nrBytes = (num: bigint | bigint): number => {
   const nr = Math.floor((nrBits(num) - 1) / 8) + 1;
   return nr == 0 ? 1 : nr;
 }
@@ -38,7 +38,7 @@ export const leBuff2Int = (buff: Uint8Array): bigint => {
 
 
 /** big integer to little-endian bytestring */
-export const leInt2Buff = (num: BigInt | bigint) => {
+export const leInt2Buff = (num: bigint | bigint) => {
   const len = nrBytes(num);
   const buff = new Uint8Array(len);
   const view = new DataView(buff.buffer);

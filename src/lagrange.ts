@@ -34,7 +34,7 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
           const [xi, _] = points[i];
           w *= xj - xi;
           const len = pj.length;
-          let _pj = new Array(len + 1);
+          const _pj = new Array(len + 1);
           _pj[0] = - xi * pj[0];
           for (let a = 0; a < len - 1; a++) {
             _pj[a + 1] = pj[a] - xi * pj[a + 1];
