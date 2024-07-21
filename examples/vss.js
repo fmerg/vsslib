@@ -1,16 +1,13 @@
 import { Command } from 'commander';
-import {
-  parseDecimal,
-  parseCommaSeparatedDecimals,
-  Party,
-  Combiner,
-  selectParty,
-} from './utils';
+import { parseDecimal, parseCommaSeparatedDecimals } from './utils';
+import { VssSchemes, Party, Combiner, selectParty } from './infra';
 import {
   initBackend,
+  randomPublic,
   isKeypair,
   distributeSecret,
   parseFeldmanPacket,
+  parsePedersenPacket,
   createSchnorrPacket,
   recoverPublic,
   InvalidSecretShare,
@@ -26,7 +23,7 @@ const program = new Command();
 
 
 async function demo() {
-  let { system, nrShares: n, threshold: t, combine: qualified, verbose } = program.opts();
+  let { scheme, system, nrShares: n, threshold: t, combine: qualified, verbose } = program.opts();
   qualified = qualified || Array.from({ length: t }, (_, i) => i + 1);
 
   // Cryptosystem setup
@@ -39,13 +36,27 @@ async function demo() {
     parties.push(party);
   }
 
+  let publicBytes;
+  switch(scheme) {
+    case VssSchemes.FELDMAN:
+      break;
+    case VssSchemes.PEDERSEN:
+      publicBytes = await randomPublic(ctx);   // TODO: proper name
+      break;
+    default:
+      throw Error(
+        `Unsupported VSS scheme: ${scheme}`
+      );
+  }
+
   // VSS phase ----------------------------------------------------------------
 
   // The dealer shares some uniformly sampled secret
   const { secret: originalSecret, sharing } = await distributeSecret(ctx, n, t);
-  // The dealer generates Feldman commitments and verifiable packets for the
-  // secret shares
-  const { commitments, packets } = await sharing.createFeldmanPackets();
+  // The dealer generates commitments and verifiable secret packets
+  const { commitments, packets } = (scheme == VssSchemes.FELDMAN) ?
+    await sharing.createFeldmanPackets() :
+    await sharing.createPedersenPackets(publicBytes);
 
   // At this point, the dealer broadcasts the commitments and sends each packet to the
   // respective shareholder in private
@@ -54,7 +65,9 @@ async function demo() {
   for (const packet of packets) {
     const recipient = selectParty(packet.index, parties);
     try {
-      const { share } = await parseFeldmanPacket(recipient.ctx, commitments, packet);
+      const { share } = (scheme == VssSchemes.FELDMAN) ?
+        await parseFeldmanPacket(recipient.ctx, commitments, packet) :
+        await parsePedersenPacket(recipient.ctx, commitments, publicBytes, packet);
       // Store the retrieved share locally
       recipient.share = share;
     } catch (err) {
@@ -97,7 +110,8 @@ async function demo() {
 
 program
   .name('node feldman.js')
-  .description('Feldman Verifiable Secret Sharing (Feldman VSS) - demo')
+  .description('Verifiable Secret Sharing (VSS) - demo')
+  .option('--scheme <SCHEME>', 'VSS Scheme to use. Must be either \"feldman\" or \"pedersen\"', VssSchemes.DEFAULT)
   .option('-s, --system <SYSTEM>', 'Underlying cryptosystem', DEFAULT_SYSTEM)
   .option('-n, --nr-shares <NR>', 'Number of shareholders', parseDecimal, DEFAULT_NR_SHARES)
   .option('-t, --threshold <THRESHOLD>', 'Threshold paramer', parseDecimal, DEFAULT_THRESHOLD)

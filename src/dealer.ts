@@ -166,7 +166,7 @@ export async function distributeSecret<P extends Point>(
       const x = index;
       const y = index > predefined.length ?
         await ctx.randomScalar() :
-        await unpackScalar(ctx, predefined[index - 1]); // TODO: test invalid predefined
+        await unpackScalar(ctx, predefined[index - 1]);
       xyPoints[index] = [x, y];
       index++;
     }
