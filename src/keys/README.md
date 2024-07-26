@@ -18,8 +18,8 @@ Use at your own risk for the moment**
   * [Decryption](#decryption)
   * [Encryption with proof](#encryption-with-proof)
     * [Standalone proof of randomness](#standalone-proof-of-randomness)
-* [Decryptors](#decryptors)
-  * [Standalone proof-of-decryptor](#standalone-proof-of-decryptor)
+* [Elgamal decryptors](#elgamal-decryptors)
+  * [Verifiable decryptors](#verifiable-decryptors)
 * [Signatures](#signatures)
   * [Signcryption](#signcryption)
 * [Key sharing]("#key-sharing")
@@ -68,7 +68,7 @@ Retrieve the public key instance from its byte representation as follows.
 const receivedPublic = new PublicKey(ctx, publicBytes);
 ```
 
-## <a name="schnorr-identification"></a>Schnorr identification (NIZK proof of secret)
+## <a name="schnorr-identification"></a>Schnorr identification
 
 ### Prover's side
 
@@ -79,7 +79,7 @@ follows.
 const proof = await privateKey.proveSecret({ algorithm: "sha256", nonce: ... });
 ```
 
-The optional `algorithm` parameter specifies the hash function used for the
+The optional `algorithm` parameter specifies the hash function of the
 Fiat-Shamir transform (defaults to SHA256). The optional `nonce` parameter is
 any bytestring maintaining state between prover and verifier, so that the
 latter defends themselves against replay attacks.
@@ -135,8 +135,8 @@ selected scheme.
 `randomness` is the random scalar generated during the process, which
 admits further processing in some protocols and can be used to prove that the
 operation was not bogus. The `decryptor` can be employed in
-protocols where decruption is delegated to third parties
-(see Sec. [Decryptors]("#decryptors") for details).
+protocols where decryption is delegated to third parties
+(see Sec. [Elgamal decryptors](#decryptors) for details).
 
 > **Warning** Both `randomness` and `decryptor` can be used to
 > retrieve the original message without knowledge of the recipient's private
@@ -176,7 +176,7 @@ const { ciphertext, ... } = await publicKey.encrypt(message, { scheme: "dhies", 
 
 The optional `algorithm` parameter specifies the hash function used to generate
 the attached MAC (defaults to SHA256).
-The optional `mode` parameter specified the AES block mode for the involved
+The optional `mode` parameter specifies the AES block mode for the involved
 symmetric operation (defaults to AES-256-CBC).
 
 
@@ -191,7 +191,7 @@ const message = Uint8Array.from(Buffer.from("destroy earth"));
 const { ciphertext, ... } = await publicKey.encrypt(message, { scheme: "hybrid", mode: "aes-256-cbc" });
 ```
 
-The optional `mode` parameter specified the AES block mode for the involved
+The optional `mode` parameter specifies the AES block mode for the involved
 symmetric operation (defaults to AES-256-CBC).
 
 #### <a name="plain-encryption"></a>Plain encryption
@@ -212,10 +212,10 @@ No optional parameters apply for this scheme.
 ### Decryption
 
 The decryption interface is uniform for all encryption schemes
-(see Sec. [Elgamal encryption](#elgamal-encryption)).
+(see Sec. [Encryption](#encryption)).
 
-Given a ciphertext generated in any of the above ways, use the respective private key to
-decrypt it as follows.
+Given a `ciphertext` generated in any of the above ways, use the respective private key to
+recover the original message as follows.
 
 ```js
 const plaintext = privateKey.decrypt(ciphertext, { scheme: ..., ... });
@@ -268,21 +268,68 @@ const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorith
 await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
 ```
 
-## Decryptors
+## Elgamal decryptors
+
+The decryptor interface is uniform for all encryption schemes
+(see Sec. [Elgamal encryption](#elgamal-encryption)).
+
+Given a `ciphertext` and `decryptor` generated in any of the above ways,
+recover the original message as follows.
 
 ```js
-const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext, { algorithm: "sha256" });
+import { decryptWithDecryptor } from "vsslib";
+
+const plaintext = await decryptWithDecryptor(ctx, ciphertext, decryptor, { scheme: ..., ...});
 ```
 
+The obligatory `scheme` parameter specifies the expected encryption scheme and
+should coincide with that used during ciphertext generation.
+The rest parameters are optional and should
+coincide with those applied during ciphertext generation.
+
+### Verifiable decryptors
+
+In practice, it is usually the recipient of a ciphertext who delegates decryption
+by sending the decryptor to some third party.
+
 ```js
-await publicKey.verifyDecryptor(ciphertext, decryptor, proof, { algorithm: "sha256" });
+const { decryptor, proof } = await privateKey.computeDecryptor(ciphertext, { algorithm: "sha256", nonce: ... });
 ```
 
-### <a name="standalone-proof-of-decryptor"></a>Standalone proof-of-decryptor
+The output `proof` is a NIZK (Chaum-Pedersen) proof that `decryptor` is not
+a bogus value regarding the ciphertext, making it verifiable on behalf of the
+third party. The optional `algorithm` parameter specifies the hash function
+of the Fiat-Shamir transform during proof generation (defaults to SHA256). The
+optional `nonce` parameter can be any bytestring used for maintaining state between the
+recipient and the decrypting party for the purpose of defending against replay
+attacks.
 
+Before applying the decryptor in order to retrieve the original message,
+the decrypting party should normally verify that it corresponds indeed to the
+ciphertext. It does so against the recipient's public key as follows.
 
 ```js
-const proof = await privateKey.proveDecryptor(ciphertext, decryptor, { algorithm: "sha256" })
+import { decryptWithDecryptor, InvalidDecryptor };
+
+// Verify the decryptor against the provided ciphertext with respect to its
+// recipient's public key
+try {
+  await publicKey.verifyDecryptor(ciphertext, decryptor, proof, {
+    algorithm: "sha256", nonce: ...
+  });
+} catch (err) {
+  if (err instanceof InvalidDecryptor) {
+    // Follow policy as specified by context
+    ...
+  } else {
+    ...
+  }
+}
+
+// Proceed to message recovery
+const plaintext = await decryptWithDecryptor(ctx, ciphertext, decryptor, {
+  scheme: ..., ...
+});
 ```
 
 ## Signatures

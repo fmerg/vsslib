@@ -121,8 +121,8 @@ is attained in a particular context by other means.
     * [Cryptosystem setup](#cryptosystem-setup)
     * [Secret generation](#secret-generation)
   * [Shamir's secret sharing (SSS)](#shamir-secret-sharing)
-    * [Distributing the secret](#distributing the secret)
-    * [Basic interface](#basic-interface)
+    * [Distributing the secret](#distributing-the-secret)
+    * [Basic sharing interface](#basic-sharing-interface)
     * [Combination of secret shares](#combination-of-secret-shares)
     * [Combination of public shares](#combination-of-public-shares)
   * [Verifiable secret sharing (VSS)](#verifiable-secret-sharing)
@@ -222,7 +222,7 @@ along with the sharing.
 const { secret, sharing } = await distributeSecret(ctx, n, t);
 ```
 
-### Basic interface
+### Basic sharing interface
 
 Access of original secret in raw-bytes mode:
 

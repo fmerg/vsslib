@@ -158,11 +158,12 @@ export class PrivateKey<P extends Point> {
   }
 
   computeDecryptor = async (
-    ciphertext: Ciphertext, opts?: { algorithm?: Algorithm }
-  ): Promise<{
-    decryptor: Uint8Array,
-    proof: NizkProof
-  }> => {
+    ciphertext: Ciphertext,
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array
+    }
+  ): Promise<{ decryptor: Uint8Array, proof: NizkProof }> => {
     const b = await unpackPoint(this.ctx, ciphertext.beta);
     const x = await unpackScalar(this.ctx, this.secret);
     const decryptor = (await this.ctx.exp(b, x)).toBytes();
@@ -402,6 +403,25 @@ export class PublicKey<P extends Point> {
     );
     return isValid;
   }
+}
+
+
+export const decryptWithDecryptor = async <P extends Point>(
+  ctx: Group<P>,
+  ciphertext: Ciphertext,
+  decryptor:  Uint8Array,
+  opts: {
+    scheme: ElgamalScheme,
+    mode?: BlockMode,
+    algorithm?: Algorithm,
+  }
+): Promise<Uint8Array> => {
+  return elgamal(
+    ctx,
+    opts.scheme,
+    opts.algorithm || Algorithms.DEFAULT,
+    opts.mode || BlockModes.DEFAULT,
+  ).decryptWithDecryptor(ciphertext, decryptor);
 }
 
 

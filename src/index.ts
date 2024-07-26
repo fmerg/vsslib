@@ -21,7 +21,7 @@ export {
   unpackPoint,
 } from 'vsslib/secrets';
 
-export { generateKey, extractPartialKey } from 'vsslib/keys';
+export { generateKey, extractPartialKey, decryptWithDecryptor } from 'vsslib/keys';
 
 export { distributeSecret } from 'vsslib/dealer';
 
@@ -49,5 +49,6 @@ export {
   InvalidSecret,
   InvalidSecretShare,
   InvalidPublicShare,
+  InvalidDecryptor,
   InvalidInput,
 } from 'vsslib/errors';
