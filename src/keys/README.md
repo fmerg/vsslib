@@ -21,8 +21,9 @@ Use at your own risk for the moment**
 * [Elgamal decryptors](#elgamal-decryptors)
   * [Verifiable decryptors](#verifiable-decryptors)
 * [Signatures](#signatures)
-  * [Signcryption](#signcryption)
-* [Key sharing]("#key-sharing")
+  * [Schnorr signature](#schnorr-signature)
+* [Signcryption](#signcryption)
+* [Key sharing](#key-sharing)
   * [Feldman VSS Scheme](#feldman-scheme)
   * [Pedersen VSS Scheme](#pedersen-scheme)
   * [Public key recovery](#public-key-recovery)
@@ -334,23 +335,29 @@ const plaintext = await decryptWithDecryptor(ctx, ciphertext, decryptor, {
 
 ## Signatures
 
+The key API exposes a uniform interface for signing messages in raw-bytes
+format.
+
 ```js
 const message = Uint8Array.from(Buffer.from("destroy earth"));
 ```
+
+### Schnorr signature
+
+Below, the optional `algorithm` parameter specifies the hash function of the
+Fiat-Shamir transform (defaults to SHA256).
 
 ```js
 const signature = await privateKey.signMessage(message, { scheme: "schnorr", algorithm: "sha256" });
 ```
 
+The signature is verified as follows.
+
 ```js
 await publicKey.verifySignature(message, signature, { scheme: "schnorr", algorithm: "sha256" });
 ```
 
-### Signcryption
-
-```js
-const message = Uint8Array.from(Buffer.from("destroy earth"));
-```
+## Signcryption
 
 ```js
 const { ciphertext, signature } = await senderPrivate.sigEncrypt(message, recipientPublic, { encScheme: "hybrid", sigScheme: "schnorr" });
@@ -363,36 +370,15 @@ const { plaintext } = await recipientPrivate.sigDecrypt(ciphertext, signature, s
 ## Key sharing
 
 ```js
-const { privateKey } = await generateKey(ctx);
-
-const sharing = await privateKey.generateSharing(5, 3);
+const sharing = await privateKey.generateSharing(5, 3); // (5, 3)-Shamir sharing of private key
 ```
 
-### <a name="feldman-scheme"></a>Feldman VSS Scheme
-
-```js
-const { packets, commitments } = await sharing.createFeldmanPackets();
-```
-
-```js
-import { extractPartialKey } from "vsslib";
-
-const privateShare = await extractPartialKey(ctx, commitments, packet);
-```
-
-### <a name="pedersen-scheme"></a>Pedersen VSS Scheme
-
-```js
-const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
-```
-
-```js
-import { extractPartialKey } from "vsslib";
-
-const privateShare = await extractPartialKey(ctx, commitments, packet);
-```
+This produces an object similar to the one described [here](../../README.md#shamir-secret-sharing).
 
 ### <a name="public-key-recovery"></a>Public key recovery
+
+Verifiable public shares can be generated from secret shares
+[here](../../README.md#generation-of-packets).
 
 ```js
 import { recoverPublicKey } from "vsslib";
