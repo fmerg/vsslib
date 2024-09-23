@@ -7,7 +7,7 @@ import {
   isEqualPublic,
   parseSchnorrPacket,
   combinePublicShares,
-  distributeSecret,
+  shareSecret,
   extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
@@ -58,7 +58,7 @@ async function demo() {
   // Computation of sharings
   for (let party of parties) {
     console.time(`SHARING ${party.index}`);
-    const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
+    const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
     console.timeEnd(`SHARING ${party.index}`);
     party.originalSecret = secret ;
     party.originalPublic = await extractPublic(ctx, party.originalSecret);

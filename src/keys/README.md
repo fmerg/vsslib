@@ -23,15 +23,6 @@ Use at your own risk for the moment**
 * [Signatures](#signatures)
   * [Schnorr signature](#schnorr-signature)
 * [Signcryption](#signcryption)
-* [Key sharing](#key-sharing)
-  * [Feldman VSS Scheme](#feldman-scheme)
-  * [Pedersen VSS Scheme](#pedersen-scheme)
-  * [Public key recovery](#public-key-recovery)
-* [Partial decryptors](#partial-decryptors)
-  * [Partial decryptor generation](#partial-decryptor-generation)
-  * [Decryptor recovery](#decryptor-recovery)
-  * [Recovery with accurate blaming](#recovery-with-accurate-blaming)
-  * [Raw combination of partial decryptors](#raw-combination-of-partial-decryptors)
 
 ## Generation
 
@@ -366,38 +357,3 @@ const { ciphertext, signature } = await senderPrivate.sigEncrypt(message, recipi
 ```js
 const { plaintext } = await recipientPrivate.sigDecrypt(ciphertext, signature, senderPublic, { encScheme: "hybrid", sigScheme: "schnorr" });
 ```
-
-## Key sharing
-
-```js
-const sharing = await privateKey.generateSharing(5, 3); // (5, 3)-Shamir sharing of private key
-```
-
-This produces an object similar to the one described [here](../../README.md#shamir-secret-sharing).
-
-### <a name="public-key-recovery"></a>Public key recovery
-
-Verifiable public shares can be generated from secret shares
-[here](../../README.md#generation-of-packets).
-
-```js
-import { recoverPublicKey } from "vsslib";
-```
-
-```js
-const { publicKey } = await recoverPublicKey(ctx, publicKeyShares, { algorithm });
-```
-
-```js
-const { publicKey, blame } = await recoverPublicKey(ctx, publicKeyShares, { algorithm, errorOnInvalid: false });
-```
-
-## <a name="partial-decryptors"></a>Partial decryptors
-
-### <a name="partial-decryptor-generation"></a>Partial decryptor generation
-
-### <a name="decryptor-recovery"></a>Decryptor recovery
-
-### <a name="recovery-accurate-blaming"></a>Recovery with accurate blaming
-
-### <a name="raw-combination-of-partial-decryptors"></a>Raw combination of partial decryptors

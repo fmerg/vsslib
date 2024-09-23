@@ -5,7 +5,7 @@ import {
   initBackend,
   randomPublic,
   isKeypair,
-  distributeSecret,
+  shareSecret,
   parseFeldmanPacket,
   parsePedersenPacket,
   createSchnorrPacket,
@@ -52,7 +52,7 @@ async function demo() {
   // VSS phase ----------------------------------------------------------------
 
   // The dealer shares some uniformly sampled secret
-  const { secret: originalSecret, sharing } = await distributeSecret(ctx, n, t);
+  const { secret: originalSecret, sharing } = await shareSecret(ctx, n, t);
   // The dealer generates commitments and verifiable secret packets
   const { commitments, packets } = (scheme == VssSchemes.FELDMAN) ?
     await sharing.createFeldmanPackets() :

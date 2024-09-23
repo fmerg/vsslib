@@ -1,12 +1,11 @@
 import { leInt2Buff, mod, modInv } from 'vsslib/arith';
 import { Point, Group } from 'vsslib/backend';
 import { unpackScalar, unpackPoint } from 'vsslib/secrets'
-import { SecretShare } from 'vsslib/dealer';
-import { PublicShare } from 'vsslib/dealer';
-import { SchnorrPacket } from 'vsslib/shareholder';
+import { SecretShare, PublicShare } from 'vsslib/dealer';
+import { SchnorrPacket, PartialPublicKey, PartialDecryptor } from 'vsslib/shareholder';
 import { Ciphertext } from 'vsslib/elgamal';
 import { InvalidPublicShare, InvalidPartialDecryptor, InvalidInput } from 'vsslib/errors';
-import { PublicKey, PartialPublicKey, PartialDecryptor } from 'vsslib/keys';
+import { PublicKey } from 'vsslib/keys';
 import { BlockModes, Algorithms } from 'vsslib/enums';
 import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
 

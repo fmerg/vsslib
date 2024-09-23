@@ -21,15 +21,19 @@ export {
   unpackPoint,
 } from 'vsslib/secrets';
 
-export { generateKey, extractPartialKey, decryptWithDecryptor } from 'vsslib/keys';
+export { generateKey } from 'vsslib/keys';
 
-export { distributeSecret } from 'vsslib/dealer';
+export { shareSecret, shareKey } from 'vsslib/dealer';
 
 export {
   extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
   createSchnorrPacket,
+  parsePartialKey,
+  PartialKey,
+  PartialPublicKey,
+  PartialDecryptor
 } from 'vsslib/shareholder';
 
 export {

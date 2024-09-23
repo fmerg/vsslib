@@ -1,5 +1,5 @@
-import { extractPartialKey } from 'vsslib/keys';
 import { SecretPacket } from 'vsslib/dealer';
+import { parsePartialKey } from 'vsslib/shareholder';
 import { randomPublic, isEqualSecret } from 'vsslib/secrets';
 import { resolveTestConfig } from '../environ';
 import { selectPartialKey, createKeySharingSetup } from '../helpers';
@@ -13,7 +13,7 @@ describe('Pedersen VSS scheme', () => {
     const publicBytes = await randomPublic(ctx);
     const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
     packets.forEach(async (packet: SecretPacket) => {
-      const partialKey = await extractPartialKey(ctx, commitments, packet, publicBytes);
+      const partialKey = await parsePartialKey(ctx, commitments, packet, publicBytes);
       const targetKey = selectPartialKey(partialKey.index, partialKeys);
       expect(
         await isEqualSecret(ctx, partialKey.secret, targetKey.secret)
@@ -26,7 +26,7 @@ describe('Pedersen VSS scheme', () => {
     const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
     commitments[0] = await randomPublic(ctx);  // tamper first commitment
     packets.forEach(async (packet: SecretPacket) => {
-      await expect(extractPartialKey(ctx, commitments, packet, publicBytes)).rejects.toThrow(
+      await expect(parsePartialKey(ctx, commitments, packet, publicBytes)).rejects.toThrow(
         'Invalid share'
       );
     })

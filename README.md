@@ -24,10 +24,10 @@ const ctx = initBackend("ed25519");
 
 **Dealer's side**
 ```js
-import { distributeSecret, createFeldmanPackets } from "vsslib";
+import { shareSecret, createFeldmanPackets } from "vsslib";
 
 // Generate a Shamir (5, 3)-sharing for some uniformly random secret
-const { sharing } = await distributeSecret(ctx, 5, 3);
+const { sharing } = await shareSecret(ctx, 5, 3);
 
 // Generate verifiable packets for the totality of secret shares
 const { packets, commitments } = await sharing.createFeldmanPackets();
@@ -132,9 +132,10 @@ is attained in a particular context by other means.
     * [Verifiable share packets](#verifiable-share-packets)
     * [Recovery operation](#recovery-operation)
     * [Recovery with accurate blaming](#recovery-with-accurate-blaming)
-  * [Threshold decryption](#threshold-decryption)
-    * [Accurate blaming](#accurate-blaming)
-  * [Implementing a Distributed Key Generation (DKG) scheme](#dkg-implementation)
+  * [Key layer](#key-layer)
+    * [Share extraction](#share-extraction)
+    * [Partial decryptors](#partial-decryptors)
+    * [Threshold decryption](#threshold-decryption)
   * [Pluggable backend](#pluggable-backend)
 * [Security](#security)
 * [Development](#development)
@@ -205,9 +206,9 @@ with respect to `ctx`.
 Generate a (n, t)-sharing of a given secret as follows.
 
 ```js
-import { distributeSecret } from "vsslib";
+import { shareSecret } from "vsslib";
 
-const { sharing } = await distributeSecret(ctx, n, t, secret);
+const { sharing } = await shareSecret(ctx, n, t, secret);
 ```
 
 > **Warning**
@@ -219,7 +220,7 @@ If not provided, the secret is created on the fly and can be returned
 along with the sharing.
 
 ```js
-const { secret, sharing } = await distributeSecret(ctx, n, t);
+const { secret, sharing } = await shareSecret(ctx, n, t);
 ```
 
 ### Basic sharing interface
@@ -621,7 +622,21 @@ containing the public shares of cheating shareholders.
 > **Warning**
 > Make sure to always check the `blame` index when using the `errorOnInvalid: false` option.
 
-## Threshold decryption
+## Key layer
+
+### Share extraction
+
+### Partial decryptors
+
+#### <a name="partial-decryptor-generation"></a>Partial decryptor generation
+
+#### <a name="decryptor-recovery"></a>Decryptor recovery
+
+#### <a name="recovery-accurate-blaming"></a>Recovery with accurate blaming
+
+#### <a name="raw-combination-of-partial-decryptors"></a>Raw combination of partial decryptors
+
+### Threshold decryption
 
 ```js
 const { ciphertext } = await publicKey.encrypt(message, { scheme: "ies" });
@@ -635,13 +650,11 @@ const partialDrecryptor = await privateShare.computePartialDecryptor(ciphertext)
 const { plaintext } = await thresholdDecrypt(ctx, ciphertext, partialDrecryptors, partialPublics, { scheme });
 ```
 
-### Accurate blaming
+#### Accurate blaming
 
 ```js
 const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, partialDrecryptor, partialPublics, { scheme, errorOnInvalid: false });
 ```
-
-## <a name="dkg-implementation"></a>Implementing a Distributed Key Generation (DKG) Scheme
 
 ## Pluggable backend
 

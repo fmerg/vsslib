@@ -1,6 +1,6 @@
 import { initBackend } from 'vsslib/backend';
 import { randomPublic } from 'vsslib/secrets';
-import { PartialKey } from 'vsslib/keys/shares';
+import { PartialKey } from 'vsslib/shareholder';
 import { Algorithms } from 'vsslib/enums';
 import { System, ElgamalScheme, Algorithm } from 'vsslib/types';
 import { randomNonce } from 'vsslib/crypto';

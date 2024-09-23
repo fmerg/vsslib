@@ -1,5 +1,5 @@
-import { extractPartialKey } from 'vsslib/keys';
 import { SecretPacket } from 'vsslib/dealer';
+import { parsePartialKey } from 'vsslib/shareholder';
 import { randomPublic, isEqualSecret } from 'vsslib/secrets';
 import { resolveTestConfig } from '../environ';
 import { selectPartialKey, createKeySharingSetup } from '../helpers';
@@ -12,7 +12,7 @@ describe('Feldman VSS scheme - success', () => {
     const { ctx, sharing, partialKeys } = await createKeySharingSetup(system, nrShares, threshold);
     const { packets, commitments } = await sharing.createFeldmanPackets();
     packets.forEach(async (packet: SecretPacket) => {
-      const partialKey = await extractPartialKey(ctx, commitments, packet);
+      const partialKey = await parsePartialKey(ctx, commitments, packet);
       const targetKey = selectPartialKey(partialKey.index, partialKeys);
       expect(
         await isEqualSecret(ctx, partialKey.secret, targetKey.secret)
@@ -24,7 +24,7 @@ describe('Feldman VSS scheme - success', () => {
     const { packets, commitments } = await sharing.createFeldmanPackets();
     commitments[0] = await randomPublic(ctx);  // tamper first commitment
     packets.forEach(async (packet: SecretPacket) => {
-      await expect(extractPartialKey(ctx, commitments, packet)).rejects.toThrow(
+      await expect(parsePartialKey(ctx, commitments, packet)).rejects.toThrow(
         'Invalid share'
       );
     })

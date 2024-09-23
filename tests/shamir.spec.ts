@@ -1,7 +1,7 @@
 import { initBackend } from 'vsslib/backend';
 import { leInt2Buff } from 'vsslib/arith';
 import { unpackScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
-import { distributeSecret } from 'vsslib/dealer';
+import { shareSecret } from 'vsslib/dealer';
 import { resolveTestConfig } from './environ';
 import { cartesian } from './utils';
 
@@ -18,7 +18,7 @@ describe('Shamir secret sharing', () => {
     'ok - without predefined shares - over %s - (n, t): %s', async (system, [n, t]) => {
     const ctx = initBackend(system);
     const { secret: original } = await randomSecret(ctx);
-    const { secret, sharing } = await distributeSecret(ctx, n, t, original);
+    const { secret, sharing } = await shareSecret(ctx, n, t, original);
     expect(sharing.polynomial.degree).toEqual(t - 1);
     expect(sharing.polynomial.evaluate(0)).toEqual(await unpackScalar(ctx, original));
     expect(await isEqualSecret(ctx, sharing.getOriginalSecret(), original)).toBe(true);
@@ -45,7 +45,7 @@ describe('Shamir secret sharing', () => {
     }
     const { secret: original } = await randomSecret(ctx);
     [0, t - 1].forEach(async (nrPredefined) => {
-      const { secret, sharing } = await distributeSecret(
+      const { secret, sharing } = await shareSecret(
         ctx, n, t, original, predefined.slice(0, nrPredefined)
       );
       expect(sharing.polynomial.degree).toEqual(t - 1);
@@ -73,21 +73,21 @@ describe('Shamir secret sharing', () => {
   it.each(systems)(
     'error - number of requested shares < threshold - over %s', async (system) => {
     const ctx = initBackend(system);
-    await expect(distributeSecret(ctx, 0, 2)).rejects.toThrow(
+    await expect(shareSecret(ctx, 0, 2)).rejects.toThrow(
       'Number of shares must be at least one'
     );
   });
   it.each(systems)(
     'error - threshold parameter exceeds number of shares - over %s', async (system) => {
     const ctx = initBackend(system);
-    await expect(distributeSecret(ctx, 1, 2)).rejects.toThrow(
+    await expect(shareSecret(ctx, 1, 2)).rejects.toThrow(
       'Threshold parameter exceeds number of shares'
     );
   });
   it.each(systems)(
     'error - threshold parameter < 1 - over %s', async (system) => {
     const ctx = initBackend(system);
-    await expect(distributeSecret(ctx, 1, 0)).rejects.toThrow(
+    await expect(shareSecret(ctx, 1, 0)).rejects.toThrow(
       'Threshold parameter must be at least 1'
     );
   });
@@ -95,7 +95,7 @@ describe('Shamir secret sharing', () => {
     'error - number of predefined shares >= threshold - over %s', async (system) => {
     const ctx = initBackend(system);
     const predefined = [leInt2Buff(BigInt(1)), leInt2Buff(BigInt(2))];
-    await expect(distributeSecret(ctx, 3, 2, undefined, predefined)).rejects.toThrow(
+    await expect(shareSecret(ctx, 3, 2, undefined, predefined)).rejects.toThrow(
       'Number of predefined shares violates threshold'
     );
   });
@@ -103,7 +103,7 @@ describe('Shamir secret sharing', () => {
     'error - invalid secret - over %s', async (system) => {
     const ctx = initBackend(system);
     const secret = Uint8Array.from([0]);
-    await expect(distributeSecret(ctx, 3, 2, secret)).rejects.toThrow(
+    await expect(shareSecret(ctx, 3, 2, secret)).rejects.toThrow(
       'Invalid scalar provided'
     );
   });
@@ -111,7 +111,7 @@ describe('Shamir secret sharing', () => {
     'error - invalid predefined provided - over %s', async (system) => {
     const ctx = initBackend(system);
     const secret = Uint8Array.from([0]);
-    await expect(distributeSecret(ctx, 3, 2, undefined, [secret])).rejects.toThrow(
+    await expect(shareSecret(ctx, 3, 2, undefined, [secret])).rejects.toThrow(
       'Invalid scalar provided'
     );
   });

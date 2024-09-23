@@ -3,7 +3,7 @@ import { Ciphertext } from 'vsslib/elgamal';
 import { NizkProof } from 'vsslib/nizk';
 import { Signature } from 'vsslib/signer';
 import { randomSecret, unpackScalar, unpackPoint, extractPublic, isEqualPublic } from 'vsslib/secrets';
-import { distributeSecret, ShamirSharing } from 'vsslib/dealer';
+import { shareSecret, ShamirSharing } from 'vsslib/dealer';
 import { InvalidDecryptor, InvalidEncryption, InvalidSecret, InvalidSignature } from 'vsslib/errors';
 import { Algorithms, BlockModes, ElgamalSchemes } from 'vsslib/enums';
 import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from 'vsslib/types';
@@ -47,12 +47,6 @@ export class PrivateKey<P extends Point> {
     );
   }
 
-  generateSharing = async (nrShares: number, threshold: number): Promise<ShamirSharing<P>> => {
-    const { sharing } = await distributeSecret(
-      this.ctx, nrShares, threshold, this.secret
-    );
-    return sharing;
-  }
 
   signMessage = async (
     message: Uint8Array,

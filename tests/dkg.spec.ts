@@ -5,7 +5,7 @@ import {
   randomPublic,
   extractPublic,
   isEqualPublic,
-  distributeSecret,
+  shareSecret,
   extractPublicShare,
   parsePedersenPacket,
   createSchnorrPacket,
@@ -60,7 +60,7 @@ describe('Distributed Key Generation (DKG)', () => {
 
     // Computation of sharings
     for (let party of parties) {
-      const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
+      const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
       party.originalSecret = secret ;
       party.originalPublic = await extractPublic(ctx, party.originalSecret);
       party.sharing = sharing;

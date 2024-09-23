@@ -3,15 +3,15 @@ import {
   initBackend,
   randomSecret,
   randomPublic,
-  distributeSecret,
+  shareSecret,
+  shareKey,
   generateKey,
   createSchnorrPacket,
 } from 'vsslib';
 import { IndexedNonce }  from 'vsslib/combiner';
 import { randomNonce } from 'vsslib/crypto';
 import { SecretShare, PublicShare } from 'vsslib/dealer';
-import { SchnorrPacket } from 'vsslib/shareholder';
-import { PartialKey, PartialPublicKey, PartialDecryptor } from 'vsslib/keys';
+import { SchnorrPacket, PartialKey, PartialPublicKey, PartialDecryptor } from 'vsslib/shareholder';
 import { ElgamalSchemes } from 'vsslib/enums';
 import { ElgamalScheme, System, Algorithm } from 'vsslib/types';
 import { leInt2Buff } from 'vsslib/arith';
@@ -35,7 +35,7 @@ export const selectPartialPublic = <P extends Point>(index: number, shares: Part
 export const createRawSharing = async (system: System, nrShares: number, threshold: number) => {
   const ctx = initBackend(system);
   const { secret, publicBytes } = await randomSecret(ctx);
-  const { sharing } = await distributeSecret(ctx, nrShares, threshold, secret);
+  const { sharing } = await shareSecret(ctx, nrShares, threshold, secret);
   const secretShares = await sharing.getSecretShares();
   const publicShares = await sharing.getPublicShares();
   return { ctx, secret, publicBytes, sharing, secretShares, publicShares };
@@ -45,7 +45,7 @@ export const createRawSharing = async (system: System, nrShares: number, thresho
 export const createKeySharingSetup = async (system: System, nrShares: number, threshold: number) => {
   const ctx = initBackend(system)
   const { privateKey, publicKey } = await generateKey(ctx);
-  const sharing = await privateKey.generateSharing(nrShares, threshold);
+  const sharing = await shareKey(privateKey, nrShares, threshold);
   const polynomial = sharing.polynomial;
   const secretShares = await sharing.getSecretShares();
   const partialKeys = secretShares.map(({ value, index }: SecretShare) => {

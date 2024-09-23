@@ -5,7 +5,7 @@ import {
   initBackend,
   isEqualSecret,
   isKeypair,
-  distributeSecret,
+  shareSecret,
   combineSecretShares,
   combinePublicShares,
 } from 'vsslib';
@@ -19,7 +19,7 @@ const program = new Command();
 async function demo() {
   let { system, nrShares: n, threshold: t, combine: qualified, verbose } = program.opts();
   const ctx = initBackend(system);
-  const { secret: originalSecret, sharing } = await distributeSecret(ctx, n, t);
+  const { secret: originalSecret, sharing } = await shareSecret(ctx, n, t);
 
   qualified = qualified || Array.from({ length: t }, (_, i) => i + 1);
 

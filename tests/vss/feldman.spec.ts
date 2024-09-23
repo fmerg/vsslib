@@ -1,6 +1,6 @@
 import { initBackend } from 'vsslib/backend';
 import { randomPublic } from 'vsslib/secrets';
-import { distributeSecret, SecretShare, ShamirSharing } from 'vsslib/dealer';
+import { shareSecret, SecretShare, ShamirSharing } from 'vsslib/dealer';
 import { verifyFeldmanCommitments } from 'vsslib/shareholder';
 import { resolveTestConfig } from '../environ';
 
@@ -10,7 +10,7 @@ let { systems, nrShares, threshold } = resolveTestConfig();
 describe('Feldman VSS scheme', () => {
   it.each(systems)('success over %s', async (system) => {
     const ctx = initBackend(system);
-    const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
+    const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
     const secretShares = await sharing.getSecretShares();
     const { commitments } = await sharing.createFeldmanPackets();
     secretShares.forEach(async (share: SecretShare) => {
@@ -26,7 +26,7 @@ describe('Feldman VSS scheme', () => {
 
   it.each(systems)('failure over %s', async (system) => {
     const ctx = initBackend(system);
-    const { secret, sharing } = await distributeSecret(ctx, nrShares, threshold);
+    const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
     const secretShares = await sharing.getSecretShares();
     const { commitments } = await sharing.createFeldmanPackets();
     commitments[0] = await randomPublic(ctx);
