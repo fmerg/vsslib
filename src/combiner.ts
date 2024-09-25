@@ -188,7 +188,7 @@ export async function recoverPublicKey<P extends Point>(
 
 export async function recoverDecryptor<P extends Point>(
   ctx: Group<P>,
-  sares: PartialDecryptor[],
+  shares: PartialDecryptor[],
   ciphertext: Ciphertext,
   partialPublicKeys: PartialPublicKey<P>[],
   opts?: {
@@ -202,14 +202,14 @@ export async function recoverDecryptor<P extends Point>(
   const threshold = opts ? opts.threshold : undefined;
   const nonces = opts ? opts.nonces : undefined;
   const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
-  if (threshold && sares.length < threshold) throw new InvalidInput(
+  if (threshold && shares.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
   const exp = ctx.exp;
-  const indexes = sares.map(share => share.index);
+  const indexes = shares.map(share => share.index);
   const blame = [];
   let d = ctx.neutral;
-  for (const share of sares) {
+  for (const share of shares) {
     const { value, index } = share;
     const partialPublic = partialPublicKeys.filter(s => s.index == index)[0];  // TODO: pop
     if (!partialPublic)
