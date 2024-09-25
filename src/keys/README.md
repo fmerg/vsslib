@@ -7,7 +7,7 @@ Use at your own risk for the moment**
 
 ## Table of contents
 
-* [Generation](#key-generation)
+* [Generation](#generation)
   * [Serialization](#serialization)
 * [Schnorr identification](#schnorr-identification)
 * [Elgamal encryption](#elgamal-encryption)
@@ -17,12 +17,10 @@ Use at your own risk for the moment**
     * [Plain encryption](#plain-encryption)
   * [Decryption](#decryption)
   * [Encryption with proof](#encryption-with-proof)
-    * [Standalone proof of randomness](#standalone-proof-of-randomness)
-* [Elgamal decryptors](#elgamal-decryptors)
-  * [Verifiable decryptors](#verifiable-decryptors)
+    * [Standalone proof-of-randomness](#standalone-proof-of-randomness)
+  * [Decryptors](#decryptors)
 * [Signatures](#signatures)
   * [Schnorr signature](#schnorr-signature)
-* [Signcryption](#signcryption)
 
 ## Generation
 
@@ -242,25 +240,36 @@ try {
 
 ### <a name="encryption-with-proof"></a>Encryption with proof
 
-```js
-const { ciphertext, proof } = await publicKey.encryptProve(message, { scheme: "dhies" })
-```
+In some cases, the encrypting party must prove knowledge of the random nonce,
+e.g., in plain ElGamal encryption, where a proof of randomness may be attached
+in order to serive a CCA-secure ciphertext.
 
 ```js
-const { plaintext } = await privateKey.verifyDecrypt(ciphertext, proof, { scheme: "dhies" })
+const { ciphertext, proof } = await publicKey.encryptProve(message, { scheme: "plain" })
 ```
 
-### Standalone proof of randomness
+Decryption with proof verification proceeds as follows.
+
+```js
+const { plaintext } = await privateKey.verifyDecrypt(ciphertext, proof, { scheme: "plain" })
+```
+
+#### Standalone proof-of-randomness
+
+If a ciphertext has already been generated as [here](#encryption), a proof of
+randomness can be explicitly generated as follows.
 
 ```js
 const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: "sha256" });
 ```
 
+Verification proceeds as follows.
+
 ```js
 await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
 ```
 
-## Elgamal decryptors
+### Decryptors
 
 The decryptor interface is uniform for all encryption schemes
 (see Sec. [Elgamal encryption](#elgamal-encryption)).
@@ -279,7 +288,7 @@ should coincide with that used during ciphertext generation.
 The rest parameters are optional and should
 coincide with those applied during ciphertext generation.
 
-### Verifiable decryptors
+#### Verification
 
 In practice, it is usually the recipient of a ciphertext who delegates decryption
 by sending the decryptor to some third party.
@@ -346,14 +355,4 @@ The signature is verified as follows.
 
 ```js
 await publicKey.verifySignature(message, signature, { scheme: "schnorr", algorithm: "sha256" });
-```
-
-## Signcryption
-
-```js
-const { ciphertext, signature } = await senderPrivate.sigEncrypt(message, recipientPublic, { encScheme: "hybrid", sigScheme: "schnorr" });
-```
-
-```js
-const { plaintext } = await recipientPrivate.sigDecrypt(ciphertext, signature, senderPublic, { encScheme: "hybrid", sigScheme: "schnorr" });
 ```

@@ -120,21 +120,20 @@ is attained in a particular context by other means.
   * [Preliminaries](#preliminaries)
     * [Cryptosystem setup](#cryptosystem-setup)
     * [Secret generation](#secret-generation)
-  * [Shamir's secret sharing (SSS)](#shamir-secret-sharing)
-    * [Distributing the secret](#distributing-the-secret)
+  * [Shamir's Secret Sharing (SSS)](#shamir-secret-sharing)
+    * [Sharing the secret](#sharing-the-secret)
     * [Basic sharing interface](#basic-sharing-interface)
-    * [Combination of secret shares](#combination-of-secret-shares)
-    * [Combination of public shares](#combination-of-public-shares)
-  * [Verifiable secret sharing (VSS)](#verifiable-secret-sharing)
+    * [Combination of shares](#combination-of-shares)
+  * [Verifiable Secret Sharing (VSS)](#verifiable-secret-sharing)
     * [Feldman scheme](#feldman-scheme-1)
     * [Pedersen scheme](#pedersen-scheme-1)
   * [Verifiable public recovery](#verifiable-public-recovery)
-    * [Verifiable share packets](#verifiable-share-packets)
+    * [Generation of packets](#generation-of-packets)
     * [Recovery operation](#recovery-operation)
-    * [Recovery with accurate blaming](#recovery-with-accurate-blaming)
   * [Key layer](#key-layer)
-    * [Share extraction](#share-extraction)
-    * [Partial decryptors](#partial-decryptors)
+    * [Sharing the key](#sharing-the-key)
+    * [Partial keys](#partial-keys)
+    * [Public key recovery](#public-key-recovery)
     * [Threshold decryption](#threshold-decryption)
   * [Pluggable backend](#pluggable-backend)
 * [Security](#security)
@@ -199,9 +198,9 @@ const publicBytes = await extractPublic(ctx, secret);
 > Throws error if `secret` is not a valid scalar representation
 with respect to `ctx`.
 
-## <a name="shamir-secret-sharing"></a>Shamir's secret sharing (SSS)
+## <a name="shamir-secret-sharing"></a>Shamir's Secret Sharing (SSS)
 
-### Distributing the secret
+### Sharing the secret
 
 Generate a (n, t)-sharing of a given secret as follows.
 
@@ -225,43 +224,32 @@ const { secret, sharing } = await shareSecret(ctx, n, t);
 
 ### Basic sharing interface
 
-Access of original secret in raw-bytes mode:
 
 ```js
+// Access the original secret
 const secret = sharing.getOriginalSecret();
-```
 
-Access all secret shares in raw-bytes mode:
-
-```js
+// Access all secret shares
 const secretShares = await sharing.getSecretShares();
-```
 
-Access all public shares in raw-bytes mode:
-
-```js
+//Access all public shares
 const publicShares = await sharing.getPublicShares();
-```
 
-Access the i-th share in raw-bytes mode:
-
-```js
+// Access the i-th share
 const { secretShare, publicShare } = await sharing.getShare(i);
-```
 
-Access the public counterpart of a secret share in raw-bytes mode:
-
-```js
+// Access the public counterpart of a secret share
 import { extractPublicShare } from "vsslib";
-
 const publicShare = await extractPublicShare(ctx, secretShare);
 ```
 
 > **Warning**
-> Throws error if `secretShare.value` is not a valid scalar representation
+> The last call throws error if `secretShare.value` is not a valid scalar representation
 with respect to `ctx`.
 
-### Combination of secret shares
+### Combination of shares
+
+#### Combination of secret shares
 
 Combine any collection of secret shares using interpolation coefficients as
 follows.
@@ -284,7 +272,7 @@ const combinedSecret = await combineSecretShares(ctx, secretShares, t);
 > **Warning**
 > Throws error if less than `t` shares are provided.
 
-### Combination of public shares
+#### Combination of public shares
 
 Combine any collection of public shares using interpolation in the exponent as
 follows.
@@ -312,7 +300,7 @@ const combinedPublic = await combinePublicShares(ctx, publicShares, t);
 > **Warning**
 > Throws error if less than `t` shares are provided.
 
-## <a name="verifiable-secret-sharing"></a>Verifiable secret sharing (VSS)
+## <a name="verifiable-secret-sharing"></a>Verifiable Secret Sharing (VSS)
 
 In practice, shareholders need to defend
 against malicious dealers and verify the consistency of their
@@ -349,7 +337,7 @@ const { packets, commitments } = await sharing.createFeldmanPackets();
 > Commitments are intended for broadcast while packets
 > are sent to the respective shareholders by the dealer in private.
 
-#### Verification and extraction of secret share
+#### <a name="verification-feldman"></a>Verification and extraction of secret share
 
 Extract and verify secret share from the received packet as follows.
 
@@ -405,7 +393,7 @@ try {
 Involved parties agree first on some public reference:
 
 ```js
-import { randomPublic } from 'vsslib';
+import { randomPublic } from "vsslib";
 
 const publicBytes = await randomPublic(ctx);
 ```
@@ -423,7 +411,7 @@ const { packets, commitments } = await sharing.createPedersenPackets(publicBytes
 > Commitments are intended for broadcast while packets
 > are sent to the respective shareholders by the dealer in private.
 
-#### Verification and extraction of secret share
+#### <a name="verification-pedersen"></a>Verification and extraction of secret share
 
 Extract and verify secret share from the received packet as follows.
 
@@ -598,9 +586,9 @@ try {
 }
 ```
 
-### Recovery with accurate blaming
+#### Recovery with accurate blaming
 
-For security investigation purposes, the combiner may want to trace potentially
+For security investigation purposes, the combiner may want to trace
 cheating shareholders. This presupposes that the recovery operation completes
 irrespective of potential verification failures and malicious shareholders are listed
 in a blame index.
@@ -624,43 +612,196 @@ containing the public shares of cheating shareholders.
 
 ## Key layer
 
+Most of the above operation can be reproduced on top of the 
+[`vsslib/keys`](./src/keys) API.
+
+### Sharing the key
+
+Civen a `privateKey` like [here](./src/keys/README.md#generation),
+generate a (n, t)-sharing of it as follows.
+
 ```js
 import { shareKey } from "vsslib";
 
-const sharing = await shareKey(privateKey, n, t); // (n, t)-Shamir sharing
+const sharing = await shareKey(privateKey, n, t);
 ```
 
-### Share extraction
+This procuces a sharing instance similar to the one described in Sec.
+[Sharing the secret](#sharing-the-secret).
+Refer to Sec. [Verifible Secret Sharing](#verifiable-secret-sharing) to see
+how to generate VSS packets.
 
-### Partial decryptors
+Extracting a private key share from a VSS packet is achieved with the following
+function, which is the higher-level anlogue of the
+[`parseFeldmanPacket`](#verification-feldman)
+and
+[`parsePedersenPacket`](#verification-pedersen)
+utilities.
 
-#### <a name="partial-decryptor-generation"></a>Partial decryptor generation
+```js
+import { parsePartialKey } from "vsslib";
+```
 
-#### <a name="decryptor-recovery"></a>Decryptor recovery
+Assuming a [Feldman](#feldman-scheme-1) packet:
 
-#### <a name="recovery-accurate-blaming"></a>Recovery with accurate blaming
+```js
+const partialKey = await parsePartialKey(ctx, commitments, packet);
+```
 
-#### <a name="raw-combination-of-partial-decryptors"></a>Raw combination of partial decryptors
+Assuming a [Pedersen](#pedersen-scheme-1) packet:
+
+```js
+const partialKey = await parsePartialKey(ctx, commitments, packet, publicBytes);
+```
+
+In either case, this throws `vsslib.InvalidSecretShare`
+if the packet is found to be invalid against the provided commitments.
+You will usually have to handle
+this error in order to adhere to some specified rejection policy:
+
+```js
+import { InvalidSecretShare } from "vsslib";
+
+try {
+  const partialKey = await parsePartialKey(ctx, commitments, packet, ...);
+  // Store locally the retrieved private share
+  ...
+} catch (err) {
+  if (err instanceof InvalidSecretShare) {
+    // Follow rejection policy as specified by context
+    ...
+  } else {
+    ... 
+  }
+}
+```
+
+### Partial keys
+
+Partial keys extend the `vsslib.keys.PrivateKey` with the following interfaces.
+
+#### Schnorr packets
+
+```js
+const packet = await partialKey.createSchnorrPacket({ algorithm: "sha256", nonce: ...})
+```
+
+This consists of the public key share and a NIZK (Schnorr) proof-of-knowledge of
+its secret counterart. The optional `algorithm` parameter specifies the hash
+function used for proof generation (defaults to SHA256).
+
+#### Partial decryptors
+
+Let `ciphertext` be generated as
+[here](./src/keys/README.md#encryption)
+with respect to the combined public key.
+
+Given the ciphertext, every partial key can generate a respective partial
+decryptor as follows.
+
+```js
+const share = await partialKey.computePartialDecryptor(ciphertext, {
+  algorithm: "sha256"
+});
+```
+
+This consists of an indexed decryptor and a NIZK (Chaum-Pedersen) proof that
+bounds its value to the partial key.
+The optional `algorithm` parameter specifies the hash
+function used for proof generation (defaults to SHA256).
+
+```js
+import { verifyPartialDecryptor, InvalidPartialDecryptor } from "vsslib";
+
+try {
+  await partialPublicKey.verifyPartialDecryptor(ciphertext, share, {
+    algorithm: "sha256"
+  });
+  ...
+} catch (err) {
+  if (err instanceof InvalidPartialDecryptor) {
+    // Abort and follow policy as specified by context
+    ...
+  } else {
+    ...
+  }
+}
+```
+
+The combined decryptor can be recovered in a verifiable fashion as follows:
+
+```js
+import { recoverDecryptor } from "vsslib";
+
+const { recovered, blame } = await recoverDecryptor(ctx, shares, ciphertext, partialPublicKeys, {
+  algorithm: "sha256", threshold: t, nonces: ..., errorOnInvalid: ...
+});
+```
+
+The optional parameters and error handling are the same as [here](#recovery-operation).
+
+### Public key recovery
+
+Given Schnorr packets generated as [here](#schnorr-packets), recover the group
+public key in a verifiable fashion as follows.
+
+```js
+import { recoverPublicKey } from "vsslib";
+
+const { recovered, blame } = await recoverPublicKey(ctx, packets, {
+  algorithm: "sha256", threshold: t, nonces: ..., errorOnInvalid: ...
+});
+```
+
+The optional parameters and error handling are the same as [here](#recovery-operation).
+
 
 ### Threshold decryption
 
-```js
-const { ciphertext } = await publicKey.encrypt(message, { scheme: "ies" });
-```
+Given partial decryptors generated as [here](#partial-decryptors), the
+plaintext can be recovered in a verifiable fashion as follows.
+
 
 ```js
-const partialDrecryptor = await privateShare.computePartialDecryptor(ciphertext);
+import { thresholdDecrypt } from "vsslib";
+
+const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, {
+  scheme: ..., threshold: ..., sha256: ...,
+});
 ```
+
+The obligatory `scheme` parameter must be the same as that used when
+[encrypting](./src/keys/README.md#encryption)
+the plaintext with respect to the group public key.
+The optional `threshold` parameter ensures that the operation completes only if
+at least `t` packets are provided, otherwise it throws `InvalidInput` error.
+The optional `algorithm` parameter specifies the hash function used for proof
+generation (defaults to SHA256).
+
+#### Decryption with accurate blaming
+
+For security investigation purposes, the decrypting party may want to trace
+cheating shareholders. This presupposes that the decryption operation completes
+irrespective of potential verification failures and malicious shareholders are listed
+in a blame index.
 
 ```js
-const { plaintext } = await thresholdDecrypt(ctx, ciphertext, partialDrecryptors, partialPublics, { scheme });
+const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, {
+  ...,
+  errorOnInvalid: false
+});
+
+if (blame.length > 0) {
+  // Hold cheating shareholders accountable according to specified policy
+  ...
+}
 ```
 
-#### Accurate blaming
+This returns the decrytion result along with a (potentially empty) list `blame`,
+containing the public shares of cheating shareholders.
 
-```js
-const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, partialDrecryptor, partialPublics, { scheme, errorOnInvalid: false });
-```
+> **Warning**
+> Make sure to always check the `blame` index when using the `errorOnInvalid: false` option.
 
 ## Pluggable backend
 
@@ -676,7 +817,7 @@ TODO
 
 Threshold-cryptographic security against malicious shareholders
 is attained by means of non-interactive zero-knowledge (NIZK) proofs
-(e.g., decoupled Chaum-Pederesen protocols in a threshold decryption scheme).
+(e.g., decoupled Chaum-Pedersen protocols in a threshold decryption scheme).
 
 Vsslib provides NIZK infrastructure ([`vsslib/nizk`](./src/nizk.ts))
 for proving knowledge of generic discrete-log based linear relations
