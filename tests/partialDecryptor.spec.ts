@@ -4,9 +4,9 @@ import { PartialKey } from 'vsslib/shareholder';
 import { Algorithms } from 'vsslib/enums';
 import { System, ElgamalScheme, Algorithm } from 'vsslib/types';
 import { randomNonce } from 'vsslib/crypto';
-import { cartesian } from '../utils';
-import { buildMessage } from '../helpers';
-import { resolveTestConfig } from '../environ';
+import { cartesian } from './utils';
+import { buildMessage } from './helpers';
+import { resolveTestConfig } from './environ';
 
 const createPartialDecryptorSetup = async (opts: {
   system: System, scheme: ElgamalScheme, algorithm: Algorithm, nonce?: Uint8Array

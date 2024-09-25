@@ -624,6 +624,12 @@ containing the public shares of cheating shareholders.
 
 ## Key layer
 
+```js
+import { shareKey } from "vsslib";
+
+const sharing = await shareKey(privateKey, n, t); // (n, t)-Shamir sharing
+```
+
 ### Share extraction
 
 ### Partial decryptors
