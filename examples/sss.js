@@ -18,18 +18,21 @@ const program = new Command();
 
 async function demo() {
   let { system, nrShares: n, threshold: t, combine: qualified, verbose } = program.opts();
-  const ctx = initBackend(system);
-  const { secret: originalSecret, sharing } = await shareSecret(ctx, n, t);
-
   qualified = qualified || Array.from({ length: t }, (_, i) => i + 1);
 
+  const ctx = initBackend(system);
+
+  const { secret, sharing } = await shareSecret(ctx, n, t);
+
+  // Combine secret shares
   const secretShares = (await sharing.getSecretShares()).filter(s => qualified.includes(s.index));
   const combinedSecret = await combineSecretShares(ctx, secretShares);
-  console.log(await isEqualSecret(ctx, combinedSecret, originalSecret));
+  console.log(await isEqualSecret(ctx, combinedSecret, secret));
 
+  // Combine public shares
   const publicShares = (await sharing.getPublicShares()).filter(s => qualified.includes(s.index));
   const combinedPublic = await combinePublicShares(ctx, publicShares);
-  console.log(await isKeypair(ctx, originalSecret, combinedPublic));
+  console.log(await isKeypair(ctx, secret, combinedPublic));
 }
 
 program

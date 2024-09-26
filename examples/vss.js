@@ -22,41 +22,55 @@ const DEFAULT_THRESHOLD = 3;
 const program = new Command();
 
 
+export async function runVSS(ctx, nrShares, threshold, scheme) {
+  const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
+  let publicBytes;
+  if (scheme == VssSchemes.PEDERSEN) {
+      publicBytes = await randomPublic(ctx);
+  }
+  const { commitments, packets } = (scheme == VssSchemes.FELDMAN) ?
+    await sharing.createFeldmanPackets() :
+    await sharing.createPedersenPackets(publicBytes);
+  return { secret, sharing, commitments, publicBytes, packets};
+}
+
+class VssParty extends Party {
+  consumeVssPacket = async (packet, commitments, publicBytes) => {
+    try {
+      const { share } = !publicBytes ?
+        await parseFeldmanPacket(this.ctx, commitments, packet) :
+        await parsePedersenPacket(this.ctx, commitments, publicBytes, packet);
+      this.share = share;
+    } catch (err) {
+      if (err instanceof InvalidSecretShare) {
+      } else {
+        throw err;
+      }
+    }
+  }
+}
+
+export function initGroup(ctx, nrParties) {
+  const parties = [];
+  for (let index = 1; index <= nrParties; index++) {
+    const party = new VssParty(ctx, index);
+    parties.push(party);
+  }
+  return parties;
+}
+
 async function demo() {
   let { scheme, system, nrShares: n, threshold: t, combine: qualified, verbose } = program.opts();
   qualified = qualified || Array.from({ length: t }, (_, i) => i + 1);
 
-  // Cryptosystem setup
   const ctx = initBackend(system);
 
-  // Initialization of shareholders
-  const parties = [];
-  for (let index = 1; index <= n; index++) {
-    const party = new Party(ctx, index);
-    parties.push(party);
-  }
+  const parties = initGroup(ctx, n);
 
-  let publicBytes;
-  switch(scheme) {
-    case VssSchemes.FELDMAN:
-      break;
-    case VssSchemes.PEDERSEN:
-      publicBytes = await randomPublic(ctx);   // TODO: proper name
-      break;
-    default:
-      throw Error(
-        `Unsupported VSS scheme: ${scheme}`
-      );
-  }
 
   // VSS phase ----------------------------------------------------------------
 
-  // The dealer shares some uniformly sampled secret
-  const { secret: originalSecret, sharing } = await shareSecret(ctx, n, t);
-  // The dealer generates commitments and verifiable secret packets
-  const { commitments, packets } = (scheme == VssSchemes.FELDMAN) ?
-    await sharing.createFeldmanPackets() :
-    await sharing.createPedersenPackets(publicBytes);
+  const { secret, commitments, publicBytes, packets } = await runVSS(ctx, n, t, scheme);
 
   // At this point, the dealer broadcasts the commitments and sends each packet to the
   // respective shareholder in private
@@ -64,19 +78,7 @@ async function demo() {
   // Shareholders verify the received packets and extract their respective share
   for (const packet of packets) {
     const recipient = selectParty(packet.index, parties);
-    try {
-      const { share } = (scheme == VssSchemes.FELDMAN) ?
-        await parseFeldmanPacket(recipient.ctx, commitments, packet) :
-        await parsePedersenPacket(recipient.ctx, commitments, publicBytes, packet);
-      // Store the retrieved share locally
-      recipient.share = share;
-    } catch (err) {
-      if (err instanceof InvalidSecretShare) {
-        // The recipient shareholder rejects the packet and follows some policy
-      } else {
-        throw err;
-      }
-    }
+    await recipient.consumeVssPacket(packet, commitments, publicBytes);
   }
 
   // Public recovery phase ----------------------------------------------------
@@ -97,7 +99,7 @@ async function demo() {
   try {
     const { recovered: recoveredPublic } = await recoverPublic(ctx, combiner.aggreagated);
     // Check consistency with original secret
-    const ok = await isKeypair(ctx, originalSecret, recoveredPublic);
+    const ok = await isKeypair(ctx, secret, recoveredPublic);
     console.log({ ok });
   } catch (err) {
     if (err instanceof InvalidPublicShare) {

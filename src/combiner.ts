@@ -148,8 +148,6 @@ export async function recoverPublic<P extends Point>(
     const packetNonce = nonces.filter((n: IndexedNonce) => n.index == packet.index)[0];  // TODO: pop
     const nonce = packetNonce ? packetNonce.nonce : undefined;
     try {
-      // TODO: Improve this interface so as to remove lambda computation
-      // outside the present block
       const { value, index } = await parseSchnorrPacket(ctx, packet, { algorithm, nonce });
       const li = computeLambda(ctx, index, indexes);
       const yi = await unpackPoint(ctx, value)
