@@ -18,90 +18,128 @@ import {
 import { Systems } from 'vsslib/enums';
 import { randomNonce } from 'vsslib/crypto';
 
+import { VssSchemes, Party, Combiner, selectParty } from './infra';
+
 const program = new Command();
 
 const DEFAULT_SYSTEM = Systems.ED25519;
 const DEFAULT_NR_SHARES = 5;
 const DEFAULT_THRESHOLD = 3;
 
-class Party {
+class DkgParty extends Party {
   constructor(ctx, index) {
-    this.index = index;
-    this.originalSecret = undefined;
+    super(ctx, index);
+    this.secret = undefined;
     this.sharing = undefined;
     this.aggregates = [];
-    this.localSecretShare = undefined;
-    this.localPublicShare = undefined;
+    this.localSecret = undefined;
+    this.localPublic = undefined;
     this.publicShares = [];
     this.globalPublic = undefined;
+  }
+
+  doShare = async (nrShares, threshold) => {
+    console.time(`SHARING ${this.index}`);
+    const { secret, sharing } = await shareSecret(this.ctx, nrShares, threshold);
+    console.timeEnd(`SHARING ${this.index}`);
+    this.secret = secret ;
+    this.originalPublic = await extractPublic(this.ctx, this.secret);
+    this.sharing = sharing;
+  }
+
+  doBroadcast = async (publicBytes) => {
+    return this.sharing.createPedersenPackets(publicBytes);
+  }
+
+  doParseVss = async (commitments, publicBytes, packet) => {
+    const { share, binding } = await parsePedersenPacket(
+      this.ctx, commitments, publicBytes, packet
+    );
+    this.aggregates.push(share);
+  }
+
+  doLocal = async () => {
+    console.time(`SUMMATION ${this.index}`);
+    const sum = await addSecrets(this.ctx, this.aggregates.map(s => s.value));
+    console.timeEnd(`SUMMATION ${this.index}`);
+    this.localSecret = { value: sum, index: this.index };
+    this.localPublic = await extractPublicShare(this.ctx, this.localSecret);
+  }
+
+  doAdvertise = async (nonce) => {
+    return createSchnorrPacket(this.ctx, this.localSecret, { nonce });
+  }
+
+  doParseSchnorr = async (packet, nonce) => {
+    const publicShare = await parseSchnorrPacket(this.ctx, packet, { nonce });
+    this.publicShares.push(publicShare);
+  }
+
+  doGlobal = async () => {
+    this.globalPublic = await combinePublicShares(this.ctx, this.publicShares);
   }
 }
 
 
-const selectParty = (index, parties) => parties.filter(p => p.index == index)[0];
-
-async function demo() {
-  const { system, nrShares, threshold, verbose } = program.opts();
-
-  const ctx = initBackend(system);
-
-  // Public reference for Pedersen VSS Scheme
-  const publicBytes = await randomPublic(ctx);
-
-  // Involved parties initialization
+export function initGroup(ctx, nrParties) {
   const parties = [];
-  for (let index = 1; index <= nrShares; index++) {
-    const party = new Party(ctx, index);
+  for (let index = 1; index <= nrParties; index++) {
+    const party = new DkgParty(ctx, index);
     parties.push(party);
   }
+  return parties;
+}
 
-  // Computation of sharings
+
+export async function runDKG(parties, nrShares, threshold, publicBytes) {
   for (let party of parties) {
-    console.time(`SHARING ${party.index}`);
-    const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
-    console.timeEnd(`SHARING ${party.index}`);
-    party.originalSecret = secret ;
-    party.originalPublic = await extractPublic(ctx, party.originalSecret);
-    party.sharing = sharing;
+    await party.doShare(nrShares, threshold);
   }
 
-  // Distribution of packets
   for (let party of parties) {
     console.time(`DISTRIBUTION ${party.index}`);
-    const { packets, commitments } = await party.sharing.createPedersenPackets(publicBytes);
+    const { packets, commitments } = await party.doBroadcast(publicBytes);
     for (const packet of packets) {
       const recipient = selectParty(packet.index, parties);
-      const { share, binding } = await parsePedersenPacket(
-        ctx, commitments, publicBytes, packet
-      );
-      recipient.aggregates.push(share);
+      await recipient.doParseVss(commitments, publicBytes, packet);
     }
     console.timeEnd(`DISTRIBUTION ${party.index}`);
   }
 
-  // Local summation of received shares
   for (let party of parties) {
-    console.time(`SUMMATION ${party.index}`);
-    const localSum = await addSecrets(ctx, party.aggregates.map(s => s.value));
-    console.timeEnd(`SUMMATION ${party.index}`);
-    party.localSecretShare = { value: localSum, index: party.index };
-    party.localPublicShare = await extractPublicShare(ctx, party.localSecretShare);
-    // Public share advertisement
+    party.doLocal();
+  }
+
+  for (let sender of parties) {
     for (const recipient of parties) {
       const nonce = await randomNonce();
-      const packet = await createSchnorrPacket(ctx, party.localSecretShare, { nonce });
-      const publicShare = await parseSchnorrPacket(ctx, packet, { nonce });
-      recipient.publicShares.push(publicShare);
+      const packet = await sender.doAdvertise(nonce);
+      await recipient.doParseSchnorr(packet, nonce);
     }
   }
 
+  for (let party of parties) {
+    await party.doGlobal();
+  }
+
+  return { globalPublic: parties[0].globalPublic };
+}
+
+
+async function demo() {
+  const { system, nrShares, threshold, verbose } = program.opts();
+  const ctx = initBackend(system);
+  const parties = initGroup(ctx, nrShares);
+  const publicBytes = await randomPublic(ctx);
+  const { globalPublic } = await runDKG(parties, nrShares, threshold, publicBytes);
+
   // All parties should locally recover this global public
   const targetGlobalPublic = await combinePublics(ctx, parties.map(p => p.originalPublic));
-  // Local recovery of combined public
+  if (!(await isEqualPublic(ctx, globalPublic, targetGlobalPublic))) {
+    throw new Error(`Inconsistent global public`);
+  }
   for (let party of parties) {
-    party.globalPublic = await combinePublicShares(ctx, party.publicShares);
-    // Check consistency
-    const isConsistent = await isEqualPublic(ctx, party.globalPublic, targetGlobalPublic);
+    isConsistent = await isEqualPublic(ctx, party.globalPublic, globalPublic);
     if(!isConsistent) {
       throw new Error(`Inconsistency at location {party.index}`);
     }
