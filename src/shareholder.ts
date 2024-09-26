@@ -159,6 +159,13 @@ export class PartialKey<P extends Point> extends PrivateKey<P> {
     this.ctx, await extractPublic(this.ctx, this.secret), this.index
   );
 
+  async createSchnorrPacket(opts?: {
+    algorithm?: Algorithm,
+    nonce?: Uint8Array,
+  }): Promise<SchnorrPacket> {
+    return createSchnorrPacket(this.ctx, { value: this.secret, index: this.index}, opts);
+  }
+
   async computePartialDecryptor(
     ciphertext: Ciphertext,
     opts?: {

@@ -104,6 +104,43 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
 }
 
 
+export const mockPublicKeyRecoverySetup = async <P extends Point>(opts: {
+  ctx: Group<P>,
+  partialKeys: PartialKey<P>[],
+  algorithm?: Algorithm,
+  withNonce?: boolean,
+  nrInvalid?: number,
+}) => {
+  let { ctx, partialKeys, algorithm, nrInvalid, withNonce } = opts;
+  withNonce = withNonce || false;
+  const packets = [];
+  const nonces: IndexedNonce[] = [];
+  for (const partialKey of partialKeys) {
+    const nonce = withNonce ? await randomNonce() : undefined;
+    const packet = await partialKey.createSchnorrPacket({ algorithm, nonce });
+    packets.push(packet);
+    if (nonce) {
+      nonces.push({ nonce, index: partialKey.index });
+    }
+  }
+  let blame: number[] = [];
+  nrInvalid = nrInvalid || 0;
+  while (blame.length < nrInvalid) {
+    const index = randomIndex(1, partialKeys.length);
+    if (blame.includes(index)) continue;
+    blame.push(index);
+  }
+  for (const index of blame) {
+    if (withNonce) {
+      nonces.filter((n: IndexedNonce) => n.index == index)[0].nonce = await randomNonce();
+    } else {
+      packets.filter((p: SchnorrPacket) => p.index == index)[0].value = await randomPublic(ctx);
+    }
+  }
+  return { packets, blame, nonces };
+}
+
+
 export const mockThresholdDecryptionSetup = async (opts: {
   system: System,
   scheme: ElgamalScheme,
