@@ -588,7 +588,7 @@ try {
 
 #### Recovery with accurate blaming
 
-For security investigation purposes, the combiner may want to trace potentially
+For security investigation purposes, the combiner may want to trace
 cheating shareholders. This presupposes that the recovery operation completes
 irrespective of potential verification failures and malicious shareholders are listed
 in a blame index.
@@ -700,9 +700,9 @@ Given the ciphertext, every partial key can generate a respective partial
 decryptor as follows.
 
 ```js
-const partialDecryptor = await partialKey.computePartialDecryptor(ciphertext, {
-  algorithm: "sha256", nonce: ...
-})
+const share = await partialKey.computePartialDecryptor(ciphertext, {
+  algorithm: "sha256"
+});
 ```
 
 This consists of an indexed decryptor and a NIZK (Chaum-Pedersen) proof that
@@ -714,8 +714,8 @@ function used for proof generation (defaults to SHA256).
 import { verifyPartialDecryptor, InvalidPartialDecryptor } from "vsslib";
 
 try {
-  await partialPublicKey.verifyPartialDecryptor(ciphertext, decryptor, {
-    algorithm: "sha256", nonce: ...
+  await partialPublicKey.verifyPartialDecryptor(ciphertext, share, {
+    algorithm: "sha256"
   });
   ...
 } catch (err) {
@@ -733,7 +733,7 @@ The combined decryptor can be recovered in a verifiable fashion as follows:
 ```js
 import { recoverDecryptor } from "vsslib";
 
-const { recovered } = await recoverDecryptor(ctx, shares, ciphertext, partialPublicKeys, {
+const { recovered, blame } = await recoverDecryptor(ctx, shares, ciphertext, partialPublicKeys, {
   algorithm: "sha256", threshold: t, nonces: ..., errorOnInvalid: ...
 });
 ```
@@ -748,7 +748,9 @@ public key in a verifiable fashion as follows.
 ```js
 import { recoverPublicKey } from "vsslib";
 
-const { recovered } = await recoverPublicKey(ctx, packets, { algorithm: "sha256", threshold: t, nonces: ..., errorOnInvalid: ... })
+const { recovered, blame } = await recoverPublicKey(ctx, packets, {
+  algorithm: "sha256", threshold: t, nonces: ..., errorOnInvalid: ...
+});
 ```
 
 The optional parameters and error handling are the same as [here](#recovery-operation).
@@ -756,48 +758,35 @@ The optional parameters and error handling are the same as [here](#recovery-oper
 
 ### Threshold decryption
 
-```js
-const { ciphertext } = await publicKey.encrypt(message, { scheme: "ies" });
-```
+Given partial decryptors generated as [here](#partial-decryptors), the
+plaintext can be recovered in a verifiable fashion as follows.
 
-Refer to section [Partial decryptors](#partial-decryptors)
 
 ```js
 import { thresholdDecrypt } from "vsslib";
 
-const { plaintext } = await thresholdDecrypt(ctx, ciphertext, partialDrecryptors, partialPublicKeys, {
-  scheme: ...,
-  threshold: ...,
+const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, {
+  scheme: ..., threshold: ..., sha256: ...,
 });
 ```
 
-#### Nonce-based decryption
-
-```js
-try {
-  const { plaintext } = await thresholdDecrypt(ctx, ciphetext, partialDrecryptors, partialPublicKeys, {
-    ...,
-    nonces: [
-      { nonce: ..., index: 1 },
-      { nonce: ..., index: 2 },
-      ...
-    ]
-  });
-  ...
-} catch (err) {
-  if (err instanceof InvalidPartialDecryptor) {
-    // Abort and follow policy as specified by context
-    ...
-  } else {
-    ...
-  }
-}
-```
+The obligatory `scheme` parameter must be the same as that used when
+[encrypting](./src/keys/README.md#encryption)
+the plaintext with respect to the group public key.
+The optional `threshold` parameter ensures that the operation completes only if
+at least `t` packets are provided, otherwise it throws `InvalidInput` error.
+The optional `algorithm` parameter specifies the hash function used for proof
+generation (defaults to SHA256).
 
 #### Decryption with accurate blaming
 
+For security investigation purposes, the decrypting party may want to trace
+cheating shareholders. This presupposes that the decryption operation completes
+irrespective of potential verification failures and malicious shareholders are listed
+in a blame index.
+
 ```js
-const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, partialDecryptor, partialPublicKeys, {
+const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, {
   ...,
   errorOnInvalid: false
 });

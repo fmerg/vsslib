@@ -15,9 +15,9 @@ Use at your own risk for the moment**
     * [DHIES-encryption (DH-based Integrated Encryption Scheme)](#dhies-encryption)
     * [Hybrid encryption ("Key Encapsulation Mechanism")](#hybrid-encryption)
     * [Plain encryption](#plain-encryption)
+  * [Decryption](#decryption)
   * [Encryption with proof](#encryption-with-proof)
     * [Standalone proof-of-randomness](#standalone-proof-of-randomness)
-  * [Decryption](#decryption)
   * [Decryptors](#decryptors)
 * [Signatures](#signatures)
   * [Schnorr signature](#schnorr-signature)
@@ -199,26 +199,6 @@ No optional parameters apply for this scheme.
 > **Warning**: Plain encryption is semantically but not CCA secure.
 > Make sure that it is securely employed in context by other means.
 
-### <a name="encryption-with-proof"></a>Encryption with proof
-
-```js
-const { ciphertext, proof } = await publicKey.encryptProve(message, { scheme: "dhies" })
-```
-
-```js
-const { plaintext } = await privateKey.verifyDecrypt(ciphertext, proof, { scheme: "dhies" })
-```
-
-#### Standalone proof-of-randomness
-
-```js
-const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: "sha256" });
-```
-
-```js
-await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
-```
-
 ### Decryption
 
 The decryption interface is uniform for all encryption schemes
@@ -256,6 +236,32 @@ try {
     ...
   }
 }
+```
+
+### <a name="encryption-with-proof"></a>Encryption with proof
+
+In some cases, the encrypting party must prove knowledge of the random nonce,
+e.g., in plain ElGamal encryption, where a proof of randomness may be attached
+in order to serive a CAA-secure ciphertext.
+
+```js
+const { ciphertext, proof } = await publicKey.encryptProve(message, { scheme: "plain" })
+```
+
+Decryption with proof verification proceeds as follows.
+
+```js
+const { plaintext } = await privateKey.verifyDecrypt(ciphertext, proof, { scheme: "plain" })
+```
+
+#### Standalone proof-of-randomness
+
+```js
+const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: "sha256" });
+```
+
+```js
+await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
 ```
 
 ### Decryptors
