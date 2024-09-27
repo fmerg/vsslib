@@ -256,11 +256,14 @@ const { plaintext } = await privateKey.verifyDecrypt(ciphertext, proof, { scheme
 
 #### Standalone proof-of-randomness
 
-If a ciphertext has already been generated as [here](#encryption),
+If a ciphertext has already been generated as [here](#encryption), a proof of
+randomness can be explicitly generated as follows.
 
 ```js
 const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: "sha256" });
 ```
+
+Verification proceeds as follows.
 
 ```js
 await privateKey.verifyEncryption(ciphertext, proof, { algorithm: "sha256" });
