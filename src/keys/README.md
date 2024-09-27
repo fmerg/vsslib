@@ -242,7 +242,7 @@ try {
 
 In some cases, the encrypting party must prove knowledge of the random nonce,
 e.g., in plain ElGamal encryption, where a proof of randomness may be attached
-in order to serive a CAA-secure ciphertext.
+in order to serive a CCA-secure ciphertext.
 
 ```js
 const { ciphertext, proof } = await publicKey.encryptProve(message, { scheme: "plain" })
@@ -255,6 +255,8 @@ const { plaintext } = await privateKey.verifyDecrypt(ciphertext, proof, { scheme
 ```
 
 #### Standalone proof-of-randomness
+
+If a ciphertext has already been generated as [here](#encryption),
 
 ```js
 const proof = await publicKey.proveEncryption(ciphertext, randomness, { algorithm: "sha256" });
