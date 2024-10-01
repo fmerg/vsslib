@@ -1,11 +1,10 @@
-import { Point, Group } from '../backend/abstract';
-import { SignatureScheme, Algorithm } from '../types';
+import { Point, Group } from 'vsslib/backend';
+import { SignatureScheme, Algorithm } from 'vsslib/types';
+import { SigDriver } from 'vsslib/signer/driver';
 
-import { Signature, SigDriver } from './driver';
+export { Signature } from 'vsslib/signer/driver';
 
-export { Signature };
-
-export default function<P extends Point, S>(
+export default function<P extends Point>(
   ctx: Group<P>,
   scheme: SignatureScheme,
   algorithm: Algorithm,

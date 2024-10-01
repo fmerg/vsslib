@@ -1,30 +1,34 @@
-import { initGroup } from '../src/backend';
-import { Group, Point } from '../src/backend/abstract';
-import { SecretShare, ShamirSharing, PublicShare } from '../src/dealer';
+import { initBackend } from 'vsslib/backend';
+import { Group, Point } from 'vsslib/backend';
+import { SecretShare, ShamirSharing, PublicShare } from 'vsslib/dealer';
 import {
-  distributeSecret,
-  parseFeldmanPacket,
+  randomPublic,
+  extractPublic,
+  isEqualPublic,
+  shareSecret,
+  extractPublicShare,
   parsePedersenPacket,
-  createPublicSharePacket,
-  parsePublicSharePacket,
+  createSchnorrPacket,
+  parseSchnorrPacket,
   combinePublicShares,
-} from '../src';
-import { randomNonce } from '../src/crypto';
+  addSecrets,
+  combinePublics,
+} from 'vsslib';
+import { randomNonce } from 'vsslib/crypto';
 import { resolveTestConfig } from './environ';
-import { isEqualBuffer } from './utils';
-import { mod, leInt2Buff } from '../src/arith';
 
 let { systems, nrShares, threshold } = resolveTestConfig();
 
-class ShareHolder<P extends Point> {
+class Party<P extends Point> {
   ctx: Group<P>;
   index: number;
   originalSecret?: Uint8Array;
+  originalPublic?: Uint8Array;
   sharing?: ShamirSharing<P>;
   aggregates: SecretShare[];
-  share?: SecretShare;
-  publicShares: PublicShare[];
+  localSecretShare?: SecretShare;
   localPublicShare?: PublicShare;
+  publicShares: PublicShare[];
   globalPublic?: Uint8Array;
 
   constructor(ctx: Group<P>, index: number) {
@@ -36,81 +40,62 @@ class ShareHolder<P extends Point> {
 }
 
 
-const selectParty = (index: number, parties: ShareHolder<Point>[]) => parties.filter(p => p.index == index)[0];
+const selectParty = <P extends Point>(index: number, parties: Party<P>[]) =>
+  parties.filter(p => p.index == index)[0];
 
 
 describe('Distributed Key Generation (DKG)', () => {
   it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const publicBytes = (await ctx.randomPoint()).toBytes();
-    let parties = [];
+    const ctx = initBackend(system);
+
+    // Public reference for Pedersen VSS Scheme
+    const publicBytes = await randomPublic(ctx);
+
+    // Involved parties initialization
+    const parties = [];
     for (let index = 1; index <= nrShares; index++) {
-      parties.push(new ShareHolder(ctx, index));
+      const party = new Party(ctx, index);
+      parties.push(party);
     }
 
+    // Computation of sharings
     for (let party of parties) {
-      party.originalSecret = await ctx.randomSecret();
-      party.sharing = await distributeSecret(ctx, nrShares, threshold, party.originalSecret!);
-    }
-
-    // Shares distribution
-    for (const party of parties) {
-      const { packets, commitments } = await party.sharing!.createPedersenPackets(
-        publicBytes
-      );
+      const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
+      party.originalSecret = secret ;
+      party.originalPublic = await extractPublic(ctx, party.originalSecret);
+      party.sharing = sharing;
+      const { packets, commitments } = await party.sharing.createPedersenPackets(publicBytes);
+      // Distribution of shares over the network
       for (const packet of packets) {
+        const recipient = selectParty(packet.index, parties);
         const { share, binding } = await parsePedersenPacket(
           ctx, commitments, publicBytes, packet
         );
-        selectParty(share.index, parties).aggregates.push(share);
+        recipient.aggregates.push(share);
       }
     }
 
-    // Local summation
+    // Local summation of received shares
     for (let party of parties) {
-      party.share = { value: leInt2Buff(BigInt(0)), index: party.index };
-      for (const share of party.aggregates) {
-        const x = ctx.leBuff2Scalar(party.share.value);
-        const z = ctx.leBuff2Scalar(share.value);
-        party.share.value = leInt2Buff(mod(x + z, ctx.order));
-      }
-      party.localPublicShare = {
-        value: (
-          await ctx.exp(
-            ctx.generator,
-            ctx.leBuff2Scalar(party.share.value),
-          )
-        ).toBytes(),
-        index: party.index,
-      }
-    }
-
-    // Public key advertisement
-    for (const sender of parties) {
-      for (const receiver of parties) {
+      const localSum = await addSecrets(ctx, party.aggregates.map(s => s.value));
+      party.localSecretShare = { value: localSum, index: party.index };
+      party.localPublicShare = await extractPublicShare(ctx, party.localSecretShare);
+      // Public share advertisement
+      for (const recipient of parties) {
         const nonce = await randomNonce();
-        const packet = await createPublicSharePacket(ctx, sender.share!, { nonce });
-        const publicShare = await parsePublicSharePacket(ctx, packet, { nonce });
-        receiver.publicShares.push(publicShare);
+        const packet = await createSchnorrPacket(ctx, party.localSecretShare!, { nonce });
+        const publicShare = await parseSchnorrPacket(ctx, packet, { nonce });
+        recipient.publicShares.push(publicShare);
       }
     }
 
-    // Local computation of global public
+    // All parties should locally recover this global public
+    const targetGlobalPublic = await combinePublics(ctx, parties.map(p => p.originalPublic!));
+    // Local recovery of combined public
     for (let party of parties) {
       party.globalPublic = await combinePublicShares(ctx, party.publicShares);
-    }
-
-    // Test correctness
-    let targetPublic = ctx.neutral;
-    for (const party of parties) {
-      const curr = await ctx.exp(
-        ctx.generator,
-        ctx.leBuff2Scalar(party.originalSecret),
-      );
-      targetPublic = await ctx.operate(curr, targetPublic);
-    }
-    for (const party of parties) {
-      expect(isEqualBuffer(party.globalPublic!, targetPublic.toBytes())).toBe(true);
+      // Check consistency
+      expect(await isEqualPublic(ctx, party.globalPublic, targetGlobalPublic)).toBe(true);
     }
   });
 })

@@ -1,12 +1,6 @@
-import hash from './hash';
-import aes from './aes';
-import hmac from './hmac';
-import { randomBytes, randomNonce } from './random';
+import hash from 'vsslib/crypto/hash';
+import aes from 'vsslib/crypto/aes';
+import hmac from 'vsslib/crypto/hmac';
 
-export {
-  randomBytes,
-  randomNonce,
-  aes,
-  hash,
-  hmac,
-}
+export { aes, hash, hmac };
+export { randomBytes, randomNonce } from 'vsslib/crypto/random';

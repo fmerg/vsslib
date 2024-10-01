@@ -1,8 +1,16 @@
 {
   "compilerOptions": {
-    "target": "es2016",
+    "target": "es2020",
+    "types": ["node", "jest"],
     "module": "commonjs",
     "rootDir": "./src",
+    "baseUrl": ".",
+    "paths": {
+      "vsslib/*": ["./src/*"],
+      "vsslib": ["./src"],
+      "tests": ["./tests"],
+      "examples": ["./examples"]
+    },
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
@@ -14,7 +22,11 @@
   "exclude": [
     "node_modules",
     "tests",
+    "examples",
     "**/*.spec.ts",
     "./dist"
-  ]
+  ],
+  "ts-node": {
+    "require": ["tsconfig-paths/register"]
+  }
 }

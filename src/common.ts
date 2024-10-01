@@ -7,7 +7,7 @@
  * 3. Dump with double quotes, no newlines and zero indentation
  * 4. Return bytes of dumped string
  */
-export const toCanonical = (obj: Object): Uint8Array => Buffer.from(JSON.stringify(
+export const toCanonical = (obj: object): Uint8Array => Buffer.from(JSON.stringify(
   obj, (key: string, value: any) => value instanceof Uint8Array ?
     Buffer.from(value).toString('base64') :
     Object.keys(value).sort().reduce(
@@ -22,7 +22,7 @@ export const toCanonical = (obj: Object): Uint8Array => Buffer.from(JSON.stringi
 /** Recovers the original structure from its "canonical" byte representation */
 export const fromCanonical = (repr: Uint8Array) => JSON.parse(
   Buffer.from(repr).toString(),
-  (key: string, value: Object | string) =>
+  (key: string, value: object | string) =>
     typeof value === 'string' ?
     Uint8Array.from(Buffer.from(value, 'base64')) :
     value

@@ -166,6 +166,8 @@ if [[ $VERBOSE == "true" ]]; then
     opts+=" --verbose"
 fi
 
+npm test -- --clearCache
+
 # NOTE: npm test -- --help
 if [[ $TARGET == *"spec.ts" ]]; then
     npm test -- $opts --findRelatedTests "$TARGET"

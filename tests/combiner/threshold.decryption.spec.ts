@@ -1,32 +1,68 @@
-import { ElgamalSchemes } from '../../src/enums';
-import { thresholdDecrypt } from '../../src/combiner';
+import { ElgamalSchemes } from 'vsslib/enums';
+import { thresholdDecrypt } from 'vsslib/combiner';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
-import { createThresholdDecryptionSetup } from '../helpers';
+import { mockThresholdDecryptionSetup } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const { systems, nrShares, threshold, elgamalSchemes: schemes} = resolveTestConfig();
 
 describe('Threshold decryption', () => {
   it.each(cartesian([systems, schemes]))(
-    'success - unconditioned - over %s/%s', async (system, scheme) => {
-    const { privateKey, message, ciphertext, publicShares, partialDecryptors, ctx } = await createThresholdDecryptionSetup({
+    'success - unconditioned - without nonce - over %s/%s', async (system, scheme) => {
+    const { privateKey, message, ciphertext, partialPublicKeys, partialDecryptors, ctx } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
     switch(scheme) {
       case ElgamalSchemes.PLAIN:
-        partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-          const { plaintext } = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, publicShares, { scheme });
-          expect(isEqualBuffer(plaintext, message)).toBe(qualifiedShares.length >= threshold);
+        partialPermutations(partialDecryptors).forEach(async (shares) => {
+          const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, { scheme });
+          expect(isEqualBuffer(plaintext, message)).toBe(shares.length >= threshold);
         });
         break;
       case ElgamalSchemes.DHIES:
       case ElgamalSchemes.HYBRID:
-        partialPermutations(partialDecryptors).forEach(async (qualifiedShares) => {
-          if (qualifiedShares.length >= threshold) {
-            const { plaintext } = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, publicShares, { scheme });
+        partialPermutations(partialDecryptors).forEach(async (shares) => {
+          if (shares.length >= threshold) {
+            const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, { scheme });
             expect(plaintext).toEqual(message);
           } else {
-            await expect(thresholdDecrypt(ctx, ciphertext, qualifiedShares, publicShares, { scheme })).rejects.toThrow(
+            await expect(thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, { scheme })).rejects.toThrow(
+              scheme == ElgamalSchemes.HYBRID ?
+                'Could not decrypt: AES decryption failure' :
+                'Could not decrypt: Invalid MAC'
+            );
+          }
+        });
+    }
+  });
+  it.each(cartesian([systems, schemes]))(
+    'success - unconditioned - with nonce - over %s/%s', async (system, scheme) => {
+    const { privateKey, message, ciphertext, partialPublicKeys, partialDecryptors, ctx, nonces } = await mockThresholdDecryptionSetup({
+      scheme, system, nrShares, threshold, withNonce: true
+    });
+    switch(scheme) {
+      case ElgamalSchemes.PLAIN:
+        partialPermutations(partialDecryptors).forEach(async (shares) => {
+          const { plaintext } = await thresholdDecrypt(
+            ctx, ciphertext, shares, partialPublicKeys, { scheme, nonces }
+          );
+          expect(isEqualBuffer(plaintext, message)).toBe(shares.length >= threshold);
+        });
+        break;
+      case ElgamalSchemes.DHIES:
+      case ElgamalSchemes.HYBRID:
+        partialPermutations(partialDecryptors).forEach(async (shares) => {
+          if (shares.length >= threshold) {
+            const { plaintext } = await thresholdDecrypt(
+              ctx, ciphertext, shares, partialPublicKeys, { scheme, nonces }
+            );
+            expect(plaintext).toEqual(message);
+          } else {
+            await expect(
+              thresholdDecrypt(
+                ctx, ciphertext, shares, partialPublicKeys, { scheme, nonces }
+              )
+            ).rejects.toThrow(
               scheme == ElgamalSchemes.HYBRID ?
                 'Could not decrypt: AES decryption failure' :
                 'Could not decrypt: Invalid MAC'
@@ -37,52 +73,87 @@ describe('Threshold decryption', () => {
   });
   it.each(cartesian([systems, schemes]))(
     'success - threshold guard - over %s/%s', async (system, scheme) => {
-    const { privateKey, message, ciphertext, publicShares, partialDecryptors, ctx } = await createThresholdDecryptionSetup({
+    const { privateKey, message, ciphertext, partialPublicKeys, partialDecryptors, ctx } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
-    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (qualifiedShares) => {
+    partialPermutations(partialDecryptors, 0, threshold - 1).forEach(async (shares) => {
       await expect(
-        thresholdDecrypt(ctx, ciphertext, qualifiedShares, publicShares, { scheme, threshold })
+        thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, { scheme, threshold })
       ).rejects.toThrow('Insufficient number of shares');
     });
-    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (qualifiedShares) => {
-      const { plaintext } = await thresholdDecrypt(ctx, ciphertext, qualifiedShares, publicShares, {
+    partialPermutations(partialDecryptors, threshold, nrShares).forEach(async (shares) => {
+      const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, {
         scheme, threshold
       });
       expect(plaintext).toEqual(message);
     });
   });
   it.each(cartesian([systems, schemes])
-  )('failure - error on invalid - over %s/%s', async (system, scheme) => {
-    const { ctx, privateKey, message, ciphertext, publicShares, partialDecryptors, invalidDecryptors } = await createThresholdDecryptionSetup({
-      scheme, system, nrShares, threshold, nrInvalidIndexes: 2
+  )('failure - error on invalid - forged proof - over %s/%s', async (system, scheme) => {
+    const { ctx, privateKey, message, ciphertext, partialPublicKeys, partialDecryptors } = await mockThresholdDecryptionSetup({
+      scheme, system, nrShares, threshold, nrInvalid: 2
     });
     await expect(
-      thresholdDecrypt(ctx, ciphertext, invalidDecryptors, publicShares, { scheme, threshold })
+      thresholdDecrypt(ctx, ciphertext, partialDecryptors, partialPublicKeys, { scheme, threshold })
+    ).rejects.toThrow('Invalid partial decryptor with index');
+  });
+  it.each(cartesian([systems, schemes])
+  )('failure - error on invalid - forged nonce - over %s/%s', async (system, scheme) => {
+    const { ctx, privateKey, message, ciphertext, partialPublicKeys, partialDecryptors, nonces } = await mockThresholdDecryptionSetup({
+      scheme, system, nrShares, threshold, nrInvalid: 2, withNonce: true
+    });
+    await expect(
+      thresholdDecrypt(ctx, ciphertext, partialDecryptors, partialPublicKeys, { scheme, threshold, nonces })
     ).rejects.toThrow('Invalid partial decryptor with index');
   });
   it.each(cartesian([systems, schemes]))
-  ('failure - with blame - over %s/%s', async (system, scheme) => {
+  ('failure - accurate blaming - forged proof - over %s/%s', async (system, scheme) => {
     const {
-      ctx, publicShares, message, ciphertext, partialDecryptors, invalidDecryptors, decryptor, blame: targetBlame
-    } = await createThresholdDecryptionSetup({
-      scheme, system, nrShares, threshold, nrInvalidIndexes: 2
+      ctx, partialPublicKeys, message, ciphertext, partialDecryptors, decryptor, blame: targetBlame
+    } = await mockThresholdDecryptionSetup({
+      scheme, system, nrShares, threshold, nrInvalid: 2
     });
-    const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, invalidDecryptors, publicShares, {
+    const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, partialDecryptors, partialPublicKeys, {
       scheme, threshold, errorOnInvalid: false
     });
     expect(isEqualBuffer(plaintext, Uint8Array.from([]))).toBe(true);
-    expect(blame.sort()).toEqual(targetBlame.sort());
+    expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
+  });
+  it.each(cartesian([systems, schemes]))
+  ('failure - accurate blaming - forged nonce - over %s/%s', async (system, scheme) => {
+    const {
+      ctx, partialPublicKeys, message, ciphertext, partialDecryptors, decryptor, blame: targetBlame, nonces
+    } = await mockThresholdDecryptionSetup({
+      scheme, system, nrShares, threshold, nrInvalid: 2, withNonce: true
+    });
+    const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, partialDecryptors, partialPublicKeys, {
+      scheme, threshold, errorOnInvalid: false, nonces
+    });
+    expect(isEqualBuffer(plaintext, Uint8Array.from([]))).toBe(true);
+    expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
   });
   it.each(cartesian([systems, schemes]))(
     'failure - missing public - over %s/%s', async (system, scheme) => {
-    const { ctx, publicShares, ciphertext, partialDecryptors, decryptor } = await createThresholdDecryptionSetup({
+    const { ctx, partialPublicKeys, ciphertext, partialDecryptors, decryptor } = await mockThresholdDecryptionSetup({
       scheme, system, nrShares, threshold
     });
     await expect(
       thresholdDecrypt(
-        ctx, ciphertext, partialDecryptors, publicShares.slice(0, nrShares - 1), { scheme, threshold }
+        ctx, ciphertext, partialDecryptors, partialPublicKeys.slice(0, nrShares - 1), { scheme, threshold }
       )
     ).rejects.toThrow('No public share with index')
+  });
+  it.each(cartesian([systems, schemes]))(
+    'failure - missing nonce - over %s/%s', async (system, scheme) => {
+    const { ctx, partialPublicKeys, ciphertext, partialDecryptors, decryptor, nonces } = await mockThresholdDecryptionSetup({
+      scheme, system, nrShares, threshold, withNonce: true
+    });
+    await expect(
+      thresholdDecrypt(
+        ctx, ciphertext, partialDecryptors, partialPublicKeys, {
+          scheme, threshold, nonces: nonces.slice(0, nrShares - 1)
+        }
+      )
+    ).rejects.toThrow('No nonce for index')
   });
 });

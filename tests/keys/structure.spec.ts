@@ -1,21 +1,48 @@
-import { initGroup } from '../../src/backend';
-import { Algorithms } from '../../src/enums';
-import { Algorithm } from '../../src/types';
-import { generateKey } from '../../src';
-import { PrivateKey, PublicKey } from '../../src/keys';
-import { cartesian } from '../utils';
+import { initBackend, generateKey } from 'vsslib';
+import { PrivateKey, PublicKey } from 'vsslib/keys';
+import { unpackScalar, unpackPoint, isEqualSecret } from 'vsslib/secrets';
 import { resolveTestConfig } from '../environ';
 
 const { systems } = resolveTestConfig();
 
+describe('Structure of asymmetric keys', () => {
+  it.each(systems)('key generation - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
 
-describe('Public key extraction', () => {
-  it.each(systems)('over %s', async (system) => {
-    const { privateKey, publicKey, ctx } = await generateKey(system);
-    const pubPoint = await publicKey.asPoint();
-    const targetPoint = await ctx.exp(ctx.generator, privateKey.asScalar());
-    const targetPublic = new PublicKey(ctx, targetPoint.toBytes());
-    expect(await pubPoint.equals(targetPoint)).toBe(true);
+    const g = ctx.generator;
+    const x = await unpackScalar(ctx, privateKey.asBytes());
+    const y = await unpackPoint(ctx, publicKey.asBytes());
+    expect(await y.equals(await ctx.exp(g, x))).toBe(true);
+  });
+  it.each(systems)('public key extraction - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { privateKey, publicKey: targetPublic} = await generateKey(ctx);
+
+    const publicKey = await privateKey.getPublicKey();
     expect(await publicKey.equals(targetPublic)).toBe(true);
+
+    const g = ctx.generator;
+    const x = await unpackScalar(ctx, privateKey.asBytes());
+    const y = await unpackPoint(ctx, publicKey.asBytes());
+    expect(await y.equals(await ctx.exp(g, x))).toBe(true);
+  });
+  it.each(systems)('keypair equality - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
+
+    const sameKey = new PrivateKey(ctx, privateKey.asBytes());
+    const samePublic = new PublicKey(ctx, publicKey.asBytes());
+
+    expect(await isEqualSecret(ctx, sameKey.secret, privateKey.secret)).toBe(true);
+    expect(await samePublic.equals(publicKey)).toBe(true);
+  });
+  it.each(systems)('keypair disparity - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { privateKey, publicKey } = await generateKey(ctx);
+    const { privateKey: otherKey, publicKey: otherPublic } = await generateKey(ctx);
+
+    expect(await isEqualSecret(ctx, otherKey.secret, privateKey.secret)).toBe(false);
+    expect(await otherPublic.equals(publicKey)).toBe(false);
   });
 });

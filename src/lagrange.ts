@@ -1,7 +1,7 @@
-import { Point, Group } from './backend/abstract';
-import { mod, modInv } from './arith';
-import { FieldPolynomial } from './polynomials';
-import { InverseNotExists, InterpolationError } from './errors';
+import { Point, Group } from 'vsslib/backend';
+import { mod, modInv } from 'vsslib/arith';
+import { FieldPolynomial } from 'vsslib/polynomials';
+import { InverseNotExists, InterpolationError } from 'vsslib/errors';
 
 
 const __0n = BigInt(0);
@@ -16,7 +16,7 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
 
   constructor(ctx: Group<P>, points: [bigint, bigint][]) {
     const k = points.length;
-    const { order } = ctx;
+    const order = ctx.order;
     if (k > order) throw new InterpolationError(
       'Number of provided points exceeds order'
     );
@@ -31,10 +31,10 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
       let pj = [__1n];
       for (let i = 0; i < k; i++) {
         if (i !== j) {
-          const [xi, _] = points[i];
+          const [xi,] = points[i];
           w *= xj - xi;
           const len = pj.length;
-          let _pj = new Array(len + 1);
+          const _pj = new Array(len + 1);
           _pj[0] = - xi * pj[0];
           for (let a = 0; a < len - 1; a++) {
             _pj[a + 1] = pj[a] - xi * pj[a + 1];
@@ -79,11 +79,18 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
 }
 
 
-export const interpolate = async (
-  ctx: Group<Point>,
-  points: XYPoint[]
-): Promise<LagrangePolynomial<Point>> => {
-  return new LagrangePolynomial(
-    ctx, points.map(([x, y]) => [BigInt(x), BigInt(y)])
-  );
+export class LagrangeInterpolator<P extends Point> {
+  ctx: Group<P>;
+
+  constructor(ctx: Group<P>) {
+    this.ctx = ctx;
+  }
+
+  interpolate = async (points: XYPoint[]) => new LagrangePolynomial(
+    this.ctx, points.map(([x, y]: XYPoint)=> [BigInt(x), BigInt(y)])
+  )
+}
+
+export default function<P extends Point>(ctx: Group<P>) {
+  return new LagrangeInterpolator(ctx);
 }

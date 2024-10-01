@@ -1,46 +1,40 @@
-import { Point, Group } from './backend/abstract';
-import { Ciphertext } from './elgamal';
-import {
-  SecretShare,
-  PublicShare,
-  PublicSharePacket,
-  parsePublicSharePacket,
-} from './dealer';
-import { leInt2Buff } from './arith';
-import {
-  PrivateKey,
-  PublicKey,
-  PrivateKeyShare,
-  PublicKeyShare,
-  PartialDecryptor
-} from './keys';
-import { InvalidPublicShare, InvalidPartialDecryptor } from './errors';
-import { BlockModes, Algorithms } from './enums';
-import { ElgamalScheme, BlockMode, Algorithm } from './types';
-import { mod, modInv } from './arith';
+import { leInt2Buff, mod, modInv } from 'vsslib/arith';
+import { Point, Group } from 'vsslib/backend';
+import { unpackScalar, unpackPoint } from 'vsslib/secrets'
+import { SecretShare, PublicShare } from 'vsslib/dealer';
+import { SchnorrPacket, PartialPublicKey, PartialDecryptor } from 'vsslib/shareholder';
+import { Ciphertext } from 'vsslib/elgamal';
+import { InvalidPublicShare, InvalidPartialDecryptor, InvalidInput } from 'vsslib/errors';
+import { PublicKey } from 'vsslib/keys';
+import { BlockModes, Algorithms } from 'vsslib/enums';
+import { ElgamalScheme, BlockMode, Algorithm } from 'vsslib/types';
 
-import elgamal from './elgamal';
+import elgamal from 'vsslib/elgamal';
+import nizk from 'vsslib/nizk';
 
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
+export type IndexedNonce = { nonce: Uint8Array, index: number };
+
+
 export function computeLambda<P extends Point>(
   ctx: Group<P>,
   index: number,
-  qualifiedIndexes: number[]
+  indexes: number[]
 ): bigint {
-  let lambda = __1n;
-  const { order } = ctx
+  const order = ctx.order;
   const i = index;
-  qualifiedIndexes.forEach(j => {
+  let acc = __1n;
+  indexes.forEach(j => {
     if (i != j) {
       const curr = BigInt(j) * modInv(BigInt(j - i), order);
-      lambda = mod(lambda * curr, order);
+      acc = mod(acc * curr, order);
     }
   });
-  return lambda;
+  return acc;
 }
 
 
@@ -50,17 +44,16 @@ export async function combineSecretShares<P extends Point>(
   threshold?: number
 ): Promise<Uint8Array> {
   if (threshold && shares.length < threshold)
-    throw new Error('Insufficient number of shares');
-  const { order, leBuff2Scalar } = ctx;
+    throw new InvalidInput('Insufficient number of shares');
+  const order = ctx.order;
   const indexes = shares.map(share => share.index);
-  const secret = shares.reduce(
-    (acc, { value, index }) => {
-      const lambda = computeLambda(ctx, index, indexes);
-      return mod(acc + leBuff2Scalar(value) * lambda, order);
-    },
-    __0n
-  );
-  return leInt2Buff(secret);
+  let x = __0n;
+  for (const { value, index } of shares) {
+    const li = computeLambda(ctx, index, indexes);
+    const xi = await unpackScalar(ctx, value);
+    x = mod(x + li * xi, order);
+  }
+  return leInt2Buff(x);
 }
 
 
@@ -70,16 +63,16 @@ export async function combinePublicShares<P extends Point>(
   threshold?: number
 ): Promise<Uint8Array> {
   if (threshold && shares.length < threshold)
-    throw new Error('Insufficient number of shares');
-  const { order, operate, neutral, exp, unpackValid } = ctx;
+    throw new InvalidInput('Insufficient number of shares');
+  const exp = ctx.exp;
   const indexes = shares.map(share => share.index);
-  let acc = neutral;
-  for (const { index, value } of shares) {
-    const lambda = computeLambda(ctx, index, indexes);
-    const curr = await unpackValid(value);
-    acc = await operate(acc, await exp(curr, lambda));
+  let y = ctx.neutral;
+  for (const { value, index } of shares) {
+    const li = computeLambda(ctx, index, indexes);
+    const yi = await unpackPoint(ctx, value)
+    y = await ctx.operate(y, await exp(yi, li));
   }
-  return acc.toBytes();
+  return y.toBytes();
 }
 
 
@@ -88,74 +81,105 @@ export async function combinePartialDecryptors<P extends Point>(
   shares: PartialDecryptor[],
   threshold?: number,
 ): Promise<Uint8Array> {
-  if (threshold && shares.length < threshold) throw new Error(
+  if (threshold && shares.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
-  const { order, neutral, exp, operate, unpackValid } = ctx;
-  const qualifiedIndexes = shares.map(share => share.index);
-  let acc = neutral;
+  const exp = ctx.exp;
+  const indexes = shares.map(share => share.index);
+  let d = ctx.neutral;
   for (const share of shares) {
     const { value, index } = share;
-    const lambda = computeLambda(ctx, index, qualifiedIndexes);
-    const curr = await exp(await unpackValid(value), lambda);
-    acc = await operate(acc, curr);
+    const li = computeLambda(ctx, index, indexes);
+    const di = await unpackPoint(ctx, value)
+    d = await ctx.operate(d, await exp(di, li));
   }
-  return acc.toBytes();
+  return d.toBytes();
+}
+
+
+export async function parseSchnorrPacket<P extends Point>(
+  ctx: Group<P>,
+  packet: SchnorrPacket,
+  opts?: {
+    algorithm?: Algorithm,
+    nonce?: Uint8Array,
+  },
+): Promise<PublicShare> {
+  const { value, index, proof } = packet;
+  const y = await unpackPoint(ctx, value)
+  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
+  const nonce = opts ? opts.nonce : undefined;
+  const isValid = await nizk(ctx, algorithm).verifyDlog(
+    {
+      u: ctx.generator,
+      v: y,
+    },
+    proof,
+    nonce,
+  );
+  if (!isValid)
+    throw new InvalidPublicShare(`Invalid packet with index ${index}`);
+  return { value, index };
 }
 
 
 export async function recoverPublic<P extends Point>(
   ctx: Group<P>,
-  packets: PublicSharePacket[],
+  packets: SchnorrPacket[],
   opts?: {
     algorithm?: Algorithm,
-    nonce?: Uint8Array, // TODO: Individual nonces
+    nonces?: IndexedNonce[],
     threshold?: number,
     errorOnInvalid?: boolean,
   },
-): Promise<{ result: Uint8Array, blame: number[] }> {
+): Promise<{ recovered: Uint8Array, blame: PublicShare[] }> {
   const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? (opts.nonce || undefined) : undefined;
   const threshold = opts ? opts.threshold : undefined;
+  const nonces = opts ? (opts.nonces || [] ) : [];
   const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
-  if (threshold && packets.length < threshold) throw new Error(
+  if (threshold && packets.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
+  const exp = ctx.exp;
   const indexes = packets.map(packet => packet.index);
-  const { order, operate, neutral, exp, unpackValid } = ctx;
-  let acc = neutral;
   const blame = [];
+  let y = ctx.neutral;
   for (const packet of packets) {
+    const packetNonce = nonces.filter((n: IndexedNonce) => n.index == packet.index)[0];  // TODO: pop
+    const nonce = packetNonce ? packetNonce.nonce : undefined;
     try {
-      const { value, index } = await parsePublicSharePacket(ctx, packet, { algorithm, nonce });
-      const lambda = computeLambda(ctx, index, indexes);
-      const curr = await unpackValid(value);
-      acc = await operate(acc, await exp(curr, lambda));
+      const { value, index } = await parseSchnorrPacket(ctx, packet, { algorithm, nonce });
+      const li = computeLambda(ctx, index, indexes);
+      const yi = await unpackPoint(ctx, value)
+      y = await ctx.operate(y, await exp(yi, li));
     } catch (err: any) {
       if (err instanceof InvalidPublicShare) {
         if (errorOnInvalid) throw err;
-        blame.push(packet.index);
+        blame.push({
+          value: packet.value,
+          index: packet.index,
+        });
       }
       else throw err;
     }
   }
-  const result = acc.toBytes();
-  return { result, blame };
+  const recovered = y.toBytes();
+  return { recovered, blame };
 }
 
 
 export async function recoverPublicKey<P extends Point>(
   ctx: Group<P>,
-  packets: PublicSharePacket[],
+  packets: SchnorrPacket[],
   opts?: {
     algorithm?: Algorithm,
-    nonce?: Uint8Array, // TODO: Individual nonces
+    nonces?: IndexedNonce[],
     threshold?: number,
     errorOnInvalid?: boolean,
   },
-): Promise<{ recovered: PublicKey<P>, blame: number[] }> {
-  const { result, blame } = await recoverPublic(ctx, packets, opts);
-  const recovered = new PublicKey(ctx, result);
+): Promise<{ recovered: PublicKey<P>, blame: PublicShare[] }> {
+  const { recovered: publicBytes, blame } = await recoverPublic(ctx, packets, opts);
+  const recovered = new PublicKey(ctx, publicBytes);
   return { recovered, blame };
 }
 
@@ -164,33 +188,41 @@ export async function recoverDecryptor<P extends Point>(
   ctx: Group<P>,
   shares: PartialDecryptor[],
   ciphertext: Ciphertext,
-  publicShares: PublicKeyShare<P>[],
+  partialPublicKeys: PartialPublicKey<P>[],
   opts?: {
     algorithm?: Algorithm,
-    nonce?: Uint8Array, // TODO: Individual decryptor nonces
+    nonces?: IndexedNonce[],
     threshold?: number,
     errorOnInvalid?: boolean,
   },
-): Promise<{ result: Uint8Array, blame: number[] }> {
+): Promise<{ recovered: Uint8Array, blame: PartialPublicKey<P>[] }> {
+  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
   const threshold = opts ? opts.threshold : undefined;
-  if (threshold && shares.length < threshold) throw new Error(
+  const nonces = opts ? opts.nonces : undefined;
+  const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
+  if (threshold && shares.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
-  const { order, neutral, exp, operate, unpackValid } = ctx;
-  const qualifiedIndexes = shares.map(share => share.index);
-  let blame = [];
-  let acc = neutral;
-  const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
-  for (const partialDecryptor of shares) {
-    const { value, index } = partialDecryptor;
-    const publicShare = publicShares.filter(s => s.index == index)[0];
-    if (!publicShare) throw new Error(`No public share with index ${index}`);
+  const exp = ctx.exp;
+  const indexes = shares.map(share => share.index);
+  const blame = [];
+  let d = ctx.neutral;
+  for (const share of shares) {
+    const { value, index } = share;
+    const partialPublic = partialPublicKeys.filter(s => s.index == index)[0];  // TODO: pop
+    if (!partialPublic)
+      throw new InvalidInput(`No public share with index ${index}`);
+    let nonce = undefined;
+    if (nonces) {
+      const indexedNonce = nonces.filter((n: IndexedNonce) => n.index == index)[0];  // TODO: pop
+      if (!indexedNonce)
+        throw new InvalidInput(`No nonce for index ${index}`);
+      nonce = indexedNonce.nonce;
+    }
     try {
-      const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-      const nonce = opts ? (opts.nonce || undefined) : undefined;
-      await publicShare.verifyPartialDecryptor(
+      await partialPublic.verifyPartialDecryptor(
         ciphertext,
-        partialDecryptor,
+        share,
         {
           algorithm,
           nonce,
@@ -198,54 +230,53 @@ export async function recoverDecryptor<P extends Point>(
       );
     } catch (err: any) {
       if (err instanceof InvalidPartialDecryptor) {
-        if (errorOnInvalid) throw new Error(
-          `Invalid partial decryptor with index ${index}`
-        );
-        blame.push(index);
+        if (errorOnInvalid) {
+          err.message += ` with index ${index}`
+          throw err;
+        }
+        blame.push(partialPublic);
       } else {
         throw err;
       }
     }
-    const lambda = computeLambda(ctx, index, qualifiedIndexes);
-    const curr = await exp(await unpackValid(value), lambda);
-    acc = await operate(acc, curr);
+    const li = computeLambda(ctx, index, indexes);
+    const di = await unpackPoint(ctx, value);
+    d = await ctx.operate(d, await exp(di, li));
   }
-  const result = acc.toBytes();
-  return { result, blame };
+  const recovered = d.toBytes();
+  return { recovered, blame };
 }
 
 
 export async function thresholdDecrypt<P extends Point>(
   ctx: Group<P>,
   ciphertext: Ciphertext,
-  decryptorShares: PartialDecryptor[],
-  publicShares: PublicKeyShare<P>[],
+  partialDecryptors: PartialDecryptor[],
+  partialPublicKeys: PartialPublicKey<P>[],
   opts: {
     scheme: ElgamalScheme,
     mode?: BlockMode,
     encAlgorithm?: Algorithm,
     vrfAlgorithm?: Algorithm,
-    nonce?: Uint8Array,
+    nonces?: IndexedNonce[],
     threshold?: number,
     errorOnInvalid?: boolean
   },
-): Promise<{ plaintext: Uint8Array, blame: number[] }> {
-  const { result: decryptor, blame } = await recoverDecryptor(
+): Promise<{ plaintext: Uint8Array, blame: PartialPublicKey<P>[] }> {
+  const { recovered: decryptor, blame } = await recoverDecryptor(
     ctx,
-    decryptorShares,
+    partialDecryptors,
     ciphertext,
-    publicShares,
+    partialPublicKeys,
     {
       algorithm: opts.vrfAlgorithm || Algorithms.DEFAULT,
-      nonce: opts.nonce,
+      nonces: opts.nonces,
       threshold: opts.threshold,
       errorOnInvalid: opts.errorOnInvalid,
     }
   );
-
   if (blame.length > 0)
     return { plaintext: Uint8Array.from([]), blame };
-
   const plaintext = await elgamal(
     ctx,
     opts.scheme,

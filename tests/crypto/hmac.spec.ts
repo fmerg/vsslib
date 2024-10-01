@@ -1,5 +1,5 @@
 import { createHmac } from 'node:crypto';
-import { hmac, randomBytes } from '../../src/crypto';
+import { hmac, randomBytes } from 'vsslib/crypto';
 import { cartesian } from '../utils';
 import { resolveTestConfig } from '../environ';
 

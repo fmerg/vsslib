@@ -1,7 +1,7 @@
 // TODO: browser
 import { createHmac as _createHmac } from 'node:crypto';
 
-import { Algorithm } from '../types';
+import { Algorithm } from 'vsslib/types';
 
 
 export class Hmac {

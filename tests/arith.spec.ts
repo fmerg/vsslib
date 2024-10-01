@@ -1,12 +1,7 @@
-import {
-  mod,
-  gcd,
-  modInv,
-} from '../../src/arith';
+import { leBuff2Int, leInt2Buff, mod, gcd, modInv } from 'vsslib/arith';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
-const __2n = BigInt(2);
 
 
 describe('errors', () => {
@@ -172,3 +167,19 @@ describe('Inverse not exists', () => {
     );
   })
 })
+
+describe('little-endian roundtrip', () => {
+  it.each([
+    [[0], 0],
+    [[1], 1],
+    [[1, 2], 513],
+    [[1, 2, 3], 197121],
+    [[1, 2, 3, 255], 4278387201],
+  ])('%s, %s', (arr, num) => {
+    const buffer = Uint8Array.from(arr);
+    const number = leBuff2Int(buffer);
+    expect(number).toBe(BigInt(num));
+    const buffBack = leInt2Buff(number);
+    expect(buffBack).toEqual(buffer);
+  });
+});

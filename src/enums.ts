@@ -1,8 +1,3 @@
-export enum Modular {
-  BITS_2048 = 2048,
-  BITS_4096 = 4096,
-}
-
 export enum Elliptic {
   ED25519   = 'ed25519',
   ED448     = 'ed448',
@@ -17,7 +12,6 @@ export enum Elliptic {
 }
 
 export const Systems = {
-  // ...Modular,
   ...Elliptic,
 }
 
@@ -33,6 +27,7 @@ export enum Algorithms {
   SHA3_512  = 'sha3-512',
 }
 
+// TODO: Remove cryptographically insecure block-mode
 export enum BlockModes {
   DEFAULT     = 'aes-256-cbc',
   AES_256_CBC = 'aes-256-cbc',
@@ -53,9 +48,3 @@ export enum SignatureSchemes {
   DEFAULT   = 'schnorr',
   SCHNORR   = 'schnorr',
 }
-
-export enum Encodings {
-  HEX       = 'hex',
-  BASE64    = 'base64',
-}
-

@@ -1,51 +1,58 @@
-import { generateKey } from './keys';
-import {
-  combinePublicShares,
-  recoverPublicKey,
-  combinePartialDecryptors,
-  recoverDecryptor,
-  thresholdDecrypt
-} from './combiner';
-
-import {
-  distributeSecret,
-  parseFeldmanPacket,
-  parsePedersenPacket,
-  createPublicSharePacket,
-  parsePublicSharePacket,
-} from './dealer';
-
-
-const backend = require('./backend');
-const crypto = require('./crypto');
-const elgamal = require('./elgamal');
-const enums = require('./enums');
-const keys = require('./keys');
-const lagrange = require('./lagrange');
-const nizk = require('./nizk');
-const dealer = require('./dealer');
-const signer = require('./signer');
-
+export { initBackend } from 'vsslib/backend';
 
 export {
-  generateKey,
-  distributeSecret,
+  Systems,
+  Algorithms,
+  BlockModes,
+  ElgamalSchemes,
+  SignatureSchemes,
+} from 'vsslib/enums';
+
+export {
+  randomSecret,
+  randomPublic,
+  extractPublic,
+  isEqualSecret,
+  isEqualPublic,
+  isKeypair,
+  addSecrets,
+  combinePublics,
+  unpackScalar,
+  unpackPoint,
+} from 'vsslib/secrets';
+
+export { generateKey } from 'vsslib/keys';
+
+export { shareSecret, shareKey } from 'vsslib/dealer';
+
+export {
+  extractPublicShare,
   parseFeldmanPacket,
   parsePedersenPacket,
-  createPublicSharePacket,
-  parsePublicSharePacket,
+  createSchnorrPacket,
+  parsePartialKey,
+  PartialKey,
+  PartialPublicKey,
+  PartialDecryptor
+} from 'vsslib/shareholder';
+
+export {
+  computeLambda,
+  combineSecretShares,
   combinePublicShares,
-  recoverPublicKey,
   combinePartialDecryptors,
+  parseSchnorrPacket,
+  recoverPublic,
+  recoverPublicKey,
   recoverDecryptor,
-  thresholdDecrypt,
-  backend,
-  crypto,
-  elgamal,
-  enums,
-  keys,
-  lagrange,
-  nizk,
-  dealer,
-  signer,
-}
+  thresholdDecrypt
+} from 'vsslib/combiner';
+
+export {
+  ElgamalError,
+  InvalidSecret,
+  InvalidSecretShare,
+  InvalidPublicShare,
+  InvalidDecryptor,
+  InvalidInput,
+} from 'vsslib/errors';

@@ -1,48 +1,41 @@
-import { ExtPointType, CurveFn as NobleCurve } from '@noble/curves/abstract/edwards';
+import { ExtPointType, CurveFn as _Curve } from '@noble/curves/abstract/edwards';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
-import { secp256k1 } from '@noble/curves/secp256k1';
-import { Elliptic } from '../enums';
-import { System } from '../types';
-import { BadGroupError, BadPointError, BadScalarError } from '../errors';
-import { Point, Group } from './abstract';
-import { mod, leBuff2Int } from '../arith';
+
+import { Elliptic } from 'vsslib/enums';
+import { System } from 'vsslib/types';
+import { BadPointError, BadScalarError } from 'vsslib/errors';
+import { mod, leBuff2Int } from 'vsslib/arith';
+import { Point, Group } from 'vsslib/backend/abstract';
 
 
 const __0n = BigInt(0);
 
+interface _CurvePoint extends ExtPointType { toRawBytes?: Function; };
 
-interface NoblePoint extends ExtPointType {
-  toRawBytes?: Function;
-};
 
 class EcPoint implements Point {
-  _wrapped: NoblePoint;
+  wrapped: _CurvePoint;
+  toBytes = (): Uint8Array => this.wrapped.toRawBytes!();
 
-  constructor(wrapped: NoblePoint) {
-    this._wrapped = wrapped;
-  }
-
-  toBytes = (): Uint8Array => this._wrapped.toRawBytes!();
-
-  public get wrapped(): NoblePoint {
-    return this._wrapped;
+  constructor(wrapped: _CurvePoint) {
+    this.wrapped = wrapped;
   }
 
   async equals<Q extends Point>(other: Q): Promise<boolean> {
-    return (other instanceof EcPoint) && (this._wrapped.equals(other.wrapped));
+    // TODO: Ensure that this is constant time
+    return (other instanceof EcPoint) && (this.wrapped.equals(other.wrapped));
   }
-
 }
 
 
 export class EcGroup extends Group<EcPoint> {
-  _base: NoblePoint;
-  _zero: NoblePoint;
-  _curve: NobleCurve;
+  _base: _CurvePoint;
+  _zero: _CurvePoint;
+  curve: _Curve;
 
-  constructor(system: System, curve: NobleCurve) {
+  constructor(system: System, curve: _Curve) {
     const modulus = curve.CURVE.Fp.ORDER;
     const order = curve.CURVE.n;
     const base = curve.ExtendedPoint.BASE;
@@ -52,18 +45,10 @@ export class EcGroup extends Group<EcPoint> {
     super(system, modulus, order, generator, neutral);
     this._base = base;
     this._zero = zero;
-    this._curve = curve;
+    this.curve = curve;
   }
 
-  public get curve(): NobleCurve {
-    return this._curve;
-  }
-
-  async equals<Q extends Point>(other: Group<Q>): Promise<boolean> {
-    return (other instanceof EcGroup) && (this._curve == other.curve);
-  }
-
-  randomSecret = async (): Promise<Uint8Array> =>
+  generateSecret = async (): Promise<Uint8Array> =>
     this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
 
   randomScalar = async (): Promise<bigint> => mod(
@@ -87,7 +72,7 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   validatePoint = async (point: EcPoint): Promise<boolean> => {
-    let flag = true;
+    const flag = true;
     if (await point.wrapped.equals(this._zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: any) {
       if (err.message.startsWith('bad point: ')) throw new BadPointError(
@@ -109,51 +94,25 @@ export class EcGroup extends Group<EcPoint> {
     point.wrapped.negate()
   );
 
-  unpack = (bytes: Uint8Array): EcPoint => {
-    let unpacked;
+  buff2Point = (bytes: Uint8Array): EcPoint => {
+    let point;
     try {
-      unpacked = new EcPoint(this._curve.ExtendedPoint.fromHex(bytes));
+      point = new EcPoint(this.curve.ExtendedPoint.fromHex(bytes));
     } catch (err: any) {
       throw new BadPointError(`bad encoding: ${err.message}`)
     }
-    return unpacked;
-  }
-
-  unpackValid = async (bytes: Uint8Array): Promise<EcPoint> => {
-    const unpacked = this.unpack(bytes);
-    await this.validatePoint(unpacked);
-    return unpacked;
+    return point;
   }
 }
 
 
-const __curves = {
-  [Elliptic.ED25519]: ed25519,
-  [Elliptic.ED448]: ed448,
-  [Elliptic.JUBJUB]: jubjub,
-  // 'secp256k1': secp256k1,
-  // 'pallas': pallas,
-  // 'vesta': vesta,
-  // 'p256': p256,
-  // 'p384': p384,
-  // 'p521': p521,
-  // 'bn254': bn254,
-};
-
-export function initElliptic(system: System): EcGroup {
-  let group: EcGroup;
-
-  switch (system) {
-    case Elliptic.ED25519:
-    case Elliptic.ED448:
-    case Elliptic.JUBJUB:
-      group = new EcGroup(system, __curves[system]);
-      break;
-    default:
-      throw new BadGroupError(
-        `Unsupported goup: ${system}`
-    );
+export const initElliptic = (
+  system: Elliptic.ED25519 | Elliptic.ED448 | Elliptic.JUBJUB
+): EcGroup => {
+  const mapping = {
+    [Elliptic.ED25519]: ed25519,
+    [Elliptic.ED448]: ed448,
+    [Elliptic.JUBJUB]: jubjub,
   }
-
-  return group;
+  return new EcGroup(system, mapping[system]);
 }

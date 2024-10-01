@@ -1,12 +1,20 @@
-import { Modular } from '../enums';
-import { System } from '../types';
-import { initModular } from './modular';
-import { initElliptic } from './elliptic';
+import { System } from 'vsslib/types';
+import { Elliptic } from 'vsslib/enums';
+import { BadGroupError } from 'vsslib/errors';
+export { Group, Point } from 'vsslib/backend/abstract'
+import { initElliptic } from 'vsslib/backend/elliptic';
 
-const sanitize  = (system: System | string) => system as System;
-const isModular = (system: System | string) => Object.values(Modular).includes(sanitize(system));
-const initGroup = (system: System | string) => isModular(system) ?
-    initModular(sanitize(system)) :
-    initElliptic(sanitize(system));
+export const initBackend = (system: System | string) => {
+  system  = system as System;
 
-export { initGroup };
+  switch (system) {
+    case Elliptic.ED25519:
+    case Elliptic.ED448:
+    case Elliptic.JUBJUB:
+      return initElliptic(system);
+    default:
+      throw new BadGroupError(
+        `Unsupported group: ${system}`
+    );
+  }
+}

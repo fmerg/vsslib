@@ -1,77 +1,52 @@
-import { Group, Point } from '../backend/abstract';
-import {
-  ShamirError,
-  InvalidSignature,
-  InvalidSecret,
-  InvalidDecryptor,
-  InvalidEncryptionProof,
-} from '../errors';
-import { initGroup } from '../backend';
-import { Ciphertext } from '../elgamal';
-import { leInt2Buff } from '../arith';
-import { NizkProof } from '../nizk';
-import { Signature } from '../signer';
-import { Algorithms, BlockModes, ElgamalSchemes, SignatureSchemes } from '../enums';
-import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from '../types';
-import { toCanonical, fromCanonical, ctEqualBuffer } from '../common';
-import { distributeSecret, ShamirSharing } from '../dealer';
+import { Group, Point } from 'vsslib/backend';
+import { Ciphertext } from 'vsslib/elgamal';
+import { NizkProof } from 'vsslib/nizk';
+import { Signature } from 'vsslib/signer';
+import { randomSecret, unpackScalar, unpackPoint, extractPublic, isEqualPublic } from 'vsslib/secrets';
+import { shareSecret, ShamirSharing } from 'vsslib/dealer';
+import { InvalidDecryptor, InvalidEncryption, InvalidSecret, InvalidSignature } from 'vsslib/errors';
+import { Algorithms, BlockModes, ElgamalSchemes } from 'vsslib/enums';
+import { Algorithm, BlockMode, ElgamalScheme, SignatureScheme } from 'vsslib/types';
+import { toCanonical, fromCanonical } from 'vsslib/common';
 
-import elgamal from '../elgamal';
-import nizk from '../nizk';
-import signer from '../signer';
+import elgamal from 'vsslib/elgamal';
+import nizk from 'vsslib/nizk';
+import signer from 'vsslib/signer';
 
 
 export class PrivateKey<P extends Point> {
   ctx: Group<P>;
-  bytes: Uint8Array;
+  secret: Uint8Array;
 
-  constructor(ctx: Group<P>, bytes: Uint8Array) {
+  constructor(ctx: Group<P>, secret: Uint8Array) {
     this.ctx = ctx;
-    this.bytes = bytes;
+    this.secret = secret;
   }
 
-  async equals<Q extends Point>(other: PrivateKey<Q>): Promise<boolean> {
-    return (
-      (await this.ctx.equals(other.ctx)) &&
-        (this.asScalar() == other.asScalar())
-    );
-  }
-
-  asScalar = (): bigint => this.ctx.leBuff2Scalar(this.bytes);
-
-  getPublic = async (): Promise<P> => {
-    const { exp, generator: g } = this.ctx;
-    return exp(g, this.asScalar());
-  }
-
-  getPublicBytes = async (): Promise<Uint8Array> => {
-    return (await this.getPublic()).toBytes();
-  }
+  asBytes = (): Uint8Array => this.secret;
 
   getPublicKey = async (): Promise<PublicKey<P>> => new PublicKey(
-    this.ctx, await this.getPublicBytes()
+    this.ctx, await extractPublic(this.ctx, this.secret)
   );
 
   proveSecret = async (opts?: { nonce?: Uint8Array, algorithm?: Algorithm }): Promise<
     NizkProof
   > => {
-    const { generator: g } = this.ctx
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
-      Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
+    const g = this.ctx.generator;
+    const x = await unpackScalar(this.ctx, this.secret);
+    const y = await this.ctx.exp(g, x);
     return nizk(this.ctx, algorithm).proveDlog(
-      this.asScalar(),
+      x,
       {
         u: g,
-        v: await this.getPublic(),
+        v: y,
       },
       nonce
     );
   }
 
-  generateSharing = async (nrShares: number, threshold: number): Promise<ShamirSharing<P>> => {
-    return distributeSecret(this.ctx, nrShares, threshold, this.bytes);
-  }
 
   signMessage = async (
     message: Uint8Array,
@@ -83,7 +58,7 @@ export class PrivateKey<P extends Point> {
   ): Promise<Signature> => {
     let { scheme, algorithm, nonce } = opts;
     return signer(this.ctx, scheme, algorithm || Algorithms.DEFAULT).signBytes(
-      this.asScalar(), message, nonce
+      this.secret, message, nonce
     );
   }
 
@@ -99,8 +74,7 @@ export class PrivateKey<P extends Point> {
     algorithm = algorithm || Algorithms.DEFAULT;
     mode = mode || BlockModes.DEFAULT;
     return elgamal(this.ctx, scheme, algorithm, mode).decrypt(
-      ciphertext,
-      this.asScalar()
+      ciphertext, this.secret
     );
   }
 
@@ -112,22 +86,43 @@ export class PrivateKey<P extends Point> {
       nonce?: Uint8Array,
     },
   ): Promise<boolean> => {
-    const { ctx } = this;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
-      Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? opts.nonce : undefined;
-    const verified = await nizk(ctx, algorithm).verifyDlog(
+    const g = this.ctx.generator;
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
+    const isValid = await nizk(this.ctx, algorithm).verifyDlog(
       {
-        u: ctx.generator,
-        v: await ctx.unpackValid(ciphertext.beta),
+        u: g,
+        v: b,
       },
       proof,
       nonce,
     );
-    if (!verified) throw new InvalidEncryptionProof(
-      `Invalid encryption`  // TODO
+    if (!isValid) throw new InvalidEncryption(
+      `Invalid encryption`  // TODO: More informative message?
     );
-    return verified;
+    return isValid;
+  }
+
+  verifyDecrypt = async (
+    ciphertext: Ciphertext,
+    proof: NizkProof,
+    opts: {
+      scheme: ElgamalScheme,
+      encAlgorithm?: Algorithm,
+      mode?: BlockMode,
+      verAlgorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
+  ): Promise<{ plaintext: Uint8Array, proof: NizkProof }> => {
+    const { scheme, encAlgorithm, mode, verAlgorithm, nonce } = opts;
+    await this.verifyEncryption(ciphertext, proof, {
+      algorithm: verAlgorithm, nonce
+    });
+    const plaintext = await this.decrypt(ciphertext, {
+      scheme, algorithm: encAlgorithm, mode
+    });
+    return { plaintext, proof };
   }
 
   proveDecryptor = async (
@@ -138,30 +133,34 @@ export class PrivateKey<P extends Point> {
       nonce?: Uint8Array,
     }
   ): Promise<NizkProof> => {
-    const ctx = this.ctx;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
-      Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    return nizk(ctx, algorithm).proveDDH(
-      this.asScalar(),
+    const g = this.ctx.generator;
+    const x = await unpackScalar(this.ctx, this.secret);
+    const y = await this.ctx.exp(g, x);
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
+    const d = await unpackPoint(this.ctx, decryptor);
+    return nizk(this.ctx, algorithm).proveDDH(
+      x,
       {
-        u: await ctx.unpackValid(ciphertext.beta),
-        v: await this.getPublic(),
-        w: await ctx.unpackValid(decryptor),
+        u: b,
+        v: y,
+        w: d,
       },
       nonce
     );
   }
 
   computeDecryptor = async (
-    ciphertext: Ciphertext, opts?: { algorithm?: Algorithm }
-  ): Promise<{
-    decryptor: Uint8Array,
-    proof: NizkProof
-  }> => {
-    const beta = await this.ctx.unpackValid(ciphertext.beta);
-    const d = await this.ctx.exp(beta, this.asScalar());
-    const decryptor = d.toBytes();
+    ciphertext: Ciphertext,
+    opts?: {
+      algorithm?: Algorithm,
+      nonce?: Uint8Array
+    }
+  ): Promise<{ decryptor: Uint8Array, proof: NizkProof }> => {
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
+    const x = await unpackScalar(this.ctx, this.secret);
+    const decryptor = (await this.ctx.exp(b, x)).toBytes();
     const proof = await this.proveDecryptor(
       ciphertext,
       decryptor,
@@ -170,9 +169,9 @@ export class PrivateKey<P extends Point> {
     return { decryptor, proof };
   }
 
-  async signEncrypt<Q extends Point>(
+  async sigEncrypt<Q extends Point>(
     message: Uint8Array,
-    receiverPublic: PublicKey<Q>,
+    recipientPublic: PublicKey<Q>,
     opts: {
       encScheme: ElgamalSchemes.DHIES | ElgamalSchemes.HYBRID,
       sigScheme: SignatureScheme,
@@ -180,27 +179,31 @@ export class PrivateKey<P extends Point> {
       mode?: BlockMode,
       nonce?: Uint8Array,
     },
-  ): Promise<{
-    ciphertext: Ciphertext,
-    signature: Signature,
-  }> {
+  ): Promise<{ ciphertext: Ciphertext, signature: Signature }> {
     let { encScheme, sigScheme, algorithm, mode, nonce } = opts;
     algorithm = algorithm || Algorithms.DEFAULT;
     mode = mode || BlockModes.DEFAULT;
     const _signer = signer(this.ctx, sigScheme, algorithm);
     const _cipher = elgamal(this.ctx, encScheme, algorithm, mode);
-    const innerSignature = await _signer.signBytes(this.asScalar(), message, nonce);
-    const receiver = receiverPublic.asBytes();
+    const recipient = recipientPublic.asBytes();
     const { ciphertext } = await _cipher.encrypt(
-      toCanonical({ message, innerSignature }), receiver
+      toCanonical({
+        message,
+        innerSignature: await _signer.signBytes(
+          this.secret,
+          message,
+          nonce
+        )
+      }),
+      recipient
     )
     const signature = await _signer.signBytes(
-      this.asScalar(), toCanonical({ ciphertext, receiver }), nonce
+      this.secret, toCanonical({ ciphertext, recipient }), nonce
     )
     return { ciphertext, signature };
   }
 
-  async verifyDecrypt<Q extends Point>(
+  async sigDecrypt<Q extends Point>(
     ciphertext: Ciphertext,
     signature: Signature,
     senderPublic: PublicKey<Q>,
@@ -217,20 +220,26 @@ export class PrivateKey<P extends Point> {
     mode = mode || BlockModes.DEFAULT;
     const _signer = signer(this.ctx, sigScheme, algorithm);
     const _cipher = elgamal(this.ctx, encScheme, algorithm, mode);
-    const receiver = await this.getPublicBytes();
-    const outerVerified = await _signer.verifyBytes(
-      senderPublic.asBytes(), toCanonical({ ciphertext, receiver }), signature, nonce
+    const recipient = await extractPublic(this.ctx, this.secret);
+    const isOuterValid = await _signer.verifyBytes(
+      senderPublic.asBytes(),
+      toCanonical({
+        ciphertext,
+        recipient
+      }),
+      signature,
+      nonce
     );
-    if (!outerVerified) throw new InvalidSignature(
-      `Invalid signature` // TODO
+    if (!isOuterValid) throw new InvalidSignature(
+      `Invalid outer signature`
     );
-    const plaintext = await _cipher.decrypt(ciphertext, this.asScalar());
+    const plaintext = await _cipher.decrypt(ciphertext, this.secret);
     const { message, innerSignature } = fromCanonical(plaintext);
-    const innerVerified = await _signer.verifyBytes(
+    const isInnerValid = await _signer.verifyBytes(
       senderPublic.asBytes(), message, innerSignature, nonce
     );
-    if (!innerVerified) throw new InvalidSignature(
-      `Invalid signature` // TODO
+    if (!isInnerValid) throw new InvalidSignature(
+      `Invalid inner signature`
     );
     return { message, innerSignature };
   }
@@ -239,22 +248,18 @@ export class PrivateKey<P extends Point> {
 
 export class PublicKey<P extends Point> {
   ctx: Group<P>;
-  bytes: Uint8Array;
+  publicBytes: Uint8Array;
 
-  constructor(ctx: Group<P>, bytes: Uint8Array) {
+  constructor(ctx: Group<P>, publicBytes: Uint8Array) {
     this.ctx = ctx;
-    this.bytes = bytes;
+    this.publicBytes = publicBytes;
   }
 
-  asPoint = async (): Promise<P> => this.ctx.unpackValid(this.bytes);
-  asBytes = (): Uint8Array => this.bytes;
-
-  async equals<Q extends Point>(other: PublicKey<Q>): Promise<boolean> {
-    return (
-      (await this.ctx.equals(other.ctx)) &&
-        ctEqualBuffer(this.bytes, other.bytes)
-    );
+  async equals(other: PublicKey<P>): Promise<boolean> {
+     return isEqualPublic(this.ctx, this.publicBytes, other.publicBytes);
   }
+
+  asBytes = (): Uint8Array => this.publicBytes;
 
   verifySecret = async (
     proof: NizkProof,
@@ -263,22 +268,22 @@ export class PublicKey<P extends Point> {
       algorithm?: Algorithm,
     },
   ): Promise<boolean> => {
-    const { generator: g } = this.ctx;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
-      Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce || undefined) : undefined;
-    const verified = await nizk(this.ctx, algorithm).verifyDlog(
+    const g = this.ctx.generator;
+    const y = await unpackPoint(this.ctx, this.publicBytes);
+    const isValid = await nizk(this.ctx, algorithm).verifyDlog(
       {
         u: g,
-        v: await this.asPoint(),
+        v: y,
       },
       proof,
       nonce,
     );
-    if (!verified) throw new InvalidSecret(
-      `Invalid secret` // TODO
+    if (!isValid) throw new InvalidSecret(
+      `Invalid Schnorr proof`
     );
-    return verified;
+    return isValid;
   }
 
   verifySignature = async (
@@ -292,13 +297,13 @@ export class PublicKey<P extends Point> {
   ): Promise<boolean> => {
     let { scheme, algorithm, nonce } = opts;
     algorithm = algorithm || Algorithms.DEFAULT;
-    const verified = await signer(this.ctx, scheme, algorithm).verifyBytes(
-      this.bytes, message, signature, nonce
+    const isValid = await signer(this.ctx, scheme, algorithm).verifyBytes(
+      this.publicBytes, message, signature, nonce
     );
-    if (!verified) throw new InvalidSignature(
-      `Invalid signature` // TODO
+    if (!isValid) throw new InvalidSignature(
+      `Invalid signature` // TODO: More informative message
     );
-    return verified;
+    return isValid;
   }
 
   encrypt = async (
@@ -317,7 +322,7 @@ export class PublicKey<P extends Point> {
     algorithm = algorithm || Algorithms.DEFAULT;
     mode = mode || BlockModes.DEFAULT;
     return elgamal(this.ctx, scheme, algorithm, mode).encrypt(
-      message, this.bytes
+      message, this.publicBytes
     );
   }
 
@@ -329,18 +334,39 @@ export class PublicKey<P extends Point> {
       nonce?: Uint8Array,
     }
   ): Promise<NizkProof> => {
-    const { ctx } = this;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
-      Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    return nizk(ctx, algorithm).proveDlog(
-      ctx.leBuff2Scalar(randomness),
+    const g = this.ctx.generator;
+    const r = await unpackScalar(this.ctx, randomness);
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
+    return nizk(this.ctx, algorithm).proveDlog(
+      r,
       {
-        u: ctx.generator,
-        v: await ctx.unpackValid(ciphertext.beta),
+        u: g,
+        v: b,
       },
       nonce
     );
+  }
+
+  encryptProve = async (
+    message: Uint8Array,
+    opts: {
+      scheme: ElgamalScheme,
+      encAlgorithm?: Algorithm,
+      mode?: BlockMode,
+      verAlgorithm?: Algorithm,
+      nonce?: Uint8Array,
+    }
+  ): Promise<{ ciphertext: Ciphertext, proof: NizkProof }> => {
+    const { scheme, encAlgorithm, mode, verAlgorithm, nonce } = opts;
+    const { ciphertext, randomness } = await this.encrypt(message, {
+      scheme, algorithm: encAlgorithm, mode
+    });
+    const proof = await this.proveEncryption(ciphertext, randomness, {
+      algorithm: verAlgorithm, nonce
+    });
+    return { ciphertext, proof };
   }
 
   verifyDecryptor = async (
@@ -352,22 +378,52 @@ export class PublicKey<P extends Point> {
       nonce?: Uint8Array,
     }
   ): Promise<boolean> => {
-    const { unpackValid } = this.ctx;
-    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) :
-      Algorithms.DEFAULT;
+    const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
     const nonce = opts ? (opts.nonce) : undefined;
-    const verified = await nizk(this.ctx, algorithm).verifyDDH(
+    const b = await unpackPoint(this.ctx, ciphertext.beta);
+    const y = await unpackPoint(this.ctx, this.publicBytes);
+    const d = await unpackPoint(this.ctx, decryptor);
+    const isValid = await nizk(this.ctx, algorithm).verifyDDH(
       {
-        u: await unpackValid(ciphertext.beta),
-        v: await unpackValid(this.bytes),
-        w: await unpackValid(decryptor),
+        u: b,
+        v: y,
+        w: d,
       },
       proof,
       nonce,
     );
-    if (!verified) throw new InvalidDecryptor(
-      `Invalid decryptor`   // TODO
+    if (!isValid) throw new InvalidDecryptor(
+      `Invalid decryptor` // TODO: More informative message?
     );
-    return verified;
+    return isValid;
   }
+}
+
+
+export const decryptWithDecryptor = async <P extends Point>(
+  ctx: Group<P>,
+  ciphertext: Ciphertext,
+  decryptor:  Uint8Array,
+  opts: {
+    scheme: ElgamalScheme,
+    mode?: BlockMode,
+    algorithm?: Algorithm,
+  }
+): Promise<Uint8Array> => {
+  return elgamal(
+    ctx,
+    opts.scheme,
+    opts.algorithm || Algorithms.DEFAULT,
+    opts.mode || BlockModes.DEFAULT,
+  ).decryptWithDecryptor(ciphertext, decryptor);
+}
+
+
+export const generateKey = async <P extends Point>(ctx: Group<P>): Promise<
+  { privateKey: PrivateKey<P>, publicKey: PublicKey<P> }
+> => {
+  const { secret } = await randomSecret(ctx);
+  const privateKey = new PrivateKey(ctx, secret);
+  const publicKey = await privateKey.getPublicKey();
+  return { privateKey, publicKey };
 }

@@ -1,6 +1,6 @@
-import { Point, Group } from '../backend/abstract';
-import { PolynomialEerror } from '../errors';
-import { BasePolynomial } from './base';
+import { Point, Group } from 'vsslib/backend';
+import { PolynomialEerror } from 'vsslib/errors';
+import { BasePolynomial } from 'vsslib/polynomials/base';
 
 
 export class FieldPolynomial<P extends Point> extends BasePolynomial {

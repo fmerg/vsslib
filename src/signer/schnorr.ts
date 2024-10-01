@@ -1,10 +1,10 @@
 // TODO: Consider consulting https://github.com/bitcoin/bips/blob/master/bip-0340.mediawiki
-import { Point, Group } from '../backend/abstract';
-import { Algorithms } from '../enums';
-import { Algorithm } from '../types';
-import { BaseSigner } from './base';
+import { Point, Group } from 'vsslib/backend';
+import { Algorithm } from 'vsslib/types';
+import { unpackScalar, unpackPoint } from 'vsslib/secrets';
+import { BaseSigner } from 'vsslib/signer/base';
 
-import nizk from '../nizk';
+import nizk from 'vsslib/nizk';
 
 
 export type SchnorrSignature = { c: Uint8Array, r: Uint8Array };
@@ -14,16 +14,17 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
     super(ctx, algorithm);
   }
 
-  signBytes = async (secret: bigint, message: Uint8Array, nonce?: Uint8Array): Promise<
+  signBytes = async (secret: Uint8Array, message: Uint8Array, nonce?: Uint8Array): Promise<
     SchnorrSignature
   > => {
-    const { generator: g, exp } = this.ctx;
-    const pub = await exp(g, secret);
+    const g = this.ctx.generator;
+    const x = await unpackScalar(this.ctx, secret);
+    const y = await this.ctx.exp(g, x);
     const { commitment, response } = await nizk(this.ctx, this.algorithm).proveLinear(
-      [secret],
+      [x],
       {
         us: [[g]],
-        vs: [pub]
+        vs: [y]
       },
       nonce,
       [message],
@@ -32,14 +33,15 @@ export class SchnorrSigner<P extends Point> extends BaseSigner<P, SchnorrSignatu
   }
 
   verifyBytes = async (
-    pub: P, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array
+    publicBytes: Uint8Array, message: Uint8Array, signature: SchnorrSignature, nonce?: Uint8Array
   ): Promise<boolean> => {
-    const { generator: g } = this.ctx;
+    const g = this.ctx.generator;
     const { c, r } = signature;
+    const y = await unpackPoint(this.ctx, publicBytes);
     return nizk(this.ctx, this.algorithm).verifyLinear(
       {
         us: [[g]],
-        vs: [pub]
+        vs: [y]
       },
       {
         commitment: [c],

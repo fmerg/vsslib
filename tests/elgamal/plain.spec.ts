@@ -1,92 +1,77 @@
-import { Systems } from '../../src/enums';
-import { leInt2Buff } from '../../src/arith';
-import { initGroup } from '../../src/backend';
-import { plainElgamal } from '../../src/elgamal/core';
+import { Systems } from 'vsslib/enums';
+import { leInt2Buff } from 'vsslib/arith';
+import { initBackend } from 'vsslib/backend';
+import { randomSecret, randomPublic } from 'vsslib/secrets';
+import { ElgamalSchemes } from 'vsslib/enums';
+
+import elgamal from 'vsslib/elgamal';
 
 import { cartesian } from '../utils';
-import { randomDlogPair } from '../helpers';
 import { resolveTestConfig } from '../environ';
 
 const { systems, modes } = resolveTestConfig();
 
+const PLAIN = ElgamalSchemes.PLAIN;
 
-describe('Decryption - success', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const { x, y } = await randomDlogPair(ctx);
-    const message = (await ctx.randomPoint()).toBytes();
-    const { ciphertext } = await plainElgamal(ctx).encrypt(message, y);
-    const plaintext = await plainElgamal(ctx).decrypt(ciphertext, x);
+
+describe('Plain Elgamal encryption', () => {
+  it.each(systems)('succes - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { secret, publicBytes } = await randomSecret(ctx);
+    const message = await randomPublic(ctx);
+    const { ciphertext } = await elgamal(ctx, PLAIN).encrypt(message, publicBytes);
+    const plaintext = await elgamal(ctx, PLAIN).decrypt(ciphertext, secret);
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption - failure if forged secret', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const { x, y } = await randomDlogPair(ctx);
-    const message = (await ctx.randomPoint()).toBytes();
-    const { ciphertext } = await plainElgamal(ctx).encrypt(message, y);
-    const forgedSecret = await ctx.randomScalar();
-    const plaintext = await plainElgamal(ctx).decrypt(ciphertext, forgedSecret);
+  it.each(systems)(
+    'failure - forged secret - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { secret, publicBytes } = await randomSecret(ctx);
+    const message = await randomPublic(ctx);
+    const { ciphertext } = await elgamal(ctx, PLAIN).encrypt(message, publicBytes);
+    const { secret: forgedSecret } = await randomSecret(ctx);
+    const plaintext = await elgamal(ctx, PLAIN).decrypt(ciphertext, forgedSecret);
     expect(plaintext).not.toEqual(message);
   });
-});
-
-
-describe('Decryption with decryptor - success', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const { x, y } = await randomDlogPair(ctx);
-    const message = (await ctx.randomPoint()).toBytes();
-    const { ciphertext, decryptor } = await plainElgamal(ctx).encrypt(message, y);
-    const plaintext = await plainElgamal(ctx).decryptWithDecryptor(
+  it.each(systems)('decrypt with decryptor - succes - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { secret, publicBytes } = await randomSecret(ctx);
+    const message = await randomPublic(ctx);
+    const { ciphertext, decryptor } = await elgamal(ctx, PLAIN).encrypt(message, publicBytes);
+    const plaintext = await elgamal(ctx, PLAIN).decryptWithDecryptor(
       ciphertext, decryptor
     );
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption with decryptor - failure if forged decryptor', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const { x, y } = await randomDlogPair(ctx);
-    const message = (await ctx.randomPoint()).toBytes();
-    const { ciphertext, decryptor } = await plainElgamal(ctx).encrypt(message, y);
-    const forgedDecryptor = (await ctx.randomPoint()).toBytes();
-    const plaintext = await plainElgamal(ctx).decryptWithDecryptor(
+  it.each(systems)('decrypt with decryptor - failure - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { secret, publicBytes } = await randomSecret(ctx);
+    const message = await randomPublic(ctx);
+    const { ciphertext, decryptor } = await elgamal(ctx, PLAIN).encrypt(message, publicBytes);
+    const forgedDecryptor = await randomPublic(ctx);
+    const plaintext = await elgamal(ctx, PLAIN).decryptWithDecryptor(
       ciphertext, forgedDecryptor
     );
     expect(plaintext).not.toEqual(message);
   });
-});
-
-
-describe('Decryption with randomness - success', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const { x, y } = await randomDlogPair(ctx);
-    const message = (await ctx.randomPoint()).toBytes();
-    const { ciphertext, randomness } = await plainElgamal(ctx).encrypt(message, y);
-    const plaintext = await plainElgamal(ctx).decryptWithRandomness(
-      ciphertext, y, randomness
+  it.each(systems)('decrypt with randomness - success - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { secret, publicBytes } = await randomSecret(ctx);
+    const message = await randomPublic(ctx);
+    const { ciphertext, randomness } = await elgamal(ctx, PLAIN).encrypt(message, publicBytes);
+    const plaintext = await elgamal(ctx, PLAIN).decryptWithRandomness(
+      ciphertext, publicBytes, randomness
     );
     expect(plaintext).toEqual(message);
   });
-});
-
-
-describe('Decryption with randomness - failure if forged randomness', () => {
-  it.each(systems)('over %s', async (system) => {
-    const ctx = initGroup(system);
-    const { x, y } = await randomDlogPair(ctx);
-    const message = (await ctx.randomPoint()).toBytes();
-    const { ciphertext, randomness } = await plainElgamal(ctx).encrypt(message, y);
-    const forgedRandomnes = leInt2Buff(await ctx.randomScalar());
-    const plaintext = await plainElgamal(ctx).decryptWithRandomness(
-      ciphertext, y, forgedRandomnes
+  it.each(systems)('decrypt with randomness - failure - forged randomness - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { secret, publicBytes } = await randomSecret(ctx);
+    const message = await randomPublic(ctx);
+    const { ciphertext, randomness } = await elgamal(ctx, PLAIN).encrypt(message, publicBytes);
+    const forgedRandomnes = await ctx.generateSecret();
+    const plaintext = await elgamal(ctx, PLAIN).decryptWithRandomness(
+      ciphertext, publicBytes, forgedRandomnes
     );
     expect(plaintext).not.toEqual(message);
   });
