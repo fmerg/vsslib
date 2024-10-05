@@ -1,5 +1,4 @@
 import { Point, Group } from 'vsslib/backend';
-import { PrivateKey } from 'vsslib/keys';
 import { FieldPolynomial, randomPolynomial } from 'vsslib/polynomials';
 import { InterpolationError, ShamirError, InvalidInput } from 'vsslib/errors';
 import { leInt2Buff } from 'vsslib/arith';
@@ -189,16 +188,4 @@ export async function shareSecret<P extends Point>(
   }
   const sharing = new ShamirSharing(ctx, nrShares, threshold, polynomial);
   return { secret, sharing };
-}
-
-
-export async function shareKey<P extends Point>(
-  key: PrivateKey<P>,
-  nrShares: number,
-  threshold: number,
-): Promise<ShamirSharing<P>> {
-    const { sharing } = await shareSecret(
-      key.ctx, nrShares, threshold, key.secret
-    );
-    return sharing;
 }

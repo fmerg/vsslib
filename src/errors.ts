@@ -14,21 +14,11 @@ export class InterpolationError extends Error {}
 
 export class ShamirError extends Error {}
 
-export class AesError extends Error {}
-
-export class ElgamalError extends Error {}
-
 export class InvalidInput extends Error {}
 
 export class InvalidSecret extends Error {}
 
 export class InvalidSignature extends Error {}
-
-export class InvalidDecryptor extends Error {}
-
-export class InvalidPartialDecryptor extends Error {}
-
-export class InvalidEncryption extends Error {}
 
 export class InvalidSecretShare extends Error {}
 

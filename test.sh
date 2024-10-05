@@ -4,32 +4,19 @@ DEFAULT_MODULE="tests"
 DEFAULT_RELOAD=false
 DEFAULT_VERBOSE=false
 DEFAULT_SYSTEM=""
-DEFAULT_ELGAMAL_SCHEME=""
-DEFAULT_SIGNATURE_SCHEME=""
 DEFAULT_ALGORITHM=""
-DEFAULT_AES_MODE=""
 DEFAULT_NR_SHARES="3"
 DEFAULT_NR_THRESHOLD="2"
 
 usage_string="usage: ./$(basename "$0") [options]
 
 Run tests with control over the orthogonal parameters below. For example, in
-order to run key tests over ed25519 with encryption scheme IES against all
-AES modes with hash algorithm SHA256 and reload, do
+order to run dealer tests over ed25519 with hash algorithm SHA256 and reload, do
 
-$ ./test.sh -m keys --elgamal-scheme ies --algorithm sha256 --reload
+$ ./test.sh -m  --dealer sha256 --reload
 
 Groups:
   ed25519, ed448, jubjub
-
-ElGamal schemes:
-  ies, hybrid, plain
-
-AES modes:
-  aes-256-cbc, aes-256-cfb, aes-256-ofb, aes-256-ctr, aes-256-gcm
-
-Signature schemes:
-  schnorr
 
 Hash algorithms:
   sha224, sha256, SHA384, sha512, sha3-224, sha3-256, sha3-384, sha3-512
@@ -40,16 +27,6 @@ Options
                                     tests run.
   -s, --system <GROUP>              Underlying cryptosystem. If not provided, tests run
                                     against all supported groups.
-  -es, --elgamal-scheme <SCHEME>    ElGamal encryption scheme to be used. If not
-                                    provided, tests run against all supported
-                                    ElGamal schemes.
-  -am, --aes-mode <MODE>            AES encryption mode to be used. This affects ElGamal
-                                    schemes with encapsulation (\"hybrid\"). If not
-                                    provided, related tests run against all
-                                    supported AES modes.
-  -ss, --signature-scheme <SCHEME>  Signature scheme to be used. If not provided,
-                                    related tests run against all supported
-                                    signature schemes.
   -a, --algorithm <HASH>            Hash algorithm to be used. This affects challenge
                                     computation for NIZK proofs (Fiat-Shamir transform).
                                     If not provided, related tests run against all
@@ -70,9 +47,6 @@ usage() { echo -n "$usage_string" 1>&2; }
 
 MODULE="$DEFAULT_MODULE"
 SYSTEM="$DEFAULT_SYSTEM"
-ELGAMAL_SCHEME="$DEFAULT_ELGAMAL_SCHEME"
-AES_MODE="$DEFAULT_AES_MODE"
-SIGNATURE_SCHEME="$DEFAULT_SIGNATURE_SCHEME"
 ALGORITHM="$DEFAULT_ALGORITHM"
 NR_SHARES="$DEFAULT_NR_SHARES"
 THRESHOLD="$DEFAULT_THRESHOLD"
@@ -91,21 +65,6 @@ do
             ;;
         -s|--system)
             SYSTEM="$2"
-            shift
-            shift
-            ;;
-        -es|--elgamal-scheme)
-            ELGAMAL_SCHEME="$2"
-            shift
-            shift
-            ;;
-        -am|--aes-mode)
-            AES_MODE="$2"
-            shift
-            shift
-            ;;
-        -ss|--signature-scheme)
-            SIGNATURE_SCHEME="$2"
             shift
             shift
             ;;
@@ -144,9 +103,6 @@ do
 done
 
 export SYSTEM="${SYSTEM}"
-export ELGAMAL_SCHEME="${ELGAMAL_SCHEME}"
-export AES_MODE="${AES_MODE}"
-export SIGNATURE_SCHEME="${SIGNATURE_SCHEME}"
 export ALGORITHM="${ALGORITHM}"
 export NR_SHARES="${NR_SHARES}"
 export THRESHOLD="${THRESHOLD}"

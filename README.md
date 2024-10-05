@@ -77,23 +77,6 @@ Vsslib comes with several backends based on
 but any implementation wrapped with the prescribed interface
 should do the job. Refer to section [Pluggable backend](#pluggable-backend) for details.
 
-### <a name="interface-overview"></a>Interface
-
-Vsslib exposes two separate APIs.
-
-The [bytes](#shamir-secret-sharing) interface is intended
-for applications where more freedom is required on how
-to directly handle the secret bytes
-(e.g., distributed generation of ephemeral secrets, or under the constraints imposed
-by a pre-existing public-key API).
-
-The "key" interface builds on top of a public-key API
-([`vsslib/keys`](./src/keys)),
-which exposes assymetric operations at the high-level and is compatible with a
-ready-made solution for [threshold decryption](#threshold-decryption).
-
-Both operate with the same sharing abstraction layer.
-
 ### <a name="security-overview"></a>Security
 
 :warning: **This library requires security audit. Use at your own risk for the moment.**
@@ -103,13 +86,8 @@ See [Security](#security-main) for details.
 #### <a name="selection-of-parameters-overview"></a>Remark on the selection of parameters
 
 Vsslib is unopinionated on the selection of cryptographic parameters
-(DL-cryptosystem, hash function for NIZK-proofs,
-Elgamal encryption scheme, AES block-mode for hybrid encryption etc.), allowing complete freedom on how to
-orthogonally combine them.
-
-For example, the provided threshold decryption mechanism is operable with
-plain Elgamal encryption even if this combination is per se insecure
-against chosen-ciphertext attacks.
+(DL-cryptosystem, hash function for NIZK-proofs),
+allowing complete freedom on how to orthogonally combine them.
 It is the user's responsibility to decide if the desired level of security
 is attained in a particular context by other means.
 
@@ -130,12 +108,6 @@ is attained in a particular context by other means.
   * [Verifiable public recovery](#verifiable-public-recovery)
     * [Generation of packets](#generation-of-packets)
     * [Recovery operation](#recovery-operation)
-  * [Key layer](#key-layer)
-    * [Sharing the key](#sharing-the-key)
-    * [Partial keys](#partial-keys)
-    * [Public key recovery](#public-key-recovery)
-    * [Threshold decryption](#threshold-decryption)
-  * [Pluggable backend](#pluggable-backend)
 * [Security](#security)
 * [Development](#development)
 
@@ -605,199 +577,6 @@ if (blame.length > 0) {
 ```
 
 This returns the combination result along with a (potentially empty) list `blame`,
-containing the public shares of cheating shareholders.
-
-> **Warning**
-> Make sure to always check the `blame` index when using the `errorOnInvalid: false` option.
-
-## Key layer
-
-Most of the above operation can be reproduced on top of the 
-[`vsslib/keys`](./src/keys) API.
-
-### Sharing the key
-
-Civen a `privateKey` like [here](./src/keys/README.md#generation),
-generate a (n, t)-sharing of it as follows.
-
-```js
-import { shareKey } from "vsslib";
-
-const sharing = await shareKey(privateKey, n, t);
-```
-
-This procuces a sharing instance similar to the one described in Sec.
-[Sharing the secret](#sharing-the-secret).
-Refer to Sec. [Verifible Secret Sharing](#verifiable-secret-sharing) to see
-how to generate VSS packets.
-
-Extracting a private key share from a VSS packet is achieved with the following
-function, which is the higher-level anlogue of the
-[`parseFeldmanPacket`](#verification-feldman)
-and
-[`parsePedersenPacket`](#verification-pedersen)
-utilities.
-
-```js
-import { parsePartialKey } from "vsslib";
-```
-
-Assuming a [Feldman](#feldman-scheme-1) packet:
-
-```js
-const partialKey = await parsePartialKey(ctx, commitments, packet);
-```
-
-Assuming a [Pedersen](#pedersen-scheme-1) packet:
-
-```js
-const partialKey = await parsePartialKey(ctx, commitments, packet, publicBytes);
-```
-
-In either case, this throws `vsslib.InvalidSecretShare`
-if the packet is found to be invalid against the provided commitments.
-You will usually have to handle
-this error in order to adhere to some specified rejection policy:
-
-```js
-import { InvalidSecretShare } from "vsslib";
-
-try {
-  const partialKey = await parsePartialKey(ctx, commitments, packet, ...);
-  // Store locally the retrieved private share
-  ...
-} catch (err) {
-  if (err instanceof InvalidSecretShare) {
-    // Follow rejection policy as specified by context
-    ...
-  } else {
-    ... 
-  }
-}
-```
-
-### Partial keys
-
-Partial keys extend the `vsslib.keys.PrivateKey` with the following interfaces.
-
-#### Schnorr packets
-
-```js
-const packet = await partialKey.createSchnorrPacket({ algorithm: "sha256", nonce: ...})
-```
-
-This consists of the public key share and a NIZK (Schnorr) proof-of-knowledge of
-its secret counterart. The optional `algorithm` parameter specifies the hash
-function used for proof generation (defaults to SHA256).
-
-#### Partial decryptors
-
-Let `ciphertext` be generated as
-[here](./src/keys/README.md#encryption)
-with respect to the combined public key.
-
-Given the ciphertext, every partial key can generate a respective partial
-decryptor as follows.
-
-```js
-const share = await partialKey.computePartialDecryptor(ciphertext, {
-  algorithm: "sha256"
-});
-```
-
-This consists of an indexed decryptor and a NIZK (Chaum-Pedersen) proof that
-bounds its value to the partial key.
-The optional `algorithm` parameter specifies the hash
-function used for proof generation (defaults to SHA256).
-
-```js
-import { verifyPartialDecryptor, InvalidPartialDecryptor } from "vsslib";
-
-try {
-  await partialPublicKey.verifyPartialDecryptor(ciphertext, share, {
-    algorithm: "sha256"
-  });
-  ...
-} catch (err) {
-  if (err instanceof InvalidPartialDecryptor) {
-    // Abort and follow policy as specified by context
-    ...
-  } else {
-    ...
-  }
-}
-```
-
-The combined decryptor can be recovered in a verifiable fashion as follows:
-
-```js
-import { recoverDecryptor } from "vsslib";
-
-const { recovered, blame } = await recoverDecryptor(ctx, shares, ciphertext, partialPublicKeys, {
-  algorithm: "sha256", threshold: t, nonces: ..., errorOnInvalid: ...
-});
-```
-
-The optional parameters and error handling are the same as [here](#recovery-operation).
-
-### Public key recovery
-
-Given Schnorr packets generated as [here](#schnorr-packets), recover the group
-public key in a verifiable fashion as follows.
-
-```js
-import { recoverPublicKey } from "vsslib";
-
-const { recovered, blame } = await recoverPublicKey(ctx, packets, {
-  algorithm: "sha256", threshold: t, nonces: ..., errorOnInvalid: ...
-});
-```
-
-The optional parameters and error handling are the same as [here](#recovery-operation).
-
-
-### Threshold decryption
-
-Given partial decryptors generated as [here](#partial-decryptors), the
-plaintext can be recovered in a verifiable fashion as follows.
-
-
-```js
-import { thresholdDecrypt } from "vsslib";
-
-const { plaintext } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, {
-  scheme: ..., threshold: ..., sha256: ...,
-});
-```
-
-The obligatory `scheme` parameter must be the same as that used when
-[encrypting](./src/keys/README.md#encryption)
-the plaintext with respect to the group public key.
-The optional `threshold` parameter ensures that the operation completes only if
-at least `t` packets are provided, otherwise it throws `InvalidInput` error.
-The optional `algorithm` parameter specifies the hash function used for proof
-generation (defaults to SHA256).
-
-#### Decryption with accurate blaming
-
-For security investigation purposes, the decrypting party may want to trace
-cheating shareholders. This presupposes that the decryption operation completes
-irrespective of potential verification failures and malicious shareholders are listed
-in a blame index.
-
-```js
-const { plaintext, blame } = await thresholdDecrypt(ctx, ciphertext, shares, partialPublicKeys, {
-  ...,
-  errorOnInvalid: false
-});
-
-if (blame.length > 0) {
-  // Hold cheating shareholders accountable according to specified policy
-  ...
-}
-```
-
-This returns the decrytion result along with a (potentially empty) list `blame`,
 containing the public shares of cheating shareholders.
 
 > **Warning**
