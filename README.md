@@ -75,7 +75,7 @@ which backend implementations are expected to conform with.
 Vsslib comes with several backends based on
 [noble-curves](https://github.com/paulmillr/noble-curves),
 but any implementation wrapped with the prescribed interface
-should do the job. Refer to section [Pluggable backend](#pluggable-backend) for details.
+should do the job. Refer to Sec. [Pluggable backend](#pluggable-backend) for details.
 
 ### <a name="security-overview"></a>Security
 
@@ -86,10 +86,11 @@ See [Security](#security-main) for details.
 #### <a name="selection-of-parameters-overview"></a>Remark on the selection of parameters
 
 Vsslib is unopinionated on the selection of cryptographic parameters
-(DL-cryptosystem, hash function for NIZK-proofs),
+(DL-cryptosystem, hash function for NIZK-proofs, etc.),
 allowing complete freedom on how to orthogonally combine them.
-It is the user's responsibility to decide if the desired level of security
-is attained in a particular context by other means.
+It is the user's responsibility to choose a secure combination per contenxt or
+decide if the desired level of security
+is attained by other means.
 
 ## Table of contents
 
@@ -101,7 +102,7 @@ is attained in a particular context by other means.
   * [Shamir's Secret Sharing (SSS)](#shamir-secret-sharing)
     * [Sharing the secret](#sharing-the-secret)
     * [Basic sharing interface](#basic-sharing-interface)
-    * [Combination of shares](#combination-of-shares)
+    * [Combining operations](#combining-operations)
   * [Verifiable Secret Sharing (VSS)](#verifiable-secret-sharing)
     * [Feldman scheme](#feldman-scheme-1)
     * [Pedersen scheme](#pedersen-scheme-1)
@@ -155,7 +156,7 @@ const { secret, publicBytes } = await randomSecret(ctx);
 
 > **Note** 
 > `secret` is the little-endian representation of a uniformly random scalar
-modulo the underlying group order, while `publicBytes`
+modulo the underlying group order. `publicBytes`
 is the byte representation of the respective group element.
 
 #### Extraction of public counterpart
@@ -183,12 +184,11 @@ const { sharing } = await shareSecret(ctx, n, t, secret);
 ```
 
 > **Warning**
-> Throws error if the condition `1<=t<=n<q` is not satisfied, where `q` stands
-> for the underlying group's order, or if the provided secret is unvalid with
+> Throws error if the condition `1 <= t <= n < q` is violated (where `q` stands
+> for the underlying group order) or if the provided secret is unvalid with
 > respect to `ctx`.
 
-If not provided, the secret is created on the fly and can be returned
-along with the sharing.
+If not provided, the secret is created on the fly.
 
 ```js
 const { secret, sharing } = await shareSecret(ctx, n, t);
@@ -204,26 +204,30 @@ const secret = sharing.getOriginalSecret();
 // Access all secret shares
 const secretShares = await sharing.getSecretShares();
 
-//Access all public shares
+// Access all public shares
 const publicShares = await sharing.getPublicShares();
 
 // Access the i-th share
 const { secretShare, publicShare } = await sharing.getShare(i);
+```
 
-// Access the public counterpart of a secret share
+Access the public counterpart of a secret share as follows.
+
+```js
 import { extractPublicShare } from "vsslib";
+
 const publicShare = await extractPublicShare(ctx, secretShare);
 ```
 
 > **Warning**
-> The last call throws error if `secretShare.value` is not a valid scalar representation
+> Throws error if `secretShare.value` is not a valid scalar representation
 with respect to `ctx`.
 
-### Combination of shares
+### Combining operations
 
 #### Combination of secret shares
 
-Combine any collection of secret shares using interpolation coefficients as
+Combine any collection of secret shares in the sense of interpolation as
 follows.
 
 ```js
@@ -255,11 +259,6 @@ import { combinePublicShares } from "vsslib";
 const combinedPublic = await combinePublicShares(ctx, publicShares);
 ```
 
-> **Warning**
-> This does not verify the shares during the combination process in any sense.
-Refer to section [Verifiable public recovery](#verifiable-public-recovery)
-for an operation that includes verification of public shares.
-
 This yields the public counterpart of the original secret only if
 the number of provided shares is at least equal to threshold.
 In order to ensure that the operation completes only if at least `t` shares are
@@ -275,12 +274,13 @@ const combinedPublic = await combinePublicShares(ctx, publicShares, t);
 ## <a name="verifiable-secret-sharing"></a>Verifiable Secret Sharing (VSS)
 
 In practice, shareholders need to defend
-against malicious dealers and verify the consistency of their
+against malicious dealers and verify the consistency of their respective
 shares, i.e., ensure that they have indeed occured from the same sharing.
-This is attained by means of additional information used to verify
-individual shares against some public quantity related to the sharing process.
-Verifiable secret sharing (VSS) schemes extend Shamir's sharing by attaching
-this information to the distributed shares.
+This is attained by means of additional information
+attached to the individual shares and used to verify
+them against some public quantity related to the sharing process.
+Verifiable secret sharing (VSS) schemes extend Shamir's sharing by including
+this information to the share packets.
 
 Vsslib provides implementations of the
 [Feldman](#feldman-scheme-1) and [Pedersen](#pedersen-scheme-1) VSS schemes,
@@ -289,8 +289,8 @@ are directly extracted from the secret sharing instance.
 
 > **Warning**
 > Correctly applying VSS when implementing DKG protocols is out of the library's scope.
-It is the user's responsibility to handle verification errors 
-in order to adhere to the prescribed complaint policy and ensure that only
+In particular, it is the user's responsibility to handle verification errors
+appropriately adhering to the prescribed complaint policy and ensure that only
 non-byzantine parties end up with a secret share.
 
 ### <a name="feldman-scheme-1"></a>Feldman scheme
@@ -306,8 +306,8 @@ const { packets, commitments } = await sharing.createFeldmanPackets();
 ```
 
 > **Note**
-> Commitments are intended for broadcast while packets
-> are sent to the respective shareholders by the dealer in private.
+> `commitments` are intended for broadcast while `packets`
+> are sent to the respective shareholders in private.
 
 #### <a name="verification-feldman"></a>Verification and extraction of secret share
 
@@ -380,8 +380,8 @@ const { packets, commitments } = await sharing.createPedersenPackets(publicBytes
 ```
 
 > **Note**
-> Commitments are intended for broadcast while packets
-> are sent to the respective shareholders by the dealer in private.
+> `commitments` are intended for broadcast while `packets`
+> are sent to the respective shareholders in private.
 
 #### <a name="verification-pedersen"></a>Verification and extraction of secret share
 
@@ -583,6 +583,8 @@ containing the public shares of cheating shareholders.
 > Make sure to always check the `blame` index when using the `errorOnInvalid: false` option.
 
 ## Pluggable backend
+
+TODO
 
 # <a name="security-main"></a>Security
 
