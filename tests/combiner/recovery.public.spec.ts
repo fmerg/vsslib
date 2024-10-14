@@ -56,9 +56,10 @@ describe('Public point recovery', () => {
       system, nrShares, threshold
     );
     const { packets, nonces } = await mockPublicRecoverySetup({ ctx, shares, algorithm, withNonce: true });
+    delete nonces[1];
     await expect(
       recoverPublic(
-        ctx, packets, { algorithm, threshold, nonces: nonces.slice(0, nrShares - 1)}
+        ctx, packets, { algorithm, threshold, nonces }
       )
     ).rejects.toThrow('Invalid packet with index')
   });

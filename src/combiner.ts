@@ -14,7 +14,7 @@ const __0n = BigInt(0);
 const __1n = BigInt(1);
 
 
-export type IndexedNonce = { nonce: Uint8Array, index: number };
+export type Nonces = { [key: number]: Uint8Array };
 
 
 export function computeLambda<P extends Point>(
@@ -104,7 +104,7 @@ export async function recoverPublic<P extends Point>(
   packets: SchnorrPacket[],
   opts?: {
     algorithm?: Algorithm,
-    nonces?: IndexedNonce[],
+    nonces?: Nonces,
     threshold?: number,
     errorOnInvalid?: boolean,
   },
@@ -121,8 +121,7 @@ export async function recoverPublic<P extends Point>(
   const blame = [];
   let y = ctx.neutral;
   for (const packet of packets) {
-    const packetNonce = nonces.filter((n: IndexedNonce) => n.index == packet.index)[0];  // TODO: pop
-    const nonce = packetNonce ? packetNonce.nonce : undefined;
+    const nonce = nonces[packet.index];
     try {
       const { value, index } = await parseSchnorrPacket(ctx, packet, { algorithm, nonce });
       const li = computeLambda(ctx, index, indexes);

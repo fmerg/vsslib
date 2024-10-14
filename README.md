@@ -541,11 +541,11 @@ shareholder's index.
 try {
   const { recovered } = await recoverPublic(ctx, packets, {
     ...,
-    nonces: [
-      { nonce: ..., index: 1 },
-      { nonce: ..., index: 2 },
+    nonces: {
+      1: ...,
+      2: ...,
       ...
-    ]
+    }
   });
   ...
 } catch (err) {
