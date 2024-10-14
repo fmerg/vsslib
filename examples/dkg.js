@@ -16,7 +16,7 @@ import {
   combinePublics,
 } from 'vsslib';
 import { Systems } from 'vsslib/enums';
-import { randomNonce } from 'vsslib/crypto';
+import { randomNonce } from 'vsslib/random';
 
 import { VssSchemes, Party, Combiner, selectParty } from './infra';
 

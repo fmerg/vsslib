@@ -14,7 +14,7 @@ import {
   addSecrets,
   combinePublics,
 } from 'vsslib';
-import { randomNonce } from 'vsslib/crypto';
+import { randomNonce } from 'vsslib/random';
 import { resolveTestConfig } from './environ';
 
 let { systems, nrShares, threshold } = resolveTestConfig();

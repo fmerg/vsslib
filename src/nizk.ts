@@ -3,7 +3,7 @@ import { Algorithm } from 'vsslib/types';
 import { InvalidInput } from 'vsslib/errors';
 import { mod, leInt2Buff, leBuff2Int } from 'vsslib/arith';
 import { unpackScalar, unpackPoint } from 'vsslib/secrets';
-import { hash } from 'vsslib/crypto';
+import hash from 'vsslib/hash';
 
 
 export type DlogPair<P extends Point> = { u: P, v: P };

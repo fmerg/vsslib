@@ -1,7 +1,9 @@
 import { createHash } from 'node:crypto';
-import { hash } from 'vsslib/crypto';
-import { cartesian } from '../utils';
-import { resolveTestConfig } from '../environ';
+
+import { cartesian } from './utils';
+import { resolveTestConfig } from './environ';
+
+import hash from 'vsslib/hash';
 
 
 const { algorithms }  = resolveTestConfig()

@@ -3,18 +3,14 @@ import { mod } from 'vsslib/arith';
 import { InvalidSecretShare, InvalidInput } from 'vsslib/errors';
 import { SecretShare, PublicShare, SecretPacket } from 'vsslib/dealer';
 import { unpackScalar, unpackPoint, extractPublic } from 'vsslib/secrets';
-import { Ciphertext } from 'vsslib/elgamal';
 import { NizkProof } from 'vsslib/nizk';
 import { Algorithm } from 'vsslib/types';
 import { Algorithms } from 'vsslib/enums';
-import { InvalidDecryptor, InvalidPartialDecryptor } from 'vsslib/errors';
-import { PrivateKey, PublicKey } from 'vsslib/keys/core';
 
 import nizk from 'vsslib/nizk';
 
 
 export type SchnorrPacket = PublicShare & { proof: NizkProof };
-export type PartialDecryptor = { value: Uint8Array, index: number, proof: NizkProof };
 
 
 export async function verifyFeldmanCommitments<P extends Point>(
@@ -124,94 +120,4 @@ export async function createSchnorrPacket<P extends Point>(
   const y = await ctx.exp(g, x);
   const proof = await nizk(ctx, algorithm).proveDlog(x, { u: g, v: y }, nonce);
   return { value: y.toBytes(), index, proof };
-}
-
-
-export async function parsePartialKey<P extends Point>(
-  ctx: Group<P>,
-  commitments: Uint8Array[],
-  packet: SecretPacket,
-  publicBytes?: Uint8Array,
-): Promise<PartialKey<P>> {
-  if (publicBytes) {
-    const { share: { value, index } } = await parsePedersenPacket(
-      ctx, commitments, publicBytes, packet,
-    );
-    return new PartialKey(ctx, value, index);
-  } else {
-    const { share: { value, index } } = await parseFeldmanPacket(
-      ctx, commitments, packet
-    );
-    return new PartialKey(ctx, value, index);
-  }
-}
-
-
-export class PartialKey<P extends Point> extends PrivateKey<P> {
-  index: number;
-
-  constructor(ctx: Group<P>, secret: Uint8Array, index: number) {
-    super(ctx, secret);
-    this.index = index;
-  }
-
-  getPublicShare = async (): Promise<PartialPublicKey<P>> => new PartialPublicKey(
-    this.ctx, await extractPublic(this.ctx, this.secret), this.index
-  );
-
-  async createSchnorrPacket(opts?: {
-    algorithm?: Algorithm,
-    nonce?: Uint8Array,
-  }): Promise<SchnorrPacket> {
-    return createSchnorrPacket(this.ctx, { value: this.secret, index: this.index}, opts);
-  }
-
-  async computePartialDecryptor(
-    ciphertext: Ciphertext,
-    opts?: {
-      algorithm?: Algorithm,
-      nonce?: Uint8Array
-    },
-  ): Promise<PartialDecryptor> {
-    const { decryptor, proof } = await this.computeDecryptor(
-      ciphertext,
-      opts,
-    );
-    return { value: decryptor, proof, index: this.index };
-  }
-}
-
-
-export class PartialPublicKey<P extends Point> extends PublicKey<P> {
-  index: number;
-
-  constructor(ctx: Group<P>, publicBytes: Uint8Array, index: number) {
-    super(ctx, publicBytes);
-    this.index = index;
-  }
-
-  async verifyPartialDecryptor(
-    ciphertext: Ciphertext,
-    share: PartialDecryptor,
-    opts?: {
-      algorithm?: Algorithm,
-      nonce?: Uint8Array,
-    },
-  ): Promise<boolean> {
-    const { value: decryptor, proof } = share;
-    try {
-      await this.verifyDecryptor(
-        ciphertext,
-        decryptor,
-        proof,
-        opts
-      );
-    } catch (err: any) {
-      if (err instanceof InvalidDecryptor) throw new InvalidPartialDecryptor(
-        `Invalid partial decryptor` // TODO
-      );
-      else throw err;
-    }
-    return true;
-  }
 }
