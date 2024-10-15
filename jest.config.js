@@ -7,5 +7,16 @@ module.exports = {
   testEnvironment: 'node',
   moduleNameMapper: pathsToModuleNameMapper(
     compilerOptions.paths, { prefix: '<rootDir>/' }
-  )
+  ),
+  testResultsProcessor: "jest-junit",
+  reporters: [
+    "default",
+    [
+      "jest-junit",
+      {
+        outputDirectory: "./coverage",
+        outputName: "junit.xml",
+      },
+    ],
+  ],
 };

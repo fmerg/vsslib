@@ -1,6 +1,8 @@
 *.sw*
 node_modules/
+coverage/
 dist/
 docs/
+junit.xml
 NOTES.txt
 TODOS.txt

@@ -1,0 +1,37 @@
+stages:
+  - install
+  - test
+
+install_dependencies:
+  stage: install
+  image: node:18
+  script:
+    - npm ci
+  artifacts:
+    paths:
+      - node_modules/
+    expire_in: 1h
+
+test:
+  stage: test
+  image: node:18
+  script:
+    - npm ci
+    - ./test.sh
+  artifacts:
+    when: always
+    reports:
+      junit: coverage/junit.xml
+    paths:
+      - coverage/
+    expire_in: 1 week
+  cache:
+    key: ${CI_COMMIT_REF_SLUG}
+    paths:
+      - node_modules/
+  after_script:
+    - echo "Tests finished running."
+
+cache:
+  paths:
+    - node_modules/
