@@ -137,7 +137,7 @@ export async function shareSecret<P extends Point>(
   nrShares: number,
   threshold: number,
   secret?: Uint8Array,
-  predefined?: Uint8Array[],
+  predefined?: SecretShare[],
 ): Promise<{ secret: Uint8Array, sharing: ShamirSharing<P>}> {
   predefined = predefined || [];
   if (nrShares < 1) throw new ShamirError(
@@ -158,16 +158,27 @@ export async function shareSecret<P extends Point>(
 
   secret = secret || await ctx.generateSecret()
   const xyPoints = new Array(threshold);
+
   try {
     const scalarSecret = await unpackScalar(ctx, secret);
     xyPoints[0] = [__0n, scalarSecret];
+    // Allocate predefined shares
+    for (const { index, value } of predefined) {
+      if (!(0 < index && index < threshold)) {
+        throw new InvalidInput(`Index not in range: ${index}`);
+      }
+      const x = index;
+      const y = await unpackScalar(ctx, value);
+      xyPoints[index] = [x, y];
+    }
+    // Fill positions with non-predefined shares
     let index = 1;
     while (index < threshold) {
-      const x = index;
-      const y = index > predefined.length ?
-        await ctx.randomScalar() :
-        await unpackScalar(ctx, predefined[index - 1]);
-      xyPoints[index] = [x, y];
+      if (xyPoints[index] == undefined) {
+        const x = index;
+        const y = await ctx.randomScalar();
+        xyPoints[index] = [x, y];
+      }
       index++;
     }
   } catch (err: unknown) {

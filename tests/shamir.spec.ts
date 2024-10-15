@@ -1,7 +1,7 @@
 import { initBackend } from 'vsslib/backend';
 import { leInt2Buff } from 'vsslib/arith';
 import { unpackScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
-import { shareSecret } from 'vsslib/dealer';
+import { shareSecret, SecretShare } from 'vsslib/dealer';
 import { resolveTestConfig } from './environ';
 import { cartesian } from './utils';
 
@@ -11,6 +11,11 @@ const thresholdParams = [
   [1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3], [4, 1], [4, 2], [4, 3], [4, 4],
   [5, 1], [5, 2], [5, 3], [5, 4], [5, 5],
 ];
+
+
+export const selectShare = (index: number, shares: SecretShare[]) => shares.filter(
+  s => s.index == index
+)[0];
 
 
 describe('Shamir secret sharing', () => {
@@ -39,9 +44,10 @@ describe('Shamir secret sharing', () => {
   it.each(cartesian([systems, thresholdParams]))(
     'ok - with predefined shares - over %s - (n, t): %s', async (system, [n, t]) => {
     const ctx = initBackend(system);
-    const predefined: Uint8Array[] = [];
+    const predefined: SecretShare[] = [];
     for (let i = 0; i < t; i++) {
-      predefined.push((await randomSecret(ctx)).secret);
+      // predefined.push((await randomSecret(ctx)).secret);
+      predefined.push({ index: i + 1, value: (await randomSecret(ctx)).secret });
     }
     const { secret: original } = await randomSecret(ctx);
     [0, t - 1].forEach(async (nrPredefined) => {
@@ -59,7 +65,9 @@ describe('Shamir secret sharing', () => {
       expect(t).toEqual((await sharing.createFeldmanPackets()).commitments.length);
       for (let index = 1; index <= nrPredefined; index++) {
         const { secretShare } = await sharing.getShare(index);
-        expect(await isEqualSecret(ctx, secretShare.value, predefined[index - 1]));
+        expect(
+          await isEqualSecret(ctx, secretShare.value, selectShare(index, predefined).value)
+);
       }
       for (let index = 1; index < sharing.nrShares; index++) {
         const { secretShare, publicShare } = await sharing.getShare(index);
@@ -94,7 +102,10 @@ describe('Shamir secret sharing', () => {
   it.each(systems)(
     'error - number of predefined shares >= threshold - over %s', async (system) => {
     const ctx = initBackend(system);
-    const predefined = [leInt2Buff(BigInt(1)), leInt2Buff(BigInt(2))];
+    const predefined = [
+      { index: 1, value: leInt2Buff(BigInt(1)) },
+      { index: 2, value: leInt2Buff(BigInt(2)) },
+    ]
     await expect(shareSecret(ctx, 3, 2, undefined, predefined)).rejects.toThrow(
       'Number of predefined shares violates threshold'
     );
@@ -110,9 +121,25 @@ describe('Shamir secret sharing', () => {
   it.each(systems)(
     'error - invalid predefined provided - over %s', async (system) => {
     const ctx = initBackend(system);
-    const secret = Uint8Array.from([0]);
-    await expect(shareSecret(ctx, 3, 2, undefined, [secret])).rejects.toThrow(
+    await expect(
+      shareSecret(ctx, 3, 2, undefined, [{ index: 1, value: Uint8Array.from([0]) }])
+    ).rejects.toThrow(
       'Invalid scalar provided'
+    );
+  });
+  it.each(systems)(
+    'error - predefined not in range - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const value = (await randomSecret(ctx)).secret;
+    await expect(
+      shareSecret(ctx, 3, 2, undefined, [{ index: 0, value }])
+    ).rejects.toThrow(
+      'Index not in range: 0'
+    );
+    await expect(
+      shareSecret(ctx, 3, 2, undefined, [{ index: 2, value }])
+    ).rejects.toThrow(
+      'Index not in range: 2'
     );
   });
 })

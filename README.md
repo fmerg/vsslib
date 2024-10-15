@@ -163,7 +163,7 @@ with respect to `ctx`.
 
 ### Sharing the secret
 
-Generate a (n, t)-sharing of a given secret as follows.
+Generate a `(n, t)`-sharing of a given secret as follows.
 
 ```js
 import { shareSecret } from "vsslib";
@@ -181,6 +181,28 @@ If not provided, the secret is created on the fly.
 ```js
 const { secret, sharing } = await shareSecret(ctx, n, t);
 ```
+
+#### Sharing with predefined shares
+
+Generate a `(n, t)`-sharing with up to `t-1` predefined shares as follows.
+
+```js
+const { secret: value1 } = await randomSecret(ctx);
+const { secret: value2 } = await randomSecret(ctx);
+...
+
+const { sharing } = await shareSecret(ctx, n, t, secret, [
+  { index: 1, value: value1 },
+  { index: 2, value: value2 },
+  ...
+])
+```
+
+> **Warning**
+> Throws error if the predefined shares are not less than `t` or any of the
+> provided indices in not in the range `(0,..., t - 1]` or any of the provided
+> values is not a valid byte representation with respect to the underlying
+> cryptosystem.
 
 ### Basic sharing interface
 
@@ -206,10 +228,6 @@ import { extractPublicShare } from "vsslib";
 
 const publicShare = await extractPublicShare(ctx, secretShare);
 ```
-
-> **Warning**
-> Throws error if `secretShare.value` is not a valid scalar representation
-with respect to `ctx`.
 
 ### Combining operations
 
