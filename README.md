@@ -1,7 +1,6 @@
 # vsslib
 
-Interfaces for Verifiable Secret Sharing (VSS) and Threshold Cryptography
-in TS/JS
+Interfaces for Verifiable Secret Sharing (VSS) in TS/JS
 
 :warning: **This library requires security audit. Use at you own risk for
 the moment.**
@@ -62,8 +61,7 @@ Vsslib provides modular building blocks for implementing threshold-cryptographic
 based on Shamir's Secret Sharing (SSS). It focuses on primitives that make the
 sharing process verifiable on behalf of involved parties
 ([Feldman](#feldman-scheme-1) and [Pedersen](#pedersen-scheme-1) VSS schemes)
-and as such applicable in contexts with zero or low trust assumptions
-(e.g., Distributed Key Generation (DKG) protocols).
+and as such applicable in contexts with zero or low trust assumptions.
 
 ### <a name="backend-overview"></a>Backend
 
@@ -75,25 +73,15 @@ which backend implementations are expected to conform with.
 Vsslib comes with several backends based on
 [noble-curves](https://github.com/paulmillr/noble-curves),
 but any implementation wrapped with the prescribed interface
-should do the job. Refer to Sec. [Pluggable backend](#pluggable-backend) for details.
+should do the job. Refer to [`vsslib/backend`](./src/backend) for details.
 
 ### <a name="security-overview"></a>Security
 
 :warning: **This library requires security audit. Use at your own risk for the moment.**
 
-See [Security](#security-main) for details.
-
-#### <a name="selection-of-parameters-overview"></a>Remark on the selection of parameters
-
-Vsslib is unopinionated on the selection of cryptographic parameters
-(DL-cryptosystem, hash function for NIZK-proofs, etc.),
-allowing complete freedom on how to orthogonally combine them.
-It is the user's responsibility to choose a secure combination per contenxt or
-decide if the desired level of security
-is attained by other means.
+See [here](#security-main) for details.
 
 ## Table of contents
-
 * [Installation](#installation)
 * [Usage](#usage)
   * [Preliminaries](#preliminaries)
@@ -112,10 +100,10 @@ is attained by other means.
 * [Security](#security)
 * [Development](#development)
 
-## Installation
+# Installation
 
 ```
-npm install TODO
+npm install vsslib
 ```
 
 # Usage
@@ -142,7 +130,7 @@ The currently provided backends are  `ed25519`, `ed448` and `jubjub`.
 > You can use any custom or other implementation,
 provided that it conforms to or has been wrapped with the internally
 prescribed interface.
-Refer to Sec. [Pluggable backend](#pluggable-backend) for details.
+Refer to [`vsslib/backend`](./src/backend) for details.
 
 ### Secret generation
 
@@ -582,19 +570,17 @@ containing the public shares of cheating shareholders.
 > **Warning**
 > Make sure to always check the `blame` index when using the `errorOnInvalid: false` option.
 
-## Pluggable backend
-
-TODO
-
 # <a name="security-main"></a>Security
 
 :warning: **This library requires security audit. Use at your own risk for the moment.**
 
-#### <a name="input-validation-overview"></a>Input validation
+### <a name="input-validation-overview"></a>Input validation
 
-TODO
+Vsslib's interface operates with the byte representations of scalars and group
+elements, taking care to validate these bytestring against the
+underlying cryptosystem.
 
-#### <a name="nizk-overview"></a>Support for NIZK proofs
+### <a name="nizk-overview"></a>Support for NIZK proofs
 
 Threshold-cryptographic security against malicious shareholders
 is attained by means of non-interactive zero-knowledge (NIZK) proofs
@@ -607,8 +593,6 @@ functions. It takes care to avoid the
 weak Fiat-Shamir transform [pitfall](https://eprint.iacr.org/2016/771.pdf)
 by default.
 
-It is the user's responsibility to properly utilize NIZKs when implementing
-a protocol from scratch.
 
 #### <a name="replay-attacks-overview"></a>Defence against replay attacks
 
@@ -620,32 +604,20 @@ of state between itself and individual shareholders.
 Vsslib allows inclusion of nonces when generating a NIZK proof, which must in
 turn be included when verifying proofs from the combiner's side.
 A nonce can be any bytestring capable of mutually maintaining state,
-e.g. cryptographically secure random bytes, unique session identifiers,
+e.g., cryptographically secure random bytes, unique session identifiers,
 synchronized counters, or combinations thereof.
 It is the user's responsibility to ensure that its design is secure in the
 particular application context.
 
-#### <a name="constant-time-comparisons-validation-overview"></a>Constant-time comparisons
+### <a name="constant-time-comparisons-validation-overview"></a>Constant-time comparisons
 
 TODO
 
-#### <a name="knwon-weakeness-overview"></a>Known weaknesses
+### <a name="knwon-weakeness-overview"></a>Known weaknesses
 
 TODO
 
 # Development
-
-## Installation
-
-```
-$ npm install
-```
-
-### Watch
-
-```
-$ npm run dev
-```
 
 ### Build
 
@@ -677,12 +649,6 @@ $ ./test.sh --help
 
 ```
 $ npm run test[:reload]
-```
-
-## Benchmarks
-
-```
-$ ts-node bench/sample.ts
 ```
 
 ## Documentation
