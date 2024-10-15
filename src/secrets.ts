@@ -40,10 +40,11 @@ export const unpackScalar = async <P extends Point>(
   const scalar = ctx.leBuff2Scalar(secret);
   try {
     await ctx.validateScalar(scalar);
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof BadScalarError) throw new InvalidInput(
       'Invalid scalar provided: ' + err.message
     )
+    else throw err;
   }
   return scalar;
 }
@@ -56,10 +57,11 @@ export const unpackPoint = async <P extends Point>(
   const point = ctx.buff2Point(publicBytes);
   try {
     await ctx.validatePoint(point);
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof BadPointError) throw new InvalidInput(
       'Invalid point provided: ' + err.message
     )
+    else throw err;
   }
   return point;
 }

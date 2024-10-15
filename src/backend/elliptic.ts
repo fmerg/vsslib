@@ -74,10 +74,11 @@ export class EcGroup extends Group<EcPoint> {
   validatePoint = async (point: EcPoint): Promise<boolean> => {
     const flag = true;
     if (await point.wrapped.equals(this._zero)) return flag;
-    try { point.wrapped.assertValidity(); } catch (err: any) {
-      if (err.message.startsWith('bad point: ')) throw new BadPointError(
-      );
-      else throw err;
+    try { point.wrapped.assertValidity(); } catch (err: unknown) {
+      if (err instanceof Error) {
+        if (err.message.startsWith('bad point: ')) throw new BadPointError();
+        else throw err;
+      }
     }
     return flag;
   }
@@ -98,8 +99,11 @@ export class EcGroup extends Group<EcPoint> {
     let point;
     try {
       point = new EcPoint(this.curve.ExtendedPoint.fromHex(bytes));
-    } catch (err: any) {
-      throw new BadPointError(`bad encoding: ${err.message}`)
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        throw new BadPointError(`bad encoding: ${err.message}`)
+      }
+      else throw err;
     }
     return point;
   }

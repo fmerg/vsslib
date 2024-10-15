@@ -44,7 +44,7 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
         }
       }
       let wj;
-      try { wj = modInv(w, order); } catch (err: any) {
+      try { wj = modInv(w, order); } catch (err: unknown) {
         if (err instanceof InverseNotExists) throw new InterpolationError(
           'Not all provided x\'s are distinct modulo order'
         );

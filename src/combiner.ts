@@ -127,7 +127,7 @@ export async function recoverPublic<P extends Point>(
       const li = computeLambda(ctx, index, indexes);
       const yi = await unpackPoint(ctx, value)
       y = await ctx.operate(y, await exp(yi, li));
-    } catch (err: any) {
+    } catch (err: unknown) {
       if (err instanceof InvalidPublicShare) {
         if (errorOnInvalid) throw err;
         blame.push({

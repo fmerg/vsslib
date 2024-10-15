@@ -170,7 +170,7 @@ export async function shareSecret<P extends Point>(
       xyPoints[index] = [x, y];
       index++;
     }
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof InvalidInput)
       throw new ShamirError(err.message);
     else
@@ -180,7 +180,7 @@ export async function shareSecret<P extends Point>(
   let polynomial;
   try {
     polynomial = await lagrange(ctx).interpolate(xyPoints);
-  } catch (err: any) {
+  } catch (err: unknown) {
     if (err instanceof InterpolationError) throw new ShamirError(
       err.message
     );

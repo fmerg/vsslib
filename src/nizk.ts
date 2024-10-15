@@ -1,7 +1,7 @@
 import { Group, Point } from 'vsslib/backend';
 import { Algorithm } from 'vsslib/types';
 import { InvalidInput } from 'vsslib/errors';
-import { mod, leInt2Buff, leBuff2Int } from 'vsslib/arith';
+import { mod, leInt2Buff } from 'vsslib/arith';
 import { unpackScalar, unpackPoint } from 'vsslib/secrets';
 import hash from 'vsslib/hash';
 
