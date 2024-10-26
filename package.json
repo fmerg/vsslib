@@ -2,18 +2,16 @@
   "name": "vsslib",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "files": [
-    "/dist"
-  ],
+  "main": "index.js",
+  "types": "index.d.ts",
   "scripts": {
     "dev": "tsc --watch",
     "test": "jest tests --maxWorkers=1",
     "test:reload": "jest tests --watch --maxWorkers=1",
     "build": "rm -rf ./build && tsc",
     "docs": "typedoc --out docs src/*.ts",
-    "lint": "eslint ./src"
+    "lint": "eslint ./src",
+    "run-publish": "node ./scripts/publish.mjs"
   },
   "author": "",
   "license": "ISC",
@@ -24,16 +22,17 @@
     "commander": "^10.0.0",
     "eslint": "^8.57.0",
     "ffjavascript": "^0.2.57",
+    "inquirer": "^12.0.1",
     "jest": "^29.5",
     "jest-junit": "^16.0.0",
     "js-combinatorics": "^2.1.1",
     "ts-jest": "^29.0.5",
+    "tsx": "^4.19.1",
     "typedoc": "^0.23.26",
     "typescript": "^4.9.5",
     "typescript-eslint": "^7.16.0"
   },
   "dependencies": {
-    "@noble/curves": "^0.8.3",
-    "tsx": "^4.19.1"
+    "@noble/curves": "^0.8.3"
   }
 }
