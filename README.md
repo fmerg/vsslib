@@ -589,6 +589,14 @@ containing the public shares of cheating shareholders.
 
 :warning: **This library requires security audit. Use at your own risk for the moment.**
 
+### <a name="side-channel-attacks"></a>Side-channel attacks
+
+Constant-time operations have been applied where possible.
+Strict resistance against side-channel-attacks is improssible to attain,
+since JS is a garbage-collected and just-in-time compiled language.
+This moreover depends crucially on the cryptographic
+backend implementation.
+
 ### <a name="input-validation-overview"></a>Input validation
 
 Vsslib's interface operates with the byte representations of scalars and group
