@@ -654,3 +654,9 @@ $ npm run build
 ```
 $ npm run docs
 ```
+
+## Publish
+
+```
+$ npm run run-publish
+```
