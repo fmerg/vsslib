@@ -76,15 +76,13 @@ export async function combinePublicShares<P extends Point>(
 export async function parseSchnorrPacket<P extends Point>(
   ctx: Group<P>,
   packet: SchnorrPacket,
-  opts?: {
+  { algorithm = Algorithms.DEFAULT, nonce }: {
     algorithm?: Algorithm,
     nonce?: Uint8Array,
-  },
+  } = {},
 ): Promise<PublicShare> {
   const { value, index, proof } = packet;
   const y = await unpackPoint(ctx, value)
-  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? opts.nonce : undefined;
   const isValid = await nizk(ctx, algorithm).verifyDlog(
     {
       u: ctx.generator,
@@ -102,17 +100,18 @@ export async function parseSchnorrPacket<P extends Point>(
 export async function recoverPublic<P extends Point>(
   ctx: Group<P>,
   packets: SchnorrPacket[],
-  opts?: {
+  {
+    algorithm = Algorithms.DEFAULT,
+    nonces = {},
+    threshold,
+    errorOnInvalid = true,
+  }: {
     algorithm?: Algorithm,
     nonces?: Nonces,
     threshold?: number,
     errorOnInvalid?: boolean,
-  },
+  } = {},
 ): Promise<{ recovered: Uint8Array, blame: PublicShare[] }> {
-  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const threshold = opts ? opts.threshold : undefined;
-  const nonces = opts ? (opts.nonces || [] ) : [];
-  const errorOnInvalid = opts ? (opts.errorOnInvalid == undefined ? true : opts.errorOnInvalid) : true;
   if (threshold && packets.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
