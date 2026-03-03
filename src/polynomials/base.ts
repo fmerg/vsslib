@@ -1,5 +1,5 @@
-import { mod } from 'vsslib/arith';
-import { PolynomialEerror } from 'vsslib/errors';
+import { mod } from '../arith';
+import { PolynomialEerror } from '../errors';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);

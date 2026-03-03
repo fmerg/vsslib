@@ -1,13 +1,13 @@
-import { leInt2Buff, mod, modInv } from 'vsslib/arith';
-import { Point, Group } from 'vsslib/backend';
-import { unpackScalar, unpackPoint } from 'vsslib/secrets'
-import { SecretShare, PublicShare } from 'vsslib/dealer';
-import { SchnorrPacket } from 'vsslib/shareholder';
-import { InvalidPublicShare, InvalidInput } from 'vsslib/errors';
-import { Algorithms } from 'vsslib/enums';
-import { Algorithm } from 'vsslib/types';
+import { leInt2Buff, mod, modInv } from './arith';
+import { Point, Group } from './backend';
+import { unpackScalar, unpackPoint } from './secrets'
+import { SecretShare, PublicShare } from './dealer';
+import { SchnorrPacket } from './shareholder';
+import { InvalidPublicShare, InvalidInput } from './errors';
+import { Algorithms } from './enums';
+import { Algorithm } from './types';
 
-import nizk from 'vsslib/nizk';
+import nizk from './nizk';
 
 
 const __0n = BigInt(0);
