@@ -75,10 +75,9 @@ export class EcGroup extends Group<EcPoint> {
     const flag = true;
     if (await point.wrapped.equals(this._zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.message.startsWith('bad point: ')) throw new BadPointError();
-        else throw err;
-      }
+      if (err instanceof Error && err.message.startsWith('bad point: '))
+        throw new BadPointError(err.message);
+      throw err;
     }
     return flag;
   }

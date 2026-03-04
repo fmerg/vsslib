@@ -44,6 +44,7 @@ export type { Nonces } from './combiner';
 export type { NizkProof } from './nizk';
 
 export {
+  VssError,
   BadGroupError,
   ShamirError,
   InvalidSecret,
