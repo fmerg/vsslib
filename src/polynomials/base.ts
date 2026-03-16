@@ -1,5 +1,5 @@
-import { mod } from 'vsslib/arith';
-import { PolynomialEerror } from 'vsslib/errors';
+import { mod } from '../arith';
+import { PolynomialError } from '../errors';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -12,7 +12,7 @@ export class BasePolynomial {
 
   constructor(coeffs: (bigint | number)[], order: bigint | number) {
     if ((order <= __1n))
-      throw new PolynomialEerror(`Order must be > 1: ${order}`);
+      throw new PolynomialError(`Order must be > 1: ${order}`);
     const reduced = coeffs.map((num) => mod(BigInt(num), BigInt(order)));
     let len = reduced.length;
     if (len > 0) {
@@ -55,7 +55,7 @@ export class BasePolynomial {
   }
 
   add = (other: BasePolynomial): BasePolynomial => {
-    if (this.order !== other.order) throw new PolynomialEerror(
+    if (this.order !== other.order) throw new PolynomialError(
       `Cannot add polynomials with different orders: ${this.order}, ${other.order}`
     );
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
@@ -71,7 +71,7 @@ export class BasePolynomial {
   }
 
   mult = (other: BasePolynomial): BasePolynomial => {
-    if (this.order !== other.order) throw new PolynomialEerror(
+    if (this.order !== other.order) throw new PolynomialError(
       `Cannot multiply polynomials with different orders: ${this.order}, ${other.order}`
     );
     if (this.isZero() || other.isZero())

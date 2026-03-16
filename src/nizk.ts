@@ -1,9 +1,9 @@
-import { Group, Point } from 'vsslib/backend';
-import { Algorithm } from 'vsslib/types';
-import { InvalidInput } from 'vsslib/errors';
-import { mod, leInt2Buff } from 'vsslib/arith';
-import { unpackScalar, unpackPoint } from 'vsslib/secrets';
-import hash from 'vsslib/hash';
+import { Group, Point } from './backend';
+import { Algorithm } from './types';
+import { InvalidInput } from './errors';
+import { mod, leInt2Buff } from './arith';
+import { unpackScalar, unpackPoint } from './secrets';
+import { hash } from './hash';
 
 
 export type DlogPair<P extends Point> = { u: P, v: P };
@@ -21,7 +21,7 @@ export class NizkProtocol<P extends Point>{
     this.algorithm = algorithm;
   }
 
-  _unpackProof = async (proof: NizkProof): Promise<{ commitment: P[], response: bigint[] }> => {
+  private unpackProof = async (proof: NizkProof): Promise<{ commitment: P[], response: bigint[] }> => {
     const { commitment, response } = proof;
     const m = commitment.length;
     const n = response.length;
@@ -32,13 +32,13 @@ export class NizkProtocol<P extends Point>{
     return { commitment: innerComm, response: innerResp };
   }
 
-  _packProof = async (proof: { commitment: P[], response: bigint[] }): Promise<NizkProof> => {
+  private packProof = async (proof: { commitment: P[], response: bigint[] }): Promise<NizkProof> => {
     const commitment = proof.commitment.map(c => c.toBytes());
     const response = proof.response.map(r => leInt2Buff(r));
     return { commitment, response };
   }
 
-  _computeChallenge = async (
+  private computeChallenge = async (
     relation: GenericLinear<P>, commitment: P[], extras: Uint8Array[], nonce?: Uint8Array,
   ): Promise<bigint> => {
     const { modulus, order, generator } = this.ctx;
@@ -61,8 +61,12 @@ export class NizkProtocol<P extends Point>{
     return unpackScalar(this.ctx, digest);
   }
 
-   _proveLinear = async (
-    witness: bigint[], relation: GenericLinear<P>, extras: Uint8Array[], nonce?: Uint8Array,
+  /* Prove knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` */
+  proveLinear = async (
+    witness: bigint[],
+    relation: GenericLinear<P>,
+    nonce?: Uint8Array,
+    extras: Uint8Array[] = [],
   ): Promise<NizkProof> => {
     const exp = this.ctx.exp;
     const order = this.ctx.order;
@@ -84,25 +88,28 @@ export class NizkProtocol<P extends Point>{
       }
       commitment[i] = ci;
     }
-    const challenge = await this._computeChallenge(
+    const challenge = await this.computeChallenge(
       relation, commitment, extras, nonce
     );
     const response = new Array(n);
     for (const [j, x] of witness.entries()) {
       response[j] = mod(rs[j] + x * challenge, order);
     }
-    return this._packProof({ commitment, response });
+    return this.packProof({ commitment, response });
   }
 
-  _verifyLinear = async (
-    relation: GenericLinear<P>, proof: NizkProof, extras: Uint8Array[], nonce?: Uint8Array
+  verifyLinear = async (
+    relation: GenericLinear<P>,
+    proof: NizkProof,
+    nonce?: Uint8Array,
+    extras: Uint8Array[] = [],
   ): Promise<boolean> => {
     const exp = this.ctx.exp;
     const { us, vs } = relation;
-    const { commitment, response } = await this._unpackProof(proof);
+    const { commitment, response } = await this.unpackProof(proof);
     if (vs.length !== commitment.length)
       throw new InvalidInput('Incompatible lengths');
-    const challenge = await this._computeChallenge(relation, commitment, extras, nonce);
+    const challenge = await this.computeChallenge(relation, commitment, extras, nonce);
     let flag = true;
     for (const [i, v] of vs.entries()) {
       if (us[i].length !== response.length)
@@ -123,57 +130,26 @@ export class NizkProtocol<P extends Point>{
     return flag;
   }
 
-  /* Prove knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` */
-  proveLinear = async (
-    witness: bigint[],
-    relation: GenericLinear<P>,
-    nonce?: Uint8Array,
-    extras?: Uint8Array[]
-  ): Promise<NizkProof> => {
-    return this._proveLinear(
-      witness,
-      relation,
-      extras || [],
-      nonce
-    );
-  }
-
-  verifyLinear = async (
-    relation: GenericLinear<P>,
-    proof: NizkProof,
-    nonce?: Uint8Array,
-    extras?: Uint8Array[]
-  ): Promise<boolean> => {
-    return this._verifyLinear(
-      relation,
-      proof,
-      extras || [],
-      nonce
-    );
-  }
-
   /* Prove knowledge of `x` such that `v = u ^ x` */
   proveDlog = async (x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array): Promise<NizkProof> => {
-    return this._proveLinear(
+    return this.proveLinear(
       [x],
       {
         us: [[u]],
         vs: [v]
       },
-      [],
-      nonce
+      nonce,
     );
   }
 
   verifyDlog = async ({ u, v }: DlogPair<P>, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
-    return this._verifyLinear(
+    return this.verifyLinear(
       {
         us: [[u]],
         vs: [v]
       },
       proof,
-      [],
-      nonce
+      nonce,
     );
   }
 
@@ -181,32 +157,30 @@ export class NizkProtocol<P extends Point>{
   proveDDH = async (z: bigint, { u, v, w }: DDHTuple<P>, nonce?: Uint8Array): Promise<NizkProof> => {
     const g = this.ctx.generator;
     const n = this.ctx.neutral;
-    return this._proveLinear(
+    return this.proveLinear(
       [z, z],
       {
         us: [[g, n], [n, u]],
         vs: [v, w]
       },
-      [],
-      nonce
+      nonce,
     );
   }
 
   verifyDDH = async ({ u, v, w }: DDHTuple<P>, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     const g = this.ctx.generator;
     const n = this.ctx.neutral;
-    return this._verifyLinear(
+    return this.verifyLinear(
       {
         us: [[g, n], [n, u]],
         vs: [v, w]
       },
       proof,
-      [],
-      nonce
+      nonce,
     );
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm) {
+export function nizk<P extends Point>(ctx: Group<P>, algorithm: Algorithm) {
   return new NizkProtocol(ctx, algorithm);
 }

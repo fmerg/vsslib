@@ -5,7 +5,7 @@ import { cartesian } from '../utils';
 import { createDDHTuple } from './helpers';
 import { resolveTestConfig } from '../environ';
 
-import nizk from 'vsslib/nizk';
+import { nizk } from 'vsslib/nizk';
 
 let { systems, algorithms } = resolveTestConfig();
 

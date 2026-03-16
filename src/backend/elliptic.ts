@@ -3,11 +3,11 @@ import { ed25519 } from '@noble/curves/ed25519';
 import { ed448 } from '@noble/curves/ed448';
 import { jubjub } from '@noble/curves/jubjub';
 
-import { Elliptic } from 'vsslib/enums';
-import { System } from 'vsslib/types';
-import { BadPointError, BadScalarError } from 'vsslib/errors';
-import { mod, leBuff2Int } from 'vsslib/arith';
-import { Point, Group } from 'vsslib/backend/abstract';
+import { Elliptic } from '../enums';
+import { System } from '../types';
+import { BadPointError, BadScalarError } from '../errors';
+import { mod, leBuff2Int } from '../arith';
+import { Point, Group } from './abstract';
 
 
 const __0n = BigInt(0);
@@ -23,7 +23,7 @@ class EcPoint implements Point {
     this.wrapped = wrapped;
   }
 
-  async equals<Q extends Point>(other: Q): Promise<boolean> {
+  equals = async <Q extends Point>(other: Q): Promise<boolean> => {
     // TODO: Ensure that this is constant time
     return (other instanceof EcPoint) && (this.wrapped.equals(other.wrapped));
   }
@@ -31,8 +31,8 @@ class EcPoint implements Point {
 
 
 export class EcGroup extends Group<EcPoint> {
-  _base: _CurvePoint;
-  _zero: _CurvePoint;
+  private base: _CurvePoint;
+  private zero: _CurvePoint;
   curve: _Curve;
 
   constructor(system: System, curve: _Curve) {
@@ -43,8 +43,8 @@ export class EcGroup extends Group<EcPoint> {
     const generator = new EcPoint(base);
     const neutral = new EcPoint(zero);
     super(system, modulus, order, generator, neutral);
-    this._base = base;
-    this._zero = zero;
+    this.base = base;
+    this.zero = zero;
     this.curve = curve;
   }
 
@@ -57,7 +57,7 @@ export class EcGroup extends Group<EcPoint> {
   );
 
   randomPoint = async (): Promise<EcPoint> => new EcPoint(
-    this._base.multiply(mod(
+    this.base.multiply(mod(
       leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
       this.order
     ))
@@ -73,18 +73,17 @@ export class EcGroup extends Group<EcPoint> {
 
   validatePoint = async (point: EcPoint): Promise<boolean> => {
     const flag = true;
-    if (await point.wrapped.equals(this._zero)) return flag;
+    if (await point.wrapped.equals(this.zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: unknown) {
-      if (err instanceof Error) {
-        if (err.message.startsWith('bad point: ')) throw new BadPointError();
-        else throw err;
-      }
+      if (err instanceof Error && err.message.startsWith('bad point: '))
+        throw new BadPointError(err.message);
+      throw err;
     }
     return flag;
   }
 
   exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => new EcPoint(
-    scalar !== __0n ? point.wrapped.multiply(scalar) : this._zero
+    scalar !== __0n ? point.wrapped.multiply(scalar) : this.zero
   );
 
   operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => new EcPoint(

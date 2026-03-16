@@ -1,7 +1,7 @@
 // TODO: browser
 import { createHash as _createHash } from 'node:crypto';
 
-import { Algorithm } from 'vsslib/types';
+import { Algorithm } from './types';
 
 
 export class Hash {
@@ -17,6 +17,6 @@ export class Hash {
     );
 }
 
-export default function(algorithm: Algorithm): Hash {
+export function hash(algorithm: Algorithm): Hash {
   return new Hash(algorithm);
 }

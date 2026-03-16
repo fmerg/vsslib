@@ -4,7 +4,7 @@ import { randomNonce } from 'vsslib/random';
 import { cartesian } from '../utils';
 import { createGenericLinear } from './helpers';
 import { resolveTestConfig } from '../environ';
-import nizk from 'vsslib/nizk';
+import { nizk } from 'vsslib/nizk';
 
 let { systems, algorithms } = resolveTestConfig();
 

@@ -1,4 +1,4 @@
-import { BadModulusError, InverseNotExists } from 'vsslib/errors';
+import { ArithmeticError, BadModulusError, InverseNotExists } from './errors';
 
 const __0n      = BigInt(0);
 const __1n      = BigInt(1);
@@ -78,7 +78,7 @@ export const mod = (m: bigint, n: bigint): bigint => {
 /** Createst Common Divisor (extended euclidean algorithm) */
 export const gcd = (a: bigint, b: bigint): { x: bigint, y: bigint, g: bigint } => {
   if (!(a > __0n && b > __0n))
-    throw new Error('Non-positive inputs');
+    throw new ArithmeticError('Non-positive inputs');
 
   let [x, y, u, v] = [__0n, __1n, __1n, __0n];
   while (a > __0n) {

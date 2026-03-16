@@ -1,6 +1,6 @@
-import { Group, Point } from 'vsslib/backend';
-import { mod, leInt2Buff } from 'vsslib/arith';
-import { BadScalarError, BadPointError, InvalidInput } from 'vsslib/errors';
+import { Group, Point } from './backend';
+import { mod, leInt2Buff } from './arith';
+import { BadScalarError, BadPointError, InvalidInput } from './errors';
 
 
 export const randomSecret = async <P extends Point>(ctx: Group<P>): Promise<{
@@ -54,8 +54,9 @@ export const unpackPoint = async <P extends Point>(
   ctx: Group<P>,
   publicBytes: Uint8Array
 ): Promise<P> => {
-  const point = ctx.buff2Point(publicBytes);
+  let point;
   try {
+    point = ctx.buff2Point(publicBytes);
     await ctx.validatePoint(point);
   } catch (err: unknown) {
     if (err instanceof BadPointError) throw new InvalidInput(

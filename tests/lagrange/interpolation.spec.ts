@@ -4,7 +4,7 @@ import { cartesian } from '../utils';
 import { interpolate as textbooxInterpolate } from './helpers';
 import { resolveTestConfig } from '../environ';
 
-import lagrange from 'vsslib/lagrange';
+import { lagrange } from 'vsslib/lagrange';
 
 const { systems } = resolveTestConfig();
 

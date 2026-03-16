@@ -1,10 +1,10 @@
-import { Point, Group } from 'vsslib/backend';
-import { FieldPolynomial, randomPolynomial } from 'vsslib/polynomials';
-import { InterpolationError, ShamirError, InvalidInput } from 'vsslib/errors';
-import { leInt2Buff } from 'vsslib/arith';
-import { unpackScalar, unpackPoint } from 'vsslib/secrets';
+import { Point, Group } from './backend';
+import { FieldPolynomial, randomPolynomial } from './polynomials';
+import { InterpolationError, ShamirError, InvalidInput } from './errors';
+import { leInt2Buff } from './arith';
+import { unpackScalar, unpackPoint } from './secrets';
 
-import lagrange from 'vsslib/lagrange';
+import { lagrange } from './lagrange';
 
 const __0n = BigInt(0);
 
