@@ -65,4 +65,16 @@ describe('Pedersen VSS scheme', () => {
       await expect(parsed).rejects.toThrow('Invalid share');
     });
   });
+  it.each(systems)('success with large indexes over %s', async (system) => {
+    // index ** j exceeds Number.MAX_SAFE_INTEGER for these parameters
+    const ctx = initBackend(system);
+    const { sharing } = await shareSecret(ctx, 20, 17);
+    const publicBytes = await randomPublic(ctx);
+    const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
+    for (const packet of packets) {
+      await expect(
+        parsePedersenPacket(ctx, commitments, publicBytes, packet)
+      ).resolves.toBeDefined();
+    }
+  });
 })

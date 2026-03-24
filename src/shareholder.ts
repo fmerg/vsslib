@@ -1,5 +1,4 @@
 import { Point, Group } from './backend';
-import { mod } from './arith';
 import { InvalidSecretShare, InvalidInput } from './errors';
 import { SecretShare, PublicShare, SecretPacket } from './dealer';
 import { unpackScalar, unpackPoint, extractPublic } from './secrets';
@@ -13,6 +12,22 @@ import { nizk } from './nizk';
 export type SchnorrPacket = PublicShare & { proof: NizkProof };
 
 
+/** Evaluate `Π_j C_j ^ (index ^ j)` in the exponent using Horner's rule */
+async function evalCommitments<P extends Point>(
+  ctx: Group<P>,
+  commitments: Uint8Array[],
+  index: number,
+): Promise<P> {
+  const x = BigInt(index);
+  let acc = ctx.neutral;
+  for (let j = commitments.length - 1; j >= 0; j--) {
+    const c = await unpackPoint(ctx, commitments[j]);
+    acc = await ctx.operate(await ctx.exp(acc, x), c);
+  }
+  return acc;
+}
+
+
 export async function verifyFeldmanCommitments<P extends Point>(
   ctx: Group<P>,
   share: SecretShare,
@@ -21,14 +36,8 @@ export async function verifyFeldmanCommitments<P extends Point>(
   const { value, index } = share;
   const x = await unpackScalar(ctx, value);
   const g = ctx.generator;
-  const order = ctx.order;
   const lhs = await ctx.exp(g, x);
-  let rhs = ctx.neutral;
-  for (const [j, commitment] of commitments.entries()) {
-    const c = await unpackPoint(ctx, commitment);
-    const curr = await ctx.exp(c, mod(BigInt(index ** j), order));
-    rhs = await ctx.operate(rhs, curr);
-  }
+  const rhs = await evalCommitments(ctx, commitments, index);
   const isValid = await lhs.equals(rhs);
   if (!isValid) throw new InvalidSecretShare(
     `Invalid share at index ${index}`
@@ -46,7 +55,6 @@ export async function verifyPedersenCommitments<P extends Point>(
 ): Promise<boolean> {
   const { value, index } = share;
   const exp = ctx.exp;
-  const order = ctx.order;
   const g = ctx.generator;
   const h = await unpackPoint(ctx, publicBytes);
   const x = await unpackScalar(ctx, value);
@@ -55,12 +63,7 @@ export async function verifyPedersenCommitments<P extends Point>(
     await exp(g, x),
     await exp(h, s)
   );
-  let rhs = ctx.neutral;
-  for (const [j, commitment] of commitments.entries()) {
-    const c = await unpackPoint(ctx, commitment);
-    const curr = await exp(c, mod(BigInt(index ** j), order));
-    rhs = await ctx.operate(rhs, curr);
-  }
+  const rhs = await evalCommitments(ctx, commitments, index);
   const isValid = await lhs.equals(rhs);
   if (!isValid) throw new InvalidSecretShare(
     `Invalid share at index ${index}`
