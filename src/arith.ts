@@ -37,9 +37,13 @@ export const leBuff2Int = (buff: Uint8Array): bigint => {
 }
 
 
-/** big integer to little-endian bytestring */
-export const leInt2Buff = (num: bigint) => {
-  const len = nrBytes(num);
+/** big integer to little-endian bytestring, zero-padded to `byteLength` if given */
+export const leInt2Buff = (num: bigint, byteLength?: number) => {
+  const minLength = nrBytes(num);
+  if (byteLength !== undefined && byteLength < minLength) throw new ArithmeticError(
+    `Integer does not fit in ${byteLength} bytes`
+  );
+  const len = byteLength ?? minLength;
   const buff = new Uint8Array(len);
   const view = new DataView(buff.buffer);
 

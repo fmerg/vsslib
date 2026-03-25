@@ -1,5 +1,5 @@
 import { System } from '../types';
-import { mod, leBuff2Int } from '../arith';
+import { mod, leBuff2Int, leInt2Buff } from '../arith';
 
 export interface Point {
   toBytes: () => Uint8Array;
@@ -12,6 +12,7 @@ export abstract class Group<P extends Point> {
   order: bigint;
   generator: P;
   neutral: P;
+  scalarBytes: number;
 
   constructor(system: System, modulus: bigint, order: bigint, generator: P, neutral: P) {
     this.system = system;
@@ -19,11 +20,16 @@ export abstract class Group<P extends Point> {
     this.order = order;
     this.generator = generator;;
     this.neutral = neutral;
+    this.scalarBytes = Math.ceil(order.toString(2).length / 8);
   }
 
   leBuff2Scalar = (bytes: Uint8Array): bigint => mod(leBuff2Int(bytes), this.order);
 
-  abstract generateSecret: () => Promise<Uint8Array>;
+  /** Fixed-length little-endian encoding of a scalar reduced modulo the group order */
+  scalar2Buff = (scalar: bigint): Uint8Array => leInt2Buff(mod(scalar, this.order), this.scalarBytes);
+
+  generateSecret = async (): Promise<Uint8Array> => this.scalar2Buff(await this.randomScalar());
+
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
   abstract validateScalar: (scalar: bigint) => Promise<boolean>;
