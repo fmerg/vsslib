@@ -1,5 +1,5 @@
 import { Group, Point } from './backend';
-import { mod, leInt2Buff } from './arith';
+import { mod } from './arith';
 import { BadScalarError, BadPointError, InvalidInput } from './errors';
 
 
@@ -107,11 +107,11 @@ export const addSecrets = <P extends Point>(
   ctx: Group<P>,
   secrets: Uint8Array[]
 ): Uint8Array => {
-  if (secrets.length == 0) return leInt2Buff(BigInt(0));
+  if (secrets.length == 0) return ctx.scalar2Buff(BigInt(0));
   const result = secrets.map(s => ctx.leBuff2Scalar(s)).reduce(
     (acc, x) => mod(acc + x, ctx.order)
   );
-  return leInt2Buff(result);
+  return ctx.scalar2Buff(result);
 }
 
 

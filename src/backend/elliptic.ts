@@ -48,9 +48,6 @@ export class EcGroup extends Group<EcPoint> {
     this.curve = curve;
   }
 
-  generateSecret = async (): Promise<Uint8Array> =>
-    this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES);
-
   randomScalar = async (): Promise<bigint> => mod(
     leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
     this.order
