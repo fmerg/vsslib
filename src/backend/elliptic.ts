@@ -10,8 +10,6 @@ import { mod, leBuff2Int } from '../arith';
 import { Point, Group } from './abstract';
 
 
-const __0n = BigInt(0);
-
 interface _CurvePoint extends ExtPointType { toRawBytes?: Function; };
 
 
@@ -80,7 +78,7 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => new EcPoint(
-    scalar !== __0n ? point.wrapped.multiply(scalar) : this.zero
+    scalar !== 0n ? point.wrapped.multiply(scalar) : this.zero
   );
 
   operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => new EcPoint(

@@ -1,9 +1,6 @@
 import { mod } from '../arith';
 import { PolynomialError } from '../errors';
 
-const __0n = BigInt(0);
-const __1n = BigInt(1);
-
 
 export class BasePolynomial {
   coeffs: bigint[];
@@ -11,12 +8,12 @@ export class BasePolynomial {
   order: bigint;
 
   constructor(coeffs: (bigint | number)[], order: bigint | number) {
-    if ((order <= __1n))
+    if ((order <= 1n))
       throw new PolynomialError(`Order must be > 1: ${order}`);
     const reduced = coeffs.map((num) => mod(BigInt(num), BigInt(order)));
     let len = reduced.length;
     if (len > 0) {
-      while (reduced[len - 1] === __0n) len--;
+      while (reduced[len - 1] === 0n) len--;
     }
     this.coeffs = reduced.slice(0, len);
     this.degree = len === 0 ? -Infinity : len - 1;
@@ -60,7 +57,7 @@ export class BasePolynomial {
     );
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
     if (short.isZero()) return long.clone();
-    const newCoeffs = new Array(long.degree).fill(__0n);
+    const newCoeffs = new Array(long.degree).fill(0n);
     for (let i = 0; i < short.degree + 1; i++) {
       newCoeffs[i] = short.coeffs[i] + long.coeffs[i];
     }
@@ -77,7 +74,7 @@ export class BasePolynomial {
     if (this.isZero() || other.isZero())
       return new BasePolynomial([], this.order);
     const [long, short] = this.degree > other.degree ? [this, other] : [other, this];
-    const newCoeffs = new Array(long.degree + short.degree + 1).fill(__0n);
+    const newCoeffs = new Array(long.degree + short.degree + 1).fill(0n);
     for (let i = 0; i < long.degree + 1; i++) {
       for (let j = 0; j < short.degree + 1; j++) {
         newCoeffs[i + j] += long.coeffs[i] * short.coeffs[j];
@@ -93,7 +90,7 @@ export class BasePolynomial {
 
   evaluate = (value: bigint | number): bigint => {
     const x = BigInt(value);
-    const acc = this.coeffs.reduce((acc, c, i) => acc + c * x ** BigInt(i), __0n);
+    const acc = this.coeffs.reduce((acc, c, i) => acc + c * x ** BigInt(i), 0n);
     return mod(acc, this.order);
   }
 }

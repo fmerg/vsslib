@@ -4,9 +4,6 @@ import { FieldPolynomial } from './polynomials';
 import { InverseNotExists, InterpolationError } from './errors';
 
 
-const __0n = BigInt(0);
-const __1n = BigInt(1);
-
 export type XYPoint = [bigint, bigint] | [number, number];
 
 export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
@@ -24,11 +21,11 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
     const xs = new Array(k);
     const ys = new Array(k);
     const ws = new Array(k);
-    let coeffs = new Array(k).fill(__0n);
+    let coeffs = new Array(k).fill(0n);
     for (let j = 0; j < k; j++) {
       const [xj, yj] = points[j];
-      let w = __1n;
-      let pj = [__1n];
+      let w = 1n;
+      let pj = [1n];
       for (let i = 0; i < k; i++) {
         if (i !== j) {
           const [xi,] = points[i];
@@ -65,7 +62,7 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
   evaluate = (value: bigint | number): bigint => {
     const { xs, ys, ws, order } = this;
     const x = BigInt(value);
-    let [a, b, c] = [__0n, __0n, __0n];
+    let [a, b, c] = [0n, 0n, 0n];
     for (let i = 0; i < xs.length; i++) {
       if (mod(x, order) === mod(xs[i], order)) {
         return mod(ys[i], order);

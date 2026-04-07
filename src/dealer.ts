@@ -5,7 +5,6 @@ import { unpackScalar, unpackPoint } from './secrets';
 
 import { lagrange } from './lagrange';
 
-const __0n = BigInt(0);
 
 export type SecretShare = { value: Uint8Array, index: number };
 export type SecretPacket = SecretShare & { binding?: Uint8Array };
@@ -29,7 +28,7 @@ export class ShamirSharing<P extends Point> {
   }
 
   getOriginalSecret = (): Uint8Array => {
-    return this.ctx.scalar2Buff(this.polynomial.evaluate(__0n));
+    return this.ctx.scalar2Buff(this.polynomial.evaluate(0n));
   }
 
   getSecretShares = async (): Promise<SecretShare[]> => {
@@ -140,7 +139,7 @@ export async function shareSecret<P extends Point>(
 
   try {
     const scalarSecret = await unpackScalar(ctx, secret);
-    xyPoints[0] = [__0n, scalarSecret];
+    xyPoints[0] = [0n, scalarSecret];
     // Allocate predefined shares
     for (const { index, value } of predefined) {
       if (!(0 < index && index < threshold)) {

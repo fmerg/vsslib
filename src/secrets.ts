@@ -107,7 +107,7 @@ export const addSecrets = <P extends Point>(
   ctx: Group<P>,
   secrets: Uint8Array[]
 ): Uint8Array => {
-  if (secrets.length == 0) return ctx.scalar2Buff(BigInt(0));
+  if (secrets.length == 0) return ctx.scalar2Buff(0n);
   const result = secrets.map(s => ctx.leBuff2Scalar(s)).reduce(
     (acc, x) => mod(acc + x, ctx.order)
   );
