@@ -3,9 +3,9 @@ import { mod } from './arith';
 import { BadScalarError, BadPointError, InvalidInput } from './errors';
 
 
-export const randomSecret = async <P extends Point>(ctx: Group<P>): Promise<{
+export async function randomSecret<P extends Point>(ctx: Group<P>): Promise<{
   secret: Uint8Array, publicBytes: Uint8Array
-}> => {
+}> {
   const secret = await ctx.generateSecret();
   const g = ctx.generator;
   const x = ctx.leBuff2Scalar(secret);
@@ -15,10 +15,10 @@ export const randomSecret = async <P extends Point>(ctx: Group<P>): Promise<{
 }
 
 
-export const extractPublic = async <P extends Point>(
+export async function extractPublic<P extends Point>(
   ctx: Group<P>,
   secret: Uint8Array
-): Promise<Uint8Array> => {
+): Promise<Uint8Array> {
   const g = ctx.generator;
   const x = ctx.leBuff2Scalar(secret);
   const y = await ctx.exp(g, x);
@@ -26,17 +26,17 @@ export const extractPublic = async <P extends Point>(
 }
 
 
-export const randomPublic = async <P extends Point>(
+export async function randomPublic<P extends Point>(
   ctx: Group<P>
-): Promise<Uint8Array> => {
+): Promise<Uint8Array> {
   return (await ctx.randomPoint()).toBytes();
 }
 
 
-export const unpackScalar = async <P extends Point>(
+export async function unpackScalar<P extends Point>(
   ctx: Group<P>,
   secret: Uint8Array
-): Promise<bigint> => {
+): Promise<bigint> {
   const scalar = ctx.leBuff2Scalar(secret);
   try {
     await ctx.validateScalar(scalar);
@@ -50,10 +50,10 @@ export const unpackScalar = async <P extends Point>(
 }
 
 
-export const unpackPoint = async <P extends Point>(
+export async function unpackPoint<P extends Point>(
   ctx: Group<P>,
   publicBytes: Uint8Array
-): Promise<P> => {
+): Promise<P> {
   let point;
   try {
     point = ctx.buff2Point(publicBytes);
@@ -68,32 +68,32 @@ export const unpackPoint = async <P extends Point>(
 }
 
 
-export const isEqualSecret = async <P extends Point>(
+export async function isEqualSecret<P extends Point>(
   ctx: Group<P>,
   lhs: Uint8Array,
   rhs: Uint8Array,
-): Promise<boolean> => {
+): Promise<boolean> {
   // TODO: Make this constant-time
   return ctx.leBuff2Scalar(lhs) == ctx.leBuff2Scalar(rhs);
 }
 
 
-export const isEqualPublic = async <P extends Point>(
+export async function isEqualPublic<P extends Point>(
   ctx: Group<P>,
   lhs: Uint8Array,
   rhs: Uint8Array
-): Promise<boolean> => {
+): Promise<boolean> {
   // TODO: Ensure that this is constant-time
   const y = await unpackPoint(ctx, lhs);
   const u = await unpackPoint(ctx, rhs);
   return y.equals(u);
 }
 
-export const isKeypair = async <P extends Point>(
+export async function isKeypair<P extends Point>(
   ctx: Group<P>,
   secret: Uint8Array,
   publicBytes: Uint8Array
-): Promise<boolean> => {
+): Promise<boolean> {
   // TODO: Ensure that this is constant-time
   const g = ctx.generator;
   const x = ctx.leBuff2Scalar(secret);
@@ -103,10 +103,10 @@ export const isKeypair = async <P extends Point>(
 }
 
 
-export const addSecrets = <P extends Point>(
+export function addSecrets<P extends Point>(
   ctx: Group<P>,
   secrets: Uint8Array[]
-): Uint8Array => {
+): Uint8Array {
   if (secrets.length == 0) return ctx.scalar2Buff(0n);
   const result = secrets.map(s => ctx.leBuff2Scalar(s)).reduce(
     (acc, x) => mod(acc + x, ctx.order)
@@ -115,10 +115,10 @@ export const addSecrets = <P extends Point>(
 }
 
 
-export const combinePublics = async <P extends Point>(
+export async function combinePublics<P extends Point>(
   ctx: Group<P>,
   publics: Uint8Array[]
-): Promise<Uint8Array> => {
+): Promise<Uint8Array> {
   let acc = ctx.neutral;
   for (const y of publics.map(async p => unpackPoint(ctx, p))) {
     acc = await ctx.operate(acc, await y);
