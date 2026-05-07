@@ -1,11 +1,9 @@
 import { mod, modInv } from './arith';
 import { Point, Group } from './backend';
 import { unpackScalar, unpackPoint } from './secrets'
-import { SecretShare, PublicShare } from './dealer';
-import { SchnorrPacket } from './shareholder';
 import { InvalidPublicShare, InvalidInput } from './errors';
 import { Algorithms } from './enums';
-import { Algorithm } from './types';
+import { Algorithm, SecretShare, PublicShare, SchnorrPacket } from './types';
 
 import { nizk } from './nizk';
 

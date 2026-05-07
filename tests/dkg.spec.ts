@@ -1,6 +1,7 @@
 import { initBackend } from 'vsslib/backend';
 import { Group, Point } from 'vsslib/backend';
-import { SecretShare, ShamirSharing, PublicShare } from 'vsslib/dealer';
+import { ShamirSharing } from 'vsslib/dealer';
+import { SecretShare, PublicShare } from 'vsslib/types';
 import {
   randomPublic,
   extractPublic,
