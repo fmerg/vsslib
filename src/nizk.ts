@@ -2,7 +2,6 @@ import { Group, Point } from './backend';
 import { Algorithm } from './types';
 import { InvalidInput } from './errors';
 import { mod, leInt2Buff } from './arith';
-import { unpackScalar, unpackPoint } from './secrets';
 import { hash } from './hash';
 
 
@@ -27,8 +26,8 @@ export class NizkProtocol<P extends Point>{
     const n = response.length;
     const innerComm = new Array(m);
     const innerResp = new Array(n);
-    for (let i = 0; i < m; i++) innerComm[i] = await unpackPoint(this.ctx, commitment[i]);
-    for (let i = 0; i < n; i++) innerResp[i] = await unpackScalar(this.ctx, response[i]);
+    for (let i = 0; i < m; i++) innerComm[i] = await this.ctx.parsePoint(commitment[i]);
+    for (let i = 0; i < n; i++) innerResp[i] = await this.ctx.parseScalar(response[i]);
     return { commitment: innerComm, response: innerResp };
   }
 
@@ -58,7 +57,7 @@ export class NizkProtocol<P extends Point>{
         ...config, ...statement, ...extrasBuff, ...nonce
       ])
     );
-    return unpackScalar(this.ctx, digest);
+    return this.ctx.parseScalar(digest);
   }
 
   /* Prove knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` */

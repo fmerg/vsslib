@@ -1,7 +1,6 @@
 import { Point, Group } from './backend';
 import { FieldPolynomial, randomPolynomial } from './polynomials';
 import { InterpolationError, ShamirError, InvalidInput } from './errors';
-import { unpackScalar, unpackPoint } from './secrets';
 
 import { lagrange } from './lagrange';
 import { SecretShare, SecretPacket, PublicShare } from './types';
@@ -87,7 +86,7 @@ export class ShamirSharing<P extends Point> {
     commitments: Uint8Array[],
   }> => {
     const { exp, operate, generator: g } = this.ctx;
-    const h = await unpackPoint(this.ctx, publicBytes);
+    const h = await this.ctx.parsePoint(publicBytes);
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     const commitments = [];
@@ -133,7 +132,7 @@ export async function shareSecret<P extends Point>(
   const xyPoints = new Array(threshold);
 
   try {
-    const scalarSecret = await unpackScalar(ctx, secret);
+    const scalarSecret = await ctx.parseScalar(secret);
     xyPoints[0] = [0n, scalarSecret];
     // Allocate predefined shares
     for (const { index, value } of predefined) {
@@ -141,7 +140,7 @@ export async function shareSecret<P extends Point>(
         throw new InvalidInput(`Index not in range: ${index}`);
       }
       const x = index;
-      const y = await unpackScalar(ctx, value);
+      const y = await ctx.parseScalar(value);
       xyPoints[index] = [x, y];
     }
     // Fill positions with non-predefined shares
