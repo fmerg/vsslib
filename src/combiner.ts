@@ -1,31 +1,14 @@
-import { mod, modInv } from './arith';
+import { mod } from './arith';
 import { Point, Group } from './backend';
 import { InvalidPublicShare, InvalidInput } from './errors';
 import { Algorithms } from './enums';
 import { Algorithm, SecretShare, PublicShare, SchnorrPacket } from './types';
 
 import { nizk } from './nizk';
+import { computeLambda } from './lagrange';
 
 
 export type Nonces = { [key: number]: Uint8Array };
-
-
-export function computeLambda<P extends Point>(
-  ctx: Group<P>,
-  index: number,
-  indexes: number[]
-): bigint {
-  const order = ctx.order;
-  const i = index;
-  let acc = 1n;
-  indexes.forEach(j => {
-    if (i != j) {
-      const curr = BigInt(j) * modInv(BigInt(j - i), order);
-      acc = mod(acc * curr, order);
-    }
-  });
-  return acc;
-}
 
 
 export async function combineSecretShares<P extends Point>(

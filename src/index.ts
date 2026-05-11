@@ -38,8 +38,9 @@ export {
   createSchnorrPacket,
 } from './shareholder';
 
+export { computeLambda } from './lagrange';
+
 export {
-  computeLambda,
   combineSecretShares,
   combinePublicShares,
   parseSchnorrPacket,
