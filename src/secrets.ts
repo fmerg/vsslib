@@ -7,7 +7,7 @@ export async function randomSecret<P extends Point>(ctx: Group<P>): Promise<{
 }> {
   const secret = await ctx.generateSecret();
   const g = ctx.generator;
-  const x = ctx.leBuff2Scalar(secret);
+  const x = ctx.bytesToScalar(secret);
   const y = await ctx.exp(g, x);
   const publicBytes = y.toBytes();
   return { secret, publicBytes };
@@ -19,7 +19,7 @@ export async function extractPublic<P extends Point>(
   secret: Uint8Array
 ): Promise<Uint8Array> {
   const g = ctx.generator;
-  const x = ctx.leBuff2Scalar(secret);
+  const x = ctx.bytesToScalar(secret);
   const y = await ctx.exp(g, x);
   return y.toBytes();
 }
@@ -32,19 +32,19 @@ export async function randomPublic<P extends Point>(
 }
 
 
-export async function unpackScalar<P extends Point>(
+export async function parseScalar<P extends Point>(
   ctx: Group<P>,
-  secret: Uint8Array
+  bytes: Uint8Array
 ): Promise<bigint> {
-  return ctx.parseScalar(secret);
+  return ctx.parseScalar(bytes);
 }
 
 
-export async function unpackPoint<P extends Point>(
+export async function parsePoint<P extends Point>(
   ctx: Group<P>,
-  publicBytes: Uint8Array
+  bytes: Uint8Array
 ): Promise<P> {
-  return ctx.parsePoint(publicBytes);
+  return ctx.parsePoint(bytes);
 }
 
 
@@ -54,7 +54,7 @@ export async function isEqualSecret<P extends Point>(
   rhs: Uint8Array,
 ): Promise<boolean> {
   // TODO: Make this constant-time
-  return ctx.leBuff2Scalar(lhs) == ctx.leBuff2Scalar(rhs);
+  return ctx.bytesToScalar(lhs) == ctx.bytesToScalar(rhs);
 }
 
 
@@ -76,7 +76,7 @@ export async function isKeypair<P extends Point>(
 ): Promise<boolean> {
   // TODO: Ensure that this is constant-time
   const g = ctx.generator;
-  const x = ctx.leBuff2Scalar(secret);
+  const x = ctx.bytesToScalar(secret);
   const u = await ctx.parsePoint(publicBytes);
   const y = await ctx.exp(g, x);
   return y.equals(u);
@@ -87,11 +87,11 @@ export function addSecrets<P extends Point>(
   ctx: Group<P>,
   secrets: Uint8Array[]
 ): Uint8Array {
-  if (secrets.length == 0) return ctx.scalar2Buff(0n);
-  const result = secrets.map(s => ctx.leBuff2Scalar(s)).reduce(
+  if (secrets.length == 0) return ctx.scalarToBytes(0n);
+  const result = secrets.map(s => ctx.bytesToScalar(s)).reduce(
     (acc, x) => mod(acc + x, ctx.order)
   );
-  return ctx.scalar2Buff(result);
+  return ctx.scalarToBytes(result);
 }
 
 

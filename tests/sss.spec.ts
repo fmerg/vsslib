@@ -1,6 +1,6 @@
 import { initBackend } from 'vsslib/backend';
-import { leInt2Buff } from 'vsslib/arith';
-import { unpackScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
+import { intToLeBytes } from 'vsslib/arith';
+import { parseScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
 import { shareSecret } from 'vsslib/dealer';
 import { SecretShare } from 'vsslib/types';
 import { combineSecretShares } from 'vsslib/combiner';
@@ -27,7 +27,7 @@ describe('Shamir secret sharing', () => {
     const { secret: original } = await randomSecret(ctx);
     const { secret, sharing } = await shareSecret(ctx, n, t, original);
     expect(sharing.polynomial.degree).toEqual(t - 1);
-    expect(sharing.polynomial.evaluate(0)).toEqual(await unpackScalar(ctx, original));
+    expect(sharing.polynomial.evaluate(0)).toEqual(await parseScalar(ctx, original));
     expect(await isEqualSecret(ctx, sharing.getOriginalSecret(), original)).toBe(true);
     expect(await isEqualSecret(ctx, secret, original)).toBe(true);
     expect(n).toEqual(sharing.nrShares);
@@ -57,7 +57,7 @@ describe('Shamir secret sharing', () => {
         ctx, n, t, original, predefined.slice(0, nrPredefined)
       );
       expect(sharing.polynomial.degree).toEqual(t - 1);
-      expect(sharing.polynomial.evaluate(0)).toEqual(await unpackScalar(ctx, original));
+      expect(sharing.polynomial.evaluate(0)).toEqual(await parseScalar(ctx, original));
       expect(await isEqualSecret(ctx, sharing.getOriginalSecret(), original)).toBe(true);
       expect(await isEqualSecret(ctx, secret, original)).toBe(true);
       expect(n).toEqual(sharing.nrShares);
@@ -105,8 +105,8 @@ describe('Shamir secret sharing', () => {
     'error - number of predefined shares >= threshold - over %s', async (system) => {
     const ctx = initBackend(system);
     const predefined = [
-      { index: 1, value: leInt2Buff(BigInt(1)) },
-      { index: 2, value: leInt2Buff(BigInt(2)) },
+      { index: 1, value: intToLeBytes(BigInt(1)) },
+      { index: 2, value: intToLeBytes(BigInt(2)) },
     ]
     await expect(shareSecret(ctx, 3, 2, undefined, predefined)).rejects.toThrow(
       'Number of predefined shares violates threshold'

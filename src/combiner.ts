@@ -26,7 +26,7 @@ export async function combineSecretShares<P extends Point>(
     const xi = await ctx.parseScalar(value);
     x = mod(x + li * xi, order);
   }
-  return ctx.scalar2Buff(x);
+  return ctx.scalarToBytes(x);
 }
 
 

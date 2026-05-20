@@ -22,8 +22,8 @@ export {
   isKeypair,
   addSecrets,
   combinePublics,
-  unpackScalar,
-  unpackPoint,
+  parseScalar,
+  parsePoint,
 } from './secrets';
 
 export { shareSecret } from './dealer';

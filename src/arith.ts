@@ -15,7 +15,7 @@ function nrBytes(num: bigint): number {
 
 
 /** little-endian bytestring to big integer */
-export function leBuff2Int(buff: Uint8Array): bigint {
+export function leBytesToInt(buff: Uint8Array): bigint {
   let num = 0n;
   let i = 0;
   const view = new DataView(buff.buffer, buff.byteOffset, buff.byteLength);
@@ -36,7 +36,7 @@ export function leBuff2Int(buff: Uint8Array): bigint {
 
 
 /** big integer to little-endian bytestring, zero-padded to `byteLength` if given */
-export function leInt2Buff(num: bigint, byteLength?: number) {
+export function intToLeBytes(num: bigint, byteLength?: number) {
   const minLength = nrBytes(num);
   if (byteLength !== undefined && byteLength < minLength) throw new ArithmeticError(
     `Integer does not fit in ${byteLength} bytes`
