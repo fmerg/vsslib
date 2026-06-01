@@ -50,7 +50,7 @@ describe('Distributed Key Generation (DKG)', () => {
     const ctx = initBackend(system);
 
     // Public reference for Pedersen VSS Scheme
-    const publicBytes = await randomPublic(ctx);
+    const pedersenBase = await randomPublic(ctx);
 
     // Involved parties initialization
     const parties = [];
@@ -65,12 +65,12 @@ describe('Distributed Key Generation (DKG)', () => {
       party.originalSecret = secret ;
       party.originalPublic = await extractPublic(ctx, party.originalSecret);
       party.sharing = sharing;
-      const { packets, commitments } = await party.sharing.createPedersenPackets(publicBytes);
+      const { packets, commitments } = await party.sharing.createPedersenPackets(pedersenBase);
       // Distribution of shares over the network
       for (const packet of packets) {
         const recipient = selectParty(packet.index, parties);
         const { share, binding } = await parsePedersenPacket(
-          ctx, commitments, publicBytes, packet
+          ctx, commitments, pedersenBase, packet
         );
         recipient.aggregates.push(share);
       }

@@ -368,12 +368,12 @@ try {
 
 ### <a name="pedersen-scheme-1"></a>Pedersen scheme
 
-Involved parties agree first on some public reference:
+Involved parties agree first on a public group element to be used as Pedersen base:
 
 ```js
 import { randomPublic } from "vsslib";
 
-const publicBytes = await randomPublic(ctx);
+const pedersenBase = await randomPublic(ctx);
 ```
 
 #### Generation of Pedersen commitments and packets
@@ -382,7 +382,7 @@ Given a sharing, generate Pedersen commitments and verifiable packets for the to
 shares as follows.
 
 ```js
-const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
+const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
 ```
 
 > **Note**
@@ -396,7 +396,7 @@ Extract and verify secret share from the received packet as follows.
 ```js
 import { parsePedersenPacket } from "vsslib";
 
-const { share, binding } = await parsePedersenPacket(ctx, commitments, publicBytes, packet);
+const { share, binding } = await parsePedersenPacket(ctx, commitments, pedersenBase, packet);
 ```
 
 > **Note**
@@ -411,7 +411,7 @@ this error in order to adhere to some specified rejection policy:
 import { InvalidSecretShare } from "vsslib";
 
 try {
-  const { share, binding } = await parsePedersenPacket(ctx, commitments, publicBytes, packet);
+  const { share, binding } = await parsePedersenPacket(ctx, commitments, pedersenBase, packet);
   // Store locally the retrieved secret share
   ...
 } catch (err) {
@@ -433,7 +433,7 @@ verified along with its binding against the commitments as follows.
 import { verifyPedersenCommitments, InvalidSecretShare } from "vsslib";
 
 try {
-  await verifyPedersenCommitments(ctx, commitments, publicBytes, share, binding);
+  await verifyPedersenCommitments(ctx, commitments, pedersenBase, share, binding);
 } catch (err) {
   if (err instanceof InvalidSecretShare) {
     // Follow rejection policy as specified by context
