@@ -8,7 +8,7 @@ import {
   isEqualPublic,
   isKeypair,
   addSecrets,
-  combinePublics,
+  addPublics,
 } from 'vsslib/secrets';
 import { initBackend } from 'vsslib/backend';
 import { intToLeBytes } from 'vsslib/arith';
@@ -88,13 +88,13 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
 
     // Examine zero secrets edge case
     const zeroSum = await addSecrets(ctx, []);
-    const unitPublic = await combinePublics(ctx, []);
+    const unitPublic = await addPublics(ctx, []);
     expect(await isEqualSecret(ctx, zeroSum, intToLeBytes(BigInt(0))));
     expect(await isEqualPublic(ctx, unitPublic, ctx.neutral.toBytes())).toBe(true);
 
     // Examine single secret edge case
     const cloneSecret = await addSecrets(ctx, secrets.slice(0, 1));
-    const clonePublic = await combinePublics(ctx, publics.slice(0, 1));
+    const clonePublic = await addPublics(ctx, publics.slice(0, 1));
     expect(await isEqualSecret(ctx, cloneSecret, secrets[0])).toBe(true);
     expect(await isEqualPublic(ctx, clonePublic, publics[0])).toBe(true);
 
@@ -102,7 +102,7 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     for (let nr = 0; nr < nrTotal; nr++) {
       const secretSum = await addSecrets(ctx, secrets.slice(0, nr));
       const targetPublic = await extractPublic(ctx, secretSum);
-      const overallPublic = await combinePublics(ctx, publics.slice(0, nr))
+      const overallPublic = await addPublics(ctx, publics.slice(0, nr))
       expect(await isEqualPublic(ctx, overallPublic, targetPublic)).toBe(true);
     }
   });

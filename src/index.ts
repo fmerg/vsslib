@@ -21,7 +21,7 @@ export {
   isEqualPublic,
   isKeypair,
   addSecrets,
-  combinePublics,
+  addPublics,
   parseScalar,
   parsePoint,
 } from './secrets';

@@ -13,7 +13,7 @@ import {
   parsePedersenPacket,
   createSchnorrPacket,
   addSecrets,
-  combinePublics,
+  addPublics,
 } from 'vsslib';
 import { Systems } from 'vsslib/enums';
 import { randomNonce } from 'vsslib/random';
@@ -134,7 +134,7 @@ async function demo() {
   const { globalPublic } = await runDKG(parties, nrShares, threshold, pedersenBase);
 
   // All parties should locally recover this global public
-  const targetGlobalPublic = await combinePublics(ctx, parties.map(p => p.originalPublic));
+  const targetGlobalPublic = await addPublics(ctx, parties.map(p => p.originalPublic));
   if (!(await isEqualPublic(ctx, globalPublic, targetGlobalPublic))) {
     throw new Error(`Inconsistent global public`);
   }
