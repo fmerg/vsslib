@@ -54,7 +54,6 @@ export {
   VssError,
   BadGroupError,
   ShamirError,
-  InvalidSecret,
   InvalidSecretShare,
   InvalidPublicShare,
   InvalidInput,

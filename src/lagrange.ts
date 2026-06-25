@@ -1,7 +1,7 @@
 import { Point, Group } from './backend';
 import { mod, modInv } from './arith';
 import { FieldPolynomial } from './polynomials';
-import { InverseNotExists, InterpolationError } from './errors';
+import { NoInverseError, InterpolationError } from './errors';
 
 
 export type XYPoint = [bigint, bigint] | [number, number];
@@ -62,7 +62,7 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
       }
       let wj;
       try { wj = modInv(w, order); } catch (err: unknown) {
-        if (err instanceof InverseNotExists) throw new InterpolationError(
+        if (err instanceof NoInverseError) throw new InterpolationError(
           'Not all provided x\'s are distinct modulo order'
         );
         else throw err;
