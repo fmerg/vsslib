@@ -82,7 +82,6 @@ export class ShamirSharing<P extends Point> {
 
   createPedersenPackets = async (pedersenBase: Uint8Array): Promise<{
     packets: SecretPacket[],
-    bindings: Uint8Array[],
     commitments: Uint8Array[],
   }> => {
     const { exp, operate, generator: g } = this.ctx;
@@ -95,11 +94,11 @@ export class ShamirSharing<P extends Point> {
       commitments.push((await operate(await exp(g, a), await exp(h, b))).toBytes());
     }
     const shares = await this.getSecretShares();
-    const bindings = shares.map(({ index }) =>
-      this.ctx.scalarToBytes(bindingPolynomial.evaluate(index))
-    );
-    const packets = shares.map((share, i) => ({ ...share, binding: bindings[i] }));
-    return { packets, bindings, commitments };
+    const packets = shares.map((share) => ({
+      ...share,
+      binding: this.ctx.scalarToBytes(bindingPolynomial.evaluate(share.index)),
+    }));
+    return { packets, commitments };
   }
 };
 
