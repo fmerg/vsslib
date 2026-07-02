@@ -23,7 +23,7 @@ const ctx = initBackend("ed25519");
 
 **Dealer's side**
 ```js
-import { shareSecret, createFeldmanPackets } from "vsslib";
+import { shareSecret } from "vsslib";
 
 // Generate a Shamir (5, 3)-sharing for some uniformly random secret
 const { sharing } = await shareSecret(ctx, 5, 3);
