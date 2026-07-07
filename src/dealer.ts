@@ -1,16 +1,9 @@
 import { Point, Group } from './backend';
 import { FieldPolynomial, randomPolynomial } from './polynomials';
 import { InterpolationError, ShamirError, InvalidInput } from './errors';
-import { unpackScalar, unpackPoint } from './secrets';
 
 import { lagrange } from './lagrange';
-
-const __0n = BigInt(0);
-
-export type SecretShare = { value: Uint8Array, index: number };
-export type SecretPacket = SecretShare & { binding?: Uint8Array };
-
-export type PublicShare = { value: Uint8Array, index: number };
+import { SecretShare, SecretPacket, PublicShare } from './types';
 
 
 export class ShamirSharing<P extends Point> {
@@ -29,14 +22,14 @@ export class ShamirSharing<P extends Point> {
   }
 
   getOriginalSecret = (): Uint8Array => {
-    return this.ctx.scalar2Buff(this.polynomial.evaluate(__0n));
+    return this.ctx.scalarToBytes(this.polynomial.evaluate(0n));
   }
 
   getSecretShares = async (): Promise<SecretShare[]> => {
     const polynomial = this.polynomial;
     const shares = new Array(this.nrShares);
     for (let index = 1; index <= this.nrShares; index++) {
-      const value = this.ctx.scalar2Buff(polynomial.evaluate(index));
+      const value = this.ctx.scalarToBytes(polynomial.evaluate(index));
       shares[index - 1] = { value, index };
     }
     return shares;
@@ -64,7 +57,7 @@ export class ShamirSharing<P extends Point> {
     const y = await this.ctx.exp(g, x);
     return {
       secretShare: {
-        value: this.ctx.scalar2Buff(x),
+        value: this.ctx.scalarToBytes(x),
         index,
       },
       publicShare: {
@@ -87,13 +80,12 @@ export class ShamirSharing<P extends Point> {
     return { packets, commitments };
   }
 
-  createPedersenPackets = async (publicBytes: Uint8Array): Promise<{
+  createPedersenPackets = async (pedersenBase: Uint8Array): Promise<{
     packets: SecretPacket[],
-    bindings: Uint8Array[],
     commitments: Uint8Array[],
   }> => {
     const { exp, operate, generator: g } = this.ctx;
-    const h = await unpackPoint(this.ctx, publicBytes);
+    const h = await this.ctx.parsePoint(pedersenBase);
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     const commitments = [];
@@ -102,11 +94,11 @@ export class ShamirSharing<P extends Point> {
       commitments.push((await operate(await exp(g, a), await exp(h, b))).toBytes());
     }
     const shares = await this.getSecretShares();
-    const bindings = shares.map(({ index }) =>
-      this.ctx.scalar2Buff(bindingPolynomial.evaluate(index))
-    );
-    const packets = shares.map((share, i) => ({ ...share, binding: bindings[i] }));
-    return { packets, bindings, commitments };
+    const packets = shares.map((share) => ({
+      ...share,
+      binding: this.ctx.scalarToBytes(bindingPolynomial.evaluate(share.index)),
+    }));
+    return { packets, commitments };
   }
 };
 
@@ -139,15 +131,15 @@ export async function shareSecret<P extends Point>(
   const xyPoints = new Array(threshold);
 
   try {
-    const scalarSecret = await unpackScalar(ctx, secret);
-    xyPoints[0] = [__0n, scalarSecret];
+    const scalarSecret = await ctx.parseScalar(secret);
+    xyPoints[0] = [0n, scalarSecret];
     // Allocate predefined shares
     for (const { index, value } of predefined) {
       if (!(0 < index && index < threshold)) {
         throw new InvalidInput(`Index not in range: ${index}`);
       }
       const x = index;
-      const y = await unpackScalar(ctx, value);
+      const y = await ctx.parseScalar(value);
       xyPoints[index] = [x, y];
     }
     // Fill positions with non-predefined shares

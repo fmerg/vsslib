@@ -13,7 +13,7 @@ import {
   parsePedersenPacket,
   createSchnorrPacket,
   addSecrets,
-  combinePublics,
+  addPublics,
 } from 'vsslib';
 import { Systems } from 'vsslib/enums';
 import { randomNonce } from 'vsslib/random';
@@ -47,13 +47,13 @@ class DkgParty extends Party {
     this.sharing = sharing;
   }
 
-  doBroadcast = async (publicBytes) => {
-    return this.sharing.createPedersenPackets(publicBytes);
+  doBroadcast = async (pedersenBase) => {
+    return this.sharing.createPedersenPackets(pedersenBase);
   }
 
-  doParseVss = async (commitments, publicBytes, packet) => {
+  doParseVss = async (commitments, pedersenBase, packet) => {
     const { share, binding } = await parsePedersenPacket(
-      this.ctx, commitments, publicBytes, packet
+      this.ctx, commitments, pedersenBase, packet
     );
     this.aggregates.push(share);
   }
@@ -91,17 +91,17 @@ export function initGroup(ctx, nrParties) {
 }
 
 
-export async function runDKG(parties, nrShares, threshold, publicBytes) {
+export async function runDKG(parties, nrShares, threshold, pedersenBase) {
   for (let party of parties) {
     await party.doShare(nrShares, threshold);
   }
 
   for (let party of parties) {
     console.time(`DISTRIBUTION ${party.index}`);
-    const { packets, commitments } = await party.doBroadcast(publicBytes);
+    const { packets, commitments } = await party.doBroadcast(pedersenBase);
     for (const packet of packets) {
       const recipient = selectParty(packet.index, parties);
-      await recipient.doParseVss(commitments, publicBytes, packet);
+      await recipient.doParseVss(commitments, pedersenBase, packet);
     }
     console.timeEnd(`DISTRIBUTION ${party.index}`);
   }
@@ -130,11 +130,11 @@ async function demo() {
   const { system, nrShares, threshold, verbose } = program.opts();
   const ctx = initBackend(system);
   const parties = initGroup(ctx, nrShares);
-  const publicBytes = await randomPublic(ctx);
-  const { globalPublic } = await runDKG(parties, nrShares, threshold, publicBytes);
+  const pedersenBase = await randomPublic(ctx);
+  const { globalPublic } = await runDKG(parties, nrShares, threshold, pedersenBase);
 
   // All parties should locally recover this global public
-  const targetGlobalPublic = await combinePublics(ctx, parties.map(p => p.originalPublic));
+  const targetGlobalPublic = await addPublics(ctx, parties.map(p => p.originalPublic));
   if (!(await isEqualPublic(ctx, globalPublic, targetGlobalPublic))) {
     throw new Error(`Inconsistent global public`);
   }

@@ -9,9 +9,8 @@ import {
 } from 'vsslib';
 import { Nonces }  from 'vsslib/combiner';
 import { randomNonce } from 'vsslib/random';
-import { SecretShare, PublicShare } from 'vsslib/dealer';
-import { SchnorrPacket } from 'vsslib/shareholder';
-import { leInt2Buff } from 'vsslib/arith';
+import { SecretShare, PublicShare, SchnorrPacket } from 'vsslib/types';
+import { intToLeBytes } from 'vsslib/arith';
 import { randomIndex } from './utils';
 
 

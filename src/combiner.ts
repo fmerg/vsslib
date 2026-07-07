@@ -1,38 +1,14 @@
-import { mod, modInv } from './arith';
+import { mod } from './arith';
 import { Point, Group } from './backend';
-import { unpackScalar, unpackPoint } from './secrets'
-import { SecretShare, PublicShare } from './dealer';
-import { SchnorrPacket } from './shareholder';
 import { InvalidPublicShare, InvalidInput } from './errors';
 import { Algorithms } from './enums';
-import { Algorithm } from './types';
+import { Algorithm, SecretShare, PublicShare, SchnorrPacket } from './types';
 
 import { nizk } from './nizk';
-
-
-const __0n = BigInt(0);
-const __1n = BigInt(1);
+import { computeLambda } from './lagrange';
 
 
 export type Nonces = { [key: number]: Uint8Array };
-
-
-export function computeLambda<P extends Point>(
-  ctx: Group<P>,
-  index: number,
-  indexes: number[]
-): bigint {
-  const order = ctx.order;
-  const i = index;
-  let acc = __1n;
-  indexes.forEach(j => {
-    if (i != j) {
-      const curr = BigInt(j) * modInv(BigInt(j - i), order);
-      acc = mod(acc * curr, order);
-    }
-  });
-  return acc;
-}
 
 
 export async function combineSecretShares<P extends Point>(
@@ -44,13 +20,13 @@ export async function combineSecretShares<P extends Point>(
     throw new InvalidInput('Insufficient number of shares');
   const order = ctx.order;
   const indexes = shares.map(share => share.index);
-  let x = __0n;
+  let x = 0n;
   for (const { value, index } of shares) {
     const li = computeLambda(ctx, index, indexes);
-    const xi = await unpackScalar(ctx, value);
+    const xi = await ctx.parseScalar(value);
     x = mod(x + li * xi, order);
   }
-  return ctx.scalar2Buff(x);
+  return ctx.scalarToBytes(x);
 }
 
 
@@ -66,7 +42,7 @@ export async function combinePublicShares<P extends Point>(
   let y = ctx.neutral;
   for (const { value, index } of shares) {
     const li = computeLambda(ctx, index, indexes);
-    const yi = await unpackPoint(ctx, value)
+    const yi = await ctx.parsePoint(value)
     y = await ctx.operate(y, await exp(yi, li));
   }
   return y.toBytes();
@@ -82,7 +58,7 @@ export async function parseSchnorrPacket<P extends Point>(
   } = {},
 ): Promise<PublicShare> {
   const { value, index, proof } = packet;
-  const y = await unpackPoint(ctx, value)
+  const y = await ctx.parsePoint(value)
   const isValid = await nizk(ctx, algorithm).verifyDlog(
     {
       u: ctx.generator,

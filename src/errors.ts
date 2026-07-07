@@ -18,7 +18,7 @@ export class BadPointError extends VssError {}
 
 export class BadScalarError extends VssError {}
 
-export class InverseNotExists extends VssError {}
+export class NoInverseError extends VssError {}
 
 export class PolynomialError extends VssError {}
 
@@ -29,10 +29,6 @@ export class InterpolationError extends VssError {}
 export class ShamirError extends VssError {}
 
 export class InvalidInput extends VssError {}
-
-export class InvalidSecret extends VssError {}
-
-export class InvalidSignature extends VssError {}
 
 export class InvalidSecretShare extends VssError {}
 
