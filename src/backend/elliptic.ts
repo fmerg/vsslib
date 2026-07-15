@@ -1,7 +1,8 @@
-import { ExtPointType, CurveFn as _Curve } from '@noble/curves/abstract/edwards';
+import { EdwardsPoint as _CurvePoint, CurveFn as _Curve } from '@noble/curves/abstract/edwards';
 import { ed25519 } from '@noble/curves/ed25519';
 import { ed448 } from '@noble/curves/ed448';
-import { jubjub } from '@noble/curves/jubjub';
+import { jubjub } from '@noble/curves/misc';
+import { randomBytes } from '@noble/curves/utils';
 
 import { Elliptic } from '../enums';
 import { System } from '../types';
@@ -10,12 +11,9 @@ import { mod, leBytesToInt } from '../arith';
 import { Point, Group } from './abstract';
 
 
-interface _CurvePoint extends ExtPointType { toRawBytes?: Function; };
-
-
 class EcPoint implements Point {
   wrapped: _CurvePoint;
-  toBytes = (): Uint8Array => this.wrapped.toRawBytes!();
+  toBytes = (): Uint8Array => this.wrapped.toBytes();
 
   constructor(wrapped: _CurvePoint) {
     this.wrapped = wrapped;
@@ -34,10 +32,10 @@ export class EcGroup extends Group<EcPoint> {
   curve: _Curve;
 
   constructor(system: System, curve: _Curve) {
-    const modulus = curve.CURVE.Fp.ORDER;
-    const order = curve.CURVE.n;
-    const base = curve.ExtendedPoint.BASE;
-    const zero = curve.ExtendedPoint.ZERO;
+    const modulus = curve.Point.Fp.ORDER;
+    const order = curve.Point.Fn.ORDER;
+    const base = curve.Point.BASE;
+    const zero = curve.Point.ZERO;
     const generator = new EcPoint(base);
     const neutral = new EcPoint(zero);
     super(system, modulus, order, generator, neutral);
@@ -47,13 +45,13 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   randomScalar = async (): Promise<bigint> => mod(
-    leBytesToInt(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+    leBytesToInt(randomBytes(this.curve.Point.Fp.BYTES)),
     this.order
   );
 
   randomPoint = async (): Promise<EcPoint> => new EcPoint(
     this.base.multiply(mod(
-      leBytesToInt(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+      leBytesToInt(randomBytes(this.curve.Point.Fp.BYTES)),
       this.order
     ))
   );
@@ -92,7 +90,7 @@ export class EcGroup extends Group<EcPoint> {
   bytesToPoint = (bytes: Uint8Array): EcPoint => {
     let point;
     try {
-      point = new EcPoint(this.curve.ExtendedPoint.fromHex(bytes));
+      point = new EcPoint(this.curve.Point.fromBytes(bytes));
     } catch (err: unknown) {
       if (err instanceof Error) {
         throw new BadPointError(`bad encoding: ${err.message}`)
