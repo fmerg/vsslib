@@ -1,8 +1,8 @@
-import { EdwardsPoint as _CurvePoint, CurveFn as _Curve } from '@noble/curves/abstract/edwards';
-import { ed25519 } from '@noble/curves/ed25519';
-import { ed448 } from '@noble/curves/ed448';
-import { jubjub } from '@noble/curves/misc';
-import { randomBytes } from '@noble/curves/utils';
+import { EdwardsPoint as _CurvePoint, EdDSA as _Curve } from '@noble/curves/abstract/edwards.js';
+import { ed25519 } from '@noble/curves/ed25519.js';
+import { ed448 } from '@noble/curves/ed448.js';
+import { jubjub } from '@noble/curves/misc.js';
+import { randomBytes } from '@noble/curves/utils.js';
 
 import { Elliptic } from '../enums';
 import { System } from '../types';
