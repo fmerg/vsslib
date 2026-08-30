@@ -4,7 +4,6 @@
     "types": ["node", "jest"],
     "module": "commonjs",
     "rootDir": "./src",
-    "baseUrl": ".",
     "paths": {
       "vsslib/*": ["./src/*"],
       "vsslib": ["./src"],

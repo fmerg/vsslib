@@ -18,6 +18,7 @@ export const Systems = {
 export enum Algorithms {
   DEFAULT   = 'sha256',
   SHA224    = 'sha224',
+  // eslint-disable-next-line @typescript-eslint/no-duplicate-enum-values
   SHA256    = 'sha256',
   SHA384    = 'sha384',
   SHA512    = 'sha512',

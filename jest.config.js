@@ -8,6 +8,12 @@ module.exports = {
   moduleNameMapper: pathsToModuleNameMapper(
     compilerOptions.paths, { prefix: '<rootDir>/' }
   ),
+  // @noble packages are ESM-only; compile them to CommonJS for Jest
+  transform: {
+    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.js$': ['ts-jest', { tsconfig: { allowJs: true, module: 'commonjs' } }],
+  },
+  transformIgnorePatterns: ['/node_modules/(?!@noble/)'],
   testResultsProcessor: "jest-junit",
   reporters: [
     "default",
