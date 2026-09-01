@@ -45,7 +45,7 @@ describe('Share index validation', () => {
     const { commitments } = await sharing.createFeldmanPackets();
     for (const index of badIndexes) {
       await expect(
-        verifyFeldmanCommitments(ctx, commitments, { ...secretShares[0], index })
+        verifyFeldmanCommitments(ctx, commitments, { ...secretShares[0], index }, threshold)
       ).rejects.toThrow('positive integer');
       await expect(
         createSchnorrPacket(ctx, { ...secretShares[0], index })

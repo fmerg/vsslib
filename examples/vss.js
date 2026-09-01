@@ -35,11 +35,11 @@ export async function runVSS(ctx, nrShares, threshold, scheme) {
 }
 
 class VssParty extends Party {
-  consumeVssPacket = async (packet, commitments, pedersenBase) => {
+  consumeVssPacket = async (packet, commitments, pedersenBase, threshold) => {
     try {
       const { share } = !pedersenBase ?
-        await parseFeldmanPacket(this.ctx, commitments, packet) :
-        await parsePedersenPacket(this.ctx, commitments, pedersenBase, packet);
+        await parseFeldmanPacket(this.ctx, commitments, packet, threshold) :
+        await parsePedersenPacket(this.ctx, commitments, pedersenBase, packet, threshold);
       this.share = share;
     } catch (err) {
       if (err instanceof InvalidSecretShare) {
@@ -78,7 +78,7 @@ async function demo() {
   // Shareholders verify the received packets and extract their respective share
   for (const packet of packets) {
     const recipient = selectParty(packet.index, parties);
-    await recipient.consumeVssPacket(packet, commitments, pedersenBase);
+    await recipient.consumeVssPacket(packet, commitments, pedersenBase, t);
   }
 
   // Public recovery phase ----------------------------------------------------

@@ -42,7 +42,7 @@ import { parseFeldmanPacket, InvalidSecretShare } from "vsslib";
 
 // Extract and verify secret share from received packet
 try {
-  const { share } = await parseFeldmanPacket(ctx, commitments, packet);
+  const { share } = await parseFeldmanPacket(ctx, commitments, packet, t);
   // Store retrieved share locally
   ...
 } catch (err) {
@@ -324,18 +324,19 @@ Extract and verify secret share from the received packet as follows.
 ```js
 import { parseFeldmanPacket } from "vsslib";
 
-const { share } = await parseFeldmanPacket(ctx, commitments, packet);
+const { share } = await parseFeldmanPacket(ctx, commitments, packet, t);
 ```
 
 This throws `vsslib.InvalidSecretShare` if the included share is found to
-be invalid against the provided commitments. You will usually have to handle
+be invalid against the provided commitments, or if the number of commitments
+differs from the agreed threshold `t`. You will usually have to handle
 this error in order to adhere to some specified rejection policy:
 
 ```js
 import { InvalidSecretShare } from "vsslib";
 
 try {
-  const { share } = await parseFeldmanPacket(ctx, commitments, packet);
+  const { share } = await parseFeldmanPacket(ctx, commitments, packet, t);
   // Store locally the retrieved secret share
   ...
 } catch (err) {
@@ -357,7 +358,7 @@ verified against the commitments as follows.
 import { verifyFeldmanCommitments, InvalidSecretShare } from "vsslib";
 
 try {
-  await verifyFeldmanCommitments(ctx, commitments, share);
+  await verifyFeldmanCommitments(ctx, commitments, share, t);
 } catch (err) {
   if (err instanceof InvalidSecretShare) {
     // Follow rejection policy as specified by context
@@ -408,7 +409,7 @@ Extract and verify secret share from the received packet as follows.
 ```js
 import { parsePedersenPacket } from "vsslib";
 
-const { share, binding } = await parsePedersenPacket(ctx, commitments, pedersenBase, packet);
+const { share, binding } = await parsePedersenPacket(ctx, commitments, pedersenBase, packet, t);
 ```
 
 > **Note**
@@ -416,14 +417,15 @@ const { share, binding } = await parsePedersenPacket(ctx, commitments, pedersenB
 > discarded.
 
 This throws `vsslib.InvalidSecretShare` if the included share is found to
-be invalid against the provided commitments. You will usually have to handle
+be invalid against the provided commitments, or if the number of commitments
+differs from the agreed threshold `t`. You will usually have to handle
 this error in order to adhere to some specified rejection policy:
 
 ```js
 import { InvalidSecretShare } from "vsslib";
 
 try {
-  const { share, binding } = await parsePedersenPacket(ctx, commitments, pedersenBase, packet);
+  const { share, binding } = await parsePedersenPacket(ctx, commitments, pedersenBase, packet, t);
   // Store locally the retrieved secret share
   ...
 } catch (err) {
@@ -445,7 +447,7 @@ verified along with its binding against the commitments as follows.
 import { verifyPedersenCommitments, InvalidSecretShare } from "vsslib";
 
 try {
-  await verifyPedersenCommitments(ctx, commitments, pedersenBase, share, binding);
+  await verifyPedersenCommitments(ctx, commitments, pedersenBase, share, binding, t);
 } catch (err) {
   if (err instanceof InvalidSecretShare) {
     // Follow rejection policy as specified by context
