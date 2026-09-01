@@ -2,7 +2,7 @@ import { Command, Option } from 'commander';
 import { parseDecimal } from './utils';
 import {
   initBackend,
-  randomPublic,
+  derivePedersenBase,
   extractPublic,
   isEqualPublic,
   parseSchnorrPacket,
@@ -130,7 +130,7 @@ async function demo() {
   const { system, nrShares, threshold, verbose } = program.opts();
   const ctx = initBackend(system);
   const parties = initGroup(ctx, nrShares);
-  const pedersenBase = await randomPublic(ctx);
+  const pedersenBase = await derivePedersenBase(ctx);
   const { globalPublic } = await runDKG(parties, nrShares, threshold, pedersenBase);
 
   // All parties should locally recover this global public
