@@ -1,7 +1,8 @@
 import { Point, Group } from './backend';
 import { mod, modInv } from './arith';
 import { FieldPolynomial } from './polynomials';
-import { NoInverseError, InterpolationError } from './errors';
+import { NoInverseError, InterpolationError, InvalidInput } from './errors';
+import { validateIndexes } from './indexes';
 
 
 export type XYPoint = [bigint, bigint] | [number, number];
@@ -13,6 +14,10 @@ export function computeLambda<P extends Point>(
   index: number,
   indexes: number[]
 ): bigint {
+  validateIndexes(indexes);
+  if (!indexes.includes(index)) throw new InvalidInput(
+    `Index not included in indexes: ${index}`
+  );
   const order = ctx.order;
   const i = index;
   let acc = 1n;

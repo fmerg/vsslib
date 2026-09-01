@@ -130,7 +130,9 @@ export class NizkProtocol<P extends Point>{
   }
 
   /* Prove knowledge of `x` such that `v = u ^ x` */
-  proveDlog = async (x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array): Promise<NizkProof> => {
+  proveDlog = async (
+    x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array, extras: Uint8Array[] = [],
+  ): Promise<NizkProof> => {
     return this.proveLinear(
       [x],
       {
@@ -138,10 +140,13 @@ export class NizkProtocol<P extends Point>{
         vs: [v]
       },
       nonce,
+      extras,
     );
   }
 
-  verifyDlog = async ({ u, v }: DlogPair<P>, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
+  verifyDlog = async (
+    { u, v }: DlogPair<P>, proof: NizkProof, nonce?: Uint8Array, extras: Uint8Array[] = [],
+  ): Promise<boolean> => {
     return this.verifyLinear(
       {
         us: [[u]],
@@ -149,6 +154,7 @@ export class NizkProtocol<P extends Point>{
       },
       proof,
       nonce,
+      extras,
     );
   }
 

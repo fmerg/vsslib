@@ -6,6 +6,7 @@ import { Algorithm, SecretShare, PublicShare, SchnorrPacket } from './types';
 
 import { nizk } from './nizk';
 import { computeLambda } from './lagrange';
+import { validateIndex, validateIndexes, indexToBytes } from './indexes';
 
 
 export type Nonces = { [key: number]: Uint8Array };
@@ -20,6 +21,7 @@ export async function combineSecretShares<P extends Point>(
     throw new InvalidInput('Insufficient number of shares');
   const order = ctx.order;
   const indexes = shares.map(share => share.index);
+  validateIndexes(indexes);
   let x = 0n;
   for (const { value, index } of shares) {
     const li = computeLambda(ctx, index, indexes);
@@ -39,6 +41,7 @@ export async function combinePublicShares<P extends Point>(
     throw new InvalidInput('Insufficient number of shares');
   const exp = ctx.exp;
   const indexes = shares.map(share => share.index);
+  validateIndexes(indexes);
   let y = ctx.neutral;
   for (const { value, index } of shares) {
     const li = computeLambda(ctx, index, indexes);
@@ -58,6 +61,7 @@ export async function parseSchnorrPacket<P extends Point>(
   } = {},
 ): Promise<PublicShare> {
   const { value, index, proof } = packet;
+  validateIndex(index);
   const y = await ctx.parsePoint(value)
   const isValid = await nizk(ctx, algorithm).verifyDlog(
     {
@@ -66,6 +70,7 @@ export async function parseSchnorrPacket<P extends Point>(
     },
     proof,
     nonce,
+    [indexToBytes(index)],
   );
   if (!isValid)
     throw new InvalidPublicShare(`Invalid packet with index ${index}`);
@@ -91,6 +96,9 @@ export async function recoverPublic<P extends Point>(
   if (threshold && packets.length < threshold) throw new InvalidInput(
     'Insufficient number of shares'
   );
+  // Malformed or duplicate indexes cannot be attributed to a single
+  // shareholder, so they are rejected regardless of errorOnInvalid
+  validateIndexes(packets.map(packet => packet.index));
   const shares = [];
   const blame = [];
   for (const packet of packets) {
