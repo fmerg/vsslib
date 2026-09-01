@@ -8,6 +8,20 @@ import { nizk } from './nizk';
 import { validateIndex, indexToBytes } from './indexes';
 
 
+/** Parse a Pedersen base, rejecting the neutral element and the generator,
+ * whose discrete logs are known */
+export async function parsePedersenBase<P extends Point>(
+  ctx: Group<P>,
+  pedersenBase: Uint8Array,
+): Promise<P> {
+  const h = await ctx.parsePoint(pedersenBase);
+  if (await h.equals(ctx.neutral) || await h.equals(ctx.generator)) throw new InvalidInput(
+    'Pedersen base must be neither the neutral element nor the generator'
+  );
+  return h;
+}
+
+
 /** Evaluate `Π_j C_j ^ (index ^ j)` in the exponent using Horner's rule,
  * ensuring that there is one commitment per coefficient of a `threshold`-sharing */
 async function evalCommitments<P extends Point>(
@@ -64,7 +78,7 @@ export async function verifyPedersenCommitments<P extends Point>(
   validateIndex(index);
   const exp = ctx.exp;
   const g = ctx.generator;
-  const h = await ctx.parsePoint(pedersenBase);
+  const h = await parsePedersenBase(ctx, pedersenBase);
   const x = await ctx.parseScalar(value);
   const s = await ctx.parseScalar(binding);
   const lhs = await ctx.operate(

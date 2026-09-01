@@ -89,6 +89,11 @@ export class EcGroup extends Group<EcPoint> {
         throw new BadPointError(err.message);
       throw err;
     }
+    // Reject points with a small-order component, which would otherwise
+    // vanish from verification equations for suitable challenges
+    if (!point.wrapped.isTorsionFree()) throw new BadPointError(
+      'bad point: not in prime-order subgroup'
+    );
     return flag;
   }
 

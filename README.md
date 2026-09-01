@@ -621,6 +621,8 @@ backend implementation.
 Vsslib's interface operates with the byte representations of scalars and group
 elements, taking care to always ensure that the involved bytestrings are valid
 representations with respect to the underlying cryptosystem.
+Group elements are moreover required to lie in the prime-order subgroup, so
+that points with a small-order component are rejected.
 
 ### <a name="nizk-overview"></a>Support for NIZK proofs
 

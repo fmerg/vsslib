@@ -3,6 +3,7 @@ import { FieldPolynomial, randomPolynomial } from './polynomials';
 import { InterpolationError, ShamirError, InvalidInput } from './errors';
 
 import { lagrange } from './lagrange';
+import { parsePedersenBase } from './shareholder';
 import { SecretShare, SecretPacket, PublicShare } from './types';
 
 
@@ -85,7 +86,7 @@ export class ShamirSharing<P extends Point> {
     commitments: Uint8Array[],
   }> => {
     const { exp, operate, generator: g } = this.ctx;
-    const h = await this.ctx.parsePoint(pedersenBase);
+    const h = await parsePedersenBase(this.ctx, pedersenBase);
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     const commitments = [];
