@@ -31,9 +31,13 @@ export abstract class Group<P extends Point> {
 
   generateSecret = async (): Promise<Uint8Array> => this.scalarToBytes(await this.randomScalar());
 
-  /** Decode and validate a scalar; throws InvalidInput on invalid bytes */
+  /** Decode and validate a scalar, rejecting non-canonical encodings; throws
+   * InvalidInput on invalid bytes */
   parseScalar = async (bytes: Uint8Array): Promise<bigint> => {
-    const scalar = this.bytesToScalar(bytes);
+    if (bytes.length !== this.scalarBytes) throw new InvalidInput(
+      `Invalid scalar provided: expected ${this.scalarBytes} bytes, got ${bytes.length}`
+    );
+    const scalar = leBytesToInt(bytes);
     try {
       await this.validateScalar(scalar);
     } catch (err: unknown) {
