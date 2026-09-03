@@ -10,6 +10,24 @@ export type DDHTuple<P extends Point> = { u: P, v: P, w: P };
 export type GenericLinear<P extends Point> = { us: P[][], vs: P[] };
 export type NizkProof = { commitment: Uint8Array[], response: Uint8Array[] };
 
+type ProofType = 'linear' | 'dlog' | 'ddh';
+
+
+/** Unambiguous encoding of a sequence of fields, each prefixed by its length */
+function encodeFields(fields: Uint8Array[]): Uint8Array {
+  const lengths = fields.map(f => intToLeBytes(BigInt(f.length), 4));
+  const out = new Uint8Array(fields.reduce((acc, f) => acc + 4 + f.length, 0));
+  let offset = 0;
+  for (const [i, f] of fields.entries()) {
+    out.set(lengths[i], offset);
+    out.set(f, offset + 4);
+    offset += 4 + f.length;
+  }
+  return out;
+}
+
+const encodeCount = (n: number): Uint8Array => intToLeBytes(BigInt(n), 4);
+
 
 export class NizkProtocol<P extends Point>{
   ctx: Group<P>;
@@ -38,30 +56,51 @@ export class NizkProtocol<P extends Point>{
   }
 
   private computeChallenge = async (
-    relation: GenericLinear<P>, commitment: P[], extras: Uint8Array[], nonce?: Uint8Array,
+    type: ProofType,
+    relation: GenericLinear<P>,
+    commitment: P[],
+    extras: Uint8Array[],
+    nonce?: Uint8Array,
   ): Promise<bigint> => {
     const { modulus, order, generator } = this.ctx;
-    const config = [...intToLeBytes(modulus), ...intToLeBytes(order), ...generator.toBytes()];
     const { us, vs } = relation;
-    const statement = [
-      ...us.reduce((acc, ui) => [...acc, ...ui], []),
-      ...vs,
-      ...commitment
-    ].reduce(
-      (acc: number[], p: P) => [...acc, ...p.toBytes()], []
-    );
-    const extrasBytes = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
-    nonce = nonce || Uint8Array.from([]);
-    const digest = await hash(this.algorithm).digest(
-      Uint8Array.from([
-        ...config, ...statement, ...extrasBytes, ...nonce
-      ])
-    );
+    const toBytes = (p: P) => p.toBytes();
+    const input = encodeFields([
+      new TextEncoder().encode(`vsslib:nizk:${type}`),
+      intToLeBytes(modulus),
+      intToLeBytes(order),
+      generator.toBytes(),
+      encodeCount(us.length),
+      ...us.flatMap(ui => [encodeCount(ui.length), ...ui.map(toBytes)]),
+      encodeCount(vs.length),
+      ...vs.map(toBytes),
+      encodeCount(commitment.length),
+      ...commitment.map(toBytes),
+      encodeCount(extras.length),
+      ...extras,
+      nonce || new Uint8Array(),
+    ]);
+    const digest = await hash(this.algorithm).digest(input);
     return mod(leBytesToInt(digest), order);
   }
 
   /* Prove knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` */
   proveLinear = async (
+    witness: bigint[],
+    relation: GenericLinear<P>,
+    nonce?: Uint8Array,
+    extras: Uint8Array[] = [],
+  ): Promise<NizkProof> => this.prove('linear', witness, relation, nonce, extras);
+
+  verifyLinear = async (
+    relation: GenericLinear<P>,
+    proof: NizkProof,
+    nonce?: Uint8Array,
+    extras: Uint8Array[] = [],
+  ): Promise<boolean> => this.verify('linear', relation, proof, nonce, extras);
+
+  private prove = async (
+    type: ProofType,
     witness: bigint[],
     relation: GenericLinear<P>,
     nonce?: Uint8Array,
@@ -88,7 +127,7 @@ export class NizkProtocol<P extends Point>{
       commitment[i] = ci;
     }
     const challenge = await this.computeChallenge(
-      relation, commitment, extras, nonce
+      type, relation, commitment, extras, nonce
     );
     const response = new Array(n);
     for (const [j, x] of witness.entries()) {
@@ -97,7 +136,8 @@ export class NizkProtocol<P extends Point>{
     return this.packProof({ commitment, response });
   }
 
-  verifyLinear = async (
+  private verify = async (
+    type: ProofType,
     relation: GenericLinear<P>,
     proof: NizkProof,
     nonce?: Uint8Array,
@@ -108,7 +148,7 @@ export class NizkProtocol<P extends Point>{
     const { commitment, response } = await this.unpackProof(proof);
     if (vs.length !== commitment.length)
       throw new InvalidInput('Incompatible lengths');
-    const challenge = await this.computeChallenge(relation, commitment, extras, nonce);
+    const challenge = await this.computeChallenge(type, relation, commitment, extras, nonce);
     let flag = true;
     for (const [i, v] of vs.entries()) {
       if (us[i].length !== response.length)
@@ -133,7 +173,8 @@ export class NizkProtocol<P extends Point>{
   proveDlog = async (
     x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array, extras: Uint8Array[] = [],
   ): Promise<NizkProof> => {
-    return this.proveLinear(
+    return this.prove(
+      'dlog',
       [x],
       {
         us: [[u]],
@@ -147,7 +188,8 @@ export class NizkProtocol<P extends Point>{
   verifyDlog = async (
     { u, v }: DlogPair<P>, proof: NizkProof, nonce?: Uint8Array, extras: Uint8Array[] = [],
   ): Promise<boolean> => {
-    return this.verifyLinear(
+    return this.verify(
+      'dlog',
       {
         us: [[u]],
         vs: [v]
@@ -162,7 +204,8 @@ export class NizkProtocol<P extends Point>{
   proveDDH = async (z: bigint, { u, v, w }: DDHTuple<P>, nonce?: Uint8Array): Promise<NizkProof> => {
     const g = this.ctx.generator;
     const n = this.ctx.neutral;
-    return this.proveLinear(
+    return this.prove(
+      'ddh',
       [z, z],
       {
         us: [[g, n], [n, u]],
@@ -175,7 +218,8 @@ export class NizkProtocol<P extends Point>{
   verifyDDH = async ({ u, v, w }: DDHTuple<P>, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     const g = this.ctx.generator;
     const n = this.ctx.neutral;
-    return this.verifyLinear(
+    return this.verify(
+      'ddh',
       {
         us: [[g, n], [n, u]],
         vs: [v, w]
