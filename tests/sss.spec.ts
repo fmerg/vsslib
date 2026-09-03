@@ -130,6 +130,18 @@ describe('Shamir secret sharing', () => {
     );
   });
   it.each(systems)(
+    'error - duplicate or non-integer predefined indexes - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const value1 = (await randomSecret(ctx)).secret;
+    const value2 = (await randomSecret(ctx)).secret;
+    await expect(
+      shareSecret(ctx, 4, 3, undefined, [{ index: 1, value: value1 }, { index: 1, value: value2 }])
+    ).rejects.toThrow('Indexes must be distinct');
+    await expect(
+      shareSecret(ctx, 4, 3, undefined, [{ index: 1.5, value: value1 }])
+    ).rejects.toThrow('Index must be a positive integer');
+  });
+  it.each(systems)(
     'error - predefined not in range - over %s', async (system) => {
     const ctx = initBackend(system);
     const value = (await randomSecret(ctx)).secret;

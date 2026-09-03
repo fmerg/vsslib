@@ -202,7 +202,7 @@ const { sharing } = await shareSecret(ctx, n, t, secret, [
 
 > **Warning**
 > Throws error if the predefined shares are not less than `t`, or any of the
-> provided indices in not in the range `(0,..., t - 1]`, or any of the provided
+> provided indices in not in the range `(0,..., t - 1]` or is repeated, or any of the provided
 > values is not a valid byte representation with respect to the underlying
 > cryptosystem.
 
