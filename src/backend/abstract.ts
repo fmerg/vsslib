@@ -24,8 +24,6 @@ export abstract class Group<P extends Point> {
     this.scalarBytes = Math.ceil(order.toString(2).length / 8);
   }
 
-  bytesToScalar = (bytes: Uint8Array): bigint => mod(leBytesToInt(bytes), this.order);
-
   /** Fixed-length little-endian encoding of a scalar reduced modulo the group order */
   scalarToBytes = (scalar: bigint): Uint8Array => intToLeBytes(mod(scalar, this.order), this.scalarBytes);
 

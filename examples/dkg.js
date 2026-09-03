@@ -107,7 +107,7 @@ export async function runDKG(parties, nrShares, threshold, pedersenBase) {
   }
 
   for (let party of parties) {
-    party.doLocal();
+    await party.doLocal();
   }
 
   for (let sender of parties) {

@@ -12,6 +12,7 @@ import {
 } from 'vsslib/secrets';
 import { initBackend } from 'vsslib/backend';
 import { intToLeBytes } from 'vsslib/arith';
+import { InvalidInput } from 'vsslib/errors';
 
 import { resolveTestConfig } from './environ';
 
@@ -25,7 +26,7 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     expect(await isKeypair(ctx, secret, publicBytes)).toBe(true);
 
     const g = ctx.generator;
-    const x = ctx.bytesToScalar(secret);
+    const x = await parseScalar(ctx, secret);
     const y = await parsePoint(ctx, publicBytes);
     expect(await y.equals(await ctx.exp(g, x))).toBe(true);
   });
@@ -38,7 +39,7 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     expect(await isEqualPublic(ctx, publicBytes, targetPublic)).toBe(true);
 
     const g = ctx.generator;
-    const x = ctx.bytesToScalar(secret);
+    const x = await parseScalar(ctx, secret);
     const y = await parsePoint(ctx, publicBytes);
     expect(await y.equals(await ctx.exp(g, x))).toBe(true);
   });
@@ -67,7 +68,7 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     const ctx = initBackend(system);
     const { secret } = await randomSecret(ctx);
     const scalar = await parseScalar(ctx, secret);
-    expect(await isEqualSecret(ctx, intToLeBytes(scalar), secret)).toBe(true);
+    expect(await isEqualSecret(ctx, ctx.scalarToBytes(scalar), secret)).toBe(true);
   });
   it.each(systems)('public-to-point roundtrip - over %s', async (system) => {
     const ctx = initBackend(system);
@@ -89,7 +90,7 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     // Examine zero secrets edge case
     const zeroSum = await addSecrets(ctx, []);
     const unitPublic = await addPublics(ctx, []);
-    expect(await isEqualSecret(ctx, zeroSum, intToLeBytes(BigInt(0))));
+    expect(zeroSum).toEqual(ctx.scalarToBytes(0n));
     expect(await isEqualPublic(ctx, unitPublic, ctx.neutral.toBytes())).toBe(true);
 
     // Examine single secret edge case
@@ -99,12 +100,32 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     expect(await isEqualPublic(ctx, clonePublic, publics[0])).toBe(true);
 
     // Check commutation between addition of secrets and combination of publics
-    for (let nr = 0; nr < nrTotal; nr++) {
+    for (let nr = 1; nr < nrTotal; nr++) {
       const secretSum = await addSecrets(ctx, secrets.slice(0, nr));
       const targetPublic = await extractPublic(ctx, secretSum);
       const overallPublic = await addPublics(ctx, publics.slice(0, nr))
       expect(await isEqualPublic(ctx, overallPublic, targetPublic)).toBe(true);
     }
   });
+  it.each(systems)('non-canonical secrets are rejected - over %s', async (system) => {
+    // Lenient decoding would accept many encodings per secret, e.g. s + q or
+    // trailing zero bytes, and the zero secret, whose public is the neutral element
+    const ctx = initBackend(system);
+    const { order: q, scalarBytes: len } = ctx;
+    const { secret, publicBytes } = await randomSecret(ctx);
+    const s = await parseScalar(ctx, secret);
+    const sameLength = s + q < (1n << BigInt(8 * len)) ? [intToLeBytes(s + q, len)] : [];
+    const encodings = [
+      ...sameLength,
+      intToLeBytes(s, len + 1),
+      intToLeBytes(0n, len),
+      intToLeBytes(q, len),
+    ];
+    for (const bytes of encodings) {
+      await expect(extractPublic(ctx, bytes)).rejects.toThrow(InvalidInput);
+      await expect(isKeypair(ctx, bytes, publicBytes)).rejects.toThrow(InvalidInput);
+      await expect(isEqualSecret(ctx, bytes, secret)).rejects.toThrow(InvalidInput);
+      await expect(addSecrets(ctx, [secret, bytes])).rejects.toThrow(InvalidInput);
+    }
+  });
 })
-
