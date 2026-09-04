@@ -2,7 +2,7 @@ import { Command, Option } from 'commander';
 import { parseDecimal } from './utils';
 import {
   initBackend,
-  randomPublic,
+  derivePedersenBase,
   extractPublic,
   isEqualPublic,
   parseSchnorrPacket,
@@ -51,9 +51,9 @@ class DkgParty extends Party {
     return this.sharing.createPedersenPackets(pedersenBase);
   }
 
-  doParseVss = async (commitments, pedersenBase, packet) => {
+  doParseVss = async (commitments, pedersenBase, packet, threshold) => {
     const { share, binding } = await parsePedersenPacket(
-      this.ctx, commitments, pedersenBase, packet
+      this.ctx, commitments, pedersenBase, packet, threshold
     );
     this.aggregates.push(share);
   }
@@ -75,8 +75,8 @@ class DkgParty extends Party {
     this.publicShares.push(publicShare);
   }
 
-  doGlobal = async () => {
-    this.globalPublic = await combinePublicShares(this.ctx, this.publicShares);
+  doGlobal = async (threshold) => {
+    this.globalPublic = await combinePublicShares(this.ctx, this.publicShares, threshold);
   }
 }
 
@@ -101,13 +101,13 @@ export async function runDKG(parties, nrShares, threshold, pedersenBase) {
     const { packets, commitments } = await party.doBroadcast(pedersenBase);
     for (const packet of packets) {
       const recipient = selectParty(packet.index, parties);
-      await recipient.doParseVss(commitments, pedersenBase, packet);
+      await recipient.doParseVss(commitments, pedersenBase, packet, threshold);
     }
     console.timeEnd(`DISTRIBUTION ${party.index}`);
   }
 
   for (let party of parties) {
-    party.doLocal();
+    await party.doLocal();
   }
 
   for (let sender of parties) {
@@ -119,7 +119,7 @@ export async function runDKG(parties, nrShares, threshold, pedersenBase) {
   }
 
   for (let party of parties) {
-    await party.doGlobal();
+    await party.doGlobal(threshold);
   }
 
   return { globalPublic: parties[0].globalPublic };
@@ -130,7 +130,7 @@ async function demo() {
   const { system, nrShares, threshold, verbose } = program.opts();
   const ctx = initBackend(system);
   const parties = initGroup(ctx, nrShares);
-  const pedersenBase = await randomPublic(ctx);
+  const pedersenBase = await derivePedersenBase(ctx);
   const { globalPublic } = await runDKG(parties, nrShares, threshold, pedersenBase);
 
   // All parties should locally recover this global public

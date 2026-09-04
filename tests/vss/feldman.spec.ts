@@ -22,10 +22,11 @@ describe('Feldman VSS scheme', () => {
         ctx,
         commitments,
         share,
+        threshold,
       );
       expect(isValid).toBe(true);
       // Check parsing
-      const packet = await parseFeldmanPacket(ctx, commitments, packets[index - 1]);
+      const packet = await parseFeldmanPacket(ctx, commitments, packets[index - 1], threshold);
       expect(isEqualBuffer(packet.share.value, share.value)).toBe(true);
     });
   });
@@ -42,12 +43,35 @@ describe('Feldman VSS scheme', () => {
         ctx,
         commitments,
         share,
+        threshold,
       );
       await expect(verification).rejects.toThrow('Invalid share');
       // Check parsing failure
-      const parsed = parseFeldmanPacket(ctx, commitments, packets[share.index - 1]);
+      const parsed = parseFeldmanPacket(ctx, commitments, packets[share.index - 1], threshold);
       await expect(parsed).rejects.toThrow('Invalid share');
     });
+  });
+  it.each(systems)('commitment count must match threshold over %s', async (system) => {
+    // A dealer announcing threshold t but sharing with another degree must be
+    // caught: with t + 1 commitments every share verifies, yet t shares cannot
+    // reconstruct the secret
+    const ctx = initBackend(system);
+    for (const actual of [threshold - 1, threshold + 1].filter(t => t > 0)) {
+      const { sharing } = await shareSecret(ctx, nrShares + 1, actual);
+      const { packets, commitments } = await sharing.createFeldmanPackets();
+      for (const packet of packets) {
+        await expect(
+          parseFeldmanPacket(ctx, commitments, packet, threshold)
+        ).rejects.toThrow('Invalid number of commitments');
+      }
+    }
+    const { sharing } = await shareSecret(ctx, nrShares, threshold);
+    const { packets, commitments } = await sharing.createFeldmanPackets();
+    for (const bad of [0, 1.5, -1]) {
+      await expect(
+        parseFeldmanPacket(ctx, commitments, packets[0], bad)
+      ).rejects.toThrow('Threshold must be a positive integer');
+    }
   });
   it.each(systems)('success with large indexes over %s', async (system) => {
     // index ** j exceeds Number.MAX_SAFE_INTEGER for these parameters
@@ -55,7 +79,7 @@ describe('Feldman VSS scheme', () => {
     const { sharing } = await shareSecret(ctx, 20, 17);
     const { packets, commitments } = await sharing.createFeldmanPackets();
     for (const packet of packets) {
-      await expect(verifyFeldmanCommitments(ctx, commitments, packet)).resolves.toBe(true);
+      await expect(verifyFeldmanCommitments(ctx, commitments, packet, 17)).resolves.toBe(true);
     }
   });
 })

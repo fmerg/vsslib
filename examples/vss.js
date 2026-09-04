@@ -3,7 +3,7 @@ import { parseDecimal, parseCommaSeparatedDecimals } from './utils';
 import { VssSchemes, Party, Combiner, selectParty } from './infra';
 import {
   initBackend,
-  randomPublic,
+  derivePedersenBase,
   isKeypair,
   shareSecret,
   parseFeldmanPacket,
@@ -26,7 +26,7 @@ export async function runVSS(ctx, nrShares, threshold, scheme) {
   const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
   let pedersenBase;
   if (scheme == VssSchemes.PEDERSEN) {
-      pedersenBase = await randomPublic(ctx);
+      pedersenBase = await derivePedersenBase(ctx);
   }
   const { commitments, packets } = (scheme == VssSchemes.FELDMAN) ?
     await sharing.createFeldmanPackets() :
@@ -35,11 +35,11 @@ export async function runVSS(ctx, nrShares, threshold, scheme) {
 }
 
 class VssParty extends Party {
-  consumeVssPacket = async (packet, commitments, pedersenBase) => {
+  consumeVssPacket = async (packet, commitments, pedersenBase, threshold) => {
     try {
       const { share } = !pedersenBase ?
-        await parseFeldmanPacket(this.ctx, commitments, packet) :
-        await parsePedersenPacket(this.ctx, commitments, pedersenBase, packet);
+        await parseFeldmanPacket(this.ctx, commitments, packet, threshold) :
+        await parsePedersenPacket(this.ctx, commitments, pedersenBase, packet, threshold);
       this.share = share;
     } catch (err) {
       if (err instanceof InvalidSecretShare) {
@@ -78,7 +78,7 @@ async function demo() {
   // Shareholders verify the received packets and extract their respective share
   for (const packet of packets) {
     const recipient = selectParty(packet.index, parties);
-    await recipient.consumeVssPacket(packet, commitments, pedersenBase);
+    await recipient.consumeVssPacket(packet, commitments, pedersenBase, t);
   }
 
   // Public recovery phase ----------------------------------------------------
@@ -97,7 +97,7 @@ async function demo() {
   // public shares and applies interpolation in the exponent in order to
   // recover the public counterpart of the original secret
   try {
-    const { recovered: recoveredPublic } = await recoverPublic(ctx, combiner.aggreagated);
+    const { recovered: recoveredPublic } = await recoverPublic(ctx, combiner.aggreagated, t);
     // Check consistency with original secret
     const ok = await isKeypair(ctx, secret, recoveredPublic);
     console.log({ ok });

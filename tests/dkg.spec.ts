@@ -3,7 +3,7 @@ import { Group, Point } from 'vsslib/backend';
 import { ShamirSharing } from 'vsslib/dealer';
 import { SecretShare, PublicShare } from 'vsslib/types';
 import {
-  randomPublic,
+  derivePedersenBase,
   extractPublic,
   isEqualPublic,
   shareSecret,
@@ -50,7 +50,7 @@ describe('Distributed Key Generation (DKG)', () => {
     const ctx = initBackend(system);
 
     // Public reference for Pedersen VSS Scheme
-    const pedersenBase = await randomPublic(ctx);
+    const pedersenBase = await derivePedersenBase(ctx);
 
     // Involved parties initialization
     const parties = [];
@@ -70,7 +70,7 @@ describe('Distributed Key Generation (DKG)', () => {
       for (const packet of packets) {
         const recipient = selectParty(packet.index, parties);
         const { share, binding } = await parsePedersenPacket(
-          ctx, commitments, pedersenBase, packet
+          ctx, commitments, pedersenBase, packet, threshold
         );
         recipient.aggregates.push(share);
       }
@@ -94,7 +94,7 @@ describe('Distributed Key Generation (DKG)', () => {
     const targetGlobalPublic = await addPublics(ctx, parties.map(p => p.originalPublic!));
     // Local recovery of combined public
     for (let party of parties) {
-      party.globalPublic = await combinePublicShares(ctx, party.publicShares);
+      party.globalPublic = await combinePublicShares(ctx, party.publicShares, threshold);
       // Check consistency
       expect(await isEqualPublic(ctx, party.globalPublic, targetGlobalPublic)).toBe(true);
     }

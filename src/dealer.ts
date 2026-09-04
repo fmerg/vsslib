@@ -3,6 +3,8 @@ import { FieldPolynomial, randomPolynomial } from './polynomials';
 import { InterpolationError, ShamirError, InvalidInput } from './errors';
 
 import { lagrange } from './lagrange';
+import { parsePedersenBase } from './shareholder';
+import { validateIndexes } from './indexes';
 import { SecretShare, SecretPacket, PublicShare } from './types';
 
 
@@ -85,7 +87,7 @@ export class ShamirSharing<P extends Point> {
     commitments: Uint8Array[],
   }> => {
     const { exp, operate, generator: g } = this.ctx;
-    const h = await this.ctx.parsePoint(pedersenBase);
+    const h = await parsePedersenBase(this.ctx, pedersenBase);
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     const commitments = [];
@@ -134,10 +136,13 @@ export async function shareSecret<P extends Point>(
     const scalarSecret = await ctx.parseScalar(secret);
     xyPoints[0] = [0n, scalarSecret];
     // Allocate predefined shares
-    for (const { index, value } of predefined) {
+    for (const { index } of predefined) {
       if (!(0 < index && index < threshold)) {
         throw new InvalidInput(`Index not in range: ${index}`);
       }
+    }
+    validateIndexes(predefined.map(share => share.index));
+    for (const { index, value } of predefined) {
       const x = index;
       const y = await ctx.parseScalar(value);
       xyPoints[index] = [x, y];

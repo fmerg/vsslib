@@ -24,16 +24,18 @@ export abstract class Group<P extends Point> {
     this.scalarBytes = Math.ceil(order.toString(2).length / 8);
   }
 
-  bytesToScalar = (bytes: Uint8Array): bigint => mod(leBytesToInt(bytes), this.order);
-
   /** Fixed-length little-endian encoding of a scalar reduced modulo the group order */
   scalarToBytes = (scalar: bigint): Uint8Array => intToLeBytes(mod(scalar, this.order), this.scalarBytes);
 
   generateSecret = async (): Promise<Uint8Array> => this.scalarToBytes(await this.randomScalar());
 
-  /** Decode and validate a scalar; throws InvalidInput on invalid bytes */
+  /** Decode and validate a scalar, rejecting non-canonical encodings; throws
+   * InvalidInput on invalid bytes */
   parseScalar = async (bytes: Uint8Array): Promise<bigint> => {
-    const scalar = this.bytesToScalar(bytes);
+    if (bytes.length !== this.scalarBytes) throw new InvalidInput(
+      `Invalid scalar provided: expected ${this.scalarBytes} bytes, got ${bytes.length}`
+    );
+    const scalar = leBytesToInt(bytes);
     try {
       await this.validateScalar(scalar);
     } catch (err: unknown) {
@@ -68,5 +70,7 @@ export abstract class Group<P extends Point> {
   abstract operate: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;
   abstract bytesToPoint: (bytes: Uint8Array) => P;
+  /** Hash to a point of the prime-order subgroup whose discrete log is unknown */
+  abstract hashToPoint: (msg: Uint8Array, dst: Uint8Array) => Promise<P>;
 }
 

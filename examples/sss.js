@@ -26,12 +26,12 @@ async function demo() {
 
   // Combine secret shares
   const secretShares = (await sharing.getSecretShares()).filter(s => qualified.includes(s.index));
-  const combinedSecret = await combineSecretShares(ctx, secretShares);
+  const combinedSecret = await combineSecretShares(ctx, secretShares, t);
   console.log(await isEqualSecret(ctx, combinedSecret, secret));
 
   // Combine public shares
   const publicShares = (await sharing.getPublicShares()).filter(s => qualified.includes(s.index));
-  const combinedPublic = await combinePublicShares(ctx, publicShares);
+  const combinedPublic = await combinePublicShares(ctx, publicShares, t);
   console.log(await isKeypair(ctx, secret, combinedPublic));
 }
 
