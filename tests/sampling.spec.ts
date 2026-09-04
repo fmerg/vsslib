@@ -9,7 +9,7 @@ describe('Scalar sampling', () => {
     // Reducing N = 2^(8 * Fp.BYTES) random bits modulo q makes values below
     // N mod q more likely; on jubjub the excess is about 1.4% of the samples
     const ctx = initBackend(system);
-    const Fp = ctx.curve.Point.Fp;
+    const Fp = ctx.Point.Fp;
     const q = ctx.order;
     const rem = (1n << BigInt(8 * Fp.BYTES)) % q;
     const p = Number((rem * 1_000_000n) / q) / 1_000_000;

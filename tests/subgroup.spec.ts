@@ -17,7 +17,7 @@ const { systems, nrShares, threshold } = resolveTestConfig();
 
 /** The point (0, -1), which has order 2 on all supported curves */
 const orderTwoPoint = (ctx: EcGroup) => {
-  const Point = ctx.curve.Point;
+  const Point = ctx.Point;
   return Point.fromAffine({ x: 0n, y: Point.Fp.ORDER - 1n });
 }
 
