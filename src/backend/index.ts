@@ -4,17 +4,11 @@ import { BadGroupError } from '../errors';
 export { Group, Point } from './abstract'
 import { initElliptic } from './elliptic';
 
-export function initBackend(system: System | string) {
-  system  = system as System;
+const ELLIPTIC = new Set<string>(Object.values(Elliptic));
 
-  switch (system) {
-    case Elliptic.ED25519:
-    case Elliptic.ED448:
-    case Elliptic.JUBJUB:
-      return initElliptic(system);
-    default:
-      throw new BadGroupError(
-        `Unsupported group: ${system}`
-    );
-  }
+export function initBackend(system: System | string) {
+  if (ELLIPTIC.has(system)) return initElliptic(system as Elliptic);
+  throw new BadGroupError(
+    `Unsupported group: ${system}`
+  );
 }
