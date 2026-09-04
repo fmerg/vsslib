@@ -166,7 +166,7 @@ describe('Shamir secret sharing', () => {
     expect(sharing.getOriginalSecret()).toEqual(secret);
     const shares = await sharing.getSecretShares();
     shares.forEach(share => expect(share.value.length).toEqual(ctx.scalarBytes));
-    const combined = await combineSecretShares(ctx, shares.slice(0, t));
+    const combined = await combineSecretShares(ctx, shares.slice(0, t), t);
     expect(combined).toEqual(secret);
   });
 })

@@ -52,7 +52,7 @@ describe('Prime-order subgroup validation', () => {
     await expect(parseSchnorrPacket(ctx, forged)).rejects.toThrow(InvalidInput);
     for (const errorOnInvalid of [true, false]) {
       await expect(
-        recoverPublic(ctx, [forged, ...packets.slice(1)], { errorOnInvalid })
+        recoverPublic(ctx, [forged, ...packets.slice(1)], threshold, { errorOnInvalid })
       ).rejects.toThrow('not in prime-order subgroup');
     }
   });

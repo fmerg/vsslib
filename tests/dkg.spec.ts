@@ -94,7 +94,7 @@ describe('Distributed Key Generation (DKG)', () => {
     const targetGlobalPublic = await addPublics(ctx, parties.map(p => p.originalPublic!));
     // Local recovery of combined public
     for (let party of parties) {
-      party.globalPublic = await combinePublicShares(ctx, party.publicShares);
+      party.globalPublic = await combinePublicShares(ctx, party.publicShares, threshold);
       // Check consistency
       expect(await isEqualPublic(ctx, party.globalPublic, targetGlobalPublic)).toBe(true);
     }
