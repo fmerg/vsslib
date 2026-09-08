@@ -4,13 +4,10 @@ export enum Elliptic {
   JUBJUB    = 'jubjub',
   RISTRETTO255 = 'ristretto255',
   DECAF448  = 'decaf448',
-  // SECP256K1 = 'secp256k1',
-  // PALLAS    = 'pallas',
-  // VESTA     = 'vesta',
-  // P256      = 'p256',
-  // P384      = 'p384',
-  // P521      = 'p521',
-  // BN254     = 'bn254',
+  SECP256K1 = 'secp256k1',
+  P256      = 'p256',
+  P384      = 'p384',
+  P521      = 'p521',
 }
 
 export const Systems = {
