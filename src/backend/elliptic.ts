@@ -18,12 +18,20 @@ type _CurvePoint = CurvePoint<bigint, any>;
 type _PointCons = CurvePointCons<_CurvePoint>;
 
 
+type _Codec = {
+  toBytes: (point: _CurvePoint) => Uint8Array,
+  fromBytes: (bytes: Uint8Array) => _CurvePoint,
+};
+
+
 class EcPoint implements Point {
   wrapped: _CurvePoint;
-  toBytes = (): Uint8Array => this.wrapped.toBytes();
+  private encode: _Codec['toBytes'];
+  toBytes = (): Uint8Array => this.encode(this.wrapped);
 
-  constructor(wrapped: _CurvePoint) {
+  constructor(wrapped: _CurvePoint, encode: _Codec['toBytes']) {
     this.wrapped = wrapped;
+    this.encode = encode;
   }
 
   equals = async <Q extends Point>(other: Q): Promise<boolean> => {
@@ -40,6 +48,13 @@ type _HashToCurve = (msg: Uint8Array, dst: Uint8Array) => _CurvePoint;
 const JUBJUB_PERSONALIZATION = asciiToBytes('vsslib_H');
 
 
+/** Encoding native to noble, e.g. RFC 8032 for Edwards curves */
+const nobleCodec = (Point: _PointCons): _Codec => ({
+  toBytes: (point) => point.toBytes(),
+  fromBytes: (bytes) => Point.fromBytes(bytes),
+});
+
+
 const jubjubHashToCurve: _HashToCurve = (msg, dst) => {
   if (dst.length > 255) throw new Error('DST too long');
   return jubjub_findGroupHash(
@@ -52,21 +67,25 @@ export class EcGroup extends Group<EcPoint> {
   private base: _CurvePoint;
   private zero: _CurvePoint;
   private hashToCurve: _HashToCurve;
+  private codec: _Codec;
   Point: _PointCons;
 
-  constructor(system: System, Point: _PointCons, hashToCurve: _HashToCurve) {
+  constructor(system: System, Point: _PointCons, hashToCurve: _HashToCurve, codec: _Codec) {
     const modulus = Point.Fp.ORDER;
     const order = Point.Fn.ORDER;
     const base = Point.BASE;
     const zero = Point.ZERO;
-    const generator = new EcPoint(base);
-    const neutral = new EcPoint(zero);
+    const generator = new EcPoint(base, codec.toBytes);
+    const neutral = new EcPoint(zero, codec.toBytes);
     super(system, modulus, order, generator, neutral);
     this.base = base;
     this.zero = zero;
     this.Point = Point;
     this.hashToCurve = hashToCurve;
+    this.codec = codec;
   }
+
+  private wrap = (point: _CurvePoint): EcPoint => new EcPoint(point, this.codec.toBytes);
 
   // Reduce 128 extra bits modulo the order, so that the bias is negligible
   randomScalar = async (): Promise<bigint> => mod(
@@ -74,7 +93,7 @@ export class EcGroup extends Group<EcPoint> {
     this.order
   );
 
-  randomPoint = async (): Promise<EcPoint> => new EcPoint(
+  randomPoint = async (): Promise<EcPoint> => this.wrap(
     this.base.multiply(await this.randomScalar())
   );
 
@@ -101,22 +120,22 @@ export class EcGroup extends Group<EcPoint> {
     return flag;
   }
 
-  exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => new EcPoint(
+  exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => this.wrap(
     scalar !== 0n ? point.wrapped.multiply(scalar) : this.zero
   );
 
-  operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => new EcPoint(
+  operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => this.wrap(
     lhs.wrapped.add(rhs.wrapped)
   );
 
-  invert = async (point: EcPoint): Promise<EcPoint> => new EcPoint(
+  invert = async (point: EcPoint): Promise<EcPoint> => this.wrap(
     point.wrapped.negate()
   );
 
   bytesToPoint = (bytes: Uint8Array): EcPoint => {
     let point;
     try {
-      point = new EcPoint(this.Point.fromBytes(bytes));
+      point = this.wrap(this.codec.fromBytes(bytes));
     } catch (err: unknown) {
       if (err instanceof Error) {
         throw new BadPointError(`bad encoding: ${err.message}`)
@@ -126,14 +145,17 @@ export class EcGroup extends Group<EcPoint> {
     return point;
   }
 
-  hashToPoint = async (msg: Uint8Array, dst: Uint8Array): Promise<EcPoint> => new EcPoint(
+  hashToPoint = async (msg: Uint8Array, dst: Uint8Array): Promise<EcPoint> => this.wrap(
     this.hashToCurve(msg, dst)
   );
 }
 
 
-/** Supported curves; a new system needs an Elliptic member and an entry here */
-const CURVES: Record<Elliptic, { Point: _PointCons, hashToCurve: _HashToCurve }> = {
+/** Supported curves; a new system needs an Elliptic member and an entry here.
+ * The codec defaults to noble's native encoding */
+const CURVES: Record<Elliptic, {
+  Point: _PointCons, hashToCurve: _HashToCurve, codec?: (Point: _PointCons) => _Codec
+}> = {
   [Elliptic.ED25519]: {
     Point: ed25519.Point,
     hashToCurve: (msg, DST) => ed25519_hasher.hashToCurve(msg, { DST }),
@@ -158,6 +180,6 @@ const CURVES: Record<Elliptic, { Point: _PointCons, hashToCurve: _HashToCurve }>
 
 
 export function initElliptic(system: Elliptic): EcGroup {
-  const { Point, hashToCurve } = CURVES[system];
-  return new EcGroup(system, Point, hashToCurve);
+  const { Point, hashToCurve, codec = nobleCodec } = CURVES[system];
+  return new EcGroup(system, Point, hashToCurve, codec(Point));
 }
