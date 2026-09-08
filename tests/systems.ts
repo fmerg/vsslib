@@ -1,5 +1,5 @@
-import { ed25519 } from '@noble/curves/ed25519.js';
-import { ed448 } from '@noble/curves/ed448.js';
+import { ed25519, ristretto255 } from '@noble/curves/ed25519.js';
+import { ed448, decaf448 } from '@noble/curves/ed448.js';
 import { jubjub } from '@noble/curves/misc.js';
 import { System } from 'vsslib/types';
 
@@ -12,11 +12,32 @@ const leBytes = (value: bigint, length: number): Uint8Array => {
 }
 
 
+const leInt = (bytes: Uint8Array): bigint => bytes.reduceRight(
+  (acc, byte) => (acc << 8n) | BigInt(byte), 0n
+);
+
+
+type _PointCons = { Fp: { ORDER: bigint }, ZERO: { toBytes(): Uint8Array }, BASE: { toBytes(): Uint8Array } };
+
+
 /** Encodings of the neutral element with a field element left unreduced, i.e.
  * x + p in place of x; non-canonical, so they must be rejected */
-const unreducedNeutral = (Point: typeof ed25519.Point, x: bigint): Uint8Array[] => [
+const unreducedNeutral = (Point: _PointCons, x: bigint): Uint8Array[] => [
   leBytes(Point.Fp.ORDER + x, Point.ZERO.toBytes().length),
 ];
+
+
+/** Non-canonical encodings for ristretto255 and decaf448, which encode a
+ * non-negative field element s: s = p for the neutral element, and p - s
+ * (negative) for the generator */
+const primeOrderNonCanonical = (Point: _PointCons): Uint8Array[] => {
+  const p = Point.Fp.ORDER;
+  const length = Point.BASE.toBytes().length;
+  return [
+    ...unreducedNeutral(Point, 0n),
+    leBytes(p - leInt(Point.BASE.toBytes()), length),
+  ];
+}
 
 
 /** Encoding of the point (0, -1), which has order 2 on twisted Edwards curves */
@@ -59,5 +80,16 @@ export const fixtures: Record<System, SystemFixture> = {
     smallOrderPoint: edwardsOrderTwo(jubjub.Point),
     // y = 1 + p
     nonCanonicalPoints: unreducedNeutral(jubjub.Point, 1n),
+  },
+  ristretto255: {
+    scalarBytes: 32,
+    defaultPedersenBase: 'a24deccc7db99bb9c3f0a913f14197e91d5f63ac34db72f2ef0feec65bfb8b19',
+    nonCanonicalPoints: primeOrderNonCanonical(ristretto255.Point),
+  },
+  decaf448: {
+    scalarBytes: 56,
+    defaultPedersenBase: '74af30c8f1ba4f634abc0dd7a46bee804c023e0634a207808f4ece367b50d7b0' +
+      '0d5eb9722a3a5c58be2827e6392a5b3ddcfa845ad3b33419',
+    nonCanonicalPoints: primeOrderNonCanonical(decaf448.Point),
   },
 };

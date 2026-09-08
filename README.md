@@ -126,7 +126,7 @@ import { initBackend } from "vsslib";
 const ctx = initBackend("ed25519");
   ```
 
-The currently provided backends are  `ed25519`, `ed448` and `jubjub`.
+The currently provided backends are `ed25519`, `ed448`, `jubjub`, `ristretto255` and `decaf448`.
 
 > **Note**
 > You can use any custom or other implementation,
