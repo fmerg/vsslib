@@ -2,6 +2,7 @@ import { Point } from 'vsslib/backend';
 import { Systems } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
 import { resolveTestConfig } from './environ';
+import { fixtures } from './systems';
 
 const __0n = BigInt(0)
 const __1n = BigInt(1)
@@ -165,4 +166,32 @@ describe('scalar validation', () => {
       'Scalar not in range'
     );
   })
+});
+
+describe('canonical encoding', () => {
+  it.each(systems)('roundtrip over %s', async (system) => {
+    const ctx = initBackend(system);
+    const points = [ctx.neutral, ctx.generator, await ctx.randomPoint()];
+    for (const p of points) {
+      const bytes = p.toBytes();
+      const q = await ctx.parsePoint(bytes);
+      expect(await q.equals(p)).toBe(true);
+      expect(q.toBytes()).toEqual(bytes);
+    }
+  });
+  it.each(systems)('known non-canonical encodings rejected over %s', async (system) => {
+    const ctx = initBackend(system);
+    for (const bytes of fixtures[system].nonCanonicalPoints) {
+      await expect(ctx.parsePoint(bytes)).rejects.toThrow('Invalid point provided');
+    }
+  });
+  it.each(systems)('non-canonical encodings rejected over %s', async (system) => {
+    // A backend decoder that ignores a trailing byte must not let two
+    // encodings of the same element through
+    const ctx = initBackend(system);
+    const decode = ctx.bytesToPoint;
+    ctx.bytesToPoint = (bytes: Uint8Array) => decode(bytes.slice(0, -1));
+    const bytes = Uint8Array.from([...ctx.generator.toBytes(), 0]);
+    await expect(ctx.parsePoint(bytes)).rejects.toThrow('not canonical');
+  });
 });

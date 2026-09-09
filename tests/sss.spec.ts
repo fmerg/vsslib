@@ -2,10 +2,11 @@ import { initBackend } from 'vsslib/backend';
 import { intToLeBytes } from 'vsslib/arith';
 import { parseScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
 import { shareSecret } from 'vsslib/dealer';
-import { SecretShare } from 'vsslib/types';
+import { SecretShare, System } from 'vsslib/types';
 import { combineSecretShares } from 'vsslib/combiner';
 import { resolveTestConfig } from './environ';
 import { cartesian } from './utils';
+import { fixtures } from './systems';
 
 let { systems } = resolveTestConfig();
 
@@ -159,8 +160,7 @@ describe('Shamir secret sharing', () => {
   it.each(cartesian([systems, thresholdParams]))(
     'fixed-width scalar encoding - over %s - (n, t): %s', async (system, [n, t]) => {
     const ctx = initBackend(system);
-    const expectedBytes = { ed25519: 32, ed448: 56, jubjub: 32 }[system as string];
-    expect(ctx.scalarBytes).toEqual(expectedBytes);
+    expect(ctx.scalarBytes).toEqual(fixtures[system as System].scalarBytes);
     const { secret, sharing } = await shareSecret(ctx, n, t);
     expect(secret.length).toEqual(ctx.scalarBytes);
     expect(sharing.getOriginalSecret()).toEqual(secret);

@@ -1,7 +1,6 @@
 import { Command } from 'commander';
-import { parseDecimal, parseCommaSeparatedDecimals } from './utils.js';
+import { parseDecimal, parseCommaSeparatedDecimals, systemOption } from './utils.js';
 import {
-  Systems,
   initBackend,
   isEqualSecret,
   isKeypair,
@@ -10,7 +9,6 @@ import {
   combinePublicShares,
 } from 'vsslib';
 
-const DEFAULT_SYSTEM = Systems.ED25519;
 const DEFAULT_NR_SHARES = 5;
 const DEFAULT_THRESHOLD = 3;
 
@@ -38,7 +36,7 @@ async function demo() {
 program
   .name('node shamir.js')
   .description('Shamir Secret Sharing (raw SSS) - demo')
-  .option('-s, --system <SYSTEM>', 'Underlying cryptosystem', DEFAULT_SYSTEM)
+  .addOption(systemOption())
   .option('-n, --nr-shares <NR>', 'Number of shareholders', parseDecimal, DEFAULT_NR_SHARES)
   .option('-t, --threshold <THRESHOLD>', 'Threshold paramer', parseDecimal, DEFAULT_THRESHOLD)
   .option('-c, --combine <INDEXES>', 'Qualified indexes', parseCommaSeparatedDecimals)

@@ -1,5 +1,5 @@
-import { Command, Option } from 'commander';
-import { parseDecimal } from './utils';
+import { Command } from 'commander';
+import { parseDecimal, systemOption } from './utils';
 import {
   initBackend,
   derivePedersenBase,
@@ -15,14 +15,12 @@ import {
   addSecrets,
   addPublics,
 } from 'vsslib';
-import { Systems } from 'vsslib/enums';
 import { randomNonce } from 'vsslib/random';
 
 import { VssSchemes, Party, Combiner, selectParty } from './infra';
 
 const program = new Command();
 
-const DEFAULT_SYSTEM = Systems.ED25519;
 const DEFAULT_NR_SHARES = 5;
 const DEFAULT_THRESHOLD = 3;
 
@@ -139,9 +137,9 @@ async function demo() {
     throw new Error(`Inconsistent global public`);
   }
   for (let party of parties) {
-    isConsistent = await isEqualPublic(ctx, party.globalPublic, globalPublic);
+    const isConsistent = await isEqualPublic(ctx, party.globalPublic, globalPublic);
     if(!isConsistent) {
-      throw new Error(`Inconsistency at location {party.index}`);
+      throw new Error(`Inconsistency at location ${party.index}`);
     }
     console.log(`ok ${party.index}`);
   }
@@ -150,7 +148,7 @@ async function demo() {
 program
   .name('node dkg.js')
   .description('Distributed Key Generation (DKG) - demo')
-  .option('-s, --system <SYSTEM>', 'Underlying cryptosystem', DEFAULT_SYSTEM)
+  .addOption(systemOption())
   .option('-n, --nr-shares <NR>', 'Number of parties', parseDecimal, DEFAULT_NR_SHARES)
   .option('-t, --threshold <THRESHOLD>', 'Threshold paramer', parseDecimal, DEFAULT_THRESHOLD)
   .option('-v, --verbose', 'be verbose')
