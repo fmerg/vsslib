@@ -73,7 +73,14 @@ which backend implementations are expected to conform with.
 Vsslib comes with several backends based on
 [`noble-curves`](https://github.com/paulmillr/noble-curves),
 but any implementation wrapped with the prescribed interface
-should do the job. Refer to [`vsslib/backend`](./src/backend) for details.
+should do the job, provided that it
+- operates over a group of prime order,
+- gives every element, including the neutral one, a unique encoding,
+- rejects elements outside the prime-order subgroup,
+- hashes to group elements of unknown discrete log, and
+- samples scalars uniformly up to negligible bias.
+
+Refer to [`vsslib/backend`](./src/backend) for details.
 
 ### <a name="security-overview"></a>Security
 
@@ -126,13 +133,27 @@ import { initBackend } from "vsslib";
 const ctx = initBackend("ed25519");
   ```
 
-The currently provided backends are `ed25519`, `ed448`, `jubjub`, `ristretto255`, `decaf448`,
-`secp256k1`, `p256`, `p384` and `p521`.
+The currently provided backends are the following.
 
-Points of `secp256k1`, `p256`, `p384` and `p521` are encoded in compressed SEC1 form, with the
-single byte `0x00` for the point at infinity; uncompressed and hybrid encodings are rejected.
-Scalars are encoded little-endian on every backend, so secret keys of these curves, conventionally
-big-endian, must be byte-reversed when exchanged with other libraries.
+| System         | Group                      | Point encoding     | Point bytes | Scalar bytes |
+|----------------|----------------------------|--------------------|-------------|--------------|
+| `ed25519`      | edwards25519, cofactor 8   | RFC 8032           | 32          | 32           |
+| `ed448`        | edwards448, cofactor 4     | RFC 8032           | 57          | 56           |
+| `jubjub`       | Jubjub, cofactor 8         | Zcash              | 32          | 32           |
+| `ristretto255` | ristretto255, prime order  | RFC 9496           | 32          | 32           |
+| `decaf448`     | decaf448, prime order      | RFC 9496           | 56          | 56           |
+| `secp256k1`    | secp256k1, prime order     | SEC1, compressed   | 33          | 32           |
+| `p256`         | NIST P-256, prime order    | SEC1, compressed   | 33          | 32           |
+| `p384`         | NIST P-384, prime order    | SEC1, compressed   | 49          | 48           |
+| `p521`         | NIST P-521, prime order    | SEC1, compressed   | 67          | 66           |
+
+On the curves with a cofactor, points outside the prime-order subgroup are rejected.
+SEC1 points are accepted only in compressed form, with the single byte `0x00` for the point
+at infinity; uncompressed and hybrid encodings are rejected.
+Scalars are encoded little-endian with fixed width on every backend, so secret keys of the
+SEC1 curves, conventionally big-endian, must be byte-reversed when exchanged with other libraries.
+Pedersen bases are derived with RFC 9380 hash-to-curve, except on `jubjub`, which uses the
+Zcash group hash.
 
 > **Note**
 > You can use any custom or other implementation,
@@ -644,6 +665,12 @@ npx tsx examples/<file> --help
 
 ```
 $ ./test.sh --help
+```
+
+Tests run against all backends by default; pass `-s <system>` to run them against one, e.g.,
+
+```
+$ ./test.sh -s p256
 ```
 
 ### Lint
