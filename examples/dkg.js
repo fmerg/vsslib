@@ -137,9 +137,9 @@ async function demo() {
     throw new Error(`Inconsistent global public`);
   }
   for (let party of parties) {
-    isConsistent = await isEqualPublic(ctx, party.globalPublic, globalPublic);
+    const isConsistent = await isEqualPublic(ctx, party.globalPublic, globalPublic);
     if(!isConsistent) {
-      throw new Error(`Inconsistency at location {party.index}`);
+      throw new Error(`Inconsistency at location ${party.index}`);
     }
     console.log(`ok ${party.index}`);
   }
