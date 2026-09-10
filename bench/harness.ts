@@ -57,7 +57,7 @@ export async function measure(spec: CaseSpec, timing: Timing): Promise<RunResult
   const ctx = initBackend(params.system);
   // Distinct inputs, since the arithmetic is not constant-time
   const pool: unknown[] = [];
-  for (let i = 0; i < timing.poolSize; i++) pool.push(await setup(ctx, params));
+  for (let slot = 0; slot < timing.poolSize; slot++) pool.push(await setup(ctx, params, slot));
   let next = 0;
   const bench = new Bench({
     time: timing.time,
