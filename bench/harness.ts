@@ -1,5 +1,6 @@
 import { Bench } from 'tinybench';
 import { initBackend } from 'vsslib';
+import { SUITES } from './registry';
 import { BenchCase, Dimension, Params } from './types';
 
 
@@ -10,39 +11,54 @@ export type Timing = {
   iterations: number;
   /** Warm-up time in ms */
   warmupTime: number;
+  /** Number of distinct inputs cycled through by the timed operation */
+  poolSize: number;
 };
 
-/** A benchmark case bound to concrete parameters */
-export type Planned = {
+/** Serializable identification of a benchmark case bound to parameters */
+export type CaseSpec = {
   module: string;
-  bench: BenchCase<unknown>;
+  name: string;
   params: Params;
 };
 
-export type Result = {
+/** Statistics of a single run, i.e. one process; latencies in ms */
+export type RunResult = {
+  median: number;
+  mad: number;
+  mean: number;
+  p99: number;
+  samples: number;
+};
+
+export type CaseResult = {
   operation: string;
   uses: Dimension[];
   params: Params;
-  /** Latency statistics in ms */
-  mean: number;
-  p50: number;
-  p99: number;
-  /** Relative margin of error of the mean latency, in percent */
-  rme: number;
-  samples: number;
-  /** Mean throughput in operations per second */
-  throughput: number;
+  runs: RunResult[];
 };
 
 
-export const operationName = ({ module, bench }: Planned) => `${module}/${bench.name}`;
+export const operationName = ({ module, name }: CaseSpec) => `${module}/${name}`;
 
 
-export async function measure(planned: Planned, timing: Timing): Promise<Result> {
-  const { bench: { uses, setup, run }, params } = planned;
-  const operation = operationName(planned);
+export const findCase = ({ module, name }: CaseSpec): BenchCase<unknown> => {
+  const bench = SUITES.find(suite => suite.module === module)?.cases.find(c => c.name === name);
+  if (!bench) throw new Error(`Unknown benchmark: ${module}/${name}`);
+  return bench;
+}
+
+
+/** Measures a case in the current process; meant to run in a fresh worker
+ * process, so that cases cannot affect each other through JIT or heap state */
+export async function measure(spec: CaseSpec, timing: Timing): Promise<RunResult> {
+  const { setup, run } = findCase(spec);
+  const { params } = spec;
   const ctx = initBackend(params.system);
-  const state = await setup(ctx, params);
+  // Distinct inputs, since the arithmetic is not constant-time
+  const pool: unknown[] = [];
+  for (let i = 0; i < timing.poolSize; i++) pool.push(await setup(ctx, params));
+  let next = 0;
   const bench = new Bench({
     time: timing.time,
     iterations: timing.iterations,
@@ -50,22 +66,21 @@ export async function measure(planned: Planned, timing: Timing): Promise<Result>
     warmupIterations: 1,
     throws: true,
   });
-  bench.add(operation, async () => { await run(ctx, state, params); });
+  bench.add(operationName(spec), async () => {
+    await run(ctx, pool[next], params);
+    next = (next + 1) % pool.length;
+  });
   await bench.run();
   const result = bench.tasks[0].result;
   if (result.state !== 'completed') throw new Error(
-    `Benchmark ${operation} did not complete: ${result.state}`
+    `Benchmark ${operationName(spec)} did not complete: ${result.state}`
   );
-  const { latency, throughput } = result;
+  const { latency } = result;
   return {
-    operation,
-    uses,
-    params,
+    median: latency.p50,
+    mad: latency.mad,
     mean: latency.mean,
-    p50: latency.p50,
     p99: latency.p99,
-    rme: latency.rme,
     samples: latency.samplesCount,
-    throughput: throughput.mean,
   };
 }
