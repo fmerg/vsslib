@@ -1,3 +1,4 @@
+import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { CaseSpec, RunResult, Timing, operationName } from './harness';
@@ -6,6 +7,11 @@ import { CaseSpec, RunResult, Timing, operationName } from './harness';
 const ROOT = path.resolve(__dirname, '..');
 const TSX = path.join(ROOT, 'node_modules', '.bin', 'tsx');
 const WORKER = path.join(__dirname, 'worker.ts');
+
+
+const signalName = (number: number): NodeJS.Signals | null =>
+  (Object.entries(os.constants.signals) as [NodeJS.Signals, number][])
+    .find(([, n]) => n === number)?.[0] ?? null;
 
 
 /** Runs a case in a fresh process, optionally pinned to the given CPUs */
@@ -19,10 +25,18 @@ export const runInWorker = (
   let output = '';
   child.stdout.on('data', (chunk: Buffer) => { output += chunk; });
   child.on('error', reject);
-  child.on('close', (code) => {
-    if (code !== 0) return reject(new Error(
-      `Benchmark ${operationName(spec)} on ${spec.params.system} failed with exit code ${code}`
+  child.on('close', (code, signal) => {
+    const label = `Benchmark ${operationName(spec)} on ${spec.params.system}`;
+    // Wrappers (tsx, taskset) report a signal of their child as exit code 128 + n
+    signal = signal ?? (code !== null && code > 128 ? signalName(code - 128) : null);
+    if (code !== 0) return reject(new Error(signal ?
+      `${label} was killed by ${signal}` :
+      `${label} failed with exit code ${code}`
     ));
-    resolve(JSON.parse(output));
+    try {
+      resolve(JSON.parse(output));
+    } catch {
+      reject(new Error(`${label} produced invalid output: ${output.slice(0, 200)}`));
+    }
   });
 });

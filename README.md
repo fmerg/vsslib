@@ -703,15 +703,16 @@ Results can be written as `markdown`, `csv` or `json` (`-f`), also to a file
 (`--out`), and saved as a baseline for later comparison:
 
 ```
-$ ./bench.sh -m protocols --save before
+$ ./bench.sh -m protocols -r 5 --save before
 $ git checkout <other>
-$ ./bench.sh -m protocols --compare before -r 5
+$ ./bench.sh -m protocols -r 5 --compare before
 ```
 
 A case counts as `slower` or `faster` only if its median changed by more than
 `--tolerance` (5% by default) and the run medians of the two invocations do not
 overlap. Without a real change, run medians separate by chance with probability
-10% for 3 runs per side and below 1% for 5. `--fail-on-regression` makes slower cases exit with code 2.
+10% for 3 runs per side and below 1% for 5; use the same number of runs on
+both sides, which `bench.sh` warns about otherwise. `--fail-on-regression` makes slower cases exit with code 2.
 Baselines are stored, untracked, in `bench/baselines/`.
 
 For reliable figures, set the CPU frequency governor to `performance`, close
