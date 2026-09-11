@@ -673,6 +673,32 @@ Tests run against all backends by default; pass `-s <system>` to run them agains
 $ ./test.sh -s p256
 ```
 
+### Benchmarks
+
+```
+$ ./bench.sh --help
+```
+
+Benchmarks cover the high-level operations of the library only (no backends
+or internals), up to complete protocol runs such as DKG. See `--help` for
+modules, parameter sweeps, output formats, columns and baselines.
+
+#### Statistics
+
+Each case runs in fresh processes, repeated round-robin over the cases on
+seeded inputs, and is reported as medians over runs; `range` shows how quiet
+the machine was. A case counts as changed only if its median moved beyond the
+tolerance and the runs of both invocations do not overlap; unchanged code
+passes this by chance 10% of the time with the default 3 runs per side, and
+below 1% with 5.
+
+#### CPUs
+
+Runs record the machine conditions and comparisons warn when these differ.
+Use the `performance` governor and, on CPUs with performance and efficiency
+cores, pin the runs to one kind with `--cpus`; turbo boost, throttling and
+background load are not controlled.
+
 ### Lint
 
 ```

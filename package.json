@@ -42,6 +42,7 @@
     "build": "rm -rf ./dist && tsc",
     "docs": "typedoc --out docs src/*.ts",
     "lint": "eslint ./src",
+    "bench": "./bench.sh",
     "run-publish": "node ./scripts/publish.mjs"
   },
   "author": "",
@@ -56,6 +57,7 @@
     "jest": "^30.5.2",
     "jest-junit": "^17.0.0",
     "js-combinatorics": "^2.1.4",
+    "tinybench": "^6.2.2",
     "ts-jest": "^29.4.15",
     "tsx": "^4.23.15",
     "typedoc": "^0.28.20",

@@ -6,7 +6,7 @@ DEFAULT_VERBOSE=false
 DEFAULT_SYSTEM=""
 DEFAULT_ALGORITHM=""
 DEFAULT_NR_SHARES="3"
-DEFAULT_NR_THRESHOLD="2"
+DEFAULT_THRESHOLD="2"
 
 # Supported systems, as listed in the Elliptic enum
 SYSTEMS=$(node -e '
@@ -15,6 +15,10 @@ SYSTEMS=$(node -e '
   const names = [...body.matchAll(/^\s*\w+\s*=\s*\x27([^\x27]+)\x27/gm)].map(m => m[1]);
   console.log(names.join(", "));
 ' "$(dirname "$0")/src/enums.ts")
+if [[ $? -ne 0 || -z "$SYSTEMS" ]]; then
+    echo "Could not read the supported systems from src/enums.ts" 1>&2
+    exit 1
+fi
 
 usage_string="usage: ./$(basename "$0") [options]
 
@@ -46,6 +50,8 @@ Options
   -r, --reload                      Reload and run tests when saving changes.
   -v, --verbose                     Be verbose.
   -h, --help                        Display this help message and exit.
+
+Other arguments are passed to Jest, e.g. --bail or --testNamePattern <PATTERN>.
 
 "
 
@@ -87,7 +93,7 @@ do
             shift
             ;;
         -t|--threshold)
-            TRHESHOLD="$2"
+            THRESHOLD="$2"
             shift
             shift
             ;;
@@ -104,7 +110,7 @@ do
             exit 0
             ;;
         *)
-            opts+=($arg)
+            opts+=("$arg")
             shift
             ;;
     esac
@@ -127,19 +133,20 @@ if [[ $TARGET != "tests"* ]]; then
 fi
 
 
-opts="--maxWorkers=1"
+jest_opts=(--maxWorkers=1)
 if [[ $RELOAD == "true" ]]; then
-    opts+=" --watch"
+    jest_opts+=(--watch)
 fi
 if [[ $VERBOSE == "true" ]]; then
-    opts+=" --verbose"
+    jest_opts+=(--verbose)
 fi
+jest_opts+=("${opts[@]}")
 
 npm test -- --clearCache
 
 # NOTE: npm test -- --help
 if [[ $TARGET == *"spec.ts" ]]; then
-    npm test -- $opts --findRelatedTests "$TARGET"
+    npm test -- "${jest_opts[@]}" --findRelatedTests "$TARGET"
 else
-    npm test -- $opts --findRelatedTests "$TARGET"/*
+    npm test -- "${jest_opts[@]}" --findRelatedTests "$TARGET"/*
 fi
