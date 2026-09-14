@@ -53,7 +53,7 @@ describe('Shamir secret sharing', () => {
       predefined.push({ index: i + 1, value: (await randomSecret(ctx)).secret });
     }
     const { secret: original } = await randomSecret(ctx);
-    [0, t - 1].forEach(async (nrPredefined) => {
+    for (const nrPredefined of [0, t - 1]) {
       const { secret, sharing } = await shareSecret(
         ctx, n, t, original, predefined.slice(0, nrPredefined)
       );
@@ -79,7 +79,7 @@ describe('Shamir secret sharing', () => {
         const targetPublic = await extractPublic(ctx, secretBytes);
         expect(await isEqualPublic(ctx, publicBytes, targetPublic)).toBe(true);
       }
-    })
+    }
   });
   it.each(systems)(
     'error - number of requested shares < threshold - over %s', async (system) => {
