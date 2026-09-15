@@ -1,5 +1,3 @@
-import { Point } from 'vsslib/backend';
-import { Systems } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
 import { resolveTestConfig } from './environ';
 import { fixtures } from './systems';

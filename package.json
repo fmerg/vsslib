@@ -41,7 +41,7 @@
     "test:watch": "jest tests --watch --maxWorkers=1",
     "build": "rm -rf ./dist && tsc",
     "docs": "typedoc --out docs src/*.ts",
-    "lint": "eslint ./src",
+    "lint": "eslint src tests bench examples",
     "bench": "./bench.sh",
     "run-publish": "node ./scripts/publish.mjs"
   },

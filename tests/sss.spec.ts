@@ -8,7 +8,7 @@ import { resolveTestConfig } from './environ';
 import { cartesian } from './utils';
 import { fixtures } from './systems';
 
-let { systems } = resolveTestConfig();
+const { systems } = resolveTestConfig();
 
 const thresholdParams = [
   [1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3], [4, 1], [4, 2], [4, 3], [4, 4],
