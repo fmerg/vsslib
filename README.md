@@ -55,7 +55,7 @@ try {
 }
 ```
 
-See [`examples`](./examples) for complete flows of SSS, VSS and DKG.
+See [`examples`](./examples/dkg.ts) for complete flows of SSS, VSS and DKG.
 
 ## Overview
 
@@ -669,7 +669,7 @@ $ npm run docs                      # API reference in docs/
 
 ## Examples
 
-[`examples`](./examples) holds complete flows: SSS, VSS with verifiable public
+[`examples`](./examples/dkg.ts) holds complete flows: SSS, VSS with verifiable public
 recovery, and DKG built on top of the latter. They are reference
 implementations, with the parties of every step marked, and are also run by
 the tests and timed by the benchmarks.

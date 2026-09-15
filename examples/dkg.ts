@@ -49,8 +49,8 @@ export const runDkg = async <P extends Point>(
     jointPublics.push(await recoverPublicKey(ctx, localShares, threshold, algorithm));
   }
 
-  // Only `secrets` would stay private to their dealers in a real deployment;
-  // it is returned for checking
+  // In a real deployment, every secret stays with its dealer and every local
+  // share with its party; all are returned here for checking
   return { secrets, localShares, jointPublics };
 }
 
