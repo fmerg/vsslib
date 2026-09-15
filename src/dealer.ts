@@ -68,40 +68,6 @@ export class ShamirSharing<P extends Point> {
       }
     };
   }
-
-  createFeldmanPackets = async (): Promise<{
-    packets: SecretPacket[],
-    commitments: Uint8Array[],
-  }> => {
-    const { exp, generator: g } = this.ctx;
-    const commitments = [];
-    for (const a of this.polynomial.coeffs) {
-      commitments.push((await exp(g, a)).toBytes());
-    }
-    const packets = await this.getSecretShares();
-    return { packets, commitments };
-  }
-
-  createPedersenPackets = async (pedersenBase: Uint8Array): Promise<{
-    packets: SecretPacket[],
-    commitments: Uint8Array[],
-  }> => {
-    const { exp, operate, generator: g } = this.ctx;
-    const h = await parsePedersenBase(this.ctx, pedersenBase);
-    const { coeffs, degree } = this.polynomial;
-    const bindingPolynomial = await randomPolynomial(this.ctx, degree);
-    const commitments = [];
-    for (const [i, a] of coeffs.entries()) {
-      const b = bindingPolynomial.coeffs[i];
-      commitments.push((await operate(await exp(g, a), await exp(h, b))).toBytes());
-    }
-    const shares = await this.getSecretShares();
-    const packets = shares.map((share) => ({
-      ...share,
-      binding: this.ctx.scalarToBytes(bindingPolynomial.evaluate(share.index)),
-    }));
-    return { packets, commitments };
-  }
 };
 
 
@@ -175,4 +141,40 @@ export async function shareSecret<P extends Point>(
   }
   const sharing = new ShamirSharing(ctx, nrShares, threshold, polynomial);
   return { secret, sharing };
+}
+
+
+export async function createFeldmanPackets<P extends Point>(
+  sharing: ShamirSharing<P>,
+): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
+  const { exp, generator: g } = sharing.ctx;
+  const commitments = [];
+  for (const a of sharing.polynomial.coeffs) {
+    commitments.push((await exp(g, a)).toBytes());
+  }
+  const packets = await sharing.getSecretShares();
+  return { packets, commitments };
+}
+
+
+export async function createPedersenPackets<P extends Point>(
+  sharing: ShamirSharing<P>,
+  pedersenBase: Uint8Array,
+): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
+  const { ctx } = sharing;
+  const { exp, operate, generator: g } = ctx;
+  const h = await parsePedersenBase(ctx, pedersenBase);
+  const { coeffs, degree } = sharing.polynomial;
+  const bindingPolynomial = await randomPolynomial(ctx, degree);
+  const commitments = [];
+  for (const [i, a] of coeffs.entries()) {
+    const b = bindingPolynomial.coeffs[i];
+    commitments.push((await operate(await exp(g, a), await exp(h, b))).toBytes());
+  }
+  const shares = await sharing.getSecretShares();
+  const packets = shares.map((share) => ({
+    ...share,
+    binding: ctx.scalarToBytes(bindingPolynomial.evaluate(share.index)),
+  }));
+  return { packets, commitments };
 }

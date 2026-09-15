@@ -23,13 +23,13 @@ const ctx = initBackend("ed25519");
 
 **Dealer's side**
 ```js
-import { shareSecret } from "vsslib";
+import { shareSecret, createFeldmanPackets } from "vsslib";
 
 // Generate a Shamir (5, 3)-sharing for some uniformly random secret
 const { sharing } = await shareSecret(ctx, 5, 3);
 
 // Generate verifiable packets for the totality of secret shares
-const { packets, commitments } = await sharing.createFeldmanPackets();
+const { packets, commitments } = await createFeldmanPackets(sharing);
 ```
 
 Broadcast the commitments and send the packets to the respective shareholders
@@ -320,7 +320,9 @@ generate Feldman commitments and verifiable packets for the totality of secret
 shares as follows.
 
 ```js
-const { packets, commitments } = await sharing.createFeldmanPackets();
+import { createFeldmanPackets } from "vsslib";
+
+const { packets, commitments } = await createFeldmanPackets(sharing);
 ```
 
 > **Note**
@@ -405,7 +407,9 @@ Given a sharing, generate Pedersen commitments and verifiable packets for the to
 shares as follows.
 
 ```js
-const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+import { createPedersenPackets } from "vsslib";
+
+const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
 ```
 
 > **Note**

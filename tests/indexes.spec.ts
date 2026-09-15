@@ -5,6 +5,7 @@ import {
   parseSchnorrPacket,
   createSchnorrPacket,
   verifyFeldmanCommitments,
+  createFeldmanPackets,
   computeLambda,
   InvalidInput,
   InvalidPublicShare,
@@ -42,7 +43,7 @@ describe('Share index validation', () => {
   });
   it.each(systems)('verification rejects malformed indexes over %s', async (system) => {
     const { ctx, sharing, secretShares } = await createRawSharing(system, nrShares, threshold);
-    const { commitments } = await sharing.createFeldmanPackets();
+    const { commitments } = await createFeldmanPackets(sharing);
     for (const index of badIndexes) {
       await expect(
         verifyFeldmanCommitments(ctx, commitments, { ...secretShares[0], index }, threshold)

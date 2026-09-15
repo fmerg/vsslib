@@ -27,7 +27,7 @@ export {
   parsePoint,
 } from './secrets';
 
-export { shareSecret } from './dealer';
+export { shareSecret, createFeldmanPackets, createPedersenPackets } from './dealer';
 export type { ShamirSharing } from './dealer';
 
 export {

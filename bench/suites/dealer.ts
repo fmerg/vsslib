@@ -1,4 +1,10 @@
-import { shareSecret, derivePedersenBase, randomNonce } from 'vsslib';
+import {
+  shareSecret,
+  createFeldmanPackets,
+  createPedersenPackets,
+  derivePedersenBase,
+  randomNonce,
+} from 'vsslib';
 import { Suite, defineCase } from '../types';
 import { dealSharing } from '../fixtures';
 
@@ -29,7 +35,7 @@ const suite: Suite = {
       name: 'createFeldmanPackets',
       uses: ['nrShares', 'threshold'],
       setup: async (ctx, { nrShares, threshold }) => dealSharing(ctx, nrShares, threshold),
-      run: async (_, sharing) => sharing.createFeldmanPackets(),
+      run: async (_, sharing) => createFeldmanPackets(sharing),
     }),
     defineCase({
       name: 'createPedersenPackets',
@@ -38,7 +44,7 @@ const suite: Suite = {
         sharing: await dealSharing(ctx, nrShares, threshold),
         pedersenBase: await derivePedersenBase(ctx, randomNonce()),
       }),
-      run: async (_, { sharing, pedersenBase }) => sharing.createPedersenPackets(pedersenBase),
+      run: async (_, { sharing, pedersenBase }) => createPedersenPackets(sharing, pedersenBase),
     }),
   ],
 };
