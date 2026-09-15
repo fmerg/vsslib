@@ -42,6 +42,7 @@
     "build": "rm -rf ./dist && tsc",
     "docs": "typedoc --out docs src/*.ts",
     "lint": "eslint src tests bench examples",
+    "typecheck": "tsc --noEmit && tsc -p tests && tsc -p bench && tsc -p examples",
     "bench": "./bench.sh",
     "run-publish": "node ./scripts/publish.mjs"
   },
@@ -56,7 +57,6 @@
     "inquirer": "^14.2.3",
     "jest": "^30.5.2",
     "jest-junit": "^17.0.0",
-    "js-combinatorics": "^2.1.4",
     "tinybench": "^6.2.2",
     "ts-jest": "^29.4.15",
     "tsx": "^4.23.15",

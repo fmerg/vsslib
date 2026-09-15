@@ -1,12 +1,14 @@
-import { Permutation, PowerSet } from "js-combinatorics";
-
-
 /** Powerset of the provided collection **/
-export const powerSet = (array: any[]): any[] => [...PowerSet.of(array)];
+export const powerSet = (array: any[]): any[][] => array.reduce(
+  (subsets: any[][], item) => subsets.concat(subsets.map(subset => [...subset, item])), [[]]
+);
 
 
 /** Permutations of the provided collection **/
-export const permutations = (array: any[]): any[] => [...Permutation.of(array)];
+export const permutations = (array: any[]): any[][] => array.length === 0 ? [[]] :
+  array.flatMap((item, i) =>
+    permutations([...array.slice(0, i), ...array.slice(i + 1)]).map(rest => [item, ...rest])
+  );
 
 
 /** Union of sets of permutations of each member of the powerset of
@@ -27,7 +29,7 @@ export const cartesian = (arrays: any[]): any[] => {
   const xs = arrays[0];
   const ys = arrays.length > 2 ? cartesian(arrays.slice(1)) :
     arrays[1].map((a: any[]) => [a]);
-  let out = new Array(xs.length * ys.length);
+  const out = new Array(xs.length * ys.length);
   for (const [i, x] of xs.entries()) {
     for (const [j, y] of ys.entries()) {
       out[i * ys.length + j] = [x, ...y];
