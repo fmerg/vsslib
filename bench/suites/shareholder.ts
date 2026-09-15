@@ -1,7 +1,6 @@
 import {
   randomSecret,
   randomNonce,
-  extractPublicShare,
   verifyFeldmanCommitments,
   verifyPedersenCommitments,
   parseFeldmanPacket,
@@ -67,12 +66,6 @@ const suite: Suite = {
       setup: pedersenInput,
       run: async (ctx, { pedersenBase, commitments, packet }, { threshold }) =>
         parsePedersenPacket(ctx, commitments, pedersenBase, packet, threshold),
-    }),
-    defineCase({
-      name: 'extractPublicShare',
-      uses: [],
-      setup: shareInput,
-      run: async (ctx, share) => extractPublicShare(ctx, share),
     }),
     defineCase({
       name: 'createSchnorrPacket',

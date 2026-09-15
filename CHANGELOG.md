@@ -17,6 +17,7 @@ All notable changes to this project will be documented in this file.
 - `ShamirSharing.createFeldmanPackets()` and `ShamirSharing.createPedersenPackets(pedersenBase)` are replaced by the functions `createFeldmanPackets(sharing)` and `createPedersenPackets(sharing, pedersenBase)`, which use the group of the sharing.
 - `createPedersenPackets` no longer returns `bindings`; read `packet.binding` instead.
 - `InvalidSecret` is removed.
+- `extractPublicShare` is removed; use `extractPublic(ctx, share.value)` with the index of the share.
 - Scalars are encoded little-endian with fixed width, `Group.scalarBytes` bytes. `parseScalar` and every function taking a secret, `extractPublic`, `isKeypair`, `isEqualSecret` and `addSecrets` included, reject any other length, zero and values not below the group order.
 - NIZK challenges are computed over a length-prefixed, labelled encoding of their input, and Schnorr packet proofs cover the share index. Proofs and packets produced by 1.0.0 do not verify.
 - Share indexes must be distinct positive safe integers; violations throw `InvalidInput`, also from `recoverPublic` regardless of `errorOnInvalid`.
