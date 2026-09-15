@@ -27,6 +27,16 @@ export function validateThreshold(threshold: number): void {
 }
 
 
+/** Ensure that `threshold` is valid and that there are at least `threshold` shares;
+ * throws InvalidInput otherwise */
+export function validateShareCount(count: number, threshold: number): void {
+  validateThreshold(threshold);
+  if (count < threshold) throw new InvalidInput(
+    `Insufficient number of shares: ${count} < ${threshold}`
+  );
+}
+
+
 /** Fixed-length encoding of an index, used to bind it to NIZK proofs */
 export function indexToBytes(index: number): Uint8Array {
   return intToLeBytes(BigInt(index), 8);

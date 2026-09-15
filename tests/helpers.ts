@@ -7,7 +7,7 @@ import {
   shareSecret,
   createSchnorrPacket,
 } from 'vsslib';
-import { Nonces }  from 'vsslib/combiner';
+import { Nonces }  from 'vsslib/operations/recovery';
 import { randomNonce } from 'vsslib/random';
 import { SecretShare, SchnorrPacket } from 'vsslib/types';
 import { randomIndex } from './utils';

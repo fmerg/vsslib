@@ -1,9 +1,9 @@
 import { initBackend } from 'vsslib/backend';
 import { intToLeBytes } from 'vsslib/arith';
-import { parseScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
-import { shareSecret, createFeldmanPackets } from 'vsslib/dealer';
+import { parseScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/operations/secrets';
+import { shareSecret, combineSecretShares } from 'vsslib/operations/shamir';
+import { createFeldmanPackets } from 'vsslib/operations/feldman';
 import { SecretShare, System } from 'vsslib/types';
-import { combineSecretShares } from 'vsslib/combiner';
 import { resolveTestConfig } from './environ';
 import { cartesian } from './utils';
 import { fixtures } from './systems';

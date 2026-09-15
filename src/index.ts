@@ -16,7 +16,6 @@ export { randomNonce } from './random';
 export {
   randomSecret,
   randomPublic,
-  derivePedersenBase,
   extractPublic,
   isEqualSecret,
   isEqualPublic,
@@ -25,28 +24,23 @@ export {
   addPublics,
   parseScalar,
   parsePoint,
-} from './secrets';
-
-export { shareSecret, createFeldmanPackets, createPedersenPackets } from './dealer';
-export type { ShamirSharing } from './dealer';
-
-export {
-  verifyFeldmanCommitments,
-  verifyPedersenCommitments,
-  parseFeldmanPacket,
-  parsePedersenPacket,
-  createSchnorrPacket,
-} from './shareholder';
-
-export { computeLambda } from './lagrange';
-
-export {
+  shareSecret,
   combineSecretShares,
   combinePublicShares,
+  createFeldmanPackets,
+  verifyFeldmanCommitments,
+  parseFeldmanPacket,
+  derivePedersenBase,
+  createPedersenPackets,
+  verifyPedersenCommitments,
+  parsePedersenPacket,
+  createSchnorrPacket,
   parseSchnorrPacket,
   recoverPublic,
-} from './combiner';
-export type { Nonces } from './combiner';
+} from './operations';
+export type { ShamirSharing, Nonces } from './operations';
+
+export { computeLambda } from './lagrange';
 
 export type { NizkProof } from './nizk';
 
