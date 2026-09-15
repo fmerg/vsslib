@@ -14,7 +14,6 @@ module.exports = {
     '^.+\\.js$': ['ts-jest', { tsconfig: { allowJs: true, module: 'commonjs' } }],
   },
   transformIgnorePatterns: ['/node_modules/(?!@noble/)'],
-  testResultsProcessor: "jest-junit",
   reporters: [
     "default",
     [

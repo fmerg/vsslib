@@ -29,6 +29,10 @@
       ]
     }
   },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "files": [
     "dist"
   ],
@@ -38,25 +42,24 @@
   "scripts": {
     "dev": "tsc --watch",
     "test": "jest tests --maxWorkers=1",
-    "test:reload": "jest tests --watch --maxWorkers=1",
+    "test:watch": "jest tests --watch --maxWorkers=1",
     "build": "rm -rf ./dist && tsc",
     "docs": "typedoc --out docs src/*.ts",
-    "lint": "eslint ./src",
+    "lint": "eslint src tests bench examples",
+    "typecheck": "tsc --noEmit && tsc -p tests && tsc -p bench && tsc -p examples",
     "bench": "./bench.sh",
-    "run-publish": "node ./scripts/publish.mjs"
+    "prepublishOnly": "npm run lint && npm run typecheck && ./test.sh && npm run build"
   },
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0-only",
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.0.0",
     "commander": "^15.0.0",
     "eslint": "^10.13.0",
-    "inquirer": "^14.2.3",
     "jest": "^30.5.2",
     "jest-junit": "^17.0.0",
-    "js-combinatorics": "^2.1.4",
     "tinybench": "^6.2.2",
     "ts-jest": "^29.4.15",
     "tsx": "^4.23.15",

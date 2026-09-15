@@ -55,6 +55,8 @@ try {
 }
 ```
 
+See [`examples`](./examples/dkg.ts) for complete flows of SSS, VSS and DKG.
+
 ## Overview
 
 Vsslib provides modular building blocks for implementing threshold-cryptographic protocols
@@ -655,35 +657,30 @@ particular application context.
 
 # Development
 
-### Examples
-
 ```
-npx tsx examples/<file> --help
-```
-
-### Tests
-
-```
-$ ./test.sh --help
+$ ./test.sh --help                  # tests, over all systems unless -s <SYSTEM>
+$ ./bench.sh --help                 # benchmarks of the high-level operations
+$ npx tsx examples/dkg.ts --help    # also sss.ts and vss.ts
+$ npm run lint
+$ npm run typecheck                 # library, tests, benchmarks and examples
+$ npm run build
+$ npm run docs                      # API reference in docs/
 ```
 
-Tests run against all backends by default; pass `-s <system>` to run them against one, e.g.,
+## Examples
 
-```
-$ ./test.sh -s p256
-```
+[`examples`](./examples/dkg.ts) holds complete flows: SSS, VSS with verifiable public
+recovery, and DKG built on top of the latter. They are reference
+implementations, with the parties of every step marked, and are also run by
+the tests and timed by the benchmarks.
 
-### Benchmarks
-
-```
-$ ./bench.sh --help
-```
+## Benchmarks
 
 Benchmarks cover the high-level operations of the library only (no backends
 or internals), up to complete protocol runs such as DKG. See `--help` for
 modules, parameter sweeps, output formats, columns and baselines.
 
-#### Statistics
+### Statistics
 
 Each case runs in fresh processes, repeated round-robin over the cases on
 seeded inputs, and is reported as medians over runs; `range` shows how quiet
@@ -692,33 +689,22 @@ tolerance and the runs of both invocations do not overlap; unchanged code
 passes this by chance 10% of the time with the default 3 runs per side, and
 below 1% with 5.
 
-#### CPUs
+### CPUs
 
 Runs record the machine conditions and comparisons warn when these differ.
 Use the `performance` governor and, on CPUs with performance and efficiency
 cores, pin the runs to one kind with `--cpus`; turbo boost, throttling and
 background load are not controlled.
 
-### Lint
-
-```
-$ npm run lint
-```
-
-### Build
-
-```
-$ npm run build
-```
-
-## Documentation
-
-```
-$ npm run docs
-```
-
 ## Publish
 
+Update the CHANGELOG, then
+
 ```
-$ npm run run-publish
+$ npm version <patch|minor|major> -m "chore: release %s"
+$ npm publish
+$ git push --follow-tags
 ```
+
+`npm publish` first runs lint, type check, tests and build (`prepublishOnly`),
+and requires `npm login` or a token in `~/.npmrc`.

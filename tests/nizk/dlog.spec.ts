@@ -6,7 +6,7 @@ import { createDlogPair } from './helpers';
 import { resolveTestConfig } from '../environ';
 import { nizk } from 'vsslib/nizk';
 
-let { systems, algorithms } = resolveTestConfig();
+const { systems, algorithms } = resolveTestConfig();
 
 
 describe('NIZK Dlog proof (Schnorr protocol)', () => {

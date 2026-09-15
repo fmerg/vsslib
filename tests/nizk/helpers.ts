@@ -1,11 +1,8 @@
 import { Point, Group } from 'vsslib/backend';
 import { DlogPair, DDHTuple, GenericLinear } from 'vsslib/nizk';
 
-import { hash } from 'vsslib/hash';
 
 
-const __0n = BigInt(0);
-const __1n = BigInt(1);
 
 
 /** Create generic linear relation with given dimensions */
@@ -16,8 +13,8 @@ export async function createGenericLinear<P extends Point>(
   const { randomScalar, randomPoint, neutral, exp, operate } = ctx;
   const { m, n } = opts;
   const witness = new Array(n);
-  const vs = Array.from({ length: m }, (_, i) => neutral);
-  const us = Array.from({ length: m }, (_, i) => Array.from({ length: n }, (_, j) => neutral));
+  const vs = Array.from({ length: m }, () => neutral);
+  const us = Array.from({ length: m }, () => Array.from({ length: n }, () => neutral));
   for (let j = 0; j < n; j++) {
     const xj = await randomScalar();
     for (let i = 0; i < m; i++) {

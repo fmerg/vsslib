@@ -6,9 +6,7 @@
     "rootDir": "./src",
     "paths": {
       "vsslib/*": ["./src/*"],
-      "vsslib": ["./src"],
-      "tests": ["./tests"],
-      "examples": ["./examples"]
+      "vsslib": ["./src"]
     },
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -18,15 +16,5 @@
     "declaration": true,
     "outDir": "./dist"
   },
-  "exclude": [
-    "node_modules",
-    "tests",
-    "examples",
-    "bench",
-    "**/*.spec.ts",
-    "./dist"
-  ],
-  "ts-node": {
-    "require": ["tsconfig-paths/register"]
-  }
+  "include": ["src"]
 }

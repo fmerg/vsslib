@@ -4,56 +4,56 @@ import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing, mockPublicRecoverySetup } from '../helpers';
 
-let { systems, algorithms, nrShares, threshold } = resolveTestConfig();
+const { systems, algorithms, nrShares, threshold } = resolveTestConfig();
 
 
 describe('Public point recovery', () => {
   it.each(cartesian([systems, algorithms])
   )('success - without nonce - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm });
-    partialPermutations(packets, threshold, nrShares).forEach(async (qualifiedPackets) => {
-      let { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm });
+    for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
+      const { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm });
       expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
       expect(blame).toEqual([]);
-    });
+    }
   });
   it.each(cartesian([systems, algorithms])
   )('success - with nonce - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets, nonces } = await mockPublicRecoverySetup({
       ctx, shares, algorithm, withNonce: true
     });
-    partialPermutations(packets, threshold, nrShares).forEach(async (qualifiedPackets) => {
-      let { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm, nonces });
+    for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
+      const { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm, nonces });
       expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
       expect(blame).toEqual([]);
-    });
+    }
   });
   it.each(cartesian([systems, algorithms])
   )('success - threshold guard - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm });
-    partialPermutations(packets, 0, threshold - 1).forEach(async (qualifiedPackets) => {
+    for (const qualifiedPackets of partialPermutations(packets, 0, threshold - 1)) {
       await expect(recoverPublic(ctx, qualifiedPackets, threshold, { algorithm })).rejects.toThrow(
         'Insufficient number of shares'
       );
-    });
-    partialPermutations(packets, threshold, nrShares).forEach(async (qualifiedPackets) => {
-      let { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm });
+    }
+    for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
+      const { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm });
       expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
       expect(blame).toEqual([]);
-    });
+    }
   });
   it.each(cartesian([systems, algorithms])
   )('failure - missing nonce - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets, nonces } = await mockPublicRecoverySetup({ ctx, shares, algorithm, withNonce: true });
@@ -64,7 +64,7 @@ describe('Public point recovery', () => {
   });
   it.each(cartesian([systems, algorithms])
   )('failure - error on invalid - forged proof - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm, nrInvalid: 2 });
@@ -74,7 +74,7 @@ describe('Public point recovery', () => {
   });
   it.each(cartesian([systems, algorithms])
   )('failure - error on invalid - forged nonces - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets, nonces } = await mockPublicRecoverySetup({
@@ -88,14 +88,14 @@ describe('Public point recovery', () => {
   });
   it.each(cartesian([systems, algorithms])
   )('success - accurate blaming - enough valid shares - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     for (const withNonce of [false, true]) {
       const { packets, blame: targetBlame, nonces } = await mockPublicRecoverySetup({
         ctx, shares, algorithm, nrInvalid: nrShares - threshold, withNonce
       });
-      let { recovered, blame } = await recoverPublic(
+      const { recovered, blame } = await recoverPublic(
         ctx, packets, threshold, { algorithm, nonces, errorOnInvalid: false }
       );
       expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
@@ -104,7 +104,7 @@ describe('Public point recovery', () => {
   });
   it.each(cartesian([systems, algorithms])
   )('failure - accurate blaming - forged proof - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets, blame: targetBlame } = await mockPublicRecoverySetup({
@@ -121,7 +121,7 @@ describe('Public point recovery', () => {
   });
   it.each(cartesian([systems, algorithms])
   )('failure - accurate blaming - forged nonces - over %s/%s', async (system, algorithm) => {
-    const { ctx, secret, publicBytes, secretShares: shares } = await createRawSharing(
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets, blame: targetBlame, nonces } = await mockPublicRecoverySetup({

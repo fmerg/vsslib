@@ -2,12 +2,9 @@ import { Systems } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
 import { BasePolynomial } from 'vsslib/polynomials/base';
 import { cartesian, trimZeroes } from '../utils';
-import { resolveTestConfig } from '../environ';
 
-const __0n = BigInt(0);
 const __1n = BigInt(1);
 
-const { systems } = resolveTestConfig();
 
 const __coeffs_and_degree = [
   [[], -Infinity],
@@ -70,7 +67,7 @@ describe('Construction errors', () => {
 
 describe('Equal polynomials', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
-    [coeffs, degree], order
+    [coeffs], order
   ) => {
     const poly1 = new BasePolynomial(coeffs, order);
     const poly2 = new BasePolynomial(coeffs, order);
@@ -92,7 +89,7 @@ describe('Equal polynomials', () => {
 
 describe('Non-equal polynomials', () => {
   it.each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
-    [coeffs, degree], order
+    [coeffs], order
   ) => {
     const poly1 = new BasePolynomial(coeffs, order);
     const poly2 = new BasePolynomial(coeffs, order + __1n);

@@ -9,8 +9,7 @@ import {
 } from 'vsslib';
 import { Nonces }  from 'vsslib/combiner';
 import { randomNonce } from 'vsslib/random';
-import { SecretShare, PublicShare, SchnorrPacket } from 'vsslib/types';
-import { intToLeBytes } from 'vsslib/arith';
+import { SecretShare, SchnorrPacket } from 'vsslib/types';
 import { randomIndex } from './utils';
 
 
@@ -30,7 +29,8 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
   withNonce?: boolean,
   nrInvalid?: number,
 }) => {
-  let { ctx, shares, algorithm, nrInvalid, withNonce } = opts;
+  const { ctx, shares, algorithm } = opts;
+  let { nrInvalid, withNonce } = opts;
   withNonce = withNonce || false;
   const packets = [];
   const nonces: Nonces = {};
@@ -42,7 +42,7 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
       nonces[share.index] = nonce;
     }
   }
-  let blame: number[] = [];
+  const blame: number[] = [];
   nrInvalid = nrInvalid || 0;
   while (blame.length < nrInvalid) {
     const index = randomIndex(1, shares.length);

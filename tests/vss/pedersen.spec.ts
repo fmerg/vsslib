@@ -1,24 +1,22 @@
 import { initBackend } from 'vsslib/backend';
-import { randomSecret, randomPublic, derivePedersenBase } from 'vsslib/secrets';
-import { shareSecret, ShamirSharing } from 'vsslib/dealer';
-import { SecretShare } from 'vsslib/types';
+import { randomPublic, derivePedersenBase } from 'vsslib/secrets';
+import { shareSecret } from 'vsslib/dealer';
 import { verifyPedersenCommitments, parsePedersenPacket } from 'vsslib/shareholder';
 import { resolveTestConfig } from '../environ';
-import { intToLeBytes } from 'vsslib/arith';
 import { isEqualBuffer } from '../utils';
 import { fixtures } from '../systems';
 
-let { systems, nrShares, threshold } = resolveTestConfig();
+const { systems, nrShares, threshold } = resolveTestConfig();
 
 
 describe('Pedersen VSS scheme', () => {
   it.each(systems)('success over %s', async (system) => {
     const ctx = initBackend(system);
-    const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
+    const { sharing } = await shareSecret(ctx, nrShares, threshold);
     const pedersenBase = await derivePedersenBase(ctx);
     const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
     const secretShares = await sharing.getSecretShares();
-    secretShares.forEach(async (share: SecretShare) => {
+    for (const share of secretShares) {
       // Check verification
       const binding = packets[share.index - 1].binding!;
       const isValid = await verifyPedersenCommitments(
@@ -39,16 +37,16 @@ describe('Pedersen VSS scheme', () => {
         threshold,
       );
       expect(isEqualBuffer(packet.share.value, share.value)).toBe(true);
-    });
+    }
   });
   it.each(systems)('failure over %s', async (system) => {
     const ctx = initBackend(system);
-    const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
+    const { sharing } = await shareSecret(ctx, nrShares, threshold);
     const pedersenBase = await derivePedersenBase(ctx);
     const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
     commitments[0] = await randomPublic(ctx);
     const secretShares = await sharing.getSecretShares();
-    secretShares.forEach(async (share: SecretShare) => {
+    for (const share of secretShares) {
       // Check verification failure
       const binding = packets[share.index - 1].binding!;
       const verification = verifyPedersenCommitments(
@@ -69,7 +67,7 @@ describe('Pedersen VSS scheme', () => {
         threshold,
       );
       await expect(parsed).rejects.toThrow('Invalid share');
-    });
+    }
   });
   it.each(systems)('commitment count must match threshold over %s', async (system) => {
     // A dealer announcing threshold t but sharing with another degree must be

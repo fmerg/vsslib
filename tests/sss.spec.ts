@@ -8,7 +8,7 @@ import { resolveTestConfig } from './environ';
 import { cartesian } from './utils';
 import { fixtures } from './systems';
 
-let { systems } = resolveTestConfig();
+const { systems } = resolveTestConfig();
 
 const thresholdParams = [
   [1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3], [4, 1], [4, 2], [4, 3], [4, 4],
@@ -53,7 +53,7 @@ describe('Shamir secret sharing', () => {
       predefined.push({ index: i + 1, value: (await randomSecret(ctx)).secret });
     }
     const { secret: original } = await randomSecret(ctx);
-    [0, t - 1].forEach(async (nrPredefined) => {
+    for (const nrPredefined of [0, t - 1]) {
       const { secret, sharing } = await shareSecret(
         ctx, n, t, original, predefined.slice(0, nrPredefined)
       );
@@ -79,7 +79,7 @@ describe('Shamir secret sharing', () => {
         const targetPublic = await extractPublic(ctx, secretBytes);
         expect(await isEqualPublic(ctx, publicBytes, targetPublic)).toBe(true);
       }
-    })
+    }
   });
   it.each(systems)(
     'error - number of requested shares < threshold - over %s', async (system) => {
