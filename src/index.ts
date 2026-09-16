@@ -4,6 +4,7 @@ export { initBackend } from './backend';
 export type { Group, Point } from './backend';
 
 export { Systems, Algorithms } from './enums';
+export type { Elliptic } from './enums';
 export type {
   System,
   Algorithm,
