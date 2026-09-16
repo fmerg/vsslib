@@ -674,6 +674,14 @@ $ npm run build
 $ npm run docs                      # API reference in docs/
 ```
 
+## Layout
+
+[`src/operations`](./src/operations) holds the library operations, one module
+per scheme (`shamir`, `feldman`, `pedersen`, `recovery`, plus `secrets`), each
+with both directions of the scheme, e.g., packet creation and parsing. They
+build on the rest of `src` (backends, NIZK proofs, interpolation), which never
+imports from them. Tests in `tests/operations` mirror these modules.
+
 ## Examples
 
 [`examples`](./examples/dkg.ts) holds complete flows: SSS, VSS with verifiable public
