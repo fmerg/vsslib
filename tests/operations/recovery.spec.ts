@@ -1,5 +1,5 @@
 import { recoverPublic } from 'vsslib/operations/recovery';
-import { randomPublic } from 'vsslib/operations/secrets';
+import { randomPublic } from 'vsslib';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing, mockPublicRecoverySetup } from '../helpers';
