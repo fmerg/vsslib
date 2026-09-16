@@ -1,16 +1,18 @@
 import { Suite } from './types';
 import secrets from './suites/secrets';
-import dealer from './suites/dealer';
-import shareholder from './suites/shareholder';
-import combiner from './suites/combiner';
+import shamir from './suites/shamir';
+import feldman from './suites/feldman';
+import pedersen from './suites/pedersen';
+import recovery from './suites/recovery';
 import protocols from './suites/protocols';
 
 
 export const SUITES: Suite[] = [
   secrets,
-  dealer,
-  shareholder,
-  combiner,
+  shamir,
+  feldman,
+  pedersen,
+  recovery,
   protocols,
 ];
 
