@@ -44,7 +44,7 @@
     "test": "jest tests --maxWorkers=1",
     "test:watch": "jest tests --watch --maxWorkers=1",
     "build": "rm -rf ./dist && tsc",
-    "docs": "typedoc --excludeInternal --out docs src/index.ts src/backend/index.ts src/nizk.ts",
+    "docs": "typedoc --excludeInternal --out docs src/backend/index.ts src/index.ts src/nizk.ts",
     "lint": "eslint src tests bench examples",
     "typecheck": "tsc --noEmit && tsc -p tests && tsc -p bench && tsc -p examples",
     "bench": "./bench.sh",
