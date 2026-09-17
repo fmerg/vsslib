@@ -1,10 +1,45 @@
-import { recoverPublic } from 'vsslib/operations/recovery';
-import { randomPublic } from 'vsslib';
+import {
+  createSchnorrPacket,
+  parseSchnorrPacket,
+  recoverPublic,
+} from 'vsslib/operations/recovery';
+import { randomPublic, InvalidPublicShare } from 'vsslib';
 import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing, mockPublicRecoverySetup } from '../helpers';
 
 const { systems, algorithms, nrShares, threshold } = resolveTestConfig();
+
+
+describe('Schnorr packets', () => {
+  it.each(cartesian([systems, algorithms])
+  )('roundtrip - over %s/%s', async (system, algorithm) => {
+    const { ctx, secretShares, publicShares } = await createRawSharing(
+      system, nrShares, threshold
+    );
+    for (const [i, share] of secretShares.entries()) {
+      const packet = await createSchnorrPacket(ctx, share, { algorithm });
+      const parsed = await parseSchnorrPacket(ctx, packet, { algorithm });
+      expect(parsed.index).toEqual(share.index);
+      expect(isEqualBuffer(parsed.value, publicShares[i].value)).toBe(true);
+    }
+  });
+  it.each(cartesian([systems, algorithms])
+  )('tampered packets are rejected - over %s/%s', async (system, algorithm) => {
+    // The proof covers both the public share and its index
+    const { ctx, secretShares } = await createRawSharing(system, nrShares, threshold);
+    const packet = await createSchnorrPacket(ctx, secretShares[0], { algorithm });
+    const tampered = [
+      { ...packet, value: await randomPublic(ctx) },
+      { ...packet, index: packet.index + 1 },
+    ];
+    for (const forged of tampered) {
+      await expect(
+        parseSchnorrPacket(ctx, forged, { algorithm })
+      ).rejects.toThrow(InvalidPublicShare);
+    }
+  });
+});
 
 
 describe('Public point recovery', () => {
