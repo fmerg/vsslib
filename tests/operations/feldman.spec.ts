@@ -12,6 +12,8 @@ describe('Feldman VSS scheme', () => {
     const { sharing } = await shareSecret(ctx, nrShares, threshold);
     const secretShares = await sharing.getSecretShares();
     const { packets, commitments } = await createFeldmanPackets(sharing);
+    expect(commitments.length).toEqual(threshold);
+    expect(packets.length).toEqual(nrShares);
     for (const share of secretShares) {
       // Check verification
       const { index } = share;
