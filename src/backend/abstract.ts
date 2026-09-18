@@ -1,16 +1,11 @@
 import { System } from '../types';
 import { mod, leBytesToInt, intToLeBytes } from '../arith';
 import { BadScalarError, BadPointError, InvalidInput } from '../errors';
+import { isEqualBytes } from '../bytes';
 
 export interface Point {
   toBytes: () => Uint8Array;
   equals: (other: Point) => Promise<boolean>;
-}
-
-function isEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
 }
 
 

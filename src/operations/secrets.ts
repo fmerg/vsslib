@@ -1,5 +1,6 @@
 import { Group, Point } from '../backend';
 import { mod } from '../arith';
+import { isEqualBytes } from '../bytes';
 
 
 export async function randomSecret<P extends Point>(ctx: Group<P>): Promise<{
@@ -50,8 +51,11 @@ export async function isEqualSecret<P extends Point>(
   lhs: Uint8Array,
   rhs: Uint8Array,
 ): Promise<boolean> {
-  // TODO: Make this constant-time
-  return await ctx.parseScalar(lhs) == await ctx.parseScalar(rhs);
+  // Parsing rejects non-canonical encodings, so that equal secrets have
+  // equal bytes, which are compared in constant time
+  await ctx.parseScalar(lhs);
+  await ctx.parseScalar(rhs);
+  return isEqualBytes(lhs, rhs);
 }
 
 
@@ -60,10 +64,11 @@ export async function isEqualPublic<P extends Point>(
   lhs: Uint8Array,
   rhs: Uint8Array
 ): Promise<boolean> {
-  // TODO: Ensure that this is constant-time
-  const y = await ctx.parsePoint(lhs);
-  const u = await ctx.parsePoint(rhs);
-  return y.equals(u);
+  // Parsing rejects non-canonical encodings, so that equal points have
+  // equal bytes, which are compared in constant time
+  await ctx.parsePoint(lhs);
+  await ctx.parsePoint(rhs);
+  return isEqualBytes(lhs, rhs);
 }
 
 export async function isKeypair<P extends Point>(
@@ -71,12 +76,11 @@ export async function isKeypair<P extends Point>(
   secret: Uint8Array,
   publicBytes: Uint8Array
 ): Promise<boolean> {
-  // TODO: Ensure that this is constant-time
   const g = ctx.generator;
   const x = await ctx.parseScalar(secret);
-  const u = await ctx.parsePoint(publicBytes);
+  await ctx.parsePoint(publicBytes);
   const y = await ctx.exp(g, x);
-  return y.equals(u);
+  return isEqualBytes(y.toBytes(), publicBytes);
 }
 
 
