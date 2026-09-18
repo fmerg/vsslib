@@ -37,11 +37,11 @@ export function leBytesToInt(buff: Uint8Array): bigint {
 
 /** big integer to little-endian bytestring, zero-padded to `byteLength` if given */
 export function intToLeBytes(num: bigint, byteLength?: number) {
-  const minLength = nrBytes(num);
-  if (byteLength !== undefined && byteLength < minLength) throw new ArithmeticError(
-    `Integer does not fit in ${byteLength} bytes`
-  );
-  const len = byteLength ?? minLength;
+  // With a given length, bound-check instead of measuring the integer, whose
+  // string conversion would copy secrets to the heap in variable time
+  if (byteLength !== undefined && !(0n <= num && num < 1n << BigInt(8 * byteLength)))
+    throw new ArithmeticError(`Integer does not fit in ${byteLength} bytes`);
+  const len = byteLength ?? nrBytes(num);
   const buff = new Uint8Array(len);
   const view = new DataView(buff.buffer);
 
