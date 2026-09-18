@@ -103,11 +103,14 @@ export class EcGroup extends Group<EcPoint> {
 
   private wrap = (point: _CurvePoint): EcPoint => new EcPoint(point, this.codec.toBytes);
 
-  // Reduce 128 extra bits modulo the order, so that the bias is negligible
-  randomScalar = async (): Promise<bigint> => mod(
-    leBytesToInt(randomBytes(this.scalarBytes + 16)),
-    this.order
-  );
+  // Reduce 128 extra bits modulo the order, so that the bias is negligible,
+  // and wipe the random bytes, which determine the scalar
+  randomScalar = async (): Promise<bigint> => {
+    const bytes = randomBytes(this.scalarBytes + 16);
+    const scalar = mod(leBytesToInt(bytes), this.order);
+    bytes.fill(0);
+    return scalar;
+  }
 
   randomPoint = async (): Promise<EcPoint> => this.wrap(
     this.base.multiply(await this.randomScalar())
