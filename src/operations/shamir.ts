@@ -43,7 +43,7 @@ export class ShamirSharing<P extends Point> {
     const g = this.ctx.generator;
     for (let index = 1; index <= this.nrShares; index++) {
       const x = polynomial.evaluate(index);
-      const y = await this.ctx.exp(g, x);
+      const y = await this.ctx.expSecret(g, x);
       const value = y.toBytes();
       shares.push({ value, index });
     }
@@ -56,7 +56,7 @@ export class ShamirSharing<P extends Point> {
   }> => {
     const g = this.ctx.generator;
     const x = await this.polynomial.evaluate(index);
-    const y = await this.ctx.exp(g, x);
+    const y = await this.ctx.expSecret(g, x);
     return {
       secretShare: {
         value: this.ctx.scalarToBytes(x),

@@ -41,14 +41,14 @@ export async function createPedersenPackets<P extends Point>(
   pedersenBase: Uint8Array,
 ): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
   const { ctx } = sharing;
-  const { exp, operate, generator: g } = ctx;
+  const { expSecret, operate, generator: g } = ctx;
   const h = await parsePedersenBase(ctx, pedersenBase);
   const { coeffs, degree } = sharing.polynomial;
   const bindingPolynomial = await randomPolynomial(ctx, degree);
   const commitments = [];
   for (const [i, a] of coeffs.entries()) {
     const b = bindingPolynomial.coeffs[i];
-    commitments.push((await operate(await exp(g, a), await exp(h, b))).toBytes());
+    commitments.push((await operate(await expSecret(g, a), await expSecret(h, b))).toBytes());
   }
   const shares = await sharing.getSecretShares();
   const packets = shares.map((share) => ({
@@ -69,14 +69,14 @@ export async function verifyPedersenCommitments<P extends Point>(
 ): Promise<boolean> {
   const { value, index } = share;
   validateIndex(index);
-  const exp = ctx.exp;
+  const expSecret = ctx.expSecret;
   const g = ctx.generator;
   const h = await parsePedersenBase(ctx, pedersenBase);
   const x = await ctx.parseScalar(value);
   const s = await ctx.parseScalar(binding);
   const lhs = await ctx.operate(
-    await exp(g, x),
-    await exp(h, s)
+    await expSecret(g, x),
+    await expSecret(h, s)
   );
   const rhs = await evalCommitments(ctx, commitments, index, threshold);
   const isValid = await lhs.equals(rhs);

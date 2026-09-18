@@ -1,5 +1,5 @@
 import { System } from '../types';
-import { mod, leBytesToInt, intToLeBytes } from '../arith';
+import { mod, modInv, leBytesToInt, intToLeBytes } from '../arith';
 import { BadScalarError, BadPointError, InvalidInput } from '../errors';
 import { isEqualBytes } from '../bytes';
 
@@ -74,10 +74,28 @@ export abstract class Group<P extends Point> {
     return point;
   }
 
+  /** Whether `exp` blinds secret scalars for `point` natively; backends
+   * override it where their multiplication does so */
+  blindsNatively: (point: P) => boolean = () => false;
+
+  /** Exponentiation by a secret scalar. Unless `exp` blinds it natively, the
+   * scalar is split as `point ^ s = (point ^ r) ^ (s / r)` for a fresh random
+   * `r`, so that each exponentiation sees a uniform scalar independent of `s`
+   * and timing leakage does not accumulate over repeated calls with `s`. The
+   * split is multiplicative, since reducing `s - r` would branch on `s < r` */
+  expSecret = async (point: P, scalar: bigint): Promise<P> => {
+    if (this.blindsNatively(point)) return this.exp(point, scalar);
+    let r = 0n;
+    while (r === 0n) r = await this.randomScalar();
+    const q = await this.exp(point, r);
+    return this.exp(q, mod(scalar * modInv(r, this.order), this.order));
+  }
+
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
   abstract validateScalar: (scalar: bigint) => Promise<boolean>;
   abstract validatePoint: (point: P) => Promise<boolean>;
+  /** Exponentiation, possibly variable-time; use expSecret for secret scalars */
   abstract exp: (point: P, scalar: bigint) => Promise<P>;
   abstract operate: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;

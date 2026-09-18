@@ -108,7 +108,6 @@ export class NizkProtocol<P extends Point>{
     nonce?: Uint8Array,
     extras: Uint8Array[] = [],
   ): Promise<NizkProof> => {
-    const exp = this.ctx.exp;
     const order = this.ctx.order;
     const { us, vs } = relation;
     const m = vs.length;
@@ -123,7 +122,7 @@ export class NizkProtocol<P extends Point>{
       for (let j = 0; j < n; j++) {
         ci = await this.ctx.operate(
           ci,
-          await exp(us[i][j], rs[j])
+          await this.ctx.expSecret(us[i][j], rs[j])
         );
       }
       commitment[i] = ci;
