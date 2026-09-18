@@ -1,13 +1,13 @@
-import { Point, Group } from 'vsslib/backend';
-import { mod } from 'vsslib/arith';
-import { InvalidSecretShare, InvalidInput } from 'vsslib/errors';
-import { SecretShare, PublicShare, SecretPacket } from 'vsslib/dealer';
-import { unpackScalar, unpackPoint, extractPublic } from 'vsslib/secrets';
-import { NizkProof } from 'vsslib/nizk';
-import { Algorithm } from 'vsslib/types';
-import { Algorithms } from 'vsslib/enums';
+import { Point, Group } from './backend';
+import { mod } from './arith';
+import { InvalidSecretShare, InvalidInput } from './errors';
+import { SecretShare, PublicShare, SecretPacket } from './dealer';
+import { unpackScalar, unpackPoint, extractPublic } from './secrets';
+import { NizkProof } from './nizk';
+import { Algorithm } from './types';
+import { Algorithms } from './enums';
 
-import nizk from 'vsslib/nizk';
+import nizk from './nizk';
 
 
 export type SchnorrPacket = PublicShare & { proof: NizkProof };

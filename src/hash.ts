@@ -1,7 +1,7 @@
 // TODO: browser
 import { createHash as _createHash } from 'node:crypto';
 
-import { Algorithm } from 'vsslib/types';
+import { Algorithm } from './types';
 
 
 export class Hash {

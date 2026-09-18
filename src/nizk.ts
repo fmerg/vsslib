@@ -1,9 +1,9 @@
-import { Group, Point } from 'vsslib/backend';
-import { Algorithm } from 'vsslib/types';
-import { InvalidInput } from 'vsslib/errors';
-import { mod, leInt2Buff } from 'vsslib/arith';
-import { unpackScalar, unpackPoint } from 'vsslib/secrets';
-import hash from 'vsslib/hash';
+import { Group, Point } from './backend';
+import { Algorithm } from './types';
+import { InvalidInput } from './errors';
+import { mod, leInt2Buff } from './arith';
+import { unpackScalar, unpackPoint } from './secrets';
+import hash from './hash';
 
 
 export type DlogPair<P extends Point> = { u: P, v: P };

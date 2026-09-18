@@ -1,5 +1,5 @@
-import { System } from 'vsslib/types';
-import { mod, leBuff2Int } from 'vsslib/arith';
+import { System } from '../types';
+import { mod, leBuff2Int } from '../arith';
 
 export interface Point {
   toBytes: () => Uint8Array;

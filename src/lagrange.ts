@@ -1,7 +1,7 @@
-import { Point, Group } from 'vsslib/backend';
-import { mod, modInv } from 'vsslib/arith';
-import { FieldPolynomial } from 'vsslib/polynomials';
-import { InverseNotExists, InterpolationError } from 'vsslib/errors';
+import { Point, Group } from './backend';
+import { mod, modInv } from './arith';
+import { FieldPolynomial } from './polynomials';
+import { InverseNotExists, InterpolationError } from './errors';
 
 
 const __0n = BigInt(0);

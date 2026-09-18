@@ -1,6 +1,10 @@
-export { initBackend } from 'vsslib/backend';
+export { initBackend } from './backend';
+export type { Group, Point } from './backend';
 
-export { Systems, Algorithms } from 'vsslib/enums';
+export { Systems, Algorithms } from './enums';
+export type { System, Algorithm } from './types';
+
+export { randomNonce } from './random';
 
 export {
   randomSecret,
@@ -13,16 +17,20 @@ export {
   combinePublics,
   unpackScalar,
   unpackPoint,
-} from 'vsslib/secrets';
+} from './secrets';
 
-export { shareSecret } from 'vsslib/dealer';
+export { shareSecret } from './dealer';
+export type { ShamirSharing, SecretShare, SecretPacket, PublicShare } from './dealer';
 
 export {
   extractPublicShare,
+  verifyFeldmanCommitments,
+  verifyPedersenCommitments,
   parseFeldmanPacket,
   parsePedersenPacket,
   createSchnorrPacket,
-} from 'vsslib/shareholder';
+} from './shareholder';
+export type { SchnorrPacket } from './shareholder';
 
 export {
   computeLambda,
@@ -30,11 +38,16 @@ export {
   combinePublicShares,
   parseSchnorrPacket,
   recoverPublic,
-} from 'vsslib/combiner';
+} from './combiner';
+export type { Nonces } from './combiner';
+
+export type { NizkProof } from './nizk';
 
 export {
+  BadGroupError,
+  ShamirError,
   InvalidSecret,
   InvalidSecretShare,
   InvalidPublicShare,
   InvalidInput,
-} from 'vsslib/errors';
+} from './errors';

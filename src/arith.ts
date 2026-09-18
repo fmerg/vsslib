@@ -1,4 +1,4 @@
-import { BadModulusError, InverseNotExists } from 'vsslib/errors';
+import { BadModulusError, InverseNotExists } from './errors';
 
 const __0n      = BigInt(0);
 const __1n      = BigInt(1);
