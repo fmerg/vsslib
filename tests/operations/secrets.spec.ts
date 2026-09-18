@@ -9,12 +9,11 @@ import {
   isKeypair,
   addSecrets,
   addPublics,
-} from 'vsslib/secrets';
-import { initBackend } from 'vsslib/backend';
+} from 'vsslib/operations/secrets';
+import { initBackend, InvalidInput } from 'vsslib';
 import { intToLeBytes } from 'vsslib/arith';
-import { InvalidInput } from 'vsslib/errors';
 
-import { resolveTestConfig } from './environ';
+import { resolveTestConfig } from '../environ';
 
 const { systems } = resolveTestConfig();
 

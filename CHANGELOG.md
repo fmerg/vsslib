@@ -14,19 +14,22 @@ All notable changes to this project will be documented in this file.
 - `verifyFeldmanCommitments` and `verifyPedersenCommitments` take `(ctx, commitments, [pedersenBase,] share, [binding], threshold)`.
 - `verifyFeldmanCommitments`, `verifyPedersenCommitments`, `parseFeldmanPacket` and `parsePedersenPacket` take a required `threshold` and reject any other number of commitments.
 - `combineSecretShares` and `combinePublicShares` take a required `threshold`, and `recoverPublic` takes `(ctx, packets, threshold, options)`. All three throw `InvalidInput` on fewer than `threshold` shares; `recoverPublic` throws `InvalidPublicShare` if fewer than `threshold` packets are valid.
+- `ShamirSharing.createFeldmanPackets()` and `ShamirSharing.createPedersenPackets(pedersenBase)` are replaced by the functions `createFeldmanPackets(sharing)` and `createPedersenPackets(sharing, pedersenBase)`, which use the group of the sharing.
 - `createPedersenPackets` no longer returns `bindings`; read `packet.binding` instead.
 - `InvalidSecret` is removed.
+- `extractPublicShare` is removed; use `extractPublic(ctx, share.value)` with the index of the share.
 - Scalars are encoded little-endian with fixed width, `Group.scalarBytes` bytes. `parseScalar` and every function taking a secret, `extractPublic`, `isKeypair`, `isEqualSecret` and `addSecrets` included, reject any other length, zero and values not below the group order.
 - NIZK challenges are computed over a length-prefixed, labelled encoding of their input, and Schnorr packet proofs cover the share index. Proofs and packets produced by 1.0.0 do not verify.
 - Share indexes must be distinct positive safe integers; violations throw `InvalidInput`, also from `recoverPublic` regardless of `errorOnInvalid`.
 - Hash algorithms outside `Algorithms` throw `InvalidInput`.
-- Custom backends: `Group.buff2Point` is renamed to `bytesToPoint`, `Group.bytesToScalar` is removed, and `Group` declares the abstract `hashToPoint(msg, dst)`. In the elliptic backend, `EcGroup.curve` is replaced by `EcGroup.Point`.
+- Custom backends: `Group.buff2Point` is renamed to `bytesToPoint`, `Group.bytesToScalar` is removed, and `Group` declares the abstract `hashToPoint(msg, dst)`. In the elliptic backend, `EcGroup.curve` is removed; the wrapped curve is internal.
 
 ### Added
 
 - Backends `ristretto255`, `decaf448`, `secp256k1`, `p256`, `p384` and `p521`. SEC1 points are encoded compressed, with `0x00` for the point at infinity.
 - `derivePedersenBase(ctx, seed)`, which hashes a public seed to a group element of unknown discrete log.
 - Root exports of `verifyFeldmanCommitments`, `verifyPedersenCommitments`, the public types and the errors `VssError`, `BadGroupError` and `ShamirError`. Every error derives from `VssError`.
+- Type exports of `Elliptic`, the type of `System`, and of `EcGroup` and `EcPoint` from `vsslib/backend`, the types of the elliptic backends.
 
 ### Security
 

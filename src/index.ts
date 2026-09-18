@@ -1,7 +1,10 @@
+/** @module vsslib */
+
 export { initBackend } from './backend';
 export type { Group, Point } from './backend';
 
 export { Systems, Algorithms } from './enums';
+export type { Elliptic } from './enums';
 export type {
   System,
   Algorithm,
@@ -16,7 +19,6 @@ export { randomNonce } from './random';
 export {
   randomSecret,
   randomPublic,
-  derivePedersenBase,
   extractPublic,
   isEqualSecret,
   isEqualPublic,
@@ -25,29 +27,23 @@ export {
   addPublics,
   parseScalar,
   parsePoint,
-} from './secrets';
-
-export { shareSecret } from './dealer';
-export type { ShamirSharing } from './dealer';
-
-export {
-  extractPublicShare,
-  verifyFeldmanCommitments,
-  verifyPedersenCommitments,
-  parseFeldmanPacket,
-  parsePedersenPacket,
-  createSchnorrPacket,
-} from './shareholder';
-
-export { computeLambda } from './lagrange';
-
-export {
+  shareSecret,
   combineSecretShares,
   combinePublicShares,
+  createFeldmanPackets,
+  verifyFeldmanCommitments,
+  parseFeldmanPacket,
+  derivePedersenBase,
+  createPedersenPackets,
+  verifyPedersenCommitments,
+  parsePedersenPacket,
+  createSchnorrPacket,
   parseSchnorrPacket,
   recoverPublic,
-} from './combiner';
-export type { Nonces } from './combiner';
+} from './operations';
+export type { ShamirSharing, Nonces } from './operations';
+
+export { computeLambda } from './lagrange';
 
 export type { NizkProof } from './nizk';
 

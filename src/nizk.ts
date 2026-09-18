@@ -1,3 +1,5 @@
+/** @module vsslib/nizk */
+
 import { Group, Point } from './backend';
 import { Algorithm } from './types';
 import { InvalidInput } from './errors';

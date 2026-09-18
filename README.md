@@ -23,13 +23,13 @@ const ctx = initBackend("ed25519");
 
 **Dealer's side**
 ```js
-import { shareSecret } from "vsslib";
+import { shareSecret, createFeldmanPackets } from "vsslib";
 
 // Generate a Shamir (5, 3)-sharing for some uniformly random secret
 const { sharing } = await shareSecret(ctx, 5, 3);
 
 // Generate verifiable packets for the totality of secret shares
-const { packets, commitments } = await sharing.createFeldmanPackets();
+const { packets, commitments } = await createFeldmanPackets(sharing);
 ```
 
 Broadcast the commitments and send the packets to the respective shareholders
@@ -82,7 +82,7 @@ should do the job, provided that it
 - hashes to group elements of unknown discrete log, and
 - samples scalars uniformly up to negligible bias.
 
-Refer to [`vsslib/backend`](./src/backend) for details.
+Refer to [`vsslib/backend`](./src/backend/abstract.ts) for details.
 
 ### <a name="security-overview"></a>Security
 
@@ -161,7 +161,7 @@ Zcash group hash.
 > You can use any custom or other implementation,
 provided that it conforms to or has been wrapped with the internally
 prescribed interface.
-Refer to [`vsslib/backend`](./src/backend) for details.
+Refer to [`vsslib/backend`](./src/backend/abstract.ts) for details.
 
 ### Secret generation
 
@@ -255,9 +255,12 @@ const { secretShare, publicShare } = await sharing.getShare(i);
 Access the public counterpart of a secret share as follows.
 
 ```js
-import { extractPublicShare } from "vsslib";
+import { extractPublic } from "vsslib";
 
-const publicShare = await extractPublicShare(ctx, secretShare);
+const publicShare = {
+  value: await extractPublic(ctx, secretShare.value),
+  index: secretShare.index,
+};
 ```
 
 ### Combining operations
@@ -320,7 +323,9 @@ generate Feldman commitments and verifiable packets for the totality of secret
 shares as follows.
 
 ```js
-const { packets, commitments } = await sharing.createFeldmanPackets();
+import { createFeldmanPackets } from "vsslib";
+
+const { packets, commitments } = await createFeldmanPackets(sharing);
 ```
 
 > **Note**
@@ -405,7 +410,9 @@ Given a sharing, generate Pedersen commitments and verifiable packets for the to
 shares as follows.
 
 ```js
-const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+import { createPedersenPackets } from "vsslib";
+
+const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
 ```
 
 > **Note**
@@ -666,6 +673,15 @@ $ npm run typecheck                 # library, tests, benchmarks and examples
 $ npm run build
 $ npm run docs                      # API reference in docs/
 ```
+
+## Layout
+
+[`src/operations`](./src/operations/index.ts) holds the library operations,
+one module per scheme (`shamir`, `feldman`, `pedersen`, `recovery`, plus
+`secrets`), each with both directions of the scheme, e.g., packet creation and
+parsing. They build on the core modules of `src` (backends, NIZK proofs,
+interpolation), which never import from them. Tests in `tests/operations`
+mirror these modules.
 
 ## Examples
 

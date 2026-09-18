@@ -28,9 +28,10 @@ fi
 usage_string="usage: ./$(basename "$0") [options]
 
 Run tests with control over the orthogonal parameters below. For example, in
-order to run the VSS tests over ed25519 with SHA256 and rerun them on changes, do
+order to run the public recovery tests over ed25519 with SHA256 and rerun them
+on changes, do
 
-$ ./test.sh -m vss -s ed25519 -a sha256 --watch
+$ ./test.sh -m operations/recovery -s ed25519 -a sha256 --watch
 
 Systems:
   ${SYSTEMS}
@@ -39,9 +40,10 @@ Hash algorithms:
   ${ALGORITHMS}
 
 Options
-  -m, --module <MODULE>             Tests to run. Can be any subfolder or file inside
-                                    the ./tests folder. if not provided, all
-                                    tests run.
+  -m, --module <MODULE>             Tests to run. Can be any subfolder or spec file
+                                    inside the ./tests folder, the latter with or
+                                    without .spec.ts. If not provided, all tests
+                                    run.
   -s, --system <SYSTEM>             Underlying cryptosystem. If not provided, tests run
                                     against all supported systems.
   -a, --algorithm <HASH>            Hash algorithm to be used. This affects challenge
@@ -139,6 +141,14 @@ export THRESHOLD="${THRESHOLD}"
 TARGET=$MODULE
 if [[ $TARGET != "tests"* ]]; then
     TARGET="tests/$TARGET"
+fi
+# Allow spec files without their suffix, e.g. operations/feldman
+if [[ ! -e $TARGET && -f $TARGET.spec.ts ]]; then
+    TARGET="$TARGET.spec.ts"
+fi
+if [[ ! -e $TARGET ]]; then
+    echo "No such test module: $MODULE" 1>&2
+    exit 1
 fi
 
 

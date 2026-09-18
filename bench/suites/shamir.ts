@@ -1,11 +1,10 @@
 import {
+  shareSecret,
   combineSecretShares,
   combinePublicShares,
-  parseSchnorrPacket,
-  recoverPublic,
 } from 'vsslib';
 import { Ctx, Params, Suite, defineCase } from '../types';
-import { dealSharing, schnorrFixture, slotIndex, slotIndexes } from '../fixtures';
+import { dealSharing, slotIndexes } from '../fixtures';
 
 
 /** Shares of a qualified set of exactly t shareholders, determined by the slot */
@@ -21,8 +20,27 @@ const qualifiedShares = async <S extends { index: number }>(
 
 
 const suite: Suite = {
-  module: 'combiner',
+  module: 'shamir',
   cases: [
+    // Interpolates t points; the number of shares only bounds the indexes
+    defineCase({
+      name: 'shareSecret',
+      uses: ['threshold'],
+      setup: async () => undefined,
+      run: async (ctx, _, { nrShares, threshold }) => shareSecret(ctx, nrShares, threshold),
+    }),
+    defineCase({
+      name: 'getSecretShares',
+      uses: ['nrShares', 'threshold'],
+      setup: async (ctx, { nrShares, threshold }) => dealSharing(ctx, nrShares, threshold),
+      run: async (_, sharing) => sharing.getSecretShares(),
+    }),
+    defineCase({
+      name: 'getPublicShares',
+      uses: ['nrShares', 'threshold'],
+      setup: async (ctx, { nrShares, threshold }) => dealSharing(ctx, nrShares, threshold),
+      run: async (_, sharing) => sharing.getPublicShares(),
+    }),
     defineCase({
       name: 'combineSecretShares',
       uses: ['nrShares', 'threshold'],
@@ -34,27 +52,6 @@ const suite: Suite = {
       uses: ['nrShares', 'threshold'],
       setup: async (ctx, params, slot) => qualifiedShares(ctx, params, slot, s => s.getPublicShares()),
       run: async (ctx, shares, { threshold }) => combinePublicShares(ctx, shares, threshold),
-    }),
-    // Verification of a single packet, whose proof binds its own nonce
-    defineCase({
-      name: 'parseSchnorrPacket',
-      uses: ['algorithm'],
-      setup: async (ctx, { nrShares, threshold, algorithm }, slot) => {
-        const { packets, nonces } = await schnorrFixture(ctx, nrShares, threshold, algorithm);
-        const index = slotIndex(slot, nrShares);
-        return { packet: packets[index - 1], nonce: nonces[index] };
-      },
-      run: async (ctx, { packet, nonce }, { algorithm }) =>
-        parseSchnorrPacket(ctx, packet, { algorithm, nonce }),
-    }),
-    // Verification of all n packets and interpolation over them
-    defineCase({
-      name: 'recoverPublic',
-      uses: ['algorithm', 'nrShares', 'threshold'],
-      setup: async (ctx, { nrShares, threshold, algorithm }) =>
-        schnorrFixture(ctx, nrShares, threshold, algorithm),
-      run: async (ctx, { packets, nonces }, { threshold, algorithm }) =>
-        recoverPublic(ctx, packets, threshold, { algorithm, nonces }),
     }),
   ],
 };

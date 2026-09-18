@@ -1,17 +1,17 @@
-import { Point, Group } from './backend';
-import { FieldPolynomial, randomPolynomial } from './polynomials';
-import { InterpolationError, ShamirError, InvalidInput } from './errors';
-
-import { lagrange } from './lagrange';
-import { parsePedersenBase } from './shareholder';
-import { validateIndexes } from './indexes';
-import { SecretShare, SecretPacket, PublicShare } from './types';
+import { Point, Group } from '../backend';
+import { mod } from '../arith';
+import { FieldPolynomial } from '../polynomials';
+import { InterpolationError, ShamirError, InvalidInput } from '../errors';
+import { lagrange, computeLambda } from '../lagrange';
+import { validateIndexes, validateShareCount } from '../indexes';
+import { SecretShare, PublicShare } from '../types';
 
 
 export class ShamirSharing<P extends Point> {
   ctx: Group<P>;
   nrShares: number;
   threshold: number;
+  /** @internal Sharing polynomial, read by the VSS schemes */
   polynomial: FieldPolynomial<P>;
 
   constructor(
@@ -67,40 +67,6 @@ export class ShamirSharing<P extends Point> {
         index,
       }
     };
-  }
-
-  createFeldmanPackets = async (): Promise<{
-    packets: SecretPacket[],
-    commitments: Uint8Array[],
-  }> => {
-    const { exp, generator: g } = this.ctx;
-    const commitments = [];
-    for (const a of this.polynomial.coeffs) {
-      commitments.push((await exp(g, a)).toBytes());
-    }
-    const packets = await this.getSecretShares();
-    return { packets, commitments };
-  }
-
-  createPedersenPackets = async (pedersenBase: Uint8Array): Promise<{
-    packets: SecretPacket[],
-    commitments: Uint8Array[],
-  }> => {
-    const { exp, operate, generator: g } = this.ctx;
-    const h = await parsePedersenBase(this.ctx, pedersenBase);
-    const { coeffs, degree } = this.polynomial;
-    const bindingPolynomial = await randomPolynomial(this.ctx, degree);
-    const commitments = [];
-    for (const [i, a] of coeffs.entries()) {
-      const b = bindingPolynomial.coeffs[i];
-      commitments.push((await operate(await exp(g, a), await exp(h, b))).toBytes());
-    }
-    const shares = await this.getSecretShares();
-    const packets = shares.map((share) => ({
-      ...share,
-      binding: this.ctx.scalarToBytes(bindingPolynomial.evaluate(share.index)),
-    }));
-    return { packets, commitments };
   }
 };
 
@@ -175,4 +141,42 @@ export async function shareSecret<P extends Point>(
   }
   const sharing = new ShamirSharing(ctx, nrShares, threshold, polynomial);
   return { secret, sharing };
+}
+
+
+export async function combineSecretShares<P extends Point>(
+  ctx: Group<P>,
+  shares: SecretShare[],
+  threshold: number,
+): Promise<Uint8Array> {
+  validateShareCount(shares.length, threshold);
+  const order = ctx.order;
+  const indexes = shares.map(share => share.index);
+  validateIndexes(indexes);
+  let x = 0n;
+  for (const { value, index } of shares) {
+    const li = computeLambda(ctx, index, indexes);
+    const xi = await ctx.parseScalar(value);
+    x = mod(x + li * xi, order);
+  }
+  return ctx.scalarToBytes(x);
+}
+
+
+export async function combinePublicShares<P extends Point>(
+  ctx: Group<P>,
+  shares: PublicShare[],
+  threshold: number,
+): Promise<Uint8Array> {
+  validateShareCount(shares.length, threshold);
+  const exp = ctx.exp;
+  const indexes = shares.map(share => share.index);
+  validateIndexes(indexes);
+  let y = ctx.neutral;
+  for (const { value, index } of shares) {
+    const li = computeLambda(ctx, index, indexes);
+    const yi = await ctx.parsePoint(value)
+    y = await ctx.operate(y, await exp(yi, li));
+  }
+  return y.toBytes();
 }

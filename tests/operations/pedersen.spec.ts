@@ -1,7 +1,10 @@
-import { initBackend } from 'vsslib/backend';
-import { randomPublic, derivePedersenBase } from 'vsslib/secrets';
-import { shareSecret } from 'vsslib/dealer';
-import { verifyPedersenCommitments, parsePedersenPacket } from 'vsslib/shareholder';
+import {
+  derivePedersenBase,
+  createPedersenPackets,
+  verifyPedersenCommitments,
+  parsePedersenPacket,
+} from 'vsslib/operations/pedersen';
+import { initBackend, randomPublic, shareSecret } from 'vsslib';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer } from '../utils';
 import { fixtures } from '../systems';
@@ -14,7 +17,7 @@ describe('Pedersen VSS scheme', () => {
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, nrShares, threshold);
     const pedersenBase = await derivePedersenBase(ctx);
-    const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+    const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
     const secretShares = await sharing.getSecretShares();
     for (const share of secretShares) {
       // Check verification
@@ -43,7 +46,7 @@ describe('Pedersen VSS scheme', () => {
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, nrShares, threshold);
     const pedersenBase = await derivePedersenBase(ctx);
-    const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+    const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
     commitments[0] = await randomPublic(ctx);
     const secretShares = await sharing.getSecretShares();
     for (const share of secretShares) {
@@ -77,7 +80,7 @@ describe('Pedersen VSS scheme', () => {
     const pedersenBase = await derivePedersenBase(ctx);
     for (const actual of [threshold - 1, threshold + 1].filter(t => t > 0)) {
       const { sharing } = await shareSecret(ctx, nrShares + 1, actual);
-      const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+      const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
       for (const packet of packets) {
         await expect(
           parsePedersenPacket(ctx, commitments, pedersenBase, packet, threshold)
@@ -85,7 +88,7 @@ describe('Pedersen VSS scheme', () => {
       }
     }
     const { sharing } = await shareSecret(ctx, nrShares, threshold);
-    const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+    const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
     for (const bad of [0, 1.5, -1]) {
       await expect(
         parsePedersenPacket(ctx, commitments, pedersenBase, packets[0], bad)
@@ -97,7 +100,7 @@ describe('Pedersen VSS scheme', () => {
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, 20, 17);
     const pedersenBase = await derivePedersenBase(ctx);
-    const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+    const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
     for (const packet of packets) {
       await expect(
         parsePedersenPacket(ctx, commitments, pedersenBase, packet, 17)

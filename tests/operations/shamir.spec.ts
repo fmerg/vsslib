@@ -1,14 +1,20 @@
-import { initBackend } from 'vsslib/backend';
+import { shareSecret, combineSecretShares, combinePublicShares } from 'vsslib/operations/shamir';
+import {
+  initBackend,
+  parseScalar,
+  randomSecret,
+  extractPublic,
+  isEqualSecret,
+  isEqualPublic,
+} from 'vsslib';
 import { intToLeBytes } from 'vsslib/arith';
-import { parseScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
-import { shareSecret } from 'vsslib/dealer';
 import { SecretShare, System } from 'vsslib/types';
-import { combineSecretShares } from 'vsslib/combiner';
-import { resolveTestConfig } from './environ';
-import { cartesian } from './utils';
-import { fixtures } from './systems';
+import { resolveTestConfig } from '../environ';
+import { createRawSharing } from '../helpers';
+import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
+import { fixtures } from '../systems';
 
-const { systems } = resolveTestConfig();
+const { systems, nrShares, threshold } = resolveTestConfig();
 
 const thresholdParams = [
   [1, 1], [2, 1], [2, 2], [3, 1], [3, 2], [3, 3], [4, 1], [4, 2], [4, 3], [4, 4],
@@ -16,7 +22,7 @@ const thresholdParams = [
 ];
 
 
-export const selectShare = (index: number, shares: SecretShare[]) => shares.filter(
+const selectShare = (index: number, shares: SecretShare[]) => shares.filter(
   s => s.index == index
 )[0];
 
@@ -35,7 +41,6 @@ describe('Shamir secret sharing', () => {
     expect(n).toEqual((await sharing.getSecretShares()).length);
     expect(n).toEqual((await sharing.getPublicShares()).length);
     expect(t).toEqual(sharing.threshold);
-    expect(t).toEqual((await sharing.createFeldmanPackets()).commitments.length);
     for (let index = 1; index <= sharing.nrShares; index++) {
       const { secretShare, publicShare } = await sharing.getShare(index);
       const { value: secretBytes } = secretShare;
@@ -49,7 +54,6 @@ describe('Shamir secret sharing', () => {
     const ctx = initBackend(system);
     const predefined: SecretShare[] = [];
     for (let i = 0; i < t; i++) {
-      // predefined.push((await randomSecret(ctx)).secret);
       predefined.push({ index: i + 1, value: (await randomSecret(ctx)).secret });
     }
     const { secret: original } = await randomSecret(ctx);
@@ -65,7 +69,6 @@ describe('Shamir secret sharing', () => {
       expect(n).toEqual((await sharing.getSecretShares()).length);
       expect(n).toEqual((await sharing.getPublicShares()).length);
       expect(t).toEqual(sharing.threshold);
-      expect(t).toEqual((await sharing.createFeldmanPackets()).commitments.length);
       for (let index = 1; index <= nrPredefined; index++) {
         const { secretShare } = await sharing.getShare(index);
         expect(
@@ -170,3 +173,51 @@ describe('Shamir secret sharing', () => {
     expect(combined).toEqual(secret);
   });
 })
+
+
+describe('Combination of secret shares (scalars)', () => {
+  it.each(systems)('threshold guard - over %s', async (system) => {
+    const { ctx, secret, secretShares } = await createRawSharing(system, nrShares, threshold);
+    for (const shares of partialPermutations(secretShares, 0, threshold - 1)) {
+      await expect(combineSecretShares(ctx, shares, threshold)).rejects.toThrow(
+        'Insufficient number of shares'
+      );
+    }
+    for (const shares of partialPermutations(secretShares, threshold, nrShares)) {
+      const result = await combineSecretShares(ctx, shares, threshold);
+      expect(await isEqualSecret(ctx, result, secret)).toBe(true);
+    }
+  });
+  it.each(systems)('threshold validation - over %s', async (system) => {
+    const { ctx, secretShares } = await createRawSharing(system, nrShares, threshold);
+    for (const bad of [0, -1, 1.5, undefined]) {
+      await expect(combineSecretShares(ctx, secretShares, bad as unknown as number)).rejects.toThrow(
+        'Threshold must be a positive integer'
+      );
+    }
+  });
+});
+
+
+describe('Combination of public shares (points)', () => {
+  it.each(systems)('threshold guard - over %s', async (system) => {
+    const { ctx, publicBytes, publicShares } = await createRawSharing(system, nrShares, threshold);
+    for (const shares of partialPermutations(publicShares, 0, threshold - 1)) {
+      await expect(combinePublicShares(ctx, shares, threshold)).rejects.toThrow(
+        'Insufficient number of shares'
+      );
+    }
+    for (const shares of partialPermutations(publicShares, threshold, nrShares)) {
+      const result = await combinePublicShares(ctx, shares, threshold);
+      expect(isEqualBuffer(result, publicBytes)).toBe(true);
+    }
+  });
+  it.each(systems)('threshold validation - over %s', async (system) => {
+    const { ctx, publicShares } = await createRawSharing(system, nrShares, threshold);
+    for (const bad of [0, -1, 1.5, undefined]) {
+      await expect(combinePublicShares(ctx, publicShares, bad as unknown as number)).rejects.toThrow(
+        'Threshold must be a positive integer'
+      );
+    }
+  });
+});
