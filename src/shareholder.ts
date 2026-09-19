@@ -110,12 +110,13 @@ export async function extractPublicShare<P extends Point>(
 export async function createSchnorrPacket<P extends Point>(
   ctx: Group<P>,
   share: SecretShare,
-  opts?: { algorithm?: Algorithm, nonce?: Uint8Array },
+  { algorithm = Algorithms.DEFAULT, nonce }: {
+    algorithm?: Algorithm,
+    nonce?: Uint8Array,
+  } = {},
 ): Promise<SchnorrPacket> {
   const { value, index } = share;
   const g = ctx.generator;
-  const algorithm = opts ? (opts.algorithm || Algorithms.DEFAULT) : Algorithms.DEFAULT;
-  const nonce = opts ? (opts.nonce || undefined) : undefined;
   const x = await unpackScalar(ctx, value);
   const y = await ctx.exp(g, x);
   const proof = await nizk(ctx, algorithm).proveDlog(x, { u: g, v: y }, nonce);
