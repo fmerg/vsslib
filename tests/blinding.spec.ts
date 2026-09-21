@@ -1,5 +1,6 @@
 import { ed25519, ristretto255 } from '@noble/curves/ed25519.js';
 import { ed448, decaf448 } from '@noble/curves/ed448.js';
+import * as arith from 'vsslib/arith';
 import { Group, Point } from 'vsslib/backend';
 import { nizk } from 'vsslib/nizk';
 import { Algorithms } from 'vsslib/enums';
@@ -97,14 +98,43 @@ describe('secret exponentiation', () => {
       try {
         await ctx.expSecret(point as any, await (ctx.randomScalar)());
         expect(ctx.blindsNatively(point as any)).toBe(native);
-        // One sampling above, one more for the split
-        expect(spy).toHaveBeenCalledTimes(native ? 1 : 2);
+        // One sampling above, two more for the split and its blinded inversion
+        expect(spy).toHaveBeenCalledTimes(native ? 1 : 3);
         expect(exp).toHaveBeenCalledTimes(native ? 1 : 2);
       } finally {
         spy.mockRestore();
         exp.mockRestore();
       }
     }
+  });
+  it.each(systems)('never inverts the splitting factor directly over %s', async (system) => {
+    // Inversion is variable-time and would leak the factor that hides the scalar
+    const ctx = initBackend(system);
+    const sampled: bigint[] = [];
+    const inverted: bigint[] = [];
+    const randomScalar = ctx.randomScalar;
+    const modInv = arith.modInv;
+    const sample = jest.spyOn(ctx, 'randomScalar').mockImplementation(async () => {
+      const r = await randomScalar();
+      sampled.push(r);
+      return r;
+    });
+    const invert = jest.spyOn(arith, 'modInv').mockImplementation((m, n) => {
+      inverted.push(arith.mod(m, n));
+      return modInv(m, n);
+    });
+    // Force the split also where noble blinds natively
+    const native = jest.spyOn(ctx, 'blindsNatively').mockReturnValue(false);
+    try {
+      const point = await ctx.hashToPoint(Uint8Array.of(1), Uint8Array.of(2));
+      for (let i = 0; i < 4; i++) await ctx.expSecret(point, await randomScalar());
+    } finally {
+      sample.mockRestore();
+      invert.mockRestore();
+      native.mockRestore();
+    }
+    expect(inverted.length).toBeGreaterThan(0);
+    expect(inverted.filter(v => sampled.includes(v))).toEqual([]);
   });
 });
 
