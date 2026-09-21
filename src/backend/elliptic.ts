@@ -40,13 +40,20 @@ export class EcPoint implements Point {
   }
 
   equals = async <Q extends Point>(other: Q): Promise<boolean> => {
-    // TODO: Ensure that this is constant time
+    // Not constant-time; compare canonical encodings with isEqualBytes where
+    // secret-dependent points are involved
     return (other instanceof EcPoint) && (this.wrapped.equals(other.wrapped));
   }
 }
 
 
 type _HashToCurve = (msg: Uint8Array, dst: Uint8Array) => _CurvePoint;
+
+
+/** Points whose secret multiplication noble blinds: every point on cofactor-1
+ * curves, otherwise only its base point, recognized by identity (see
+ * shouldBlind in @noble/curves/abstract/curve.js; recheck on upgrades) */
+type _Blinding = 'all' | 'base' | 'none';
 
 
 // BLAKE2s personalization for the jubjub group hash
@@ -82,10 +89,17 @@ export class EcGroup extends Group<EcPoint> {
   private zero: _CurvePoint;
   private hashToCurve: _HashToCurve;
   private codec: _Codec;
+  private blinding: _Blinding;
   /** @internal Point constructor of the noble curve */
   Point: _PointCons;
 
-  constructor(system: System, Point: _PointCons, hashToCurve: _HashToCurve, codec: _Codec) {
+  constructor(
+    system: System,
+    Point: _PointCons,
+    hashToCurve: _HashToCurve,
+    codec: _Codec,
+    blinding: _Blinding,
+  ) {
     const modulus = Point.Fp.ORDER;
     const order = Point.Fn.ORDER;
     const base = Point.BASE;
@@ -98,19 +112,26 @@ export class EcGroup extends Group<EcPoint> {
     this.Point = Point;
     this.hashToCurve = hashToCurve;
     this.codec = codec;
+    this.blinding = blinding;
   }
 
   private wrap = (point: _CurvePoint): EcPoint => new EcPoint(point, this.codec.toBytes);
 
-  // Reduce 128 extra bits modulo the order, so that the bias is negligible
-  randomScalar = async (): Promise<bigint> => mod(
-    leBytesToInt(randomBytes(this.scalarBytes + 16)),
-    this.order
+  // Reduce 128 extra bits modulo the order, so that the bias is negligible,
+  // and wipe the random bytes, which determine the scalar
+  randomScalar = async (): Promise<bigint> => {
+    const bytes = randomBytes(this.scalarBytes + 16);
+    const scalar = mod(leBytesToInt(bytes), this.order);
+    bytes.fill(0);
+    return scalar;
+  }
+
+  randomPoint = async (): Promise<EcPoint> => this.expSecret(
+    this.generator, await this.randomScalar()
   );
 
-  randomPoint = async (): Promise<EcPoint> => this.wrap(
-    this.base.multiply(await this.randomScalar())
-  );
+  blindsNatively = (point: EcPoint): boolean => this.blinding === 'all' ||
+    (this.blinding === 'base' && point.wrapped === this.base);
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
@@ -169,52 +190,66 @@ export class EcGroup extends Group<EcPoint> {
 /** Supported curves; a new system needs an Elliptic member and an entry here.
  * The codec defaults to noble's native encoding */
 const CURVES: Record<Elliptic, {
-  Point: _PointCons, hashToCurve: _HashToCurve, codec?: (Point: _PointCons) => _Codec
+  Point: _PointCons,
+  hashToCurve: _HashToCurve,
+  codec?: (Point: _PointCons) => _Codec,
+  blinding: _Blinding,
 }> = {
   [Elliptic.ED25519]: {
     Point: ed25519.Point,
     hashToCurve: (msg, DST) => ed25519_hasher.hashToCurve(msg, { DST }),
+    blinding: 'base',
   },
   [Elliptic.ED448]: {
     Point: ed448.Point,
     hashToCurve: (msg, DST) => ed448_hasher.hashToCurve(msg, { DST }),
+    blinding: 'base',
   },
   [Elliptic.JUBJUB]: {
     Point: jubjub.Point,
     hashToCurve: jubjubHashToCurve,
+    blinding: 'base',
   },
   [Elliptic.RISTRETTO255]: {
     Point: ristretto255.Point,
     hashToCurve: (msg, DST) => ristretto255_hasher.hashToCurve(msg, { DST }),
+    // Multiplies its Edwards representative, whose base is ed25519's
+    blinding: 'base',
   },
   [Elliptic.DECAF448]: {
     Point: decaf448.Point,
     hashToCurve: (msg, DST) => decaf448_hasher.hashToCurve(msg, { DST }),
+    // Its Edwards base representative is not ed448's base, so noble never blinds
+    blinding: 'none',
   },
   [Elliptic.SECP256K1]: {
     Point: secp256k1.Point,
     hashToCurve: (msg, DST) => secp256k1_hasher.hashToCurve(msg, { DST }),
     codec: sec1Codec,
+    blinding: 'all',
   },
   [Elliptic.P256]: {
     Point: p256.Point,
     hashToCurve: (msg, DST) => p256_hasher.hashToCurve(msg, { DST }),
     codec: sec1Codec,
+    blinding: 'all',
   },
   [Elliptic.P384]: {
     Point: p384.Point,
     hashToCurve: (msg, DST) => p384_hasher.hashToCurve(msg, { DST }),
     codec: sec1Codec,
+    blinding: 'all',
   },
   [Elliptic.P521]: {
     Point: p521.Point,
     hashToCurve: (msg, DST) => p521_hasher.hashToCurve(msg, { DST }),
     codec: sec1Codec,
+    blinding: 'all',
   },
 };
 
 
 export function initElliptic(system: Elliptic): EcGroup {
-  const { Point, hashToCurve, codec = nobleCodec } = CURVES[system];
-  return new EcGroup(system, Point, hashToCurve, codec(Point));
+  const { Point, hashToCurve, codec = nobleCodec, blinding } = CURVES[system];
+  return new EcGroup(system, Point, hashToCurve, codec(Point), blinding);
 }

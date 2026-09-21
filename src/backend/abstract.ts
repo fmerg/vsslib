@@ -1,16 +1,11 @@
 import { System } from '../types';
-import { mod, leBytesToInt, intToLeBytes } from '../arith';
+import { mod, modInv, leBytesToInt, intToLeBytes } from '../arith';
 import { BadScalarError, BadPointError, InvalidInput } from '../errors';
+import { isEqualBytes } from '../bytes';
 
 export interface Point {
   toBytes: () => Uint8Array;
   equals: (other: Point) => Promise<boolean>;
-}
-
-function isEqualBytes(a: Uint8Array, b: Uint8Array): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
-  return true;
 }
 
 
@@ -79,10 +74,34 @@ export abstract class Group<P extends Point> {
     return point;
   }
 
+  /** Whether `exp` blinds secret scalars for `point` natively; backends
+   * override it where their multiplication does so */
+  blindsNatively: (point: P) => boolean = () => false;
+
+  /** Exponentiation by a secret scalar. Unless `exp` blinds it natively, the
+   * scalar is split as `point ^ s = (point ^ r) ^ (s / r)` for a fresh random
+   * `r`, so that each exponentiation sees a uniform scalar independent of `s`
+   * and timing leakage does not accumulate over repeated calls with `s`. The
+   * split is multiplicative, since reducing `s - r` would branch on `s < r`.
+   * Inversion is variable-time, so `r` is inverted as `u / (r * u)` for a
+   * fresh random `u`, which shows the inversion only a value independent of `r` */
+  expSecret = async (point: P, scalar: bigint): Promise<P> => {
+    if (this.blindsNatively(point)) return this.exp(point, scalar);
+    const order = this.order;
+    let r = 0n;
+    while (r === 0n) r = await this.randomScalar();
+    let u = 0n;
+    while (u === 0n) u = await this.randomScalar();
+    const rInv = mod(u * modInv(mod(r * u, order), order), order);
+    const q = await this.exp(point, r);
+    return this.exp(q, mod(scalar * rInv, order));
+  }
+
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
   abstract validateScalar: (scalar: bigint) => Promise<boolean>;
   abstract validatePoint: (point: P) => Promise<boolean>;
+  /** Exponentiation, possibly variable-time; use expSecret for secret scalars */
   abstract exp: (point: P, scalar: bigint) => Promise<P>;
   abstract operate: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;

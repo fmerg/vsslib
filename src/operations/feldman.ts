@@ -12,10 +12,10 @@ import { evalCommitments } from './commitments';
 export async function createFeldmanPackets<P extends Point>(
   sharing: ShamirSharing<P>,
 ): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
-  const { exp, generator: g } = sharing.ctx;
+  const { expSecret, generator: g } = sharing.ctx;
   const commitments = [];
   for (const a of sharing.polynomial.coeffs) {
-    commitments.push((await exp(g, a)).toBytes());
+    commitments.push((await expSecret(g, a)).toBytes());
   }
   const packets = await sharing.getSecretShares();
   return { packets, commitments };
@@ -32,7 +32,7 @@ export async function verifyFeldmanCommitments<P extends Point>(
   validateIndex(index);
   const x = await ctx.parseScalar(value);
   const g = ctx.generator;
-  const lhs = await ctx.exp(g, x);
+  const lhs = await ctx.expSecret(g, x);
   const rhs = await evalCommitments(ctx, commitments, index, threshold);
   const isValid = await lhs.equals(rhs);
   if (!isValid) throw new InvalidSecretShare(

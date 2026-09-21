@@ -197,4 +197,19 @@ describe('little-endian fixed-length encoding', () => {
   it('rejects too short length', () => {
     expect(() => intToLeBytes(BigInt(513), 1)).toThrow('Integer does not fit in 1 bytes');
   });
+  it('accepts exactly the integers below 256 ^ length', () => {
+    expect(intToLeBytes((1n << 256n) - 1n, 32)).toEqual(new Uint8Array(32).fill(255));
+    expect(() => intToLeBytes(1n << 256n, 32)).toThrow('Integer does not fit in 32 bytes');
+    expect(() => intToLeBytes(-1n, 32)).toThrow('Integer does not fit in 32 bytes');
+  });
+  it('does not convert the integer to string', () => {
+    // String conversion runs in variable time and copies secrets to the heap
+    const spy = jest.spyOn(BigInt.prototype, 'toString');
+    try {
+      intToLeBytes((1n << 255n) + 12345n, 32);
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

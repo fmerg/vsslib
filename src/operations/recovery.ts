@@ -23,7 +23,7 @@ export async function createSchnorrPacket<P extends Point>(
   validateIndex(index);
   const g = ctx.generator;
   const x = await ctx.parseScalar(value);
-  const y = await ctx.exp(g, x);
+  const y = await ctx.expSecret(g, x);
   const proof = await nizk(ctx, algorithm).proveDlog(
     x, { u: g, v: y }, nonce, [indexToBytes(index)]
   );
