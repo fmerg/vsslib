@@ -22,10 +22,12 @@ All notable changes to this project will be documented in this file.
 - NIZK challenges are computed over a length-prefixed, labelled encoding of their input, and Schnorr packet proofs cover the share index. Proofs and packets produced by 1.0.0 do not verify.
 - Share indexes must be distinct positive safe integers; violations throw `InvalidInput`, also from `recoverPublic` regardless of `errorOnInvalid`.
 - Hash algorithms outside `Algorithms` throw `InvalidInput`.
+- `randomNonce(nrBytes)` throws `InvalidInput` unless `nrBytes` is an integer from 1 to 65536; a size of 0 no longer falls back to 16 bytes.
 - Custom backends: `Group.buff2Point` is renamed to `bytesToPoint`, `Group.bytesToScalar` is removed, and `Group` declares the abstract `hashToPoint(msg, dst)`. In the elliptic backend, `EcGroup.curve` is removed; the wrapped curve is internal.
 
 ### Added
 
+- Browser support through bundlers. Hashing uses `@noble/hashes`, now a direct dependency, and randomness comes from `crypto.getRandomValues`, so that no Node APIs are needed at runtime.
 - Backends `ristretto255`, `decaf448`, `secp256k1`, `p256`, `p384` and `p521`. SEC1 points are encoded compressed, with `0x00` for the point at infinity.
 - `derivePedersenBase(ctx, seed)`, which hashes a public seed to a group element of unknown discrete log.
 - `Group.expSecret(point, scalar)`, exponentiation by a secret scalar, and `Group.blindsNatively(point)`, which tells whether `exp` blinds secret scalars for `point`. Custom backends inherit a default that always splits the scalar; override `blindsNatively` only for points the backend blinds, and as a property like the other `Group` members, since a method would be shadowed by the default.
