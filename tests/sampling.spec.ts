@@ -1,4 +1,4 @@
-import * as nobleUtils from '@noble/curves/utils.js';
+import * as nobleUtils from '@noble/hashes/utils.js';
 import { initBackend } from 'vsslib';
 import { resolveTestConfig } from './environ';
 
