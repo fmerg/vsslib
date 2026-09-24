@@ -2,6 +2,7 @@
   "extends": "../tsconfig.json",
   "compilerOptions": {
     "rootDir": "..",
+    "types": ["node", "jest"],
     "noEmit": true,
     "declaration": false
   },

@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2020",
-    "types": ["node", "jest"],
+    "types": [],
     "module": "commonjs",
     "rootDir": "./src",
     "paths": {

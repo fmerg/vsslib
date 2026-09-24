@@ -10,7 +10,7 @@ module.exports = {
   ),
   // @noble packages are ESM-only; compile them to CommonJS for Jest
   transform: {
-    '^.+\\.ts$': 'ts-jest',
+    '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tests/tsconfig.json' }],
     '^.+\\.js$': ['ts-jest', { tsconfig: { allowJs: true, module: 'commonjs' } }],
   },
   transformIgnorePatterns: ['/node_modules/(?!@noble/)'],
