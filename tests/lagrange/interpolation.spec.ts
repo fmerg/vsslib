@@ -37,10 +37,15 @@ describe('Lagrange interpolation', () => {
     expect(poly2.equals(poly1)).toBe(true);
     for (const [x, y] of points) {
       expect(poly1.evaluate(x)).toEqual(y % order);
+      expect(poly1.evaluateBarycentric(x)).toEqual(y % order);
       expect(poly2.evaluate(x)).toEqual(y % order);
     }
-    const x = await randomScalar();
-    expect(poly2.evaluate(x)).toEqual(poly1.evaluate(x));
+    for (const x of [0n, 1n, 7n, await randomScalar()]) {
+      const y = poly1.evaluate(x);
+      expect(poly1.evaluateNaive(x)).toEqual(y);
+      expect(poly1.evaluateBarycentric(x)).toEqual(y);
+      expect(poly2.evaluate(x)).toEqual(y);
+    }
   });
   it.each(systems)('ok - fixed points - over %s', async (system) => {
     const ctx = initBackend(system);
@@ -50,6 +55,7 @@ describe('Lagrange interpolation', () => {
       expect(poly2.equals(poly1)).toBe(true);
       for (const [x, y] of points) {
         expect(poly1.evaluate(x)).toEqual(BigInt(y) % ctx.order);
+        expect(poly1.evaluateBarycentric(x)).toEqual(BigInt(y) % ctx.order);
       }
     }
   });
