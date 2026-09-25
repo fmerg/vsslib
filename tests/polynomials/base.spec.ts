@@ -230,5 +230,25 @@ describe('Evaluation', () => {
       acc += c * value ** i;
     }
     expect(poly.evaluate(value)).toEqual(BigInt(acc % order));
+    expect(poly.evaluateNaive(value)).toEqual(BigInt(acc % order));
+  });
+});
+
+
+describe('Evaluation - Horner against power sum', () => {
+  it.each(Object.values(Systems))('%s', async (system) => {
+    const ctx = initBackend(system);
+    const order = ctx.order;
+    const values = [
+      0n, 1n, 2n, 50n, 0xffffffffn, 0x100000000n, order - 1n, order, order + 7n, -1n, -order - 3n,
+    ];
+    for (const degree of [0, 1, 4, 24, 25]) {
+      const coeffs = [];
+      for (let i = 0; i < degree + 1; i++) coeffs.push(await ctx.randomScalar());
+      const poly = new BasePolynomial(coeffs, order);
+      for (const value of [...values, await ctx.randomScalar()]) {
+        expect(poly.evaluate(value)).toEqual(poly.evaluateNaive(value));
+      }
+    }
   });
 });

@@ -88,7 +88,23 @@ export class BasePolynomial {
     return new BasePolynomial(this.coeffs.map((coeff) => s * coeff), this.order);
   }
 
+  /** Evaluation at `value` by Horner's rule */
   evaluate = (value: bigint | number): bigint => {
+    const { coeffs, order } = this;
+    const x = mod(BigInt(value), order);
+    // Small x (e.g., share indexes) keeps the accumulator short, so reducing
+    // once at the end is cheaper; otherwise reduce at each step
+    const reduceEachStep = x > 0xffffffffn;
+    let acc = 0n;
+    for (let i = coeffs.length - 1; i >= 0; i--) {
+      acc = acc * x + coeffs[i];
+      if (reduceEachStep) acc = mod(acc, order);
+    }
+    return mod(acc, order);
+  }
+
+  /** Evaluation at `value` as a sum of powers; reference for `evaluate` */
+  evaluateNaive = (value: bigint | number): bigint => {
     const x = BigInt(value);
     const acc = this.coeffs.reduce((acc, c, i) => acc + c * x ** BigInt(i), 0n);
     return mod(acc, this.order);
