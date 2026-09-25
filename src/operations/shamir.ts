@@ -71,6 +71,57 @@ export class ShamirSharing<P extends Point> {
 };
 
 
+/** @internal Polynomial of degree < threshold with the secret as constant term and
+ * uniform other coefficients */
+export async function sampleSharingPolynomial<P extends Point>(
+  ctx: Group<P>,
+  threshold: number,
+  secret: bigint,
+): Promise<FieldPolynomial<P>> {
+  const coeffs = new Array(threshold);
+  coeffs[0] = secret;
+  for (let i = 1; i < threshold; i++) coeffs[i] = await ctx.randomScalar();
+  return new FieldPolynomial(ctx, coeffs);
+}
+
+
+/** @internal Polynomial of degree < threshold through (0, secret), the predefined shares
+ * and uniform values at the remaining indexes below threshold; with no
+ * predefined shares it has the distribution of sampleSharingPolynomial */
+export async function interpolateSharingPolynomial<P extends Point>(
+  ctx: Group<P>,
+  threshold: number,
+  secret: bigint,
+  predefined: SecretShare[],
+): Promise<FieldPolynomial<P>> {
+  const xyPoints = new Array(threshold);
+  xyPoints[0] = [0n, secret];
+  // Allocate predefined shares
+  for (const { index } of predefined) {
+    if (!(0 < index && index < threshold)) {
+      throw new InvalidInput(`Index not in range: ${index}`);
+    }
+  }
+  validateIndexes(predefined.map(share => share.index));
+  for (const { index, value } of predefined) {
+    const x = index;
+    const y = await ctx.parseScalar(value);
+    xyPoints[index] = [x, y];
+  }
+  // Fill positions with non-predefined shares
+  let index = 1;
+  while (index < threshold) {
+    if (xyPoints[index] == undefined) {
+      const x = index;
+      const y = await ctx.randomScalar();
+      xyPoints[index] = [x, y];
+    }
+    index++;
+  }
+  return lagrange(ctx).interpolate(xyPoints);
+}
+
+
 export async function shareSecret<P extends Point>(
   ctx: Group<P>,
   nrShares: number,
@@ -96,48 +147,17 @@ export async function shareSecret<P extends Point>(
   );
 
   secret = secret || await ctx.generateSecret()
-  const xyPoints = new Array(threshold);
-
+  let polynomial;
   try {
     const scalarSecret = await ctx.parseScalar(secret);
-    xyPoints[0] = [0n, scalarSecret];
-    // Allocate predefined shares
-    for (const { index } of predefined) {
-      if (!(0 < index && index < threshold)) {
-        throw new InvalidInput(`Index not in range: ${index}`);
-      }
-    }
-    validateIndexes(predefined.map(share => share.index));
-    for (const { index, value } of predefined) {
-      const x = index;
-      const y = await ctx.parseScalar(value);
-      xyPoints[index] = [x, y];
-    }
-    // Fill positions with non-predefined shares
-    let index = 1;
-    while (index < threshold) {
-      if (xyPoints[index] == undefined) {
-        const x = index;
-        const y = await ctx.randomScalar();
-        xyPoints[index] = [x, y];
-      }
-      index++;
-    }
+    polynomial = predefined.length == 0 ?
+      await sampleSharingPolynomial(ctx, threshold, scalarSecret) :
+      await interpolateSharingPolynomial(ctx, threshold, scalarSecret, predefined);
   } catch (err: unknown) {
-    if (err instanceof InvalidInput)
+    if (err instanceof InvalidInput || err instanceof InterpolationError)
       throw new ShamirError(err.message);
     else
       throw err;
-  }
-
-  let polynomial;
-  try {
-    polynomial = await lagrange(ctx).interpolate(xyPoints);
-  } catch (err: unknown) {
-    if (err instanceof InterpolationError) throw new ShamirError(
-      err.message
-    );
-    else throw err;
   }
   const sharing = new ShamirSharing(ctx, nrShares, threshold, polynomial);
   return { secret, sharing };

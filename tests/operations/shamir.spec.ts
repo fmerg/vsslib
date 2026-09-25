@@ -1,4 +1,10 @@
-import { shareSecret, combineSecretShares, combinePublicShares } from 'vsslib/operations/shamir';
+import {
+  shareSecret,
+  combineSecretShares,
+  combinePublicShares,
+  sampleSharingPolynomial,
+  interpolateSharingPolynomial,
+} from 'vsslib/operations/shamir';
 import {
   initBackend,
   parseScalar,
@@ -25,6 +31,28 @@ const thresholdParams = [
 const selectShare = (index: number, shares: SecretShare[]) => shares.filter(
   s => s.index == index
 )[0];
+
+
+describe('Sharing polynomial - sampling against interpolation', () => {
+  it.each(cartesian([systems, [1, 2, 3, 5, 9]]))(
+    'over %s - threshold %s', async (system, t) => {
+    const ctx = initBackend(system);
+    const secret = await ctx.randomScalar();
+    const sampled = await sampleSharingPolynomial(ctx, t, secret);
+    const interpolated = await interpolateSharingPolynomial(ctx, t, secret, []);
+    for (const poly of [sampled, interpolated]) {
+      expect(poly.degree).toEqual(t - 1);
+      expect(poly.evaluate(0)).toEqual(secret);
+    }
+    // Interpolating the sampled values below threshold gives back the polynomial
+    const predefined: SecretShare[] = [];
+    for (let index = 1; index < t; index++) {
+      predefined.push({ index, value: ctx.scalarToBytes(sampled.evaluate(index)) });
+    }
+    const recovered = await interpolateSharingPolynomial(ctx, t, secret, predefined);
+    expect(recovered.equals(sampled)).toBe(true);
+  });
+});
 
 
 describe('Shamir secret sharing', () => {
