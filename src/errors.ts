@@ -1,25 +1,39 @@
-export class BadModulusError extends Error {}
+/** Base class of all errors thrown by the library */
+export class VssError extends Error {
+  constructor(message?: string) {
+    super(message);
+    this.name = new.target.name;
+  }
+}
 
-export class BadGroupError extends Error {}
+// Internal errors (backend and math layers)
 
-export class BadPointError extends Error {}
+export class ArithmeticError extends VssError {}
 
-export class BadScalarError extends Error {}
+export class BadModulusError extends VssError {}
 
-export class InverseNotExists extends Error {}
+export class BadGroupError extends VssError {}
 
-export class PolynomialEerror extends Error {}
+export class BadPointError extends VssError {}
 
-export class InterpolationError extends Error {}
+export class BadScalarError extends VssError {}
 
-export class ShamirError extends Error {}
+export class InverseNotExists extends VssError {}
 
-export class InvalidInput extends Error {}
+export class PolynomialError extends VssError {}
 
-export class InvalidSecret extends Error {}
+export class InterpolationError extends VssError {}
 
-export class InvalidSignature extends Error {}
+// Public errors (thrown by the public API)
 
-export class InvalidSecretShare extends Error {}
+export class ShamirError extends VssError {}
 
-export class InvalidPublicShare extends Error {}
+export class InvalidInput extends VssError {}
+
+export class InvalidSecret extends VssError {}
+
+export class InvalidSignature extends VssError {}
+
+export class InvalidSecretShare extends VssError {}
+
+export class InvalidPublicShare extends VssError {}

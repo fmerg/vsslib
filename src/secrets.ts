@@ -54,8 +54,9 @@ export const unpackPoint = async <P extends Point>(
   ctx: Group<P>,
   publicBytes: Uint8Array
 ): Promise<P> => {
-  const point = ctx.buff2Point(publicBytes);
+  let point;
   try {
+    point = ctx.buff2Point(publicBytes);
     await ctx.validatePoint(point);
   } catch (err: unknown) {
     if (err instanceof BadPointError) throw new InvalidInput(

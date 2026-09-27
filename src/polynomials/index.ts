@@ -1,5 +1,5 @@
 import { Point, Group } from '../backend';
-import { PolynomialEerror } from '../errors';
+import { PolynomialError } from '../errors';
 import { BasePolynomial } from './base';
 
 
@@ -13,7 +13,7 @@ export class FieldPolynomial<P extends Point> extends BasePolynomial {
 
 
 export async function randomPolynomial<P extends Point>(ctx: Group<P>, degree: number) {
-  if (degree < 0) throw new PolynomialEerror(
+  if (degree < 0) throw new PolynomialError(
     `Polynomial degree must be positive: ${degree}`
   );
   const { randomScalar } = ctx;
