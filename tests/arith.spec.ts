@@ -1,4 +1,4 @@
-import { leBytesToInt, intToLeBytes, mod, gcd, modInv } from 'vsslib/arith';
+import { leBytesToInt, intToLeBytes, mod, gcd, modInv, modInvBatch } from 'vsslib/arith';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -167,6 +167,44 @@ describe('Inverse not exists', () => {
     );
   })
 })
+
+describe('modInvBatch', () => {
+  const order = BigInt(2) ** BigInt(252) + BigInt('27742317777372353535851937790883648493');
+  it.each([
+    [[1, 2, 3, 4, 5, 6], 7],
+    [[-1, -6, 8, 13, 20], 7],
+    [[1, 5, 7, 11, -1], 12],
+    [[3], 11],
+  ])('%s mod %s matches modInv', async (xs, q) => {
+    const values = xs.map(x => BigInt(x));
+    expect(modInvBatch(values, BigInt(q))).toEqual(
+      values.map(v => modInv(v, BigInt(q)))
+    );
+  });
+  test('large prime modulus', async () => {
+    const values = Array.from({ length: 50 }, (_, i) =>
+      BigInt(i + 1) ** BigInt(60) - BigInt(i * 1000003)
+    );
+    const inverses = modInvBatch(values, order);
+    expect(inverses).toEqual(values.map(v => modInv(v, order)));
+    inverses.forEach((w, i) => expect(mod(w * values[i], order)).toBe(__1n));
+  });
+  test('empty input', async () => {
+    expect(modInvBatch([], BigInt(7))).toEqual([]);
+  });
+  it.each([
+    [[1, 2, 0], 7],
+    [[7, 1], 7],
+    [[1, -14, 3], 7],
+    [[1, 2, 5], 6],
+    [[5, 9], 12],
+  ])('%s mod %s has no inverse', async (xs, q) => {
+    expect(() => modInvBatch(xs.map(x => BigInt(x)), BigInt(q))).toThrow(
+      'No inverse exists for provided modulo'
+    );
+  });
+});
+
 
 describe('little-endian roundtrip', () => {
   it.each([
