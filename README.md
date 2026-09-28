@@ -107,6 +107,8 @@ See [here](#security-main) for details.
     * [Generation of packets](#generation-of-packets)
     * [Recovery operation](#recovery-operation)
 * [Security](#security)
+* [Performance](#performance)
+  * [Horner's method](#horner-method)
 * [Development](#development)
 
 # Installation
@@ -754,6 +756,110 @@ e.g., cryptographically secure random bytes, unique session identifiers,
 synchronized counters, or combinations thereof.
 It is the user's responsibility to ensure that its design is secure in the
 particular application context.
+
+# <a name="performance"></a>Performance
+
+### <a name="horner-method"></a>Horner's method
+
+Horner's rule evaluates a polynomial of degree `t - 1` with `t - 1`
+multiplications and additions, as `a_0 + x(a_1 + x(a_2 + ...))`, without
+computing powers of `x`. Vsslib evaluates polynomials at every share index
+`i = 1, ..., n` in two places: in the exponent, when verifying VSS commitments,
+and over scalars, when computing the shares from the sharing polynomial. The
+work on these places sped up VSS and DKG considerably, but most of the gain
+does not come from Horner's rule itself. Verification already used it, and
+became faster because each of its steps became cheaper, whereas Horner's rule
+over the sharing polynomial gains a lot in relative terms on an operation that
+was cheap to begin with. The causes are described separately below, followed by
+the measured changes of median running time against the previous
+implementation, over `n = 10, 50` shares and thresholds `t = 5, 25` (DKG with
+`n = 10, t = 5` only):
+
+| operation | `ed25519`, `decaf448` | `secp256k1`, `p521` | cause |
+| --- | ---: | ---: | --- |
+| verify/parse Feldman packets | -31% to -61% | -89% to -95% | [variable-time steps](#horner-variable-time) |
+| verify/parse Pedersen packets | -22% to -54% | -73% to -91% | [variable-time steps](#horner-variable-time) |
+| Feldman VSS protocol run | -33% to -56% | -88% to -94% | [variable-time steps](#horner-variable-time) |
+| Pedersen VSS protocol run | -19% to -48% | -65% to -89% | [variable-time steps](#horner-variable-time) |
+| DKG protocol run | -12% to -14% | -45% to -46% | [variable-time steps](#horner-variable-time) |
+| `getSecretShares` | -78% to -93% | -78% to -93% | [Horner's rule](#horner-sharing-polynomial) |
+| `createFeldmanPackets` (n = 50) | up to -23% | up to -22% | [Horner's rule](#horner-sharing-polynomial) |
+| `shareSecret` (t = 5 / t = 25) | -45% / -91% | -45% / -91% | [no interpolation](#horner-sampling) |
+
+Operations dominated by exponentiations by secret scalars or Lagrange
+coefficients, such as `getPublicShares`, `createPedersenPackets`, the
+combination of shares and SSS or public recovery protocol runs, are unchanged
+within noise.
+
+#### <a name="horner-variable-time"></a>Variable-time steps in commitment verification
+
+A share with index `i` is verified against the commitments `C_0, ..., C_(t-1)`
+by computing `C_0 * C_1^i * C_2^(i^2) * ... * C_(t-1)^(i^(t-1))`, which vsslib
+already did by Horner's rule as `C_0 * (C_1 * (C_2 * ...)^i)^i`. This had
+however no effect on the cost, because the steps went through `Group.exp`,
+which noble runs in constant time, with the same sequence of operations for
+every scalar up to the group order. Raising to the small index `i` then costs as
+much as raising to the large `i^j`, so that both forms take `t - 1` full
+multiplications. The steps now go through `Group.expPublic`, which the elliptic
+backends implement by noble's variable-time multiplication, whose cost grows
+with the length of the scalar. Each step then costs a few doublings and
+additions, since `i` has only a few bits. This is what makes verification
+faster: measured on its own, this change accounts for nearly all of the gains of
+verification, VSS and DKG in the table. Horner's rule is what makes it pay off
+in full, since it keeps every scalar as short as `i`; with the powers `i^j`
+instead, the scalars would grow by the length of `i` per term up to the full
+length of the order. Variable time is safe here, since the index and the
+commitments are public (see [Side-channel attacks](#side-channel-attacks)), and
+`Group.expPublic` is used nowhere else.
+
+For example, a Feldman VSS run with `n = 50, t = 25` takes 179 ms instead of
+2.21 s on `secp256k1`. The gain is smaller on the Edwards curves (993 ms instead
+of 1.51 s on `ed25519`), because each parsed commitment is checked to lie in the
+prime-order subgroup, a full multiplication that remains.
+
+#### <a name="horner-sharing-polynomial"></a>Horner's rule over the sharing polynomial
+
+The sharing polynomial used to be evaluated at each share index in the
+barycentric form of the interpolating polynomial, with one modular inversion
+per interpolation point at every call. It is now evaluated by Horner's rule
+over its coefficients, with `t - 1` multiplications and a single reduction
+modulo the order, which makes `getSecretShares` 78% to 93% faster. This is the
+gain of Horner's rule proper, but it concerns arithmetic on scalars, which is
+cheap compared to group operations: with `n = 50, t = 25` on `ed25519`,
+`getSecretShares` takes 92 µs instead of 1.21 ms, whereas `getPublicShares`,
+which raises the generator to each share, takes 11 ms. It is visible in
+`createFeldmanPackets`, which evaluates the polynomial alongside cheaper group
+operations, but not in complete protocol runs.
+
+#### <a name="horner-sampling"></a>Sampling instead of interpolation
+
+`shareSecret` used to construct the sharing polynomial by interpolating the
+secret at `0` and random values at `1, ..., t - 1`. Without predefined shares,
+it now samples the coefficients directly, with the secret as constant term,
+which yields the same distribution without interpolation, so that `shareSecret`
+is 45% faster at `t = 5` and 91% faster at `t = 25`. This is unrelated to
+Horner's rule, and again concerns scalar arithmetic in the microsecond range.
+With predefined shares, the polynomial is still interpolated, now building the
+Lagrange basis in quadratic instead of cubic time; this case was not
+benchmarked.
+
+#### Measurement setup
+
+The figures were measured with the [benchmarks](#benchmarks), 5 runs per side,
+on an Intel Core i5-12450H pinned to its performance cores (`--cpus 0-7`) with
+the `powersave` governor, under Ubuntu 24.04.5 (Linux 6.8), Node.js 22.22.1 and
+`@noble/curves` 2.4.0. Absolute times depend on the machine; the relative
+changes are what to compare. To reproduce, save baselines with `--save` before
+the changes and compare after them, e.g.:
+
+```
+$ ./bench.sh -m shamir,feldman,pedersen -s ed25519,decaf448,secp256k1,p521 \
+    -n 10,50 -t 5,25 --cpus 0-7 -r 5 --compare <baseline>
+$ ./bench.sh -o "protocols/*Vss" -s ed25519,decaf448,secp256k1,p521 \
+    -n 10,50 -t 5,25 --cpus 0-7 -r 5 --iterations 3 --compare <baseline>
+$ ./bench.sh -o protocols/dkg -s ed25519,decaf448,secp256k1,p521 \
+    -n 10 -t 5 --cpus 0-7 -r 5 --iterations 3 --compare <baseline>
+```
 
 # Development
 
