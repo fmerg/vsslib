@@ -51,9 +51,9 @@ All notable changes to this project will be documented in this file.
 
 ### Performance
 
-- Verification of Feldman and Pedersen commitments raises the commitments to powers of the share index through `expPublic`. Verifying and parsing Feldman packets is 31-61% faster on `ed25519` and `decaf448` and 89-95% faster on `secp256k1` and `p521`, Pedersen packets 22-54% and 73-91%; a DKG with 10 parties is 12-14% and 45-46% faster, respectively.
-- `shareSecret` without predefined shares samples the coefficients of the sharing polynomial directly instead of interpolating, and interpolation builds the Lagrange basis in quadratic instead of cubic time; `shareSecret` is 45% faster at threshold 5 and 90% faster at threshold 25.
-- The sharing polynomial is evaluated by Horner's rule over its coefficients instead of the barycentric formula, which inverted once per point and call; `getSecretShares` is 78-93% faster.
+- Verification of Feldman and Pedersen commitments raises the commitments to powers of the share index through `expPublic`. Verifying and parsing Feldman packets takes 31-61% less time on `ed25519` and `decaf448` and 89-95% less on `secp256k1` and `p521`, Pedersen packets 22-54% and 73-91% less; a DKG with 10 parties takes 12-14% and 45-46% less time, respectively.
+- `shareSecret` without predefined shares samples the coefficients of the sharing polynomial directly instead of interpolating, and interpolation builds the Lagrange basis in quadratic instead of cubic time; `shareSecret` takes 45% less time at threshold 5 and about 90% less at threshold 25.
+- The sharing polynomial is evaluated by Horner's rule over its coefficients instead of the barycentric formula, which inverted once per point and call; `getSecretShares` takes 78-93% less time.
 
 ### Fixed
 
