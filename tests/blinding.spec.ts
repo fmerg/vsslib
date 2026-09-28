@@ -176,7 +176,7 @@ describe('secret scalars go through expSecret', () => {
     await verifyFeldmanCommitments(ctx, commitments, shares[0], 2);
     expect(trace.direct).toEqual([]);
     // Horner steps raise to the share index only
-    expect(trace.public).toEqual([1n, 1n]);
+    expect(trace.public).toEqual([1n]);
     expect(trace.secret).toEqual([await ctx.parseScalar(shares[0].value)]);
   });
   it.each(systems)('pedersen over %s', async (system) => {
@@ -192,7 +192,7 @@ describe('secret scalars go through expSecret', () => {
     const { value, index, binding } = packets[1];
     await verifyPedersenCommitments(ctx, commitments, pedersenBase, { value, index }, binding!, 2);
     expect(trace.direct).toEqual([]);
-    expect(trace.public).toEqual([2n, 2n]);
+    expect(trace.public).toEqual([2n]);
     expect(trace.secret).toEqual([
       await ctx.parseScalar(value), await ctx.parseScalar(binding!),
     ]);
@@ -218,18 +218,22 @@ describe('secret scalars go through expSecret', () => {
 describe('public exponentiation', () => {
   it.each(systems)('commitment evaluation agrees with the exp-based path over %s', async (system) => {
     const ctx = initBackend(system);
-    const threshold = 4;
-    const { sharing } = await shareSecret(ctx, 6, threshold);
-    const { commitments } = await createFeldmanPackets(sharing);
-    for (const index of [1, 2, 6, 1000]) {
-      const fast = await evalCommitments(ctx, commitments, index, threshold);
-      // The default of Group.expPublic, which custom backends inherit
-      const spy = jest.spyOn(ctx, 'expPublic').mockImplementation(ctx.exp);
-      try {
-        const slow = await evalCommitments(ctx, commitments, index, threshold);
-        expect(await fast.equals(slow)).toBe(true);
-      } finally {
-        spy.mockRestore();
+    for (const threshold of [1, 2, 4]) {
+      const { sharing } = await shareSecret(ctx, 6, threshold);
+      const { commitments } = await createFeldmanPackets(sharing);
+      for (const index of [1, 2, 6, 1000]) {
+        const fast = await evalCommitments(ctx, commitments, index, threshold);
+        // The default of Group.expPublic, which custom backends inherit
+        const spy = jest.spyOn(ctx, 'expPublic').mockImplementation(ctx.exp);
+        try {
+          const slow = await evalCommitments(ctx, commitments, index, threshold);
+          expect(await fast.equals(slow)).toBe(true);
+        } finally {
+          spy.mockRestore();
+        }
+        // Against g ^ f(index), which the commitments open to
+        const y = sharing.polynomial.evaluate(index);
+        expect(await fast.equals(await ctx.exp(ctx.generator, y))).toBe(true);
       }
     }
   });
