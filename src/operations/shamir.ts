@@ -2,7 +2,7 @@ import { Point, Group } from '../backend';
 import { mod } from '../arith';
 import { FieldPolynomial } from '../polynomials';
 import { InterpolationError, ShamirError, InvalidInput } from '../errors';
-import { lagrange, computeLambda } from '../lagrange';
+import { lagrange, computeLambdas } from '../lagrange';
 import { validateIndexes, validateShareCount } from '../indexes';
 import { SecretShare, PublicShare } from '../types';
 
@@ -171,13 +171,11 @@ export async function combineSecretShares<P extends Point>(
 ): Promise<Uint8Array> {
   validateShareCount(shares.length, threshold);
   const order = ctx.order;
-  const indexes = shares.map(share => share.index);
-  validateIndexes(indexes);
+  const lambdas = computeLambdas(ctx, shares.map(share => share.index));
   let x = 0n;
-  for (const { value, index } of shares) {
-    const li = computeLambda(ctx, index, indexes);
-    const xi = await ctx.parseScalar(value);
-    x = mod(x + li * xi, order);
+  for (let i = 0; i < shares.length; i++) {
+    const xi = await ctx.parseScalar(shares[i].value);
+    x = mod(x + lambdas[i] * xi, order);
   }
   return ctx.scalarToBytes(x);
 }
@@ -190,13 +188,11 @@ export async function combinePublicShares<P extends Point>(
 ): Promise<Uint8Array> {
   validateShareCount(shares.length, threshold);
   const exp = ctx.exp;
-  const indexes = shares.map(share => share.index);
-  validateIndexes(indexes);
+  const lambdas = computeLambdas(ctx, shares.map(share => share.index));
   let y = ctx.neutral;
-  for (const { value, index } of shares) {
-    const li = computeLambda(ctx, index, indexes);
-    const yi = await ctx.parsePoint(value)
-    y = await ctx.operate(y, await exp(yi, li));
+  for (let i = 0; i < shares.length; i++) {
+    const yi = await ctx.parsePoint(shares[i].value)
+    y = await ctx.operate(y, await exp(yi, lambdas[i]));
   }
   return y.toBytes();
 }

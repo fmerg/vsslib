@@ -1,5 +1,5 @@
 import { Point, Group } from './backend';
-import { mod, modInv } from './arith';
+import { mod, modInv, modInvBatch } from './arith';
 import { FieldPolynomial } from './polynomials';
 import { NoInverseError, InterpolationError, InvalidInput } from './errors';
 import { validateIndexes } from './indexes';
@@ -8,8 +8,67 @@ import { validateIndexes } from './indexes';
 export type XYPoint = [bigint, bigint] | [number, number];
 
 
-/** Lagrange coefficient at zero of `index` with respect to `indexes` */
+// Products of indexes are reduced only once they outgrow the order by this
+// many bits; reducing at every step is slower
+const REDUCTION_MARGIN = 256n;
+
+function reduceIfLarge(m: bigint, order: bigint, bound: bigint): bigint {
+  return m >= bound || -m >= bound ? m % order : m;
+}
+
+
+/** Lagrange coefficient at zero of `index` with respect to `indexes`, as
+ * the product of the indexes over the product of their differences, with a
+ * single inversion */
 export function computeLambda<P extends Point>(
+  ctx: Group<P>,
+  index: number,
+  indexes: number[]
+): bigint {
+  validateIndexes(indexes);
+  if (!indexes.includes(index)) throw new InvalidInput(
+    `Index not included in indexes: ${index}`
+  );
+  const order = ctx.order;
+  const bound = order << REDUCTION_MARGIN;
+  let numerator = 1n;
+  let denominator = 1n;
+  for (const j of indexes) {
+    if (j !== index) {
+      numerator = reduceIfLarge(numerator * BigInt(j), order, bound);
+      denominator = reduceIfLarge(denominator * BigInt(j - index), order, bound);
+    }
+  }
+  return mod(numerator * modInv(denominator, order), order);
+}
+
+
+/** Lagrange coefficients at zero of all `indexes`, in the same order. Each
+ * is the product N of all indexes over x_i times the product of differences
+ * D_i, so that a single batch inversion serves all of them */
+export function computeLambdas<P extends Point>(
+  ctx: Group<P>,
+  indexes: number[]
+): bigint[] {
+  validateIndexes(indexes);
+  const order = ctx.order;
+  const bound = order << REDUCTION_MARGIN;
+  let numerator = 1n;
+  for (const x of indexes) numerator = reduceIfLarge(numerator * BigInt(x), order, bound);
+  const denominators = indexes.map(xi => {
+    let d = BigInt(xi);
+    for (const xj of indexes) {
+      if (xj !== xi) d = reduceIfLarge(d * BigInt(xj - xi), order, bound);
+    }
+    return d;
+  });
+  return modInvBatch(denominators, order).map(w => mod(numerator * w, order));
+}
+
+
+/** @internal Same as computeLambda, inverting each difference separately;
+ * reference for computeLambda and computeLambdas */
+export function computeLambdaNaive<P extends Point>(
   ctx: Group<P>,
   index: number,
   indexes: number[]
