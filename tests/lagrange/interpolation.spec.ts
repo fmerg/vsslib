@@ -3,7 +3,7 @@ import { cartesian } from '../utils';
 import { interpolate as textbooxInterpolate } from './helpers';
 import { resolveTestConfig } from '../environ';
 
-import { lagrange } from 'vsslib/lagrange';
+import { lagrange, expandBasis, expandBasisNaive } from 'vsslib/lagrange';
 
 const { systems } = resolveTestConfig();
 
@@ -37,10 +37,15 @@ describe('Lagrange interpolation', () => {
     expect(poly2.equals(poly1)).toBe(true);
     for (const [x, y] of points) {
       expect(poly1.evaluate(x)).toEqual(y % order);
+      expect(poly1.evaluateBarycentric(x)).toEqual(y % order);
       expect(poly2.evaluate(x)).toEqual(y % order);
     }
-    const x = await randomScalar();
-    expect(poly2.evaluate(x)).toEqual(poly1.evaluate(x));
+    for (const x of [0n, 1n, 7n, await randomScalar()]) {
+      const y = poly1.evaluate(x);
+      expect(poly1.evaluateNaive(x)).toEqual(y);
+      expect(poly1.evaluateBarycentric(x)).toEqual(y);
+      expect(poly2.evaluate(x)).toEqual(y);
+    }
   });
   it.each(systems)('ok - fixed points - over %s', async (system) => {
     const ctx = initBackend(system);
@@ -50,6 +55,7 @@ describe('Lagrange interpolation', () => {
       expect(poly2.equals(poly1)).toBe(true);
       for (const [x, y] of points) {
         expect(poly1.evaluate(x)).toEqual(BigInt(y) % ctx.order);
+        expect(poly1.evaluateBarycentric(x)).toEqual(BigInt(y) % ctx.order);
       }
     }
   });
@@ -62,3 +68,24 @@ describe('Lagrange interpolation', () => {
   });
 });
 
+
+
+describe('Lagrange basis - synthetic division against expansion', () => {
+  it.each(cartesian([[0, 1, 2, 3, 5, 9, 25], systems]))(
+    'random x\'s - %s points - over %s', async (nrPoints, system) => {
+    const ctx = initBackend(system);
+    const xs = [];
+    for (let i = 0; i < nrPoints; i++) xs.push(await ctx.randomScalar());
+    expect(expandBasis(xs, ctx.order)).toEqual(expandBasisNaive(xs, ctx.order));
+  });
+  it.each(systems)('fixed and repeated x\'s - over %s', async (system) => {
+    const order = initBackend(system).order;
+    for (const xs of [
+      [0n, 1n, 2n, 3n, 4n],
+      [5n, -3n, order + 2n, 0n],
+      [1n, order + 1n, 7n],
+    ]) {
+      expect(expandBasis(xs, order)).toEqual(expandBasisNaive(xs, order));
+    }
+  });
+});

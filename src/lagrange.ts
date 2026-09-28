@@ -31,6 +31,80 @@ export function computeLambda<P extends Point>(
 }
 
 
+/** @internal Numerators (coefficients in ascending order) and denominators of
+ * the Lagrange basis polynomials over `xs`, modulo `order`. Expands the
+ * product of all (x - x_i) once and divides it by each (x - x_j) */
+export function expandBasis(xs: bigint[], order: bigint): {
+  numerators: bigint[][],
+  denominators: bigint[],
+} {
+  const k = xs.length;
+  // Coefficients of the product of all (x - x_i)
+  let master = [1n];
+  for (const xi of xs) {
+    const next = new Array(master.length + 1);
+    next[0] = mod(- xi * master[0], order);
+    for (let a = 1; a < master.length; a++) {
+      next[a] = mod(master[a - 1] - xi * master[a], order);
+    }
+    next[master.length] = master[master.length - 1];
+    master = next;
+  }
+  const numerators = new Array(k);
+  const denominators = new Array(k);
+  for (let j = 0; j < k; j++) {
+    const xj = xs[j];
+    // Synthetic division by (x - x_j)
+    const pj = new Array(k);
+    pj[k - 1] = master[k];
+    for (let a = k - 1; a > 0; a--) {
+      pj[a - 1] = mod(master[a] + xj * pj[a], order);
+    }
+    let w = 1n;
+    for (let i = 0; i < k; i++) {
+      if (i !== j) w = mod(w * (xj - xs[i]), order);
+    }
+    numerators[j] = pj;
+    denominators[j] = w;
+  }
+  return { numerators, denominators };
+}
+
+
+/** @internal Same as expandBasis, expanding each numerator separately;
+ * reference for expandBasis */
+export function expandBasisNaive(xs: bigint[], order: bigint): {
+  numerators: bigint[][],
+  denominators: bigint[],
+} {
+  const k = xs.length;
+  const numerators = new Array(k);
+  const denominators = new Array(k);
+  for (let j = 0; j < k; j++) {
+    const xj = xs[j];
+    let w = 1n;
+    let pj = [1n];
+    for (let i = 0; i < k; i++) {
+      if (i !== j) {
+        const xi = xs[i];
+        w *= xj - xi;
+        const len = pj.length;
+        const _pj = new Array(len + 1);
+        _pj[0] = - xi * pj[0];
+        for (let a = 0; a < len - 1; a++) {
+          _pj[a + 1] = pj[a] - xi * pj[a + 1];
+        }
+        _pj[len] = pj[len - 1];
+        pj = _pj;
+      }
+    }
+    numerators[j] = pj.map((c) => mod(c, order));
+    denominators[j] = mod(w, order);
+  }
+  return { numerators, denominators };
+}
+
+
 export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
   xs: bigint[];
   ys: bigint[];
@@ -43,40 +117,23 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
       'Number of provided points exceeds order'
     );
 
-    const xs = new Array(k);
-    const ys = new Array(k);
+    const xs = points.map(([x,]) => x);
+    const ys = points.map(([, y]) => y);
     const ws = new Array(k);
-    let coeffs = new Array(k).fill(0n);
+    const { numerators, denominators } = expandBasis(xs, order);
+    const coeffs = new Array(k).fill(0n);
     for (let j = 0; j < k; j++) {
-      const [xj, yj] = points[j];
-      let w = 1n;
-      let pj = [1n];
-      for (let i = 0; i < k; i++) {
-        if (i !== j) {
-          const [xi,] = points[i];
-          w *= xj - xi;
-          const len = pj.length;
-          const _pj = new Array(len + 1);
-          _pj[0] = - xi * pj[0];
-          for (let a = 0; a < len - 1; a++) {
-            _pj[a + 1] = pj[a] - xi * pj[a + 1];
-          }
-          _pj[len] = pj[len - 1];
-          pj = _pj;
-        }
-      }
       let wj;
-      try { wj = modInv(w, order); } catch (err: unknown) {
+      try { wj = modInv(denominators[j], order); } catch (err: unknown) {
         if (err instanceof NoInverseError) throw new InterpolationError(
           'Not all provided x\'s are distinct modulo order'
         );
         else throw err;
       }
-      xs[j] = xj;
-      ys[j] = yj;
       ws[j] = wj;
-      const fj = yj * wj;
-      coeffs = coeffs.map((c, i) => c + fj * pj[i]);
+      const fj = mod(ys[j] * wj, order);
+      const pj = numerators[j];
+      for (let i = 0; i < k; i++) coeffs[i] += fj * pj[i];
     }
     super(ctx, coeffs);
     this.xs = xs;
@@ -84,7 +141,9 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
     this.ws = ws;
   }
 
-  evaluate = (value: bigint | number): bigint => {
+  /** Evaluation at `value` in barycentric form; reference for the inherited
+   * `evaluate`, which runs Horner's rule over the coefficients */
+  evaluateBarycentric = (value: bigint | number): bigint => {
     const { xs, ys, ws, order } = this;
     const x = BigInt(value);
     let [b, c] = [0n, 0n];

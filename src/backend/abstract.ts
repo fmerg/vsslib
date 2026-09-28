@@ -97,6 +97,12 @@ export abstract class Group<P extends Point> {
     return this.exp(q, mod(scalar * rInv, order));
   }
 
+  /** Exponentiation by a public scalar, such as a share index, which may run
+   * in variable time and must therefore never see secrets. Defaults to `exp`;
+   * backends override it, as a property like `blindsNatively`, where a faster
+   * variable-time multiplication exists */
+  expPublic = async (point: P, scalar: bigint): Promise<P> => this.exp(point, scalar);
+
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
   abstract validateScalar: (scalar: bigint) => Promise<boolean>;

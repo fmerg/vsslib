@@ -17,6 +17,7 @@ import {
   verifyPedersenCommitments,
   createSchnorrPacket,
 } from 'vsslib';
+import { evalCommitments } from 'vsslib/operations/commitments';
 import { resolveTestConfig } from './environ';
 
 const { systems } = resolveTestConfig();
@@ -37,12 +38,13 @@ const NATIVE: Record<string, { generator: boolean, other: boolean }> = {
 };
 
 
-/** Record the scalars passed to expSecret, and those passed to exp other
- * than from within expSecret */
+/** Record the scalars passed to expSecret and expPublic, and those passed to
+ * exp other than from within either */
 const traceExp = <P extends Point>(ctx: Group<P>) => {
   const direct: bigint[] = [];
   const secret: bigint[] = [];
-  const { exp, expSecret } = ctx;
+  const pub: bigint[] = [];
+  const { exp, expSecret, expPublic } = ctx;
   let depth = 0;
   ctx.exp = async (point, scalar) => {
     if (depth === 0) direct.push(scalar);
@@ -53,7 +55,12 @@ const traceExp = <P extends Point>(ctx: Group<P>) => {
     depth++;
     try { return await expSecret(point, scalar); } finally { depth--; }
   };
-  return { direct, secret };
+  ctx.expPublic = async (point, scalar) => {
+    pub.push(scalar);
+    depth++;
+    try { return await expPublic(point, scalar); } finally { depth--; }
+  };
+  return { direct, secret, public: pub };
 }
 
 
@@ -79,6 +86,7 @@ describe('secret exponentiation', () => {
       for (const scalar of scalars) {
         const expected = await ctx.exp(point, scalar);
         expect(await (await ctx.expSecret(point, scalar)).equals(expected)).toBe(true);
+        expect(await (await ctx.expPublic(point, scalar)).equals(expected)).toBe(true);
       }
     }
   });
@@ -149,6 +157,7 @@ describe('secret scalars go through expSecret', () => {
     await isKeypair(ctx, secret, publicBytes);
     await createSchnorrPacket(ctx, { value: secret, index: 1 });
     expect(trace.direct).toEqual([]);
+    expect(trace.public).toEqual([]);
     expect(trace.secret.filter(s => s === x)).toHaveLength(3);
   });
   it.each(systems)('sharing over %s', async (system) => {
@@ -160,11 +169,14 @@ describe('secret scalars go through expSecret', () => {
     await sharing.getShare(1);
     const { commitments } = await createFeldmanPackets(sharing);
     expect(trace.direct).toEqual([]);
+    expect(trace.public).toEqual([]);
     expect(trace.secret).toEqual(expect.arrayContaining(coeffs));
     const shares = await sharing.getSecretShares();
     trace.secret.length = 0;
     await verifyFeldmanCommitments(ctx, commitments, shares[0], 2);
-    expect(trace.direct.every(s => s === 1n)).toBe(true);
+    expect(trace.direct).toEqual([]);
+    // Horner steps raise to the share index only
+    expect(trace.public).toEqual([1n]);
     expect(trace.secret).toEqual([await ctx.parseScalar(shares[0].value)]);
   });
   it.each(systems)('pedersen over %s', async (system) => {
@@ -174,11 +186,13 @@ describe('secret scalars go through expSecret', () => {
     const trace = traceExp(ctx);
     const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
     expect(trace.direct).toEqual([]);
+    expect(trace.public).toEqual([]);
     expect(trace.secret).toEqual(expect.arrayContaining(sharing.polynomial.coeffs));
     trace.secret.length = 0;
     const { value, index, binding } = packets[1];
     await verifyPedersenCommitments(ctx, commitments, pedersenBase, { value, index }, binding!, 2);
-    expect(trace.direct.every(s => s === 2n)).toBe(true);
+    expect(trace.direct).toEqual([]);
+    expect(trace.public).toEqual([2n]);
     expect(trace.secret).toEqual([
       await ctx.parseScalar(value), await ctx.parseScalar(binding!),
     ]);
@@ -194,7 +208,33 @@ describe('secret scalars go through expSecret', () => {
     await nizk(ctx, Algorithms.SHA256).proveDlog(z, { u, v: w });
     await nizk(ctx, Algorithms.SHA256).proveDDH(z, { u, v, w });
     expect(trace.direct).toEqual([]);
+    expect(trace.public).toEqual([]);
     // One nonce mult for dlog, one per entry of the 2x2 DDH relation
     expect(trace.secret).toHaveLength(5);
+  });
+});
+
+
+describe('public exponentiation', () => {
+  it.each(systems)('commitment evaluation agrees with the exp-based path over %s', async (system) => {
+    const ctx = initBackend(system);
+    for (const threshold of [1, 2, 4]) {
+      const { sharing } = await shareSecret(ctx, 6, threshold);
+      const { commitments } = await createFeldmanPackets(sharing);
+      for (const index of [1, 2, 6, 1000]) {
+        const fast = await evalCommitments(ctx, commitments, index, threshold);
+        // The default of Group.expPublic, which custom backends inherit
+        const spy = jest.spyOn(ctx, 'expPublic').mockImplementation(ctx.exp);
+        try {
+          const slow = await evalCommitments(ctx, commitments, index, threshold);
+          expect(await fast.equals(slow)).toBe(true);
+        } finally {
+          spy.mockRestore();
+        }
+        // Against g ^ f(index), which the commitments open to
+        const y = sharing.polynomial.evaluate(index);
+        expect(await fast.equals(await ctx.exp(ctx.generator, y))).toBe(true);
+      }
+    }
   });
 });
