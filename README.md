@@ -109,6 +109,8 @@ See [here](#security-main) for details.
 * [Security](#security)
 * [Performance](#performance)
   * [Horner's method](#horner-method)
+  * [Common denominator](#common-denominator)
+  * [Measurement setup](#measurement-setup)
 * [Development](#development)
 
 # Installation
@@ -299,6 +301,27 @@ const combinedPublic = await combinePublicShares(ctx, publicShares, t);
 
 > **Warning**
 > Throws `vsslib.InvalidInput` if less than `t` shares are provided.
+
+#### Lagrange coefficients
+
+The combining operations weigh each share by the Lagrange coefficient at zero
+of its index with respect to the indexes of all combined shares. Protocols that
+combine shares by themselves can compute these coefficients, as bigints modulo
+the group order, as follows.
+
+```js
+import { computeLambda, computeLambdas } from "vsslib";
+
+const lambdas = computeLambdas(ctx, [1, 3, 4]);   // one per index, in order
+const lambda = computeLambda(ctx, 3, [1, 3, 4]);  // that of index 3 only
+```
+
+Prefer `computeLambdas` when all coefficients are needed, since it inverts a
+single value for all of them (see [Common denominator](#common-denominator)).
+
+> **Warning**
+> Both throw `vsslib.InvalidInput` if the indexes are not distinct positive
+> safe integers, and `computeLambda` also if `index` is not among them.
 
 ## <a name="verifiable-secret-sharing"></a>Verifiable Secret Sharing (VSS)
 
@@ -843,14 +866,51 @@ With predefined shares, the polynomial is still interpolated, now building the
 Lagrange basis in quadratic instead of cubic time; this case was not
 benchmarked.
 
-#### Measurement setup
+### <a name="common-denominator"></a>Common denominator
+
+The Lagrange coefficient of index `x_i` with respect to the indexes
+`x_1, ..., x_k` of the combined shares is the product of `x_j / (x_j - x_i)`
+over all `j` other than `i`. The combining operations used to compute each
+coefficient separately and to invert every difference modulo the order, i.e.
+`k(k - 1)` modular inversions for `k` shares, each a run of the extended
+Euclidean algorithm on big integers. The coefficients are now written over a
+common denominator, as `N / (x_i D_i)` with `N` the product of all indexes and
+`D_i` the product of the differences, and the denominators of all coefficients
+are inverted together by Montgomery's trick, with a single inversion and three
+multiplications per coefficient. Since indexes are small integers, these
+products are reduced modulo the order only once they outgrow it by 256 bits:
+reducing at every step made them 2-3 times slower, and not reducing at all much
+slower for thousands of shares. Measured changes of median running time of
+`combineSecretShares` against the previous implementation, with `n = 100`
+shares:
+
+| threshold | `ed25519` | `decaf448` | `secp256k1` | `p521` |
+| ---: | ---: | ---: | ---: | ---: |
+| 5 | -15% | -17% | -12% | -22% |
+| 25 | -84% | -80% | -84% | -80% |
+| 50 | -91% | -91% | -91% | -90% |
+| 100 | -94% | -94% | -93% | -94% |
+
+For example, combining 100 secret shares on `ed25519` takes 662 µs instead of
+10.4 ms. This concerns arithmetic on scalars only. `combinePublicShares` and
+`recoverPublic` are unchanged within noise, since raising each share to its
+coefficient costs far more than computing the coefficient: with `t = 25` on
+`ed25519`, `combinePublicShares` takes 39 ms, of which the coefficients took
+about 0.5 ms. The same holds for SSS and public recovery protocol runs.
+
+`shareSecret` with predefined shares interpolates `t` points, which inverts the
+`t` denominators of the Lagrange basis; these are now inverted in a batch too.
+Measured with a separate script, since the benchmarks do not cover predefined
+shares, it takes 10-25% less time at `t = 25` and 43-55% less at `t = 50, 100`.
+
+### <a name="measurement-setup"></a>Measurement setup
 
 The figures were measured with the [benchmarks](#benchmarks), 5 runs per side,
 on an Intel Core i5-12450H pinned to its performance cores (`--cpus 0-7`) with
 the `powersave` governor, under Ubuntu 24.04.5 (Linux 6.8), Node.js 22.22.1 and
 `@noble/curves` 2.4.0. Absolute times depend on the machine; the relative
 changes are what to compare. To reproduce, save baselines with `--save` before
-the changes and compare after them, e.g.:
+the changes and compare after them. For Horner's method:
 
 ```
 $ ./bench.sh -m shamir,feldman,pedersen -s ed25519,decaf448,secp256k1,p521 \
@@ -859,6 +919,16 @@ $ ./bench.sh -o "protocols/*Vss" -s ed25519,decaf448,secp256k1,p521 \
     -n 10,50 -t 5,25 --cpus 0-7 -r 5 --iterations 3 --compare <baseline>
 $ ./bench.sh -o protocols/dkg -s ed25519,decaf448,secp256k1,p521 \
     -n 10 -t 5 --cpus 0-7 -r 5 --iterations 3 --compare <baseline>
+```
+
+For the common denominator:
+
+```
+$ ./bench.sh -o "combine*,recoverPublic" -s ed25519,decaf448,secp256k1,p521 \
+    -n 100 -t 5,25,50,100 --cpus 0-7 -r 5 --compare <baseline>
+$ ./bench.sh -o "protocols/sss,protocols/publicRecovery" \
+    -s ed25519,decaf448,secp256k1,p521 -n 10,50 -t 5,25 --cpus 0-7 -r 5 \
+    --iterations 3 --compare <baseline>
 ```
 
 # Development
