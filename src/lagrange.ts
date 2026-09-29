@@ -178,19 +178,17 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
 
     const xs = points.map(([x,]) => x);
     const ys = points.map(([, y]) => y);
-    const ws = new Array(k);
     const { numerators, denominators } = expandBasis(xs, order);
+    let ws: bigint[];
+    try { ws = modInvBatch(denominators, order); } catch (err: unknown) {
+      if (err instanceof NoInverseError) throw new InterpolationError(
+        'Not all provided x\'s are distinct modulo order'
+      );
+      else throw err;
+    }
     const coeffs = new Array(k).fill(0n);
     for (let j = 0; j < k; j++) {
-      let wj;
-      try { wj = modInv(denominators[j], order); } catch (err: unknown) {
-        if (err instanceof NoInverseError) throw new InterpolationError(
-          'Not all provided x\'s are distinct modulo order'
-        );
-        else throw err;
-      }
-      ws[j] = wj;
-      const fj = mod(ys[j] * wj, order);
+      const fj = mod(ys[j] * ws[j], order);
       const pj = numerators[j];
       for (let i = 0; i < k; i++) coeffs[i] += fj * pj[i];
     }
