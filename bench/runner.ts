@@ -1,5 +1,4 @@
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { buildSync } from 'esbuild';
@@ -13,11 +12,6 @@ const CACHE = path.join(ROOT, 'node_modules', '.cache', 'vsslib-bench');
 /** How the workers run, recorded with the results; baselines without it were
  * taken by running the worker through tsx */
 export const RUNNER = 'node, esbuild bundle';
-
-
-const signalName = (number: number): NodeJS.Signals | null =>
-  (Object.entries(os.constants.signals) as [NodeJS.Signals, number][])
-    .find(([, n]) => n === number)?.[0] ?? null;
 
 
 /** Bundles the worker with the library sources for plain node and returns the
@@ -51,6 +45,7 @@ export const runInWorker = (
   worker: string, spec: CaseSpec, timing: Timing, cpus?: string
 ): Promise<RunResult> => new Promise((resolve, reject) => {
   const args = [worker, JSON.stringify({ spec, timing })];
+  // taskset replaces itself with node, so that signals reach the worker directly
   const child = cpus ?
     spawn('taskset', ['--cpu-list', cpus, process.execPath, ...args], { stdio: ['ignore', 'pipe', 'inherit'] }) :
     spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'inherit'] });
@@ -59,8 +54,6 @@ export const runInWorker = (
   child.on('error', reject);
   child.on('close', (code, signal) => {
     const label = `Benchmark ${operationName(spec)} on ${spec.params.system}`;
-    // taskset reports a signal of its child as exit code 128 + n
-    signal = signal ?? (code !== null && code > 128 ? signalName(code - 128) : null);
     if (code !== 0) return reject(new Error(signal ?
       `${label} was killed by ${signal}` :
       `${label} failed with exit code ${code}`
