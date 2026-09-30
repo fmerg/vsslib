@@ -326,7 +326,7 @@ const program = new Command()
     '  ./bench.sh -m secrets -s ed25519,p256',
     '  ./bench.sh -o "add*" -n 5,20,100 -s all',
     '  ./bench.sh -m secrets --cpus 0-7 -r 5',
-    '  ./bench.sh -m protocols -f csv --out protocols.csv',
+    '  ./bench.sh -m recovery -f csv --out recovery.csv',
     '  ./bench.sh --save before; ./bench.sh --compare before --fail-on-regression',
     '',
     'Columns: median latency, median absolute deviation and 99th percentile',
