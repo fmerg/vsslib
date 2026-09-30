@@ -1,10 +1,13 @@
 import os from 'node:os';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { RUNNER } from './runner';
 
 
 export type Environment = {
   node: string;
+  /** How the workers run; absent in baselines taken through tsx */
+  runner?: string;
   cpu: string;
   cores: number;
   /** Distinct frequency governors over all CPUs; empty where unavailable */
@@ -47,6 +50,7 @@ export const collectEnvironment = (cpus?: string): Environment => {
   const status = git(['status', '--porcelain']);
   return {
     node: process.version,
+    runner: RUNNER,
     cpu: os.cpus()[0]?.model ?? 'unknown',
     cores: os.cpus().length,
     governors: readCpufreq('scaling_governor'),
