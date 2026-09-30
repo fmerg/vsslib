@@ -1,5 +1,5 @@
 import { Point, Group } from './backend';
-import { mod, modInv } from './arith';
+import { mod, modInv, modInvBatch } from './arith';
 import { FieldPolynomial } from './polynomials';
 import { NoInverseError, InterpolationError, InvalidInput } from './errors';
 import { validateIndexes } from './indexes';
@@ -8,8 +8,81 @@ import { validateIndexes } from './indexes';
 export type XYPoint = [bigint, bigint] | [number, number];
 
 
-/** Lagrange coefficient at zero of `index` with respect to `indexes` */
+// Products of indexes are reduced only once they outgrow the order by this
+// many bits; reducing at every step is slower
+const REDUCTION_MARGIN = 256n;
+
+/** Reduction modulo `order` of values that outgrew it by REDUCTION_MARGIN bits */
+function reducer(order: bigint): (m: bigint) => bigint {
+  const high = order << REDUCTION_MARGIN;
+  const low = -high;
+  return (m: bigint) => m >= high || m <= low ? m % order : m;
+}
+
+/** Ensure that `indexes` are valid share indexes below `order`, so that they
+ * and their differences are invertible; throws InvalidInput otherwise */
+function validateLambdaIndexes(indexes: number[], order: bigint): void {
+  validateIndexes(indexes);
+  for (const index of indexes) {
+    if (!(BigInt(index) < order)) throw new InvalidInput(
+      `Index not below the group order: ${index}`
+    );
+  }
+}
+
+
+/** Lagrange coefficient at zero of `index` with respect to `indexes`, as
+ * the product of the indexes over the product of their differences, with a
+ * single inversion */
 export function computeLambda<P extends Point>(
+  ctx: Group<P>,
+  index: number,
+  indexes: number[]
+): bigint {
+  const order = ctx.order;
+  validateLambdaIndexes(indexes, order);
+  if (!indexes.includes(index)) throw new InvalidInput(
+    `Index not included in indexes: ${index}`
+  );
+  const reduce = reducer(order);
+  let numerator = 1n;
+  let denominator = 1n;
+  for (const j of indexes) {
+    if (j !== index) {
+      numerator = reduce(numerator * BigInt(j));
+      denominator = reduce(denominator * BigInt(j - index));
+    }
+  }
+  return mod(numerator * modInv(denominator, order), order);
+}
+
+
+/** Lagrange coefficients at zero of all `indexes`, in the same order. Each
+ * is the product N of all indexes over x_i times the product of differences
+ * D_i, so that a single batch inversion serves all of them */
+export function computeLambdas<P extends Point>(
+  ctx: Group<P>,
+  indexes: number[]
+): bigint[] {
+  const order = ctx.order;
+  validateLambdaIndexes(indexes, order);
+  const reduce = reducer(order);
+  let numerator = 1n;
+  for (const x of indexes) numerator = reduce(numerator * BigInt(x));
+  const denominators = indexes.map(xi => {
+    let d = BigInt(xi);
+    for (const xj of indexes) {
+      if (xj !== xi) d = reduce(d * BigInt(xj - xi));
+    }
+    return d;
+  });
+  return modInvBatch(denominators, order).map(w => mod(numerator * w, order));
+}
+
+
+/** @internal Same as computeLambda, inverting each difference separately;
+ * reference for computeLambda and computeLambdas */
+export function computeLambdaNaive<P extends Point>(
   ctx: Group<P>,
   index: number,
   indexes: number[]
@@ -119,19 +192,17 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
 
     const xs = points.map(([x,]) => x);
     const ys = points.map(([, y]) => y);
-    const ws = new Array(k);
     const { numerators, denominators } = expandBasis(xs, order);
+    let ws: bigint[];
+    try { ws = modInvBatch(denominators, order); } catch (err: unknown) {
+      if (err instanceof NoInverseError) throw new InterpolationError(
+        'Not all provided x\'s are distinct modulo order'
+      );
+      else throw err;
+    }
     const coeffs = new Array(k).fill(0n);
     for (let j = 0; j < k; j++) {
-      let wj;
-      try { wj = modInv(denominators[j], order); } catch (err: unknown) {
-        if (err instanceof NoInverseError) throw new InterpolationError(
-          'Not all provided x\'s are distinct modulo order'
-        );
-        else throw err;
-      }
-      ws[j] = wj;
-      const fj = mod(ys[j] * wj, order);
+      const fj = mod(ys[j] * ws[j], order);
       const pj = numerators[j];
       for (let i = 0; i < k; i++) coeffs[i] += fj * pj[i];
     }
