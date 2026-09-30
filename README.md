@@ -969,6 +969,16 @@ parallel, and the rounds between them depend on the network and on how the
 application implements the protocol. See `--help` for modules, parameter
 sweeps, output formats, columns and baselines.
 
+### Workers
+
+Each run is a fresh `node` process that loads a bundle of the benchmarks and
+the library sources, built by esbuild once per invocation with the target of
+`dist` (`es2020`). Dependencies are left out of the bundle, so that node loads
+the ESM-only `@noble/curves` and `@noble/hashes` natively, as it does for users
+of `dist`. Running the sources through tsx instead would transform these
+packages to CommonJS, which made their hashes up to 35 times slower. Baselines
+record the runner, and comparisons warn against baselines taken through tsx.
+
 ### Statistics
 
 Each case runs in fresh processes, repeated round-robin over the cases on
@@ -983,7 +993,9 @@ below 1% with 5.
 Runs record the machine conditions and comparisons warn when these differ.
 Use the `performance` governor and, on CPUs with performance and efficiency
 cores, pin the runs to one kind with `--cpus`; turbo boost, throttling and
-background load are not controlled.
+background load are not controlled. Take the two sides of a comparison back to
+back: under the `powersave` governor, the same code once measured twice as slow
+an hour apart.
 
 ## Publish
 
