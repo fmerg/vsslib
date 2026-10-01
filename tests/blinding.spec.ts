@@ -1,6 +1,5 @@
 import { ed25519, ristretto255 } from '@noble/curves/ed25519.js';
 import { ed448, decaf448 } from '@noble/curves/ed448.js';
-import * as arith from 'vsslib/arith';
 import { Group, Point } from 'vsslib/backend';
 import { nizk } from 'vsslib/nizk';
 import { Algorithms } from 'vsslib/enums';
@@ -121,15 +120,15 @@ describe('secret exponentiation', () => {
     const sampled: bigint[] = [];
     const inverted: bigint[] = [];
     const randomScalar = ctx.randomScalar;
-    const modInv = arith.modInv;
+    const invertScalar = ctx.invertScalar;
     const sample = jest.spyOn(ctx, 'randomScalar').mockImplementation(async () => {
       const r = await randomScalar();
       sampled.push(r);
       return r;
     });
-    const invert = jest.spyOn(arith, 'modInv').mockImplementation((m, n) => {
-      inverted.push(arith.mod(m, n));
-      return modInv(m, n);
+    const invert = jest.spyOn(ctx, 'invertScalar').mockImplementation((x) => {
+      inverted.push(x);
+      return invertScalar(x);
     });
     // Force the split also where noble blinds natively
     const native = jest.spyOn(ctx, 'blindsNatively').mockReturnValue(false);
