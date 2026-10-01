@@ -997,6 +997,26 @@ background load are not controlled. Take the two sides of a comparison back to
 back: under the `powersave` governor, the same code once measured twice as slow
 an hour apart.
 
+## Dependencies
+
+`@noble/curves` and `@noble/hashes` are pinned exactly, so that installing
+vsslib never resolves a noble release that was not tested with it; an
+application that depends on another noble version gets a second copy. esbuild
+is pinned within the `~0.28` range of tsx, so that both share one copy. CI runs
+on a Node.js image pinned by digest (`.gitlab-ci.yml`). Nothing updates these
+automatically; to bump them
+
+1. `npm outdated` lists newer versions; `npm view <package> time` shows their
+   release dates. Take a version only once it is at least 7 days old, which
+   leaves time for a compromised release to be found and pulled.
+2. Bump `@noble/curves` and `@noble/hashes` together: curves pins hashes exactly,
+   so both must name the same version for npm to install one copy of hashes.
+3. Bump esbuild together with tsx, within the range tsx accepts.
+4. For the CI image, take the newest `22.x` tag and the digest of its index
+   (see the comment in `.gitlab-ci.yml`).
+5. Run `npm install`, check that `npm ls @noble/hashes esbuild` lists one
+   version of each, and run `npm audit signatures`, lint, type check and tests.
+
 ## Publish
 
 Update the CHANGELOG, then
