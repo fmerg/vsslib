@@ -3,16 +3,13 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { buildSync } from 'esbuild';
 import { CaseSpec, RunResult, Timing, operationName } from './harness';
+import { BUNDLE_TARGET } from './environment';
 
 
 const ROOT = path.resolve(__dirname, '..');
 // Inside node_modules, so that the bundle resolves the packages left out of it
 const CACHE = path.join(ROOT, 'node_modules', '.cache', 'vsslib-bench');
 const RUN_DIR = /^run-(\d+)$/;
-
-/** How the workers run, recorded with the results; baselines without it were
- * taken by running the worker through tsx */
-export const RUNNER = 'node, esbuild bundle';
 
 
 const isAlive = (pid: number): boolean => {
@@ -56,8 +53,7 @@ export const bundleWorker = (): string => {
     bundle: true,
     platform: 'node',
     format: 'cjs',
-    // As dist
-    target: 'es2020',
+    target: BUNDLE_TARGET,
     packages: 'external',
     outfile,
     logLevel: 'warning',

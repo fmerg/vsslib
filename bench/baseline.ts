@@ -140,7 +140,7 @@ export const comparabilityWarnings = (
   const previous = document.environment;
   const fields: [string, unknown, unknown][] = [
     ['node', previous.node, environment.node],
-    ['runner', previous.runner ?? 'tsx', environment.runner ?? 'tsx'],
+    ['runner', previous.runner ?? 'tsx', environment.runner],
     ['cpu', previous.cpu, environment.cpu],
     ['governors', previous.governors.join(','), environment.governors.join(',')],
     ['pinned cpus', previous.cpus ?? 'none', environment.cpus ?? 'none'],

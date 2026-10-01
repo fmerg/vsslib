@@ -1,7 +1,15 @@
 import os from 'node:os';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { RUNNER } from './runner';
+import { version as esbuildVersion } from 'esbuild';
+
+
+/** Target of the worker bundle, as of dist */
+export const BUNDLE_TARGET = 'es2020';
+
+/** How the workers run, recorded with the results; baselines without it were
+ * taken by running the worker through tsx */
+export const RUNNER = `node, esbuild ${esbuildVersion} bundle (${BUNDLE_TARGET})`;
 
 
 export type Environment = {
