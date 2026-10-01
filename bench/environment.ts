@@ -1,10 +1,21 @@
 import os from 'node:os';
 import fs from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { version as esbuildVersion } from 'esbuild';
+
+
+/** Target of the worker bundle, as of dist */
+export const BUNDLE_TARGET = 'es2020';
+
+/** How the workers run, recorded with the results; baselines without it were
+ * taken by running the worker through tsx */
+export const RUNNER = `node, esbuild ${esbuildVersion} bundle (${BUNDLE_TARGET})`;
 
 
 export type Environment = {
   node: string;
+  /** How the workers run; absent in baselines taken through tsx */
+  runner?: string;
   cpu: string;
   cores: number;
   /** Distinct frequency governors over all CPUs; empty where unavailable */
@@ -47,6 +58,7 @@ export const collectEnvironment = (cpus?: string): Environment => {
   const status = git(['status', '--porcelain']);
   return {
     node: process.version,
+    runner: RUNNER,
     cpu: os.cpus()[0]?.model ?? 'unknown',
     cores: os.cpus().length,
     governors: readCpufreq('scaling_governor'),

@@ -1,34 +1,81 @@
-import os from 'node:os';
+import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
+import { buildSync } from 'esbuild';
 import { CaseSpec, RunResult, Timing, operationName } from './harness';
+import { BUNDLE_TARGET } from './environment';
 
 
 const ROOT = path.resolve(__dirname, '..');
-const TSX = path.join(ROOT, 'node_modules', '.bin', 'tsx');
-const WORKER = path.join(__dirname, 'worker.ts');
+// Inside node_modules, so that the bundle resolves the packages left out of it
+const CACHE = path.join(ROOT, 'node_modules', '.cache', 'vsslib-bench');
+const RUN_DIR = /^run-(\d+)$/;
 
 
-const signalName = (number: number): NodeJS.Signals | null =>
-  (Object.entries(os.constants.signals) as [NodeJS.Signals, number][])
-    .find(([, n]) => n === number)?.[0] ?? null;
+const isAlive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err: unknown) {
+    // The process exists but belongs to another user
+    return (err as NodeJS.ErrnoException).code === 'EPERM';
+  }
+}
+
+
+/** Removes the bundles of invocations that ended without their exit handler,
+ * e.g. killed by SIGHUP or SIGKILL */
+const pruneBundles = (): void => {
+  for (const name of fs.readdirSync(CACHE)) {
+    const match = RUN_DIR.exec(name);
+    if (match && !isAlive(Number(match[1]))) {
+      fs.rmSync(path.join(CACHE, name), { recursive: true, force: true });
+    }
+  }
+}
+
+
+/** Bundles the worker with the library sources for plain node and returns the
+ * path of the bundle, which is removed on exit. The workers do not run through
+ * tsx, since tsx transforms the ESM-only noble packages to CommonJS, which
+ * makes their hashes up to 35 times slower; packages are left out of the
+ * bundle, so that node loads them natively as it does for users of dist */
+export const bundleWorker = (): string => {
+  fs.mkdirSync(CACHE, { recursive: true });
+  pruneBundles();
+  const dir = path.join(CACHE, `run-${process.pid}`);
+  fs.mkdirSync(dir, { recursive: true });
+  process.on('exit', () => fs.rmSync(dir, { recursive: true, force: true }));
+  const outfile = path.join(dir, 'worker.cjs');
+  buildSync({
+    entryPoints: [path.join(__dirname, 'worker.ts')],
+    tsconfig: path.join(__dirname, 'tsconfig.json'),
+    bundle: true,
+    platform: 'node',
+    format: 'cjs',
+    target: BUNDLE_TARGET,
+    packages: 'external',
+    outfile,
+    logLevel: 'warning',
+  });
+  return outfile;
+}
 
 
 /** Runs a case in a fresh process, optionally pinned to the given CPUs */
 export const runInWorker = (
-  spec: CaseSpec, timing: Timing, cpus?: string
+  worker: string, spec: CaseSpec, timing: Timing, cpus?: string
 ): Promise<RunResult> => new Promise((resolve, reject) => {
-  const args = ['--tsconfig', path.join(ROOT, 'tsconfig.json'), WORKER, JSON.stringify({ spec, timing })];
+  const args = [worker, JSON.stringify({ spec, timing })];
+  // taskset replaces itself with node, so that signals reach the worker directly
   const child = cpus ?
-    spawn('taskset', ['--cpu-list', cpus, TSX, ...args], { stdio: ['ignore', 'pipe', 'inherit'] }) :
-    spawn(TSX, args, { stdio: ['ignore', 'pipe', 'inherit'] });
+    spawn('taskset', ['--cpu-list', cpus, process.execPath, ...args], { stdio: ['ignore', 'pipe', 'inherit'] }) :
+    spawn(process.execPath, args, { stdio: ['ignore', 'pipe', 'inherit'] });
   let output = '';
   child.stdout.on('data', (chunk: Buffer) => { output += chunk; });
   child.on('error', reject);
   child.on('close', (code, signal) => {
     const label = `Benchmark ${operationName(spec)} on ${spec.params.system}`;
-    // Wrappers (tsx, taskset) report a signal of their child as exit code 128 + n
-    signal = signal ?? (code !== null && code > 128 ? signalName(code - 128) : null);
     if (code !== 0) return reject(new Error(signal ?
       `${label} was killed by ${signal}` :
       `${label} failed with exit code ${code}`
