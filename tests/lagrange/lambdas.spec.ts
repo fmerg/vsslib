@@ -1,3 +1,6 @@
+import { describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from '../utils';
 import { initBackend } from 'vsslib/backend';
 import { mod } from 'vsslib/arith';
 import { cartesian } from '../utils';
@@ -28,17 +31,17 @@ describe('Lagrange coefficients - against the naive computation', () => {
   const cases = indexSets.flatMap(([label, indexes]) =>
     systems.map(system => [label, system, indexes] as const)
   );
-  it.each(cases)('%s indexes over %s', async (_, system, indexes) => {
+  each(cases)('%s indexes over %s', async (_, system, indexes) => {
     const ctx = initBackend(system);
     const expected = indexes.map(index => computeLambdaNaive(ctx, index, indexes));
-    expect(computeLambdas(ctx, indexes)).toEqual(expected);
-    expect(indexes.map(index => computeLambda(ctx, index, indexes))).toEqual(expected);
+    assert.deepEqual(computeLambdas(ctx, indexes), expected);
+    assert.deepEqual(indexes.map(index => computeLambda(ctx, index, indexes)), expected);
   });
 });
 
 
 describe('Lagrange coefficients - interpolation at zero', () => {
-  it.each(cartesian([[1, 3, 9, 25], systems]))('%s indexes over %s', async (k, system) => {
+  each(cartesian([[1, 3, 9, 25], systems]))('%s indexes over %s', async (k, system) => {
     const ctx = initBackend(system);
     const { order } = ctx;
     const coeffs: bigint[] = [];
@@ -47,6 +50,6 @@ describe('Lagrange coefficients - interpolation at zero', () => {
     const indexes = wide(k);
     const lambdas = computeLambdas(ctx, indexes);
     const recovered = indexes.reduce((acc, x, i) => mod(acc + lambdas[i] * f(x), order), 0n);
-    expect(recovered).toEqual(coeffs[0]);
+    assert.deepEqual(recovered, coeffs[0]);
   });
 });

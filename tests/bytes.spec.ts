@@ -1,10 +1,12 @@
+import { describe, test } from 'node:test';
+import assert from 'node:assert/strict';
 import { isEqualBytes } from 'vsslib/bytes';
 
 
 describe('isEqualBytes', () => {
   test('equal arrays', () => {
-    expect(isEqualBytes(new Uint8Array(), new Uint8Array())).toBe(true);
-    expect(isEqualBytes(Uint8Array.of(1, 2, 3), Uint8Array.of(1, 2, 3))).toBe(true);
+    assert.equal(isEqualBytes(new Uint8Array(), new Uint8Array()), true);
+    assert.equal(isEqualBytes(Uint8Array.of(1, 2, 3), Uint8Array.of(1, 2, 3)), true);
   });
   test('arrays differing at a single position', () => {
     const a = Uint8Array.of(0, 0, 0, 0);
@@ -12,13 +14,13 @@ describe('isEqualBytes', () => {
       for (const bit of [0x01, 0x80]) {
         const b = Uint8Array.from(a);
         b[i] ^= bit;
-        expect(isEqualBytes(a, b)).toBe(false);
-        expect(isEqualBytes(b, a)).toBe(false);
+        assert.equal(isEqualBytes(a, b), false);
+        assert.equal(isEqualBytes(b, a), false);
       }
     }
   });
   test('arrays of different lengths', () => {
-    expect(isEqualBytes(Uint8Array.of(1, 2), Uint8Array.of(1, 2, 0))).toBe(false);
-    expect(isEqualBytes(new Uint8Array(), Uint8Array.of(0))).toBe(false);
+    assert.equal(isEqualBytes(Uint8Array.of(1, 2), Uint8Array.of(1, 2, 0)), false);
+    assert.equal(isEqualBytes(new Uint8Array(), Uint8Array.of(0)), false);
   });
 });

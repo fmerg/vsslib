@@ -1,3 +1,6 @@
+import { describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from './utils';
 import { nizk } from 'vsslib/nizk';
 import { indexToBytes } from 'vsslib/indexes';
 import {
@@ -20,16 +23,16 @@ const cofactorSystems = systems.filter(system => fixtures[system].smallOrderPoin
 
 
 describe('Prime-order subgroup validation', () => {
-  if (cofactorSystems.length > 0) it.each(cofactorSystems)('small-order points are rejected over %s', async (system) => {
+  if (cofactorSystems.length > 0) each(cofactorSystems)('small-order points are rejected over %s', async (system) => {
     const { ctx } = await createRawSharing(system, nrShares, threshold);
     // bytesToPoint decodes without validation
     const t = ctx.bytesToPoint(fixtures[system].smallOrderPoint!);
     const mixed = await ctx.operate(ctx.generator, t);
     for (const p of [t, mixed]) {
-      await expect(parsePoint(ctx, p.toBytes())).rejects.toThrow('not in prime-order subgroup');
+      await assert.rejects(parsePoint(ctx, p.toBytes()), /not in prime-order subgroup/);
     }
   });
-  if (cofactorSystems.length > 0) it.each(cofactorSystems)('public share with small-order component is rejected over %s', async (system) => {
+  if (cofactorSystems.length > 0) each(cofactorSystems)('public share with small-order component is rejected over %s', async (system) => {
     // The shareholder publishes y + T and retries the proof until the challenge
     // is even, so that T vanishes from the verification equation
     const { ctx, secretShares: shares } = await createRawSharing(system, nrShares, threshold);
@@ -46,22 +49,16 @@ describe('Prime-order subgroup validation', () => {
       proof = await protocol.proveDlog(x, { u: g, v }, undefined, extras);
     } while (!(await protocol.verifyDlog({ u: g, v }, proof, undefined, extras)));
     const forged = { value: v.toBytes(), index, proof };
-    await expect(parseSchnorrPacket(ctx, forged)).rejects.toThrow(InvalidInput);
+    await assert.rejects(parseSchnorrPacket(ctx, forged), InvalidInput);
     for (const errorOnInvalid of [true, false]) {
-      await expect(
-        recoverPublic(ctx, [forged, ...packets.slice(1)], threshold, { errorOnInvalid })
-      ).rejects.toThrow('not in prime-order subgroup');
+      await assert.rejects(recoverPublic(ctx, [forged, ...packets.slice(1)], threshold, { errorOnInvalid }), /not in prime-order subgroup/);
     }
   });
-  it.each(systems)('trivial Pedersen bases are rejected over %s', async (system) => {
+  each(systems)('trivial Pedersen bases are rejected over %s', async (system) => {
     const { ctx, sharing } = await createRawSharing(system, nrShares, threshold);
     for (const base of [ctx.neutral, ctx.generator]) {
-      await expect(
-        createPedersenPackets(sharing, base.toBytes())
-      ).rejects.toThrow('Pedersen base must be');
+      await assert.rejects(createPedersenPackets(sharing, base.toBytes()), /Pedersen base must be/);
     }
-    await expect(
-      createPedersenPackets(sharing, await derivePedersenBase(ctx))
-    ).resolves.toBeDefined();
+    assert.notEqual(await createPedersenPackets(sharing, await derivePedersenBase(ctx)), undefined);
   });
 });

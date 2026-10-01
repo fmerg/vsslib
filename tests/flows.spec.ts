@@ -1,3 +1,6 @@
+import { describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from './utils';
 import {
   initBackend,
   derivePedersenBase,
@@ -21,27 +24,27 @@ const qualified = Array.from({ length: threshold }, (_, i) => nrShares - i);
 
 
 describe('Example flows', () => {
-  it.each(systems)('SSS over %s', async (system) => {
+  each(systems)('SSS over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, combinedSecret, combinedPublic } = await runSss(
       ctx, nrShares, threshold, qualified
     );
-    expect(await isEqualSecret(ctx, combinedSecret, secret)).toBe(true);
-    expect(await isKeypair(ctx, secret, combinedPublic)).toBe(true);
+    assert.equal(await isEqualSecret(ctx, combinedSecret, secret), true);
+    assert.equal(await isKeypair(ctx, secret, combinedPublic), true);
   });
 
-  it.each(systems)('Feldman and Pedersen VSS with public recovery over %s', async (system) => {
+  each(systems)('Feldman and Pedersen VSS with public recovery over %s', async (system) => {
     const ctx = initBackend(system);
     for (const pedersenBase of [undefined, await derivePedersenBase(ctx)]) {
       const { secret, shares } = await distributeShares(ctx, nrShares, threshold, pedersenBase);
       const recovered = await recoverPublicKey(
         ctx, shares.filter(share => qualified.includes(share.index)), threshold
       );
-      expect(await isKeypair(ctx, secret, recovered)).toBe(true);
+      assert.equal(await isKeypair(ctx, secret, recovered), true);
     }
   });
 
-  it.each(systems)('DKG over %s', async (system) => {
+  each(systems)('DKG over %s', async (system) => {
     const ctx = initBackend(system);
     const pedersenBase = await derivePedersenBase(ctx);
     const { secrets, localShares, jointPublics } = await runDkg(
@@ -54,9 +57,9 @@ describe('Example flows', () => {
     const combined = await combineSecretShares(
       ctx, localShares.filter(share => qualified.includes(share.index)), threshold
     );
-    expect(await isEqualSecret(ctx, combined, jointSecret)).toBe(true);
+    assert.equal(await isEqualSecret(ctx, combined, jointSecret), true);
     for (const recovered of jointPublics) {
-      expect(await isEqualPublic(ctx, recovered, jointPublic)).toBe(true);
+      assert.equal(await isEqualPublic(ctx, recovered, jointPublic), true);
     }
   });
 });

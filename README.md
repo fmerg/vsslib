@@ -933,6 +933,11 @@ $ npm run build
 $ npm run docs                      # API reference in docs/
 ```
 
+## Tests
+
+Tests run on Node's built-in test runner (`node:test`), with tsx compiling the
+sources; `./test.sh` also writes a JUnit report to `coverage/junit.xml` for CI.
+
 ## Layout
 
 [`src/operations`](./src/operations/index.ts) holds the library operations,

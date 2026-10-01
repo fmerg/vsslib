@@ -1,3 +1,6 @@
+import { describe, test } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from '../utils';
 import { Systems } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
 import { BasePolynomial } from 'vsslib/polynomials/base';
@@ -29,44 +32,38 @@ const __big_primes = Object.values(Systems).map((system) => initBackend(system).
 
 
 describe('Construction - coefficients smaller than order', () => {
-  it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
+  each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
     const poly = new BasePolynomial(coeffs, order);
-    expect(poly.coeffs).toEqual(trimZeroes(coeffs).map(BigInt));
-    expect(poly.degree).toBe(degree);
-    expect(poly.degree).toBe(
-      poly.coeffs.length > 0 ? poly.coeffs.length - 1 : -Infinity
-    );
+    assert.deepEqual(poly.coeffs, trimZeroes(coeffs).map(BigInt));
+    assert.equal(poly.degree, degree);
+    assert.equal(poly.degree, poly.coeffs.length > 0 ? poly.coeffs.length - 1 : -Infinity);
   });
 });
 
 
 describe('Construction - coefficients greater than order', () => {
-  it.each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
+  each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
     const poly = new BasePolynomial(coeffs, order);
-    expect(poly.coeffs).toEqual(trimZeroes(coeffs).map(BigInt));
-    expect(poly.degree).toBe(degree);
-    expect(poly.degree).toBe(
-      poly.coeffs.length > 0 ? poly.coeffs.length - 1 : -Infinity
-    );
+    assert.deepEqual(poly.coeffs, trimZeroes(coeffs).map(BigInt));
+    assert.equal(poly.degree, degree);
+    assert.equal(poly.degree, poly.coeffs.length > 0 ? poly.coeffs.length - 1 : -Infinity);
   });
 });
 
 
 describe('Construction errors', () => {
   test('Order not greater than one', async () => {
-    expect(() => { new BasePolynomial([], 1) }).toThrow(
-      'Order must be > 1'
-    );
+    assert.throws(() => { new BasePolynomial([], 1) }, /Order must be > 1/);
   });
 });
 
 
 describe('Equal polynomials', () => {
-  it.each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
+  each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
     [coeffs], order
   ) => {
     const poly1 = new BasePolynomial(coeffs, order);
@@ -78,17 +75,17 @@ describe('Equal polynomials', () => {
     const poly4 = new BasePolynomial(coeffs.concat([0]), order);
     const poly5 = poly1.clone();
 
-    expect(poly1.equals(poly1)).toBe(true);
-    expect(poly2.equals(poly1)).toBe(true);
-    expect(poly3.equals(poly1)).toBe(true);
-    expect(poly4.equals(poly1)).toBe(true);
-    expect(poly5.equals(poly1)).toBe(true);
+    assert.equal(poly1.equals(poly1), true);
+    assert.equal(poly2.equals(poly1), true);
+    assert.equal(poly3.equals(poly1), true);
+    assert.equal(poly4.equals(poly1), true);
+    assert.equal(poly5.equals(poly1), true);
   });
 });
 
 
 describe('Non-equal polynomials', () => {
-  it.each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
+  each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
     [coeffs], order
   ) => {
     const poly1 = new BasePolynomial(coeffs, order);
@@ -99,21 +96,21 @@ describe('Non-equal polynomials', () => {
       order
     );
     const poly5 = poly4.clone();
-    expect(poly3.equals(poly1)).toBe(false);
-    expect(poly2.equals(poly1)).toBe(false);
-    expect(poly4.equals(poly1)).toBe(false);
-    expect(poly5.equals(poly1)).toBe(false);
+    assert.equal(poly3.equals(poly1), false);
+    assert.equal(poly2.equals(poly1), false);
+    assert.equal(poly4.equals(poly1), false);
+    assert.equal(poly5.equals(poly1), false);
   });
 });
 
 
 describe('Zero polynomial', () => {
-  it.each(__big_primes)('order: %s', async (order) => {
+  each(__big_primes)('order: %s', async (order) => {
     const poly = BasePolynomial.zero({ order });
-    expect(poly.coeffs).toEqual([]);
-    expect(poly.degree).toBe(-Infinity);
-    expect(poly.order).toBe(order);
-    expect(poly.isZero()).toBe(true);
+    assert.deepEqual(poly.coeffs, []);
+    assert.equal(poly.degree, -Infinity);
+    assert.equal(poly.order, order);
+    assert.equal(poly.isZero(), true);
   });
 });
 
@@ -122,22 +119,18 @@ describe('Algebraic operations errors', () => {
   test('Addition error - different orders', async () => {
     const poly1 = new BasePolynomial([], 2);
     const poly2 = new BasePolynomial([], 3);
-    expect(() => poly1.add(poly2)).toThrow(
-      'Cannot add polynomials with different order'
-    );
+    assert.throws(() => poly1.add(poly2), /Cannot add polynomials with different order/);
   });
   test('Multiplication error - different orders', async () => {
     const poly1 = new BasePolynomial([], 2);
     const poly2 = new BasePolynomial([], 3);
-    expect(() => poly1.mult(poly2)).toThrow(
-      'Cannot multiply polynomials with different order'
-    );
+    assert.throws(() => poly1.mult(poly2), /Cannot multiply polynomials with different order/);
   });
 });
 
 
 describe('Addition', () => {
-  it.each(cartesian([
+  each(cartesian([
     [
       [[1, 2, 3, 4], [],                    [1, 2, 3, 4]],
       [[1, 2, 3, 4], [1],                   [2, 2, 3, 4]],
@@ -153,14 +146,14 @@ describe('Addition', () => {
     const poly1 = new BasePolynomial(coeffs1, order);
     const poly2 = new BasePolynomial(coeffs2.map((num: number) => num + order), order);
     const poly3 = new BasePolynomial(coeffs3, order);
-    expect(poly3.equals(poly1.add(poly2))).toBe(true);
-    expect(poly3.equals(poly2.add(poly1))).toBe(true);
+    assert.equal(poly3.equals(poly1.add(poly2)), true);
+    assert.equal(poly3.equals(poly2.add(poly1)), true);
   });
 });
 
 
 describe('Multiplication', () => {
-  it.each(cartesian([
+  each(cartesian([
     [
       [[1, 2, 3, 4], [],                    []],
       [[1, 2, 3, 4], [1],                   [1, 2, 3, 4]],
@@ -176,14 +169,14 @@ describe('Multiplication', () => {
     const poly1 = new BasePolynomial(coeffs1, order);
     const poly2 = new BasePolynomial(coeffs2.map((num: number) => num + order), order);
     const poly3 = new BasePolynomial(coeffs3, order);
-    expect(poly3.equals(poly1.mult(poly2))).toBe(true);
-    expect(poly3.equals(poly2.mult(poly1))).toBe(true);
+    assert.equal(poly3.equals(poly1.mult(poly2)), true);
+    assert.equal(poly3.equals(poly2.mult(poly1)), true);
   });
 });
 
 
 describe('Scalar multiplication', () => {
-  it.each(cartesian([
+  each(cartesian([
     [
       [],
       [1],
@@ -201,16 +194,16 @@ describe('Scalar multiplication', () => {
     const poly2 = poly1.multScalar(scalar);
 
     const poly3 = new BasePolynomial(coeffs.map((c: number) => scalar * c), order);
-    expect(poly2.equals(poly3)).toBe(true);
+    assert.equal(poly2.equals(poly3), true);
 
     const poly4 = new BasePolynomial([scalar], order);
-    expect(poly2.equals(poly1.mult(poly4))).toBe(true);
+    assert.equal(poly2.equals(poly1.mult(poly4)), true);
   });
 });
 
 
 describe('Evaluation', () => {
-  it.each(cartesian([
+  each(cartesian([
     [
       [],
       [1],
@@ -229,14 +222,14 @@ describe('Evaluation', () => {
     for (const [i, c] of coeffs.entries()) {
       acc += c * value ** i;
     }
-    expect(poly.evaluate(value)).toEqual(BigInt(acc % order));
-    expect(poly.evaluateNaive(value)).toEqual(BigInt(acc % order));
+    assert.deepEqual(poly.evaluate(value), BigInt(acc % order));
+    assert.deepEqual(poly.evaluateNaive(value), BigInt(acc % order));
   });
 });
 
 
 describe('Evaluation - Horner against power sum', () => {
-  it.each(Object.values(Systems))('%s', async (system) => {
+  each(Object.values(Systems))('%s', async (system) => {
     const ctx = initBackend(system);
     const order = ctx.order;
     const values = [
@@ -247,7 +240,7 @@ describe('Evaluation - Horner against power sum', () => {
       for (let i = 0; i < degree + 1; i++) coeffs.push(await ctx.randomScalar());
       const poly = new BasePolynomial(coeffs, order);
       for (const value of [...values, await ctx.randomScalar()]) {
-        expect(poly.evaluate(value)).toEqual(poly.evaluateNaive(value));
+        assert.deepEqual(poly.evaluate(value), poly.evaluateNaive(value));
       }
     }
   });
