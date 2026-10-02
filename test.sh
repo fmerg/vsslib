@@ -157,7 +157,15 @@ fi
 if [[ $TARGET == *"spec.ts" ]]; then
     files=("$TARGET")
 else
-    mapfile -t files < <(find "$TARGET" -name '*.spec.ts' | sort)
+    # No mapfile, which bash 3.2 (macOS) lacks
+    files=()
+    while IFS= read -r file; do
+        files+=("$file")
+    done < <(find "$TARGET" -name '*.spec.ts' | sort)
+fi
+if [[ ${#files[@]} -eq 0 ]]; then
+    echo "No spec files in test module: $MODULE" 1>&2
+    exit 1
 fi
 
 reporter=dot
