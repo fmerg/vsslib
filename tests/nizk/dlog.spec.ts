@@ -1,10 +1,9 @@
 import { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from '../utils';
 import { Algorithms } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
 import { randomNonce } from 'vsslib/random';
-import { cartesian } from '../utils';
+import { cartesian, each } from '../utils';
 import { createDlogPair } from './helpers';
 import { resolveTestConfig } from '../environ';
 import { nizk } from 'vsslib/nizk';

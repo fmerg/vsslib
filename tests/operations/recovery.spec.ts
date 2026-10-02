@@ -1,13 +1,12 @@
 import { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from '../utils';
 import {
   createSchnorrPacket,
   parseSchnorrPacket,
   recoverPublic,
 } from 'vsslib/operations/recovery';
 import { randomPublic, InvalidPublicShare } from 'vsslib';
-import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
+import { cartesian, partialPermutations, isEqualBuffer, each } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing, mockPublicRecoverySetup } from '../helpers';
 

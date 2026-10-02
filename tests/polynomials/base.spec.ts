@@ -1,10 +1,9 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from '../utils';
 import { Systems } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
 import { BasePolynomial } from 'vsslib/polynomials/base';
-import { cartesian, trimZeroes } from '../utils';
+import { cartesian, trimZeroes, each } from '../utils';
 
 const __1n = BigInt(1);
 

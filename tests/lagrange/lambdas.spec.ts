@@ -1,9 +1,8 @@
 import { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from '../utils';
 import { initBackend } from 'vsslib/backend';
 import { mod } from 'vsslib/arith';
-import { cartesian } from '../utils';
+import { cartesian, each } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 import { computeLambda, computeLambdas, computeLambdaNaive } from 'vsslib/lagrange';

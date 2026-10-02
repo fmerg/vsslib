@@ -1,6 +1,5 @@
 import { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from '../utils';
 import {
   derivePedersenBase,
   createPedersenPackets,
@@ -9,7 +8,7 @@ import {
 } from 'vsslib/operations/pedersen';
 import { initBackend, randomPublic, shareSecret } from 'vsslib';
 import { resolveTestConfig } from '../environ';
-import { isEqualBuffer } from '../utils';
+import { isEqualBuffer, each } from '../utils';
 import { fixtures } from '../systems';
 
 const { systems, nrShares, threshold } = resolveTestConfig();

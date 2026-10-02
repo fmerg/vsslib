@@ -1,8 +1,7 @@
 import { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from '../utils';
 import { initBackend } from 'vsslib/backend';
-import { cartesian } from '../utils';
+import { cartesian, each } from '../utils';
 import { interpolate as textbooxInterpolate } from './helpers';
 import { resolveTestConfig } from '../environ';
 
