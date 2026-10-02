@@ -14,17 +14,21 @@ import { resolveTestConfig } from '../environ';
 const { systems, algorithms, nrShares, threshold } = resolveTestConfig();
 
 const ENGINES = { chromium, firefox, webkit };
-const engines = process.env.BROWSERS ?
-  process.env.BROWSERS.split(',') as (keyof typeof ENGINES)[] :
-  Object.keys(ENGINES) as (keyof typeof ENGINES)[];
+const engines = (process.env.BROWSERS ?
+  process.env.BROWSERS.split(',').map(name => name.trim()) :
+  Object.keys(ENGINES)) as (keyof typeof ENGINES)[];
 for (const name of engines) {
-  if (!(name in ENGINES)) throw new Error(`Unsupported browser: ${name}`);
+  if (!Object.prototype.hasOwnProperty.call(ENGINES, name)) throw new Error(`Unsupported browser: ${name}`);
 }
+
+// Per engine, so that a hanging flow fails its engine instead of blocking
+// the run; all flows take a few seconds per engine
+const TIMEOUT = 5 * 60 * 1000;
 
 
 let code: string | undefined;
 
-for (const name of engines) describe(`Browser bundle in ${name}`, () => {
+for (const name of engines) describe(`Browser bundle in ${name}`, { timeout: TIMEOUT }, () => {
   let browser: Browser;
   let page: Page;
   before(async () => {
