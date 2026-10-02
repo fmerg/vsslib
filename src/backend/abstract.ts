@@ -88,7 +88,8 @@ export abstract class Group<P extends Point> {
    * and timing leakage does not accumulate over repeated calls with `s`. The
    * split is multiplicative, since reducing `s - r` would branch on `s < r`.
    * Inversion is variable-time, so `r` is inverted as `u / (r * u)` for a
-   * fresh random `u`, which shows the inversion only a value independent of `r` */
+   * fresh random `u`, which shows the inversion only a value independent of `r`.
+   * Invert only through `invertScalar`, which tests trace for `r` */
   expSecret = async (point: P, scalar: bigint): Promise<P> => {
     if (this.blindsNatively(point)) return this.exp(point, scalar);
     const order = this.order;
