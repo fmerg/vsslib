@@ -14,7 +14,7 @@ const { systems } = resolveTestConfig();
 describe('group initialization - success', () => {
   each(systems)('over %s', async (system) => {
     const ctx = initBackend(system);
-    assert.deepEqual(ctx.system, system);
+    assert.equal(ctx.system, system);
   });
 })
 

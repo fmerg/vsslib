@@ -49,6 +49,6 @@ describe('Lagrange coefficients - interpolation at zero', () => {
     const indexes = wide(k);
     const lambdas = computeLambdas(ctx, indexes);
     const recovered = indexes.reduce((acc, x, i) => mod(acc + lambdas[i] * f(x), order), 0n);
-    assert.deepEqual(recovered, coeffs[0]);
+    assert.equal(recovered, coeffs[0]);
   });
 });

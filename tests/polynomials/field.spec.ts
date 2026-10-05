@@ -20,8 +20,8 @@ describe('Random polynomial generation', () => {
     const degree = 7;
     const polynomial = await randomPolynomial(ctx, degree);
     assert.equal(polynomial.ctx.system, system);
-    assert.deepEqual(polynomial.degree, degree);
-    assert.deepEqual(polynomial.coeffs.length, degree + 1);
+    assert.equal(polynomial.degree, degree);
+    assert.equal(polynomial.coeffs.length, degree + 1);
   });
 });
 

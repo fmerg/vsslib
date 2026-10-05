@@ -22,7 +22,7 @@ describe('Schnorr packets', () => {
     for (const [i, share] of secretShares.entries()) {
       const packet = await createSchnorrPacket(ctx, share, { algorithm });
       const parsed = await parseSchnorrPacket(ctx, packet, { algorithm });
-      assert.deepEqual(parsed.index, share.index);
+      assert.equal(parsed.index, share.index);
       assert.equal(isEqualBuffer(parsed.value, publicShares[i].value), true);
     }
   });

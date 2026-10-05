@@ -43,8 +43,8 @@ describe('Sharing polynomial - sampling against interpolation', () => {
     const sampled = await sampleSharingPolynomial(ctx, t, secret);
     const interpolated = await interpolateSharingPolynomial(ctx, t, secret, []);
     for (const poly of [sampled, interpolated]) {
-      assert.deepEqual(poly.degree, t - 1);
-      assert.deepEqual(poly.evaluate(0), secret);
+      assert.equal(poly.degree, t - 1);
+      assert.equal(poly.evaluate(0), secret);
     }
     // Interpolating the sampled values below threshold gives back the polynomial
     const predefined: SecretShare[] = [];
@@ -63,13 +63,13 @@ describe('Shamir secret sharing', () => {
     const ctx = initBackend(system);
     const { secret: original } = await randomSecret(ctx);
     const { secret, sharing } = await shareSecret(ctx, n, t, original);
-    assert.deepEqual(sharing.polynomial.degree, t - 1);
-    assert.deepEqual(sharing.polynomial.evaluate(0), await parseScalar(ctx, original));
+    assert.equal(sharing.polynomial.degree, t - 1);
+    assert.equal(sharing.polynomial.evaluate(0), await parseScalar(ctx, original));
     assert.equal(await isEqualSecret(ctx, sharing.getOriginalSecret(), original), true);
     assert.equal(await isEqualSecret(ctx, secret, original), true);
     assert.deepEqual(n, sharing.nrShares);
-    assert.deepEqual(n, (await sharing.getSecretShares()).length);
-    assert.deepEqual(n, (await sharing.getPublicShares()).length);
+    assert.equal(n, (await sharing.getSecretShares()).length);
+    assert.equal(n, (await sharing.getPublicShares()).length);
     assert.deepEqual(t, sharing.threshold);
     for (let index = 1; index <= sharing.nrShares; index++) {
       const { secretShare, publicShare } = await sharing.getShare(index);
@@ -91,13 +91,13 @@ describe('Shamir secret sharing', () => {
       const { secret, sharing } = await shareSecret(
         ctx, n, t, original, predefined.slice(0, nrPredefined)
       );
-      assert.deepEqual(sharing.polynomial.degree, t - 1);
-      assert.deepEqual(sharing.polynomial.evaluate(0), await parseScalar(ctx, original));
+      assert.equal(sharing.polynomial.degree, t - 1);
+      assert.equal(sharing.polynomial.evaluate(0), await parseScalar(ctx, original));
       assert.equal(await isEqualSecret(ctx, sharing.getOriginalSecret(), original), true);
       assert.equal(await isEqualSecret(ctx, secret, original), true);
       assert.deepEqual(n, sharing.nrShares);
-      assert.deepEqual(n, (await sharing.getSecretShares()).length);
-      assert.deepEqual(n, (await sharing.getPublicShares()).length);
+      assert.equal(n, (await sharing.getSecretShares()).length);
+      assert.equal(n, (await sharing.getPublicShares()).length);
       assert.deepEqual(t, sharing.threshold);
       for (let index = 1; index <= nrPredefined; index++) {
         const { secretShare } = await sharing.getShare(index);
@@ -167,12 +167,12 @@ describe('Shamir secret sharing', () => {
   each(cartesian([systems, thresholdParams]))(
     'fixed-width scalar encoding - over %s - (n, t): %s', async (system, [n, t]) => {
     const ctx = initBackend(system);
-    assert.deepEqual(ctx.scalarBytes, fixtures[system as System].scalarBytes);
+    assert.equal(ctx.scalarBytes, fixtures[system as System].scalarBytes);
     const { secret, sharing } = await shareSecret(ctx, n, t);
-    assert.deepEqual(secret.length, ctx.scalarBytes);
+    assert.equal(secret.length, ctx.scalarBytes);
     assert.deepEqual(sharing.getOriginalSecret(), secret);
     const shares = await sharing.getSecretShares();
-    shares.forEach(share => assert.deepEqual(share.value.length, ctx.scalarBytes));
+    shares.forEach(share => assert.equal(share.value.length, ctx.scalarBytes));
     const combined = await combineSecretShares(ctx, shares.slice(0, t), t);
     assert.deepEqual(combined, secret);
   });

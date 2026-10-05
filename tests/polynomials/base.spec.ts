@@ -221,8 +221,8 @@ describe('Evaluation', () => {
     for (const [i, c] of coeffs.entries()) {
       acc += c * value ** i;
     }
-    assert.deepEqual(poly.evaluate(value), BigInt(acc % order));
-    assert.deepEqual(poly.evaluateNaive(value), BigInt(acc % order));
+    assert.equal(poly.evaluate(value), BigInt(acc % order));
+    assert.equal(poly.evaluateNaive(value), BigInt(acc % order));
   });
 });
 
@@ -239,7 +239,7 @@ describe('Evaluation - Horner against power sum', () => {
       for (let i = 0; i < degree + 1; i++) coeffs.push(await ctx.randomScalar());
       const poly = new BasePolynomial(coeffs, order);
       for (const value of [...values, await ctx.randomScalar()]) {
-        assert.deepEqual(poly.evaluate(value), poly.evaluateNaive(value));
+        assert.equal(poly.evaluate(value), poly.evaluateNaive(value));
       }
     }
   });
