@@ -105,7 +105,7 @@ describe('Shamir secret sharing', () => {
           await isEqualSecret(ctx, secretShare.value, selectShare(index, predefined).value), true
         );
       }
-      for (let index = 1; index < sharing.nrShares; index++) {
+      for (let index = 1; index <= sharing.nrShares; index++) {
         const { secretShare, publicShare } = await sharing.getShare(index);
         const { value: secretBytes } = secretShare;
         const { value: publicBytes } = publicShare;
