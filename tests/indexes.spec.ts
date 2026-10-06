@@ -1,6 +1,6 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from './utils';
+import { each, isEqualBuffer } from './utils';
 import {
   combineSecretShares,
   combinePublicShares,
@@ -91,7 +91,7 @@ describe('Share index validation', () => {
     if (nrShares - 1 >= threshold) {
       const { recovered, blame } = await recovery;
       assert.deepEqual(blame, [{ value: relabeled.value, index: relabeled.index }]);
-      assert.equal(Buffer.from(recovered).equals(Buffer.from(publicBytes)), true);
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
     } else {
       await assert.rejects(recovery, InvalidPublicShare);
     }
