@@ -202,10 +202,21 @@ mkdir -p coverage
 status=0
 node "${node_opts[@]}" "${opts[@]}" "${files[@]}" || status=$?
 
-# node passes when a name pattern or an empty case table selects no tests,
-# reporting each such file as a test case named by its path
+# node passes when a name pattern or an empty case table selects no tests.
+# It then reports each such file as a test case named by its path (Node 22)
+# or the filtered tests as skipped test cases (Node 20), neither of which ran
+ran_tests() {
+    node -e '
+      const [report, ...files] = process.argv.slice(1);
+      const xml = require("fs").readFileSync(report, "utf8");
+      const cases = xml.matchAll(/<testcase name="([^"]*)"[^>]*?(?:\/>|>([\s\S]*?)<\/testcase>)/g);
+      const ran = [...cases].filter(([, name, body]) =>
+        !files.includes(name) && !(body ?? "").includes("<skipped"));
+      process.exit(ran.length > 0 ? 0 : 1);
+    ' "$@"
+}
 if [[ $status -eq 0 && $custom_reporter == "false" ]] && \
-    ! grep '<testcase ' coverage/junit.xml | grep -qv 'name="[^"]*\.spec\.ts"'; then
+    ! ran_tests coverage/junit.xml "${files[@]}"; then
     echo "No tests ran in test module: $MODULE" 1>&2
     exit 1
 fi
