@@ -204,15 +204,21 @@ for opt in "${opts[@]}"; do
         custom_reporter=true
     fi
 done
+# The JUnit report, and the check below that reads it, only for single runs:
+# in watch mode node writes no test cases to it
+junit=false
+if [[ $custom_reporter == "false" && $WATCH == "false" ]]; then
+    junit=true
+fi
 if [[ $custom_reporter == "false" ]]; then
     reporter=dot
     if [[ $VERBOSE == "true" ]]; then
         reporter=spec
     fi
-    node_opts+=(
-        --test-reporter="$reporter" --test-reporter-destination=stdout
-        --test-reporter=junit --test-reporter-destination="$report"
-    )
+    node_opts+=(--test-reporter="$reporter" --test-reporter-destination=stdout)
+fi
+if [[ $junit == "true" ]]; then
+    node_opts+=(--test-reporter=junit --test-reporter-destination="$report")
 fi
 if [[ $WATCH == "true" ]]; then
     node_opts+=(--watch)
@@ -224,18 +230,20 @@ node "${node_opts[@]}" "${opts[@]}" "${files[@]}" || status=$?
 
 # node passes when a name pattern or an empty case table selects no tests.
 # It then reports each such file as a test case named by its path (Node 22)
-# or the filtered tests as skipped test cases (Node 20), neither of which ran
+# or the filtered tests as skipped test cases (Node 20), neither of which ran.
+# Paths are compared normalized, as node reports them, e.g. for -m ./bytes
 ran_tests() {
     node -e '
-      const [report, ...files] = process.argv.slice(1);
+      const path = require("path");
+      const [report, ...files] = process.argv.slice(1).map(arg => path.normalize(arg));
       const xml = require("fs").readFileSync(report, "utf8");
       const cases = xml.matchAll(/<testcase name="([^"]*)"[^>]*?(?:\/>|>([\s\S]*?)<\/testcase>)/g);
       const ran = [...cases].filter(([, name, body]) =>
-        !files.includes(name) && !(body ?? "").includes("<skipped"));
+        !files.includes(path.normalize(name)) && !(body ?? "").includes("<skipped"));
       process.exit(ran.length > 0 ? 0 : 1);
     ' "$@"
 }
-if [[ $status -eq 0 && $custom_reporter == "false" ]] && \
+if [[ $status -eq 0 && $junit == "true" ]] && \
     ! ran_tests "$report" "${files[@]}"; then
     echo "No tests ran in test module: $MODULE" 1>&2
     exit 1
