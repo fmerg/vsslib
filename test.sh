@@ -193,8 +193,14 @@ fi
 
 # Spec files run in parallel, each in its own process. The timeout fails a
 # spec file that hangs instead of blocking the run; node applies it to each
-# file as a whole, and the slowest take about 75 s locally
-node_opts=(--import tsx --test --test-timeout=600000)
+# file as a whole, and the slowest take about 75 s locally. The browser run
+# gets 30 minutes, above the timeouts of its three engines together (up to
+# 9 minutes each, see tests/browser/engines.ts), so that these name a hang
+timeout=600000
+if [[ $RUN_BROWSERS == "true" ]]; then
+    timeout=1800000
+fi
+node_opts=(--import tsx --test --test-timeout="$timeout")
 
 # Reporters passed through replace the defaults, since node pairs every
 # reporter with a destination
