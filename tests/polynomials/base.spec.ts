@@ -46,7 +46,8 @@ describe('Construction - coefficients greater than order', () => {
   each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs, degree], order
   ) => {
-    const poly = new BasePolynomial(coeffs, order);
+    // Each coefficient shifted by the order, which construction reduces away
+    const poly = new BasePolynomial(coeffs.map((num: number) => BigInt(num) + order), order);
     assert.deepEqual(poly.coeffs, trimZeroes(coeffs).map(BigInt));
     assert.equal(poly.degree, degree);
     assert.equal(poly.degree, poly.coeffs.length > 0 ? poly.coeffs.length - 1 : -Infinity);
@@ -62,7 +63,7 @@ describe('Construction errors', () => {
 
 
 describe('Equal polynomials', () => {
-  each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
+  each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs], order
   ) => {
     const poly1 = new BasePolynomial(coeffs, order);
@@ -84,7 +85,7 @@ describe('Equal polynomials', () => {
 
 
 describe('Non-equal polynomials', () => {
-  each(cartesian([__coeffs_and_degree, __big_primes]))('', async (
+  each(cartesian([__coeffs_and_degree, __big_primes]))('%s %s', async (
     [coeffs], order
   ) => {
     const poly1 = new BasePolynomial(coeffs, order);
