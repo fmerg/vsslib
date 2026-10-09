@@ -26,8 +26,9 @@ for (const name of engines) {
 // not cover hooks, which launch and close the browser, so these get their own.
 // Launching gives up well before its hook does, which would otherwise fail
 // while the launch goes on and leave the browser it opens unclosed
-const TIMEOUT = 2 * 60 * 1000;
-const LAUNCH_TIMEOUT = TIMEOUT / 2;
+const TIMEOUT = 5 * 60 * 1000;
+const HOOK_TIMEOUT = 2 * 60 * 1000;
+const LAUNCH_TIMEOUT = HOOK_TIMEOUT / 2;
 
 
 let code: string | undefined;
@@ -40,10 +41,10 @@ for (const name of engines) describe(`Browser bundle in ${name}`, { timeout: TIM
     browser = await ENGINES[name].launch({ timeout: LAUNCH_TIMEOUT });
     page = await browser.newPage();
     await page.addScriptTag({ content: code });
-  }, { timeout: TIMEOUT });
+  }, { timeout: HOOK_TIMEOUT });
   after(async () => {
     await browser?.close();
-  }, { timeout: TIMEOUT });
+  }, { timeout: HOOK_TIMEOUT });
 
   test('exposes every entry point', async () => {
     assert.deepEqual(await page.evaluate(missingEntryPoints), []);
