@@ -7,7 +7,7 @@ import { InvalidPublicShare, InvalidInput } from './errors';
 import { Algorithms } from './enums';
 import { Algorithm } from './types';
 
-import nizk from './nizk';
+import { nizk } from './nizk';
 
 
 const __0n = BigInt(0);

@@ -3,7 +3,7 @@ import { Algorithm } from './types';
 import { InvalidInput } from './errors';
 import { mod, leInt2Buff } from './arith';
 import { unpackScalar, unpackPoint } from './secrets';
-import hash from './hash';
+import { hash } from './hash';
 
 
 export type DlogPair<P extends Point> = { u: P, v: P };
@@ -181,6 +181,6 @@ export class NizkProtocol<P extends Point>{
   }
 }
 
-export default function<P extends Point>(ctx: Group<P>, algorithm: Algorithm) {
+export function nizk<P extends Point>(ctx: Group<P>, algorithm: Algorithm) {
   return new NizkProtocol(ctx, algorithm);
 }

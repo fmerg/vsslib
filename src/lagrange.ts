@@ -91,6 +91,6 @@ export class LagrangeInterpolator<P extends Point> {
   )
 }
 
-export default function<P extends Point>(ctx: Group<P>) {
+export function lagrange<P extends Point>(ctx: Group<P>) {
   return new LagrangeInterpolator(ctx);
 }

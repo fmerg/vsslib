@@ -17,6 +17,6 @@ export class Hash {
     );
 }
 
-export default function(algorithm: Algorithm): Hash {
+export function hash(algorithm: Algorithm): Hash {
   return new Hash(algorithm);
 }

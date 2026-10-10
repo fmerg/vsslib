@@ -7,7 +7,7 @@ import { NizkProof } from './nizk';
 import { Algorithm } from './types';
 import { Algorithms } from './enums';
 
-import nizk from './nizk';
+import { nizk } from './nizk';
 
 
 export type SchnorrPacket = PublicShare & { proof: NizkProof };

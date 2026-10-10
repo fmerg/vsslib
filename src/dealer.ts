@@ -4,7 +4,7 @@ import { InterpolationError, ShamirError, InvalidInput } from './errors';
 import { leInt2Buff } from './arith';
 import { unpackScalar, unpackPoint } from './secrets';
 
-import lagrange from './lagrange';
+import { lagrange } from './lagrange';
 
 const __0n = BigInt(0);
 
