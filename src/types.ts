@@ -1,4 +1,4 @@
-import { Elliptic, Algorithms } from 'vsslib/enums';
+import { Elliptic, Algorithms } from './enums';
 
 export type System =
   | Elliptic.ED25519

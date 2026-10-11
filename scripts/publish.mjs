@@ -1,5 +1,5 @@
 import { spawnSync } from "child_process";
-import { readFileSync, writeFileSync } from "fs";
+import { readFileSync } from "fs";
 import inquirer from "inquirer";
 const prompt = inquirer.createPromptModule();
 // ask the user if they want to bump the version using commander npm package
@@ -35,18 +35,6 @@ if (spawnSync("npm", ["run", "build"], { stdio: "inherit" }).status !== 0) {
   throw new Error("Failed to build");
 }
 
-// copy package.json to dist without devDependencies
-console.log("Copying package.json to dist...");
-const packageJson = JSON.parse(readFileSync("package.json").toString());
-const distPackageJson = {
-  ...packageJson,
-  devDependencies: {},
-  scripts: {},
-};
-writeFileSync("dist/package.json", JSON.stringify(distPackageJson, null, 2));
-// copy README.md to dist
-console.log("Copying README.md to dist...");
-writeFileSync("dist/README.md", readFileSync("README.md").toString());
 // ask the user for npm token
 const { token } = await prompt([
   {
@@ -55,7 +43,7 @@ const { token } = await prompt([
     message: "What is your npm token?",
   },
 ]);
-// cd to dist and publish
+// publish from the repo root; "files" in package.json limits the tarball to dist/
 // ask the user if they want to do a dry run
 const { dryRun } = await prompt([
   {
@@ -70,7 +58,6 @@ if (dryRun === "yes") {
   console.log("Dry running publish...");
   const { status } = spawnSync("npm", ["publish", "--dry-run", "--access", "public", "--registry", "https://registry.npmjs.org"], {
     stdio: "inherit",
-    cwd: "dist",
     env: {
       ...process.env,
       NPM_TOKEN: token,
@@ -83,13 +70,13 @@ if (dryRun === "yes") {
   console.log("Publishing...");
   spawnSync("npm", ["publish", "--access", "public", "--registry", "https://registry.npmjs.org"], {
     stdio: "inherit",
-    cwd: "dist",
     env: {
       ...process.env,
       NPM_TOKEN: token,
     },
   });
 }
+const packageJson = JSON.parse(readFileSync("package.json").toString());
 // log the commands required to commit the files, tag the release and push to github
 console.log(`
   git add .

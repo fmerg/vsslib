@@ -2,13 +2,37 @@
   "name": "vsslib",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
-  "types": "index.d.ts",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./backend": {
+      "types": "./dist/backend/index.d.ts",
+      "default": "./dist/backend/index.js"
+    },
+    "./nizk": {
+      "types": "./dist/nizk.d.ts",
+      "default": "./dist/nizk.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "typesVersions": {
+    "*": {
+      "backend": ["dist/backend/index.d.ts"],
+      "nizk": ["dist/nizk.d.ts"]
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "tsc --watch",
     "test": "jest tests --maxWorkers=1",
     "test:reload": "jest tests --watch --maxWorkers=1",
-    "build": "rm -rf ./build && tsc",
+    "build": "rm -rf ./dist && tsc",
     "docs": "typedoc --out docs src/*.ts",
     "lint": "eslint ./src",
     "run-publish": "node ./scripts/publish.mjs"

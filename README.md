@@ -2,7 +2,7 @@
 
 Interfaces for Verifiable Secret Sharing (VSS) in TS/JS
 
-:warning: **This library requires security audit. Use at you own risk for
+:warning: **This library requires security audit. Use at your own risk for
 the moment.**
 
 Vsslib provides modular building blocks for implementing threshold-cryptographic protocols
