@@ -1,4 +1,7 @@
-image: node:22
+# Pinned by digest, so that a retagged image cannot change the build. To
+# update, pick the newest 22.x tag and take the digest of its index, e.g.
+#   docker buildx imagetools inspect node:<tag> --format '{{json .Manifest.Digest}}'
+image: node:22.23.4-bookworm-slim@sha256:de170b39439eb0e5a3444ad7d60b015614a381e10fecae2e30ec9e735122f38d
 
 cache:
   key:
@@ -12,6 +15,7 @@ before_script:
 
 check:
   script:
+    - npm audit signatures
     - npm run lint
     - npm run typecheck
 
@@ -22,3 +26,21 @@ test:
     when: always
     reports:
       junit: coverage/junit.xml
+
+# Flows of the browser bundle in Chromium, Firefox and WebKit. The image ships
+# the browsers of its Playwright release, which must equal the playwright-core
+# version in package.json. Runs on schedules; elsewhere on demand, without
+# blocking the pipeline
+browsers:
+  image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web"
+      when: manual
+      allow_failure: true
+  script:
+    - npm run test:browsers
+  artifacts:
+    when: always
+    reports:
+      junit: coverage/browsers.xml

@@ -1,6 +1,8 @@
+import { describe, test, mock } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from './utils';
 import { ed25519, ristretto255 } from '@noble/curves/ed25519.js';
 import { ed448, decaf448 } from '@noble/curves/ed448.js';
-import * as arith from 'vsslib/arith';
 import { Group, Point } from 'vsslib/backend';
 import { nizk } from 'vsslib/nizk';
 import { Algorithms } from 'vsslib/enums';
@@ -66,14 +68,14 @@ const traceExp = <P extends Point>(ctx: Group<P>) => {
 
 describe('noble blinding assumptions', () => {
   test('ristretto255 multiplies the ed25519 base, decaf448 not the ed448 base', () => {
-    expect((ristretto255.Point.BASE as any).ep).toBe(ed25519.Point.BASE);
-    expect((decaf448.Point.BASE as any).ep).not.toBe(ed448.Point.BASE);
+    assert.equal((ristretto255.Point.BASE as any).ep, ed25519.Point.BASE);
+    assert.notEqual((decaf448.Point.BASE as any).ep, ed448.Point.BASE);
   });
 });
 
 
 describe('secret exponentiation', () => {
-  it.each(systems)('agrees with exponentiation over %s', async (system) => {
+  each(systems)('agrees with exponentiation over %s', async (system) => {
     const ctx = initBackend(system);
     const points = [
       ctx.generator,
@@ -85,12 +87,12 @@ describe('secret exponentiation', () => {
     for (const point of points) {
       for (const scalar of scalars) {
         const expected = await ctx.exp(point, scalar);
-        expect(await (await ctx.expSecret(point, scalar)).equals(expected)).toBe(true);
-        expect(await (await ctx.expPublic(point, scalar)).equals(expected)).toBe(true);
+        assert.equal(await (await ctx.expSecret(point, scalar)).equals(expected), true);
+        assert.equal(await (await ctx.expPublic(point, scalar)).equals(expected), true);
       }
     }
   });
-  it.each(systems)('splits the scalar unless blinded natively over %s', async (system) => {
+  each(systems)('splits the scalar unless blinded natively over %s', async (system) => {
     const ctx = initBackend(system);
     const { generator, other } = NATIVE[system];
     const cases: [Point, boolean][] = [
@@ -101,54 +103,54 @@ describe('secret exponentiation', () => {
       [await ctx.hashToPoint(Uint8Array.of(1), Uint8Array.of(2)), other],
     ];
     for (const [point, native] of cases) {
-      const spy = jest.spyOn(ctx, 'randomScalar');
-      const exp = jest.spyOn(ctx, 'exp');
+      const spy = mock.method(ctx, 'randomScalar');
+      const exp = mock.method(ctx, 'exp');
       try {
         await ctx.expSecret(point as any, await (ctx.randomScalar)());
-        expect(ctx.blindsNatively(point as any)).toBe(native);
+        assert.equal(ctx.blindsNatively(point as any), native);
         // One sampling above, two more for the split and its blinded inversion
-        expect(spy).toHaveBeenCalledTimes(native ? 1 : 3);
-        expect(exp).toHaveBeenCalledTimes(native ? 1 : 2);
+        assert.equal(spy.mock.callCount(), native ? 1 : 3);
+        assert.equal(exp.mock.callCount(), native ? 1 : 2);
       } finally {
-        spy.mockRestore();
-        exp.mockRestore();
+        spy.mock.restore();
+        exp.mock.restore();
       }
     }
   });
-  it.each(systems)('never inverts the splitting factor directly over %s', async (system) => {
+  each(systems)('never inverts the splitting factor directly over %s', async (system) => {
     // Inversion is variable-time and would leak the factor that hides the scalar
     const ctx = initBackend(system);
     const sampled: bigint[] = [];
     const inverted: bigint[] = [];
     const randomScalar = ctx.randomScalar;
-    const modInv = arith.modInv;
-    const sample = jest.spyOn(ctx, 'randomScalar').mockImplementation(async () => {
+    const invertScalar = ctx.invertScalar;
+    const sample = mock.method(ctx, 'randomScalar', async () => {
       const r = await randomScalar();
       sampled.push(r);
       return r;
     });
-    const invert = jest.spyOn(arith, 'modInv').mockImplementation((m, n) => {
-      inverted.push(arith.mod(m, n));
-      return modInv(m, n);
+    const invert = mock.method(ctx, 'invertScalar', (x: bigint) => {
+      inverted.push(x);
+      return invertScalar(x);
     });
     // Force the split also where noble blinds natively
-    const native = jest.spyOn(ctx, 'blindsNatively').mockReturnValue(false);
+    const native = mock.method(ctx, 'blindsNatively', () => false);
     try {
       const point = await ctx.hashToPoint(Uint8Array.of(1), Uint8Array.of(2));
       for (let i = 0; i < 4; i++) await ctx.expSecret(point, await randomScalar());
     } finally {
-      sample.mockRestore();
-      invert.mockRestore();
-      native.mockRestore();
+      sample.mock.restore();
+      invert.mock.restore();
+      native.mock.restore();
     }
-    expect(inverted.length).toBeGreaterThan(0);
-    expect(inverted.filter(v => sampled.includes(v))).toEqual([]);
+    assert.ok(inverted.length > 0);
+    assert.deepEqual(inverted.filter(v => sampled.includes(v)), []);
   });
 });
 
 
 describe('secret scalars go through expSecret', () => {
-  it.each(systems)('keys over %s', async (system) => {
+  each(systems)('keys over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, publicBytes } = await randomSecret(ctx);
     const x = await ctx.parseScalar(secret);
@@ -156,11 +158,11 @@ describe('secret scalars go through expSecret', () => {
     await extractPublic(ctx, secret);
     await isKeypair(ctx, secret, publicBytes);
     await createSchnorrPacket(ctx, { value: secret, index: 1 });
-    expect(trace.direct).toEqual([]);
-    expect(trace.public).toEqual([]);
-    expect(trace.secret.filter(s => s === x)).toHaveLength(3);
+    assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.public, []);
+    assert.equal(trace.secret.filter(s => s === x).length, 3);
   });
-  it.each(systems)('sharing over %s', async (system) => {
+  each(systems)('sharing over %s', async (system) => {
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, 3, 2);
     const coeffs = sharing.polynomial.coeffs;
@@ -168,36 +170,36 @@ describe('secret scalars go through expSecret', () => {
     await sharing.getPublicShares();
     await sharing.getShare(1);
     const { commitments } = await createFeldmanPackets(sharing);
-    expect(trace.direct).toEqual([]);
-    expect(trace.public).toEqual([]);
-    expect(trace.secret).toEqual(expect.arrayContaining(coeffs));
+    assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.public, []);
+    assert.ok(coeffs.every(x => trace.secret.includes(x)));
     const shares = await sharing.getSecretShares();
     trace.secret.length = 0;
     await verifyFeldmanCommitments(ctx, commitments, shares[0], 2);
-    expect(trace.direct).toEqual([]);
+    assert.deepEqual(trace.direct, []);
     // Horner steps raise to the share index only
-    expect(trace.public).toEqual([1n]);
-    expect(trace.secret).toEqual([await ctx.parseScalar(shares[0].value)]);
+    assert.deepEqual(trace.public, [1n]);
+    assert.deepEqual(trace.secret, [await ctx.parseScalar(shares[0].value)]);
   });
-  it.each(systems)('pedersen over %s', async (system) => {
+  each(systems)('pedersen over %s', async (system) => {
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, 3, 2);
     const pedersenBase = await derivePedersenBase(ctx);
     const trace = traceExp(ctx);
     const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
-    expect(trace.direct).toEqual([]);
-    expect(trace.public).toEqual([]);
-    expect(trace.secret).toEqual(expect.arrayContaining(sharing.polynomial.coeffs));
+    assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.public, []);
+    assert.ok(sharing.polynomial.coeffs.every(x => trace.secret.includes(x)));
     trace.secret.length = 0;
     const { value, index, binding } = packets[1];
     await verifyPedersenCommitments(ctx, commitments, pedersenBase, { value, index }, binding!, 2);
-    expect(trace.direct).toEqual([]);
-    expect(trace.public).toEqual([2n]);
-    expect(trace.secret).toEqual([
+    assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.public, [2n]);
+    assert.deepEqual(trace.secret, [
       await ctx.parseScalar(value), await ctx.parseScalar(binding!),
     ]);
   });
-  it.each(systems)('nizk proofs over %s', async (system) => {
+  each(systems)('nizk proofs over %s', async (system) => {
     const ctx = initBackend(system);
     const g = ctx.generator;
     const [x, z] = [await ctx.randomScalar(), await ctx.randomScalar()];
@@ -207,16 +209,16 @@ describe('secret scalars go through expSecret', () => {
     const trace = traceExp(ctx);
     await nizk(ctx, Algorithms.SHA256).proveDlog(z, { u, v: w });
     await nizk(ctx, Algorithms.SHA256).proveDDH(z, { u, v, w });
-    expect(trace.direct).toEqual([]);
-    expect(trace.public).toEqual([]);
+    assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.public, []);
     // One nonce mult for dlog, one per entry of the 2x2 DDH relation
-    expect(trace.secret).toHaveLength(5);
+    assert.equal(trace.secret.length, 5);
   });
 });
 
 
 describe('public exponentiation', () => {
-  it.each(systems)('commitment evaluation agrees with the exp-based path over %s', async (system) => {
+  each(systems)('commitment evaluation agrees with the exp-based path over %s', async (system) => {
     const ctx = initBackend(system);
     for (const threshold of [1, 2, 4]) {
       const { sharing } = await shareSecret(ctx, 6, threshold);
@@ -224,16 +226,16 @@ describe('public exponentiation', () => {
       for (const index of [1, 2, 6, 1000]) {
         const fast = await evalCommitments(ctx, commitments, index, threshold);
         // The default of Group.expPublic, which custom backends inherit
-        const spy = jest.spyOn(ctx, 'expPublic').mockImplementation(ctx.exp);
+        const spy = mock.method(ctx, 'expPublic', ctx.exp);
         try {
           const slow = await evalCommitments(ctx, commitments, index, threshold);
-          expect(await fast.equals(slow)).toBe(true);
+          assert.equal(await fast.equals(slow), true);
         } finally {
-          spy.mockRestore();
+          spy.mock.restore();
         }
         // Against g ^ f(index), which the commitments open to
         const y = sharing.polynomial.evaluate(index);
-        expect(await fast.equals(await ctx.exp(ctx.generator, y))).toBe(true);
+        assert.equal(await fast.equals(await ctx.exp(ctx.generator, y)), true);
       }
     }
   });

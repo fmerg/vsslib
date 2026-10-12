@@ -1,4 +1,6 @@
-import * as nobleUtils from '@noble/hashes/utils.js';
+import { describe, mock } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from './utils';
 import { initBackend } from 'vsslib';
 import { resolveTestConfig } from './environ';
 
@@ -6,7 +8,7 @@ const { systems } = resolveTestConfig();
 
 
 describe('Scalar sampling', () => {
-  it.each(systems)('no reduction bias over %s', async (system) => {
+  each(systems)('no reduction bias over %s', async (system) => {
     // Reducing N = 2^(8 * fieldBytes) random bits modulo q makes values below
     // N mod q more likely; on jubjub the excess is about 1.4% of the samples
     const ctx = initBackend(system);
@@ -18,24 +20,24 @@ describe('Scalar sampling', () => {
     let below = 0;
     for (let i = 0; i < n; i++) if (await ctx.randomScalar() < rem) below++;
     const sigma = Math.sqrt(n * p * (1 - p));
-    expect(Math.abs(below - n * p)).toBeLessThanOrEqual(5 * sigma + 1);
+    assert.ok(Math.abs(below - n * p) <= 5 * sigma + 1);
   });
-  it.each(systems)('random bytes are wiped after sampling over %s', async (system) => {
+  each(systems)('random bytes are wiped after sampling over %s', async (system) => {
     // The bytes determine the scalar, which may be a secret or a nonce
     const ctx = initBackend(system);
     const sampled: Uint8Array[] = [];
-    const randomBytes = nobleUtils.randomBytes;
-    const spy = jest.spyOn(nobleUtils, 'randomBytes').mockImplementation((len) => {
-      const bytes = randomBytes(len);
-      sampled.push(bytes);
-      return bytes;
+    // noble's randomBytes returns the array that getRandomValues fills
+    const getRandomValues = crypto.getRandomValues.bind(crypto);
+    const spy = mock.method(crypto, 'getRandomValues', <T extends ArrayBufferView<ArrayBuffer>>(array: T) => {
+      sampled.push(getRandomValues(array) as unknown as Uint8Array);
+      return array;
     });
     try {
       await ctx.randomScalar();
     } finally {
-      spy.mockRestore();
+      spy.mock.restore();
     }
-    expect(sampled).toHaveLength(1);
-    expect(sampled[0]).toEqual(new Uint8Array(ctx.scalarBytes + 16));
+    assert.equal(sampled.length, 1);
+    assert.deepEqual(sampled[0], new Uint8Array(ctx.scalarBytes + 16));
   });
 });

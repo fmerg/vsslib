@@ -1,6 +1,8 @@
+import { describe } from 'node:test';
+import assert from 'node:assert/strict';
 import { initBackend } from 'vsslib/backend';
 import { FieldPolynomial, randomPolynomial } from 'vsslib/polynomials';
-import { cartesian } from '../utils';
+import { cartesian, each } from '../utils';
 import { resolveTestConfig } from '../environ';
 
 
@@ -9,19 +11,17 @@ const { systems } = resolveTestConfig();
 
 
 describe('Random polynomial generation', () => {
-  it.each(systems)('Non-positive degree error - over %s', async (system) => {
+  each(systems)('Non-positive degree error - over %s', async (system) => {
     const ctx = initBackend(system);
-    await expect(randomPolynomial(ctx, -1)).rejects.toThrow(
-      'Polynomial degree must be positive'
-    );
+    await assert.rejects(randomPolynomial(ctx, -1), /Polynomial degree must be positive/);
   });
-  it.each(systems)('Success - over %s', async (system) => {
+  each(systems)('Success - over %s', async (system) => {
     const ctx = initBackend(system);
     const degree = 7;
     const polynomial = await randomPolynomial(ctx, degree);
-    expect(polynomial.ctx.system).toBe(system);
-    expect(polynomial.degree).toEqual(degree);
-    expect(polynomial.coeffs.length).toEqual(degree + 1);
+    assert.equal(polynomial.ctx.system, system);
+    assert.equal(polynomial.degree, degree);
+    assert.equal(polynomial.coeffs.length, degree + 1);
   });
 });
 
@@ -31,7 +31,7 @@ describe('Algebraic operations with random poynomials', () => {
     [0, 0], [0, 1], [1, 1], [0, 2], [1, 2], [2, 2], [5, 7], [6, 9], [7, 9], [8, 9]
   ];
 
-  it.each(cartesian([degree_pairs, systems]))('Addition - degrees %s over %s', async (
+  each(cartesian([degree_pairs, systems]))('Addition - degrees %s over %s', async (
     degrees, system
   ) => {
     const ctx = initBackend(system);
@@ -44,11 +44,11 @@ describe('Algebraic operations with random poynomials', () => {
         poly2.coeffs.slice(poly1.degree + 1)
       ),
     );
-    expect(poly3.equals(poly1.add(poly2))).toBe(true);
-    expect(poly3.equals(poly2.add(poly1))).toBe(true);
+    assert.equal(poly3.equals(poly1.add(poly2)), true);
+    assert.equal(poly3.equals(poly2.add(poly1)), true);
   });
 
-  it.each(cartesian([degree_pairs, systems]))('Multiplication - degrees %s over %s', async (
+  each(cartesian([degree_pairs, systems]))('Multiplication - degrees %s over %s', async (
     degrees, system
   ) => {
     const ctx = initBackend(system);
@@ -62,7 +62,7 @@ describe('Algebraic operations with random poynomials', () => {
       }
     }
     const poly3 = new FieldPolynomial(ctx, newCoeffs);
-    expect(poly3.equals(poly1.mult(poly2))).toBe(true);
-    expect(poly3.equals(poly2.mult(poly1))).toBe(true);
+    assert.equal(poly3.equals(poly1.mult(poly2)), true);
+    assert.equal(poly3.equals(poly2.mult(poly1)), true);
   });
 });

@@ -1,3 +1,6 @@
+import { describe, test } from 'node:test';
+import assert from 'node:assert/strict';
+import { each, isEqualBuffer } from './utils';
 import {
   combineSecretShares,
   combinePublicShares,
@@ -21,84 +24,76 @@ const badIndexes = [0, -1, 1.5, NaN, Infinity, 2 ** 53];
 
 
 describe('Share index validation', () => {
-  it.each(systems)('combination rejects duplicate indexes over %s', async (system) => {
+  each(systems)('combination rejects duplicate indexes over %s', async (system) => {
     const { ctx, secretShares, publicShares } = await createRawSharing(system, nrShares, threshold);
     const secrets = [...secretShares.slice(0, threshold - 1), secretShares[0]];
     const publics = [...publicShares.slice(0, threshold - 1), publicShares[0]];
-    await expect(combineSecretShares(ctx, secrets, threshold)).rejects.toThrow(InvalidInput);
-    await expect(combinePublicShares(ctx, publics, threshold)).rejects.toThrow(InvalidInput);
+    await assert.rejects(combineSecretShares(ctx, secrets, threshold), InvalidInput);
+    await assert.rejects(combinePublicShares(ctx, publics, threshold), InvalidInput);
   });
-  it.each(systems)('combination rejects malformed indexes over %s', async (system) => {
+  each(systems)('combination rejects malformed indexes over %s', async (system) => {
     const { ctx, secretShares, publicShares } = await createRawSharing(system, nrShares, threshold);
     for (const index of badIndexes) {
       const secrets = [{ ...secretShares[0], index }, ...secretShares.slice(1)];
       const publics = [{ ...publicShares[0], index }, ...publicShares.slice(1)];
-      await expect(combineSecretShares(ctx, secrets, threshold)).rejects.toThrow('positive integer');
-      await expect(combinePublicShares(ctx, publics, threshold)).rejects.toThrow('positive integer');
+      await assert.rejects(combineSecretShares(ctx, secrets, threshold), /positive integer/);
+      await assert.rejects(combinePublicShares(ctx, publics, threshold), /positive integer/);
     }
   });
-  it.each(systems)('lambda rejects inconsistent indexes over %s', async (system) => {
+  each(systems)('lambda rejects inconsistent indexes over %s', async (system) => {
     const { ctx } = await createRawSharing(system, nrShares, threshold);
-    expect(() => computeLambda(ctx, 1, [1, 2, 2])).toThrow(InvalidInput);
-    expect(() => computeLambda(ctx, 3, [1, 2])).toThrow(InvalidInput);
-    expect(() => computeLambda(ctx, 1.5, [1.5, 2])).toThrow(InvalidInput);
-    expect(() => computeLambdas(ctx, [1, 2, 2])).toThrow(InvalidInput);
-    expect(() => computeLambdas(ctx, [1.5, 2])).toThrow(InvalidInput);
-    expect(() => computeLambdas(ctx, [0, 1])).toThrow(InvalidInput);
+    assert.throws(() => computeLambda(ctx, 1, [1, 2, 2]), InvalidInput);
+    assert.throws(() => computeLambda(ctx, 3, [1, 2]), InvalidInput);
+    assert.throws(() => computeLambda(ctx, 1.5, [1.5, 2]), InvalidInput);
+    assert.throws(() => computeLambdas(ctx, [1, 2, 2]), InvalidInput);
+    assert.throws(() => computeLambdas(ctx, [1.5, 2]), InvalidInput);
+    assert.throws(() => computeLambdas(ctx, [0, 1]), InvalidInput);
   });
   test('lambdas reject indexes not below the group order', async () => {
     // Built-in orders exceed every safe integer; a small order stands in for a
     // custom backend, where such indexes would make inversions fail
     const ctx = { order: BigInt(7) } as unknown as Parameters<typeof computeLambdas>[0];
-    expect(() => computeLambdas(ctx, [7, 1])).toThrow('below the group order');
-    expect(() => computeLambdas(ctx, [1, 8])).toThrow(InvalidInput);
-    expect(() => computeLambda(ctx, 1, [1, 8])).toThrow(InvalidInput);
+    assert.throws(() => computeLambdas(ctx, [7, 1]), /below the group order/);
+    assert.throws(() => computeLambdas(ctx, [1, 8]), InvalidInput);
+    assert.throws(() => computeLambda(ctx, 1, [1, 8]), InvalidInput);
     const indexes = [1, 2, 6];
-    expect(computeLambdas(ctx, indexes)).toEqual(
-      indexes.map(index => computeLambdaNaive(ctx, index, indexes))
-    );
+    assert.deepEqual(computeLambdas(ctx, indexes), indexes.map(index => computeLambdaNaive(ctx, index, indexes)));
     const shares = [1, 8].map(index => ({ index, value: new Uint8Array(32) }));
-    await expect(combineSecretShares(ctx, shares, 2)).rejects.toThrow(InvalidInput);
-    await expect(combinePublicShares(ctx, shares, 2)).rejects.toThrow(InvalidInput);
+    await assert.rejects(combineSecretShares(ctx, shares, 2), InvalidInput);
+    await assert.rejects(combinePublicShares(ctx, shares, 2), InvalidInput);
   });
-  it.each(systems)('verification rejects malformed indexes over %s', async (system) => {
+  each(systems)('verification rejects malformed indexes over %s', async (system) => {
     const { ctx, sharing, secretShares } = await createRawSharing(system, nrShares, threshold);
     const { commitments } = await createFeldmanPackets(sharing);
     for (const index of badIndexes) {
-      await expect(
-        verifyFeldmanCommitments(ctx, commitments, { ...secretShares[0], index }, threshold)
-      ).rejects.toThrow('positive integer');
-      await expect(
-        createSchnorrPacket(ctx, { ...secretShares[0], index })
-      ).rejects.toThrow('positive integer');
+      await assert.rejects(verifyFeldmanCommitments(ctx, commitments, { ...secretShares[0], index }, threshold), /positive integer/);
+      await assert.rejects(createSchnorrPacket(ctx, { ...secretShares[0], index }), /positive integer/);
     }
   });
-  it.each(systems)('recovery rejects replayed packets over %s', async (system) => {
+  each(systems)('recovery rejects replayed packets over %s', async (system) => {
     const { ctx, secretShares: shares } = await createRawSharing(system, nrShares, threshold);
     const { packets } = await mockPublicRecoverySetup({ ctx, shares });
     const replayed = [...packets.slice(0, threshold), packets[0]];
     for (const errorOnInvalid of [true, false]) {
-      await expect(
-        recoverPublic(ctx, replayed, threshold, { errorOnInvalid })
-      ).rejects.toThrow('distinct');
+      await assert.rejects(recoverPublic(ctx, replayed, threshold, { errorOnInvalid }), /distinct/);
     }
   });
-  it.each(systems)('proof is bound to the index over %s', async (system) => {
+  each(systems)('proof is bound to the index over %s', async (system) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets } = await mockPublicRecoverySetup({ ctx, shares });
     const relabeled = { ...packets[0], index: nrShares + 1 };
-    await expect(parseSchnorrPacket(ctx, relabeled)).rejects.toThrow(InvalidPublicShare);
+    await assert.rejects(parseSchnorrPacket(ctx, relabeled), InvalidPublicShare);
     const recovery = recoverPublic(
       ctx, [relabeled, ...packets.slice(1)], threshold, { errorOnInvalid: false }
     );
     if (nrShares - 1 >= threshold) {
       const { recovered, blame } = await recovery;
-      expect(blame).toEqual([{ value: relabeled.value, index: relabeled.index }]);
-      expect(Buffer.from(recovered).equals(Buffer.from(publicBytes))).toBe(true);
+      assert.deepEqual(blame, [{ value: relabeled.value, index: relabeled.index }]);
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
     } else {
-      await expect(recovery).rejects.toThrow(InvalidPublicShare);
+      await assert.rejects(recovery, InvalidPublicShare);
     }
   });
 });

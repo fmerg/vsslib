@@ -933,6 +933,16 @@ $ npm run build
 $ npm run docs                      # API reference in docs/
 ```
 
+## Tests
+
+Tests run on Node's built-in test runner (`node:test`), with tsx compiling the
+sources, one process per spec file. For CI, `./test.sh` also writes a JUnit
+report to `coverage/junit.xml` (`coverage/browsers.xml` with `--browsers`),
+except with a `--test-reporter` of your own, which replaces the default
+reporters. Except in watch mode, it fails a run in which no test ran, e.g. for
+a name pattern that matches nothing, counted by
+[`tests/count-reporter.mjs`](./tests/count-reporter.mjs).
+
 ## Layout
 
 [`src/operations`](./src/operations/index.ts) holds the library operations,
@@ -956,8 +966,35 @@ the library for the browser with esbuild and fails on any Node module, also one
 required inside `try`, and on any reference to Node globals such as `Buffer` or
 `process`. It then runs SSS, VSS with public recovery and NIZK proofs from the
 bundle in a Node `vm` context that exposes only `crypto` and `TextEncoder`. It
-thereby guards against Node APIs leaking into the library, but does not replace
-testing in real browsers, nor does it bundle the compiled `dist`.
+thereby guards against Node APIs leaking into the library, but does not bundle
+the compiled `dist`.
+
+[`tests/browser/engines.ts`](./tests/browser/engines.ts) runs the same flows in
+Chromium, Firefox and WebKit through `playwright-core`, which downloads no
+browsers itself. CI runs it on schedules and on demand, in the Playwright image
+that ships the browsers. To run it locally
+
+```
+$ npx --no-install playwright-core install      # once: browsers of the pinned release
+$ npm run test:browsers                         # results also in coverage/browsers.xml
+$ BROWSERS=webkit npm run test:browsers -- -s ed25519   # ./test.sh --help
+```
+
+`--no-install` makes npx run only the locked `playwright-core` and fail on a
+misspelled name, which plain npx would fetch from the registry and execute.
+Install the browsers as your user, not with sudo, which would put them in
+root's cache. If a browser fails to launch for missing system libraries,
+`sudo ./node_modules/.bin/playwright-core install-deps` installs them, or run
+the tests in the CI image, which needs no installation:
+
+```
+$ docker run --rm -v "$PWD":/src:ro mcr.microsoft.com/playwright:<tag>@<digest> \
+    bash -c 'cp -r /src /w && cd /w && rm -rf node_modules && npm ci && npm run test:browsers'
+```
+
+with the image of the `browsers` job in `.gitlab-ci.yml`. The container works
+on a copy of the checkout, so the JUnit report stays inside it; the output
+lists the failed checks.
 
 ## Benchmarks
 
@@ -996,6 +1033,28 @@ cores, pin the runs to one kind with `--cpus`; turbo boost, throttling and
 background load are not controlled. Take the two sides of a comparison back to
 back: under the `powersave` governor, the same code once measured twice as slow
 an hour apart.
+
+## Dependencies
+
+`@noble/curves` and `@noble/hashes` are pinned exactly, so that installing
+vsslib never resolves a noble release that was not tested with it; an
+application that depends on another noble version gets a second copy. esbuild
+is pinned within the `~0.28` range of tsx, so that both share one copy. CI runs
+on a Node.js image pinned by digest (`.gitlab-ci.yml`). Nothing updates these
+automatically; to bump them
+
+1. `npm outdated` lists newer versions; `npm view <package> time` shows their
+   release dates. Take a version only once it is at least 7 days old, which
+   leaves time for a compromised release to be found and pulled.
+2. Bump `@noble/curves` and `@noble/hashes` together: curves pins hashes exactly,
+   so both must name the same version for npm to install one copy of hashes.
+3. Bump esbuild together with tsx, within the range tsx accepts, and
+   `playwright-core` together with the Playwright image of the `browsers` job,
+   whose browsers must match it.
+4. For the CI image, take the newest `22.x` tag and the digest of its index
+   (see the comment in `.gitlab-ci.yml`).
+5. Run `npm install`, check that `npm ls @noble/hashes esbuild` lists one
+   version of each, and run `npm audit signatures`, lint, type check and tests.
 
 ## Publish
 

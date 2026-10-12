@@ -1,3 +1,6 @@
+import { describe, it, test, mock } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from './utils';
 import { leBytesToInt, intToLeBytes, mod, gcd, modInv, modInvBatch } from 'vsslib/arith';
 
 const __0n = BigInt(0);
@@ -6,13 +9,13 @@ const __1n = BigInt(1);
 
 describe('errors', () => {
   test('mod - Modulus <= 2', async () => {
-    expect(() => mod(__1n, __0n)).toThrow('Modulus must be > 2');
-    expect(() => mod(__1n, __1n)).toThrow('Modulus must be > 2');
+    assert.throws(() => mod(__1n, __0n), /Modulus must be > 2/);
+    assert.throws(() => mod(__1n, __1n), /Modulus must be > 2/);
   });
   test('gcd - Non-positive inputs', async () => {
-    expect(() => gcd(__0n, __1n)).toThrow('Non-positive inputs');
-    expect(() => gcd(__1n, __0n)).toThrow('Non-positive inputs');
-    expect(() => gcd(__0n, __0n)).toThrow('Non-positive inputs');
+    assert.throws(() => gcd(__0n, __1n), /Non-positive inputs/);
+    assert.throws(() => gcd(__1n, __0n), /Non-positive inputs/);
+    assert.throws(() => gcd(__0n, __0n), /Non-positive inputs/);
   });
 });
 
@@ -42,8 +45,8 @@ describe('mod', () => {
     [-5, 3, 1],
     [-6, 3, 0],
   ];
-  it.each(fixtures)('%s, %s, %s', async (x, q, r) => {
-    expect(mod(BigInt(x), BigInt(q))).toBe(BigInt(r));
+  each(fixtures)('%s, %s, %s', async (x, q, r) => {
+    assert.equal(mod(BigInt(x), BigInt(q)), BigInt(r));
   })
 });
 
@@ -69,8 +72,8 @@ describe('greatest common divisor', () => {
     [56, 32, -1, 2, 8],
     [32, 56, 2, -1, 8],
   ];
-  it.each(fixtures)('%s, %s, %s, %s, %s', async (a, b, x, y, g) => {
-    expect(gcd(BigInt(a), BigInt(b))).toEqual({
+  each(fixtures)('%s, %s, %s, %s, %s', async (a, b, x, y, g) => {
+    assert.deepEqual(gcd(BigInt(a), BigInt(b)), {
       x: BigInt(x),
       y: BigInt(y),
       g: BigInt(g),
@@ -122,8 +125,8 @@ describe('mod inverse', () => {
     [-5, 7, 4],
     [-6, 7, 1],
   ];
-  it.each(fixtures)('%s, %s, %s', async (x, q, r) => {
-    expect(modInv(BigInt(x), BigInt(q))).toBe(BigInt(r));
+  each(fixtures)('%s, %s, %s', async (x, q, r) => {
+    assert.equal(modInv(BigInt(x), BigInt(q)), BigInt(r));
   })
 });
 
@@ -161,53 +164,47 @@ describe('Inverse not exists', () => {
     [+7, 7],
     [-7, 7],
   ];
-  it.each(fixtures)('%s, %s', async (x, q) => {
-    expect(() => modInv(BigInt(x), BigInt(q))).toThrow(
-      'No inverse exists for provided modulo'
-    );
+  each(fixtures)('%s, %s', async (x, q) => {
+    assert.throws(() => modInv(BigInt(x), BigInt(q)), /No inverse exists for provided modulo/);
   })
 })
 
 describe('modInvBatch', () => {
   const order = BigInt(2) ** BigInt(252) + BigInt('27742317777372353535851937790883648493');
-  it.each([
+  each([
     [[1, 2, 3, 4, 5, 6], 7],
     [[-1, -6, 8, 13, 20], 7],
     [[1, 5, 7, 11, -1], 12],
     [[3], 11],
   ])('%s mod %s matches modInv', async (xs, q) => {
     const values = xs.map(x => BigInt(x));
-    expect(modInvBatch(values, BigInt(q))).toEqual(
-      values.map(v => modInv(v, BigInt(q)))
-    );
+    assert.deepEqual(modInvBatch(values, BigInt(q)), values.map(v => modInv(v, BigInt(q))));
   });
   test('large prime modulus', async () => {
     const values = Array.from({ length: 50 }, (_, i) =>
       BigInt(i + 1) ** BigInt(60) - BigInt(i * 1000003)
     );
     const inverses = modInvBatch(values, order);
-    expect(inverses).toEqual(values.map(v => modInv(v, order)));
-    inverses.forEach((w, i) => expect(mod(w * values[i], order)).toBe(__1n));
+    assert.deepEqual(inverses, values.map(v => modInv(v, order)));
+    inverses.forEach((w, i) => assert.equal(mod(w * values[i], order), __1n));
   });
   test('empty input', async () => {
-    expect(modInvBatch([], BigInt(7))).toEqual([]);
+    assert.deepEqual(modInvBatch([], BigInt(7)), []);
   });
-  it.each([
+  each([
     [[1, 2, 0], 7],
     [[7, 1], 7],
     [[1, -14, 3], 7],
     [[1, 2, 5], 6],
     [[5, 9], 12],
   ])('%s mod %s has no inverse', async (xs, q) => {
-    expect(() => modInvBatch(xs.map(x => BigInt(x)), BigInt(q))).toThrow(
-      'No inverse exists for provided modulo'
-    );
+    assert.throws(() => modInvBatch(xs.map(x => BigInt(x)), BigInt(q)), /No inverse exists for provided modulo/);
   });
 });
 
 
 describe('little-endian roundtrip', () => {
-  it.each([
+  each([
     [[0], 0],
     [[1], 1],
     [[1, 2], 513],
@@ -216,38 +213,38 @@ describe('little-endian roundtrip', () => {
   ])('%s, %s', (arr, num) => {
     const buffer = Uint8Array.from(arr);
     const number = leBytesToInt(buffer);
-    expect(number).toBe(BigInt(num));
+    assert.equal(number, BigInt(num));
     const buffBack = intToLeBytes(number);
-    expect(buffBack).toEqual(buffer);
+    assert.deepEqual(buffBack, buffer);
   });
 });
 
 
 describe('little-endian fixed-length encoding', () => {
-  it.each([
+  each([
     [0, 1, [0]],
     [1, 4, [1, 0, 0, 0]],
     [513, 3, [1, 2, 0]],
     [4278387201, 4, [1, 2, 3, 255]],
   ])('%s, %s', (num, byteLength, arr) => {
-    expect(intToLeBytes(BigInt(num), byteLength)).toEqual(Uint8Array.from(arr));
+    assert.deepEqual(intToLeBytes(BigInt(num), byteLength), Uint8Array.from(arr));
   });
   it('rejects too short length', () => {
-    expect(() => intToLeBytes(BigInt(513), 1)).toThrow('Integer does not fit in 1 bytes');
+    assert.throws(() => intToLeBytes(BigInt(513), 1), /Integer does not fit in 1 bytes/);
   });
   it('accepts exactly the integers below 256 ^ length', () => {
-    expect(intToLeBytes((1n << 256n) - 1n, 32)).toEqual(new Uint8Array(32).fill(255));
-    expect(() => intToLeBytes(1n << 256n, 32)).toThrow('Integer does not fit in 32 bytes');
-    expect(() => intToLeBytes(-1n, 32)).toThrow('Integer does not fit in 32 bytes');
+    assert.deepEqual(intToLeBytes((1n << 256n) - 1n, 32), new Uint8Array(32).fill(255));
+    assert.throws(() => intToLeBytes(1n << 256n, 32), /Integer does not fit in 32 bytes/);
+    assert.throws(() => intToLeBytes(-1n, 32), /Integer does not fit in 32 bytes/);
   });
   it('does not convert the integer to string', () => {
     // String conversion runs in variable time and copies secrets to the heap
-    const spy = jest.spyOn(BigInt.prototype, 'toString');
+    const spy = mock.method(BigInt.prototype, 'toString');
     try {
       intToLeBytes((1n << 255n) + 12345n, 32);
-      expect(spy).not.toHaveBeenCalled();
+      assert.equal(spy.mock.callCount(), 0);
     } finally {
-      spy.mockRestore();
+      spy.mock.restore();
     }
   });
 });

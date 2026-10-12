@@ -2,6 +2,7 @@
 
 DEFAULT_MODULE="tests"
 DEFAULT_WATCH=false
+DEFAULT_BROWSERS=false
 DEFAULT_VERBOSE=false
 DEFAULT_SYSTEM=""
 DEFAULT_ALGORITHM=""
@@ -54,11 +55,18 @@ Options
                                     Shamir sharing (default: 3).
   -t, --threshold <THRESHOLD>       Threshold parameter for tests involving
                                     Shamir sharing (default: 2).
+  -b, --browsers                    Run the flows of the browser bundle in Chromium,
+                                    Firefox and WebKit (tests/browser/engines.ts)
+                                    instead of the spec files; BROWSERS=chromium,firefox
+                                    selects engines. Needs the browsers, see README.
+                                    Writes the JUnit report to coverage/browsers.xml.
   -w, --watch                       Rerun tests when saving changes.
-  -v, --verbose                     Be verbose.
+  -v, --verbose                     List every test, not only failures.
   -h, --help                        Display this help message and exit.
 
-Other arguments are passed to Jest, e.g. --bail or --testNamePattern <PATTERN>.
+Other arguments are passed to node --test, e.g. --test-name-pattern <PATTERN>.
+Any --test-reporter given replaces the default reporters, including the JUnit
+report.
 
 "
 
@@ -72,6 +80,8 @@ ALGORITHM="$DEFAULT_ALGORITHM"
 NR_SHARES="$DEFAULT_NR_SHARES"
 THRESHOLD="$DEFAULT_THRESHOLD"
 WATCH="$DEFAULT_WATCH"
+RUN_BROWSERS="$DEFAULT_BROWSERS"
+MODULE_GIVEN=false
 VERBOSE="$DEFAULT_VERBOSE"
 
 opts=()
@@ -81,6 +91,7 @@ do
     case $arg in
         -m|--module)
             MODULE="$2"
+            MODULE_GIVEN=true
             shift
             shift
             ;;
@@ -102,6 +113,10 @@ do
         -t|--threshold)
             THRESHOLD="$2"
             shift
+            shift
+            ;;
+        -b|--browsers)
+            RUN_BROWSERS=true
             shift
             ;;
         -w|--watch)
@@ -142,8 +157,9 @@ TARGET=$MODULE
 if [[ $TARGET != "tests"* ]]; then
     TARGET="tests/$TARGET"
 fi
-# Allow spec files without their suffix, e.g. operations/feldman
-if [[ ! -e $TARGET && -f $TARGET.spec.ts ]]; then
+# Allow spec files without their suffix, e.g. operations/feldman; such a file
+# takes precedence over a directory of the same name, e.g. tests/browser
+if [[ -f $TARGET.spec.ts ]]; then
     TARGET="$TARGET.spec.ts"
 fi
 if [[ ! -e $TARGET ]]; then
@@ -152,20 +168,99 @@ if [[ ! -e $TARGET ]]; then
 fi
 
 
-jest_opts=()
-if [[ $WATCH == "true" ]]; then
-    jest_opts+=(--watch)
-fi
-if [[ $VERBOSE == "true" ]]; then
-    jest_opts+=(--verbose)
-fi
-jest_opts+=("${opts[@]}")
-
-npm test -- --clearCache
-
-# NOTE: npm test -- --help
-if [[ $TARGET == *"spec.ts" ]]; then
-    npm test -- "${jest_opts[@]}" --findRelatedTests "$TARGET"
+# Spec files of the target, run by node's test runner with tsx compiling the
+# sources; results also go to a JUnit report for CI
+report=coverage/junit.xml
+if [[ $RUN_BROWSERS == "true" ]]; then
+    if [[ $MODULE_GIVEN == "true" ]]; then
+        echo "Options --module and --browsers exclude each other" 1>&2
+        exit 1
+    fi
+    files=(tests/browser/engines.ts)
+    report=coverage/browsers.xml
+    MODULE="browser/engines.ts"
+elif [[ $TARGET == *"spec.ts" ]]; then
+    files=("$TARGET")
 else
-    npm test -- "${jest_opts[@]}" --findRelatedTests "$TARGET"/*
+    # No mapfile, which bash 3.2 (macOS) lacks
+    files=()
+    while IFS= read -r file; do
+        files+=("$file")
+    done < <(find "$TARGET" -name '*.spec.ts' | sort)
 fi
+if [[ ${#files[@]} -eq 0 ]]; then
+    echo "No spec files in test module: $MODULE" 1>&2
+    exit 1
+fi
+
+# Spec files run in parallel, each in its own process. The timeout fails a
+# spec file that hangs instead of blocking the run; node applies it to each
+# file as a whole, and the slowest take about 75 s locally. The browser run
+# gets 30 minutes, above the timeouts of its three engines together (up to
+# 9 minutes each, see tests/browser/engines.ts), so that these name a hang
+timeout=600000
+if [[ $RUN_BROWSERS == "true" ]]; then
+    timeout=1800000
+fi
+# node warns of a listener leak on its own stream with three reporters or more
+node_opts=(
+    --import tsx --test --test-timeout="$timeout"
+    --disable-warning=MaxListenersExceededWarning
+)
+
+# Reporters passed through replace the defaults, since node pairs every
+# reporter with a destination
+custom_reporter=false
+nr_reporters=0
+nr_destinations=0
+for opt in "${opts[@]}"; do
+    if [[ $opt == --test-reporter || $opt == --test-reporter=* ]]; then
+        custom_reporter=true
+        nr_reporters=$((nr_reporters + 1))
+    elif [[ $opt == --test-reporter-destination* ]]; then
+        nr_destinations=$((nr_destinations + 1))
+    fi
+done
+if [[ $nr_destinations -gt 0 && $nr_destinations -ne $nr_reporters ]]; then
+    echo "Give one --test-reporter-destination per --test-reporter, or none" 1>&2
+    exit 1
+fi
+# Reporters given without destinations write to stdout, as node does for a
+# single reporter, since the counting reporter below takes a destination
+for ((i = nr_destinations; i < nr_reporters; i++)); do
+    opts+=(--test-reporter-destination=stdout)
+done
+if [[ $custom_reporter == "false" ]]; then
+    reporter=dot
+    if [[ $VERBOSE == "true" ]]; then
+        reporter=spec
+    fi
+    node_opts+=(
+        --test-reporter="$reporter" --test-reporter-destination=stdout
+        --test-reporter=junit --test-reporter-destination="$report"
+    )
+fi
+
+# node passes when a name pattern or an empty case table selects no tests, so
+# a reporter of ours counts the tests that ran, next to any other reporters.
+# Not in watch mode, where the run never ends
+count="${report%.xml}.count"
+rm -f "$count"
+if [[ $WATCH == "true" ]]; then
+    node_opts+=(--watch)
+else
+    node_opts+=(
+        --test-reporter=./tests/count-reporter.mjs
+        --test-reporter-destination="$count"
+    )
+fi
+
+mkdir -p coverage
+status=0
+node "${node_opts[@]}" "${opts[@]}" "${files[@]}" || status=$?
+
+if [[ $status -eq 0 && $WATCH == "false" && $(cat "$count" 2>/dev/null) != [1-9]* ]]; then
+    echo "No tests ran in test module: $MODULE" 1>&2
+    exit 1
+fi
+exit $status

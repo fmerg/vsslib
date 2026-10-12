@@ -78,13 +78,18 @@ export abstract class Group<P extends Point> {
    * override it where their multiplication does so */
   blindsNatively: (point: P) => boolean = () => false;
 
+  /** @internal Inversion modulo the order, variable-time; a property, so that
+   * tests can trace what `expSecret` inverts */
+  invertScalar = (scalar: bigint): bigint => modInv(scalar, this.order);
+
   /** Exponentiation by a secret scalar. Unless `exp` blinds it natively, the
    * scalar is split as `point ^ s = (point ^ r) ^ (s / r)` for a fresh random
    * `r`, so that each exponentiation sees a uniform scalar independent of `s`
    * and timing leakage does not accumulate over repeated calls with `s`. The
    * split is multiplicative, since reducing `s - r` would branch on `s < r`.
    * Inversion is variable-time, so `r` is inverted as `u / (r * u)` for a
-   * fresh random `u`, which shows the inversion only a value independent of `r` */
+   * fresh random `u`, which shows the inversion only a value independent of `r`.
+   * Invert only through `invertScalar`, which tests trace for `r` */
   expSecret = async (point: P, scalar: bigint): Promise<P> => {
     if (this.blindsNatively(point)) return this.exp(point, scalar);
     const order = this.order;
@@ -92,7 +97,7 @@ export abstract class Group<P extends Point> {
     while (r === 0n) r = await this.randomScalar();
     let u = 0n;
     while (u === 0n) u = await this.randomScalar();
-    const rInv = mod(u * modInv(mod(r * u, order), order), order);
+    const rInv = mod(u * this.invertScalar(mod(r * u, order)), order);
     const q = await this.exp(point, r);
     return this.exp(q, mod(scalar * rInv, order));
   }

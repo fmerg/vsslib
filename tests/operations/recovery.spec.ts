@@ -1,10 +1,12 @@
+import { describe } from 'node:test';
+import assert from 'node:assert/strict';
 import {
   createSchnorrPacket,
   parseSchnorrPacket,
   recoverPublic,
 } from 'vsslib/operations/recovery';
 import { randomPublic, InvalidPublicShare } from 'vsslib';
-import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
+import { cartesian, partialPermutations, isEqualBuffer, each } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing, mockPublicRecoverySetup } from '../helpers';
 
@@ -12,7 +14,7 @@ const { systems, algorithms, nrShares, threshold } = resolveTestConfig();
 
 
 describe('Schnorr packets', () => {
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('roundtrip - over %s/%s', async (system, algorithm) => {
     const { ctx, secretShares, publicShares } = await createRawSharing(
       system, nrShares, threshold
@@ -20,11 +22,11 @@ describe('Schnorr packets', () => {
     for (const [i, share] of secretShares.entries()) {
       const packet = await createSchnorrPacket(ctx, share, { algorithm });
       const parsed = await parseSchnorrPacket(ctx, packet, { algorithm });
-      expect(parsed.index).toEqual(share.index);
-      expect(isEqualBuffer(parsed.value, publicShares[i].value)).toBe(true);
+      assert.equal(parsed.index, share.index);
+      assert.equal(isEqualBuffer(parsed.value, publicShares[i].value), true);
     }
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('tampered packets are rejected - over %s/%s', async (system, algorithm) => {
     // The proof covers both the public share and its index
     const { ctx, secretShares } = await createRawSharing(system, nrShares, threshold);
@@ -34,16 +36,14 @@ describe('Schnorr packets', () => {
       { ...packet, index: packet.index + 1 },
     ];
     for (const forged of tampered) {
-      await expect(
-        parseSchnorrPacket(ctx, forged, { algorithm })
-      ).rejects.toThrow(InvalidPublicShare);
+      await assert.rejects(parseSchnorrPacket(ctx, forged, { algorithm }), InvalidPublicShare);
     }
   });
 });
 
 
 describe('Public point recovery', () => {
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('success - without nonce - over %s/%s', async (system, algorithm) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
@@ -51,11 +51,11 @@ describe('Public point recovery', () => {
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm });
     for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
       const { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm });
-      expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
-      expect(blame).toEqual([]);
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
+      assert.deepEqual(blame, []);
     }
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('success - with nonce - over %s/%s', async (system, algorithm) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
@@ -65,49 +65,43 @@ describe('Public point recovery', () => {
     });
     for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
       const { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm, nonces });
-      expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
-      expect(blame).toEqual([]);
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
+      assert.deepEqual(blame, []);
     }
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('success - threshold guard - over %s/%s', async (system, algorithm) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm });
     for (const qualifiedPackets of partialPermutations(packets, 0, threshold - 1)) {
-      await expect(recoverPublic(ctx, qualifiedPackets, threshold, { algorithm })).rejects.toThrow(
-        'Insufficient number of shares'
-      );
+      await assert.rejects(recoverPublic(ctx, qualifiedPackets, threshold, { algorithm }), /Insufficient number of shares/);
     }
     for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
       const { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm });
-      expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
-      expect(blame).toEqual([]);
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
+      assert.deepEqual(blame, []);
     }
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('failure - missing nonce - over %s/%s', async (system, algorithm) => {
     const { ctx, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets, nonces } = await mockPublicRecoverySetup({ ctx, shares, algorithm, withNonce: true });
     delete nonces[1];
-    await expect(
-      recoverPublic(ctx, packets, threshold, { algorithm, nonces })
-    ).rejects.toThrow('Invalid packet with index')
+    await assert.rejects(recoverPublic(ctx, packets, threshold, { algorithm, nonces }), /Invalid packet with index/)
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('failure - error on invalid - forged proof - over %s/%s', async (system, algorithm) => {
     const { ctx, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
     );
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm, nrInvalid: 2 });
-    await expect(recoverPublic(ctx, packets, threshold, { algorithm })).rejects.toThrow(
-      'Invalid packet with index'
-    );
+    await assert.rejects(recoverPublic(ctx, packets, threshold, { algorithm }), /Invalid packet with index/);
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('failure - error on invalid - forged nonces - over %s/%s', async (system, algorithm) => {
     const { ctx, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
@@ -115,13 +109,9 @@ describe('Public point recovery', () => {
     const { packets, nonces } = await mockPublicRecoverySetup({
       ctx, shares, algorithm, nrInvalid: 2, withNonce: true
     });
-    await expect(
-      recoverPublic(ctx, packets, threshold, { algorithm, nonces })
-    ).rejects.toThrow(
-      'Invalid packet with index'
-    );
+    await assert.rejects(recoverPublic(ctx, packets, threshold, { algorithm, nonces }), /Invalid packet with index/);
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('success - accurate blaming - enough valid shares - over %s/%s', async (system, algorithm) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
@@ -133,11 +123,11 @@ describe('Public point recovery', () => {
       const { recovered, blame } = await recoverPublic(
         ctx, packets, threshold, { algorithm, nonces, errorOnInvalid: false }
       );
-      expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
-      expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
+      assert.deepEqual(blame.map(b => b.index).sort(), targetBlame.sort());
     }
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('failure - accurate blaming - forged proof - over %s/%s', async (system, algorithm) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
@@ -148,13 +138,13 @@ describe('Public point recovery', () => {
     const recovery = recoverPublic(ctx, packets, threshold, { algorithm, errorOnInvalid: false });
     if (nrShares - 2 >= threshold) {
       const { recovered, blame } = await recovery;
-      expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
-      expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
+      assert.deepEqual(blame.map(b => b.index).sort(), targetBlame.sort());
     } else {
-      await expect(recovery).rejects.toThrow('Insufficient number of valid shares');
+      await assert.rejects(recovery, /Insufficient number of valid shares/);
     }
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('failure - accurate blaming - forged nonces - over %s/%s', async (system, algorithm) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
       system, nrShares, threshold
@@ -165,13 +155,13 @@ describe('Public point recovery', () => {
     const recovery = recoverPublic(ctx, packets, threshold, { algorithm, nonces, errorOnInvalid: false });
     if (nrShares - 2 >= threshold) {
       const { recovered, blame } = await recovery;
-      expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
-      expect(blame.map(b => b.index).sort()).toEqual(targetBlame.sort());
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
+      assert.deepEqual(blame.map(b => b.index).sort(), targetBlame.sort());
     } else {
-      await expect(recovery).rejects.toThrow('Insufficient number of valid shares');
+      await assert.rejects(recovery, /Insufficient number of valid shares/);
     }
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('failure - too few valid shares - over %s/%s', async (system, algorithm) => {
     // With errorOnInvalid false, blamed packets are dropped; interpolating the
     // remaining fewer than threshold shares would give a wrong public
@@ -179,18 +169,14 @@ describe('Public point recovery', () => {
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm });
     const qualified = packets.slice(0, threshold);
     qualified[0] = { ...qualified[0], value: await randomPublic(ctx) };
-    await expect(
-      recoverPublic(ctx, qualified, threshold, { algorithm, errorOnInvalid: false })
-    ).rejects.toThrow('Insufficient number of valid shares');
+    await assert.rejects(recoverPublic(ctx, qualified, threshold, { algorithm, errorOnInvalid: false }), /Insufficient number of valid shares/);
   });
-  it.each(cartesian([systems, algorithms])
+  each(cartesian([systems, algorithms])
   )('failure - threshold validation - over %s/%s', async (system, algorithm) => {
     const { ctx, secretShares: shares } = await createRawSharing(system, nrShares, threshold);
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm });
     for (const bad of [0, -1, 1.5, undefined]) {
-      await expect(
-        recoverPublic(ctx, packets, bad as unknown as number, { algorithm })
-      ).rejects.toThrow('Threshold must be a positive integer');
+      await assert.rejects(recoverPublic(ctx, packets, bad as unknown as number, { algorithm }), /Threshold must be a positive integer/);
     }
   });
 });
