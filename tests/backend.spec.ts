@@ -1,7 +1,9 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { each } from './utils';
-import { initBackend } from 'vsslib/backend';
+import { initBackend, Group } from 'vsslib/backend';
+import type { EcGroup, EcPoint } from 'vsslib/backend';
+import { InvalidInput } from 'vsslib';
 import { resolveTestConfig } from './environ';
 import { fixtures } from './systems';
 
@@ -190,5 +192,68 @@ describe('canonical encoding', () => {
     ctx.bytesToPoint = (bytes: Uint8Array) => decode(bytes.slice(0, -1));
     const bytes = Uint8Array.from([...ctx.generator.toBytes(), 0]);
     await assert.rejects(ctx.parsePoint(bytes), /not canonical/);
+  });
+});
+
+
+/** Group over the operations of an elliptic backend, with the defaults of
+ * Group for everything else, as a custom backend inherits them */
+const inheriting = (ctx: EcGroup): Group<EcPoint> => {
+  class Inheriting extends Group<EcPoint> {
+    randomScalar = ctx.randomScalar;
+    randomPoint = ctx.randomPoint;
+    validateScalar = ctx.validateScalar;
+    validatePoint = ctx.validatePoint;
+    exp = ctx.exp;
+    operate = ctx.operate;
+    invert = ctx.invert;
+    bytesToPoint = ctx.bytesToPoint;
+    hashToPoint = ctx.hashToPoint;
+  }
+  return new Inheriting(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
+}
+
+
+describe('public multi-exponentiation', () => {
+  // Around the cutoffs of Pippenger's method, 4 and 16 on secp256k1
+  const sizes = [0, 1, 2, 3, 4, 5, 15, 16, 17, 40];
+  each(systems)('agrees with exponentiation over %s', async (system) => {
+    const ctx = initBackend(system);
+    const groups = [ctx, inheriting(ctx)];
+    for (const k of sizes) {
+      const points = [];
+      const scalars = [];
+      for (let i = 0; i < k; i++) {
+        points.push(await ctx.randomPoint());
+        scalars.push(await ctx.randomScalar());
+      }
+      // Edge cases, kept within the k points
+      const special: [EcPoint, bigint][] = [
+        [ctx.generator, ctx.order - __1n],
+        [ctx.neutral, await ctx.randomScalar()],
+        [await ctx.randomPoint(), __0n],
+        [await ctx.randomPoint(), __1n],
+      ];
+      for (const [i, [point, scalar]] of special.slice(0, k).entries()) {
+        points[i] = point;
+        scalars[i] = scalar;
+      }
+      let expected = ctx.neutral;
+      for (let i = 0; i < k; i++) {
+        expected = await ctx.operate(expected, await ctx.exp(points[i], scalars[i]));
+      }
+      for (const group of groups) {
+        const result = await group.multiExpPublic(points, scalars);
+        assert.equal(await result.equals(expected), true, `k = ${k}`);
+      }
+    }
+  });
+  each(systems)('rejects incompatible lengths over %s', async (system) => {
+    const ctx = initBackend(system);
+    for (const group of [ctx, inheriting(ctx)]) {
+      const points = [ctx.generator, await ctx.randomPoint()];
+      await assert.rejects(group.multiExpPublic(points, [__1n]), InvalidInput);
+      await assert.rejects(group.multiExpPublic([], [__1n]), /Incompatible lengths/);
+    }
   });
 });
