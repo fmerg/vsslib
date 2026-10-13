@@ -20,6 +20,7 @@ import {
   createSchnorrPacket,
   combinePublicShares,
   computeLambdas,
+  recoverPublic,
 } from 'vsslib';
 import { evalCommitments } from 'vsslib/operations/commitments';
 import { resolveTestConfig } from './environ';
@@ -261,6 +262,20 @@ describe('public exponentiation', () => {
     const trace = traceExp(ctx);
     await combinePublicShares(ctx, shares, 3);
     assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.secret, []);
+    assert.deepEqual(trace.multi, [computeLambdas(ctx, [1, 3, 4, 5])]);
+  });
+  each(systems)('recovery combines the valid shares through multiExpPublic over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { sharing } = await shareSecret(ctx, 5, 3);
+    const packets = [];
+    for (const share of await sharing.getSecretShares()) {
+      packets.push(await createSchnorrPacket(ctx, share));
+    }
+    packets[1] = { ...packets[1], value: (await randomSecret(ctx)).publicBytes };
+    const trace = traceExp(ctx);
+    const { blame } = await recoverPublic(ctx, packets, 3, { errorOnInvalid: false });
+    assert.deepEqual(blame.map(share => share.index), [2]);
     assert.deepEqual(trace.secret, []);
     assert.deepEqual(trace.multi, [computeLambdas(ctx, [1, 3, 4, 5])]);
   });
