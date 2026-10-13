@@ -18,6 +18,8 @@ import {
   createPedersenPackets,
   verifyPedersenCommitments,
   createSchnorrPacket,
+  combinePublicShares,
+  computeLambdas,
 } from 'vsslib';
 import { evalCommitments } from 'vsslib/operations/commitments';
 import { resolveTestConfig } from './environ';
@@ -40,13 +42,15 @@ const NATIVE: Record<string, { generator: boolean, other: boolean }> = {
 };
 
 
-/** Record the scalars passed to expSecret and expPublic, and those passed to
- * exp other than from within either */
+/** Record the scalars passed to expSecret and expPublic, the scalar lists
+ * passed to multiExpPublic, and the scalars passed to exp other than from
+ * within any of them */
 const traceExp = <P extends Point>(ctx: Group<P>) => {
   const direct: bigint[] = [];
   const secret: bigint[] = [];
   const pub: bigint[] = [];
-  const { exp, expSecret, expPublic } = ctx;
+  const multi: bigint[][] = [];
+  const { exp, expSecret, expPublic, multiExpPublic } = ctx;
   let depth = 0;
   ctx.exp = async (point, scalar) => {
     if (depth === 0) direct.push(scalar);
@@ -62,7 +66,12 @@ const traceExp = <P extends Point>(ctx: Group<P>) => {
     depth++;
     try { return await expPublic(point, scalar); } finally { depth--; }
   };
-  return { direct, secret, public: pub };
+  ctx.multiExpPublic = async (points, scalars) => {
+    multi.push(scalars);
+    depth++;
+    try { return await multiExpPublic(points, scalars); } finally { depth--; }
+  };
+  return { direct, secret, public: pub, multi };
 }
 
 
@@ -159,6 +168,7 @@ describe('secret scalars go through expSecret', () => {
     await isKeypair(ctx, secret, publicBytes);
     await createSchnorrPacket(ctx, { value: secret, index: 1 });
     assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.multi, []);
     assert.deepEqual(trace.public, []);
     assert.equal(trace.secret.filter(s => s === x).length, 3);
   });
@@ -171,12 +181,14 @@ describe('secret scalars go through expSecret', () => {
     await sharing.getShare(1);
     const { commitments } = await createFeldmanPackets(sharing);
     assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.multi, []);
     assert.deepEqual(trace.public, []);
     assert.ok(coeffs.every(x => trace.secret.includes(x)));
     const shares = await sharing.getSecretShares();
     trace.secret.length = 0;
     await verifyFeldmanCommitments(ctx, commitments, shares[0], 2);
     assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.multi, []);
     // Horner steps raise to the share index only
     assert.deepEqual(trace.public, [1n]);
     assert.deepEqual(trace.secret, [await ctx.parseScalar(shares[0].value)]);
@@ -188,12 +200,14 @@ describe('secret scalars go through expSecret', () => {
     const trace = traceExp(ctx);
     const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
     assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.multi, []);
     assert.deepEqual(trace.public, []);
     assert.ok(sharing.polynomial.coeffs.every(x => trace.secret.includes(x)));
     trace.secret.length = 0;
     const { value, index, binding } = packets[1];
     await verifyPedersenCommitments(ctx, commitments, pedersenBase, { value, index }, binding!, 2);
     assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.multi, []);
     assert.deepEqual(trace.public, [2n]);
     assert.deepEqual(trace.secret, [
       await ctx.parseScalar(value), await ctx.parseScalar(binding!),
@@ -210,6 +224,7 @@ describe('secret scalars go through expSecret', () => {
     await nizk(ctx, Algorithms.SHA256).proveDlog(z, { u, v: w });
     await nizk(ctx, Algorithms.SHA256).proveDDH(z, { u, v, w });
     assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.multi, []);
     assert.deepEqual(trace.public, []);
     // One nonce mult for dlog, one per entry of the 2x2 DDH relation
     assert.equal(trace.secret.length, 5);
@@ -238,5 +253,15 @@ describe('public exponentiation', () => {
         assert.equal(await fast.equals(await ctx.exp(ctx.generator, y)), true);
       }
     }
+  });
+  each(systems)('public shares are combined through multiExpPublic over %s', async (system) => {
+    const ctx = initBackend(system);
+    const { sharing } = await shareSecret(ctx, 5, 3);
+    const shares = (await sharing.getPublicShares()).filter(share => share.index !== 2);
+    const trace = traceExp(ctx);
+    await combinePublicShares(ctx, shares, 3);
+    assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.secret, []);
+    assert.deepEqual(trace.multi, [computeLambdas(ctx, [1, 3, 4, 5])]);
   });
 });
