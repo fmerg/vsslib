@@ -110,6 +110,7 @@ See [here](#security-main) for details.
 * [Performance](#performance)
   * [Horner's method](#horner-method)
   * [Common denominator](#common-denominator)
+  * [Multi-exponentiation](#multi-exponentiation)
   * [Measurement setup](#measurement-setup)
 * [Development](#development)
 
@@ -708,15 +709,19 @@ value independent of `r`. The split
 costs a second multiplication and an inversion: Pedersen dealing becomes up to
 about twice as slow on the Edwards curves, and every secret operation about
 twice as slow on `decaf448`, whereas the curves of cofactor one are unaffected.
-`Group.exp` remains in use for public scalars only, such as Lagrange
-coefficients and NIZK challenges and responses. Share indexes go through
+`Group.exp` remains in use for public scalars only, namely NIZK challenges
+and responses. Share indexes go through
 `Group.expPublic` instead, which the elliptic backends implement by noble's
 variable-time multiplication: raising the commitments to powers of the share
 index, which is small and public, then costs a few doublings instead of a full
 constant-time multiplication, which shortens verification by 31% to 95%
-depending on the curve (see [Horner's method](#horner-method)). Custom backends inherit the split and should override `blindsNatively`
-only for points their exponentiation blinds; `expPublic` defaults to `exp`, and
-an override may run in variable time, since it never receives secrets.
+depending on the curve (see [Horner's method](#horner-method)). Public shares
+are combined with their Lagrange coefficients through `Group.multiExpPublic`,
+which the elliptic backends implement by a variable-time multi-scalar
+multiplication (see [Multi-exponentiation](#multi-exponentiation)). Custom backends inherit the split and should override `blindsNatively`
+only for points their exponentiation blinds; `expPublic` defaults to `exp` and
+`multiExpPublic` to one `expPublic` per point, and overrides may run in
+variable time, since they never receive secrets.
 
 Memory hygiene is limited by the language as well. `BigInt` values are
 immutable and cannot be overwritten, so the scalars vsslib computes with stay in
@@ -829,7 +834,7 @@ in full, since it keeps every scalar as short as `i`; with the powers `i^j`
 instead, the scalars would grow by the length of `i` per term up to the full
 length of the order. Variable time is safe here, since the index and the
 commitments are public (see [Side-channel attacks](#side-channel-attacks)), and
-`Group.expPublic` is used nowhere else.
+no other operation calls `Group.expPublic`.
 
 For example, parsing and verifying a Feldman packet with `n = 50, t = 25` takes
 3.32 ms instead of 46.6 ms on `secp256k1`. The gain is smaller on the Edwards
@@ -893,12 +898,49 @@ For example, combining 100 secret shares on `ed25519` takes 662 µs instead of
 `recoverPublic` are unchanged within noise, since raising each share to its
 coefficient costs far more than computing the coefficient: with `t = 25` on
 `ed25519`, `combinePublicShares` takes 39 ms, of which the coefficients took
-about 0.5 ms.
+about 0.5 ms. The exponentiations were sped up afterwards (see
+[Multi-exponentiation](#multi-exponentiation)).
 
 `shareSecret` with predefined shares interpolates `t` points, which inverts the
 `t` denominators of the Lagrange basis; these are now inverted in a batch too.
 Measured with a separate script, since the benchmarks do not cover predefined
 shares, it takes 10-25% less time at `t = 25` and 43-55% less at `t = 50, 100`.
+
+### <a name="multi-exponentiation"></a>Multi-exponentiation
+
+Combining public shares `y_1, ..., y_k` computes the product of `y_i^(lambda_i)`
+over their Lagrange coefficients `lambda_i`, which used to take one constant-time
+`Group.exp` per share. Since both the shares and the coefficients are public,
+the product now goes through `Group.multiExpPublic`, which the elliptic backends
+implement by noble's variable-time multiplication for fewer than 4 shares and by
+Pippenger's bucket method from 4 shares on. Pippenger's method shares one chain
+of doublings among all shares, whereas the multiplications cannot gain much on
+their own: the coefficients are full-width scalars, unlike the share indexes of
+[Horner's method](#horner-variable-time). On `secp256k1`, single variable-time
+multiplications already use the curve's endomorphism, so Pippenger's method takes
+over only from 16 shares on; the thresholds are the crossovers measured with
+`@noble/curves` 2.4.0. Moreover, `recoverPublic` parsed the public share of every
+packet twice, when verifying the packet and when combining, and now keeps the
+point it verified. Measured changes of median running time against the previous
+implementation, with `n = 100` shares:
+
+| operation | threshold | `ed25519` | `decaf448` | `secp256k1` | `p521` |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| `combinePublicShares` | 5 | -13% | -16% | -59% | -36% |
+| `combinePublicShares` | 25 | -32% | -51% | -69% | -65% |
+| `combinePublicShares` | 50 | -37% | -59% | -76% | -72% |
+| `combinePublicShares` | 100 | -35% | -57% | -80% | -78% |
+| `recoverPublic` | 5-100 | -29% to -31% | -21% to -22% | -38% to -40% | -37% to -41% |
+
+For example, combining 25 public shares on `secp256k1` takes 14.4 ms instead of
+46.5 ms. The gain is smaller on `ed25519`, where parsing a share costs about as
+much as raising it to its coefficient used to: its check of membership in the
+prime-order subgroup is a full multiplication, which remains, and dominates
+after the change. `recoverPublic` costs the same at every threshold, since it
+combines all valid packets, here 100, and the verification of their NIZK proofs,
+which still uses `Group.exp`, now makes up most of its time. Of its gain,
+parsing once accounts for about half on `ed25519`, a quarter on `decaf448` and
+little on the curves of cofactor one, where parsing is cheap.
 
 ### <a name="measurement-setup"></a>Measurement setup
 
@@ -919,6 +961,15 @@ For the common denominator:
 ```
 $ ./bench.sh -o "combine*,recoverPublic" -s ed25519,decaf448,secp256k1,p521 \
     -n 100 -t 5,25,50,100 --cpus 0-7 -r 5 --compare <baseline>
+```
+
+For multi-exponentiation, with `parseSchnorrPacket` as a control that should
+not change:
+
+```
+$ ./bench.sh -o "combinePublicShares,recoverPublic,parseSchnorrPacket" \
+    -s ed25519,decaf448,secp256k1,p521 -n 100 -t 5,25,50,100 --cpus 0-7 -r 5 \
+    --compare <baseline>
 ```
 
 # Development
