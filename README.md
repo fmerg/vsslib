@@ -711,8 +711,9 @@ value independent of `r`. The split
 costs a second multiplication and an inversion: Pedersen dealing becomes up to
 about twice as slow on the Edwards curves, and every secret operation about
 twice as slow on `decaf448`, whereas the curves of cofactor one are unaffected.
-On the elliptic backends, `Group.exp` remains in use for public scalars only,
-namely NIZK challenges and responses. Share indexes go through
+On the elliptic backends, `Group.exp` is called directly only for public
+scalars, namely NIZK challenges and responses; `Group.expSecret` builds on it
+for secret scalars. Share indexes go through
 `Group.expPublic` instead, which the elliptic backends implement by noble's
 variable-time multiplication: raising the commitments to powers of the share
 index, which is small and public, then costs a few doublings instead of a full
