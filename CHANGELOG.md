@@ -63,6 +63,7 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 
 - `recoverPublic` with `errorOnInvalid: false` interpolates over the valid shares only.
+- `recoverPublic` with `errorOnInvalid: false` blames packets with a malformed public share or proof, including a share outside the prime-order subgroup, instead of throwing `InvalidInput`.
 - VSS verification no longer rejects valid shares once `index ** j` exceeds 2^53.
 - `generateSecret` returns an encoded scalar consistent with the recombined secret.
 

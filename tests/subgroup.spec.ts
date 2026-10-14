@@ -50,8 +50,14 @@ describe('Prime-order subgroup validation', () => {
     } while (!(await protocol.verifyDlog({ u: g, v }, proof, undefined, extras)));
     const forged = { value: v.toBytes(), index, proof };
     await assert.rejects(parseSchnorrPacket(ctx, forged), InvalidInput);
-    for (const errorOnInvalid of [true, false]) {
-      await assert.rejects(recoverPublic(ctx, [forged, ...packets.slice(1)], threshold, { errorOnInvalid }), /not in prime-order subgroup/);
+    const tampered = [forged, ...packets.slice(1)];
+    await assert.rejects(recoverPublic(ctx, tampered, threshold), /not in prime-order subgroup/);
+    const recovery = recoverPublic(ctx, tampered, threshold, { errorOnInvalid: false });
+    if (nrShares - 1 >= threshold) {
+      const { blame } = await recovery;
+      assert.deepEqual(blame.map(b => b.index), [index]);
+    } else {
+      await assert.rejects(recovery, /Insufficient number of valid shares/);
     }
   });
   each(systems)('trivial Pedersen bases are rejected over %s', async (system) => {

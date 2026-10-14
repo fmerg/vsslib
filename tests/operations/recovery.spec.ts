@@ -5,7 +5,7 @@ import {
   parseSchnorrPacket,
   recoverPublic,
 } from 'vsslib/operations/recovery';
-import { randomPublic, InvalidPublicShare } from 'vsslib';
+import { randomPublic, InvalidPublicShare, InvalidInput } from 'vsslib';
 import { cartesian, partialPermutations, isEqualBuffer, each } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing, mockPublicRecoverySetup } from '../helpers';
@@ -145,6 +145,32 @@ describe('Public point recovery', () => {
       );
       assert.equal(isEqualBuffer(recovered, publicBytes), true);
       assert.deepEqual(blame.map(b => b.index).sort(), targetBlame.sort());
+    }
+  });
+  each(systems)('malformed packets - over %s', async (system) => {
+    // A malformed public share or proof is blamed like a forged one
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
+      system, nrShares, threshold
+    );
+    const { packets } = await mockPublicRecoverySetup({ ctx, shares });
+    const malformed = [
+      { ...packets[0], value: packets[0].value.slice(1) },
+      {
+        ...packets[0],
+        proof: { ...packets[0].proof, response: [packets[0].proof.response[0].slice(1)] },
+      },
+    ];
+    for (const packet of malformed) {
+      const tampered = [packet, ...packets.slice(1)];
+      await assert.rejects(recoverPublic(ctx, tampered, threshold), InvalidInput);
+      const recovery = recoverPublic(ctx, tampered, threshold, { errorOnInvalid: false });
+      if (nrShares - 1 >= threshold) {
+        const { recovered, blame } = await recovery;
+        assert.equal(isEqualBuffer(recovered, publicBytes), true);
+        assert.deepEqual(blame.map(b => b.index), [packet.index]);
+      } else {
+        await assert.rejects(recovery, /Insufficient number of valid shares/);
+      }
     }
   });
   each(cartesian([systems, algorithms])

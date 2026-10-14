@@ -573,9 +573,9 @@ proofs (defaults to SHA256).
 
 The operation throws `vsslib.InvalidPublicShare`
 upon the first proof that fails to verify.
-It throws `vsslib.InvalidInput` if less than `t` packets are provided, and
-also `vsslib.InvalidInput` if the packet indexes are not distinct
-positive integers.
+It throws `vsslib.InvalidInput` if less than `t` packets are provided,
+if the packet indexes are not distinct positive integers, and upon the first
+packet whose public share or proof is malformed.
 You will usually have to handle errors in order
 to adhere to some specified rejection policy:
 
@@ -591,7 +591,8 @@ try {
     ...
   } else if (err instanceof InvalidInput) {
     // Abort and follow policy as specified by context; raised upon
-    // malformed or duplicate indexes, or insufficient number of packets
+    // malformed or duplicate indexes, malformed packets, or insufficient
+    // number of packets
     ...
   } else {
     ...
@@ -644,7 +645,8 @@ if (blame.length > 0) {
 ```
 
 This returns the computation result along with a list `blame`,
-containing the public shares of cheating shareholders.
+containing the public shares of cheating shareholders, whether their proofs
+fail to verify or their packets are malformed.
 If less than `t` packets remain valid, it throws `vsslib.InvalidPublicShare`,
 since the remaining shares would interpolate to a wrong result.
 Malformed or duplicate indexes still throw `vsslib.InvalidInput`, since they
