@@ -256,4 +256,23 @@ describe('public multi-exponentiation', () => {
       await assert.rejects(group.multiExpPublic([], [__1n]), /Incompatible lengths/);
     }
   });
+  each(systems)('rejects scalars out of range over %s', async (system) => {
+    // On both sides of the cutoffs, where noble would throw errors of its own
+    const ctx = initBackend(system);
+    for (const group of [ctx, inheriting(ctx)]) {
+      for (const k of [1, 3, 4, 16, 20]) {
+        const points = [];
+        const scalars = [];
+        for (let i = 0; i < k; i++) {
+          points.push(await ctx.randomPoint());
+          scalars.push(await ctx.randomScalar());
+        }
+        for (const bad of [ctx.order, ctx.order + __1n, -__1n]) {
+          const last = [...scalars.slice(0, -1), bad];
+          await assert.rejects(group.multiExpPublic(points, last), InvalidInput);
+          await assert.rejects(group.multiExpPublic(points, last), /not in range/);
+        }
+      }
+    }
+  });
 });

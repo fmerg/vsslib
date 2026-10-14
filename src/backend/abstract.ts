@@ -9,11 +9,19 @@ export interface Point {
 }
 
 
-/** @internal Input check shared by the implementations of multiExpPublic */
-export const validateMultiExp = (points: unknown[], scalars: bigint[]): void => {
+/** @internal Input check shared by the implementations of multiExpPublic,
+ * so that every path rejects bad input with the same error */
+export const validateMultiExp = (
+  points: unknown[], scalars: bigint[], order: bigint
+): void => {
   if (points.length !== scalars.length) throw new InvalidInput(
     `Incompatible lengths: ${points.length} points, ${scalars.length} scalars`
   );
+  for (const [i, scalar] of scalars.entries()) {
+    if (scalar < 0n || scalar >= order) throw new InvalidInput(
+      `Scalar at position ${i} not in range [0, order)`
+    );
+  }
 }
 
 
@@ -121,9 +129,9 @@ export abstract class Group<P extends Point> {
    * variable time and must therefore never see secrets. Defaults to one
    * `expPublic` per point; backends override it, as a property like
    * `expPublic`, where a multi-scalar multiplication exists. Throws
-   * InvalidInput if the lengths differ */
+   * InvalidInput if the lengths differ or a scalar is not in [0, order) */
   multiExpPublic = async (points: P[], scalars: bigint[]): Promise<P> => {
-    validateMultiExp(points, scalars);
+    validateMultiExp(points, scalars, this.order);
     let acc = this.neutral;
     for (let i = 0; i < points.length; i++) {
       acc = await this.operate(acc, await this.expPublic(points[i], scalars[i]));

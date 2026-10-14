@@ -173,7 +173,7 @@ export class EcGroup extends Group<EcPoint> {
   /** Pippenger's method from `msmCutoff` points on, below which one
    * variable-time multiplication per point is faster */
   multiExpPublic = async (points: EcPoint[], scalars: bigint[]): Promise<EcPoint> => {
-    validateMultiExp(points, scalars);
+    validateMultiExp(points, scalars, this.order);
     const wrapped = points.map(point => point.wrapped);
     if (points.length >= this.msmCutoff) return this.wrap(
       pippenger(this.Point, wrapped, scalars)
