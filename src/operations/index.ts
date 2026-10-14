@@ -3,9 +3,8 @@
  *
  * Dependency rule: operations import from the core modules (backend, nizk,
  * lagrange, polynomials, indexes, ...), which never import from operations.
- * Among operations, feldman, pedersen and recovery may import from shamir,
- * and feldman and pedersen from the internal commitments module; nothing
- * else imports a sibling. */
+ * Among operations, feldman and pedersen may import from shamir and from
+ * the internal commitments module; nothing else imports a sibling. */
 
 export * from './secrets';
 export * from './shamir';

@@ -1,4 +1,5 @@
 import type { CurvePoint, CurvePointCons } from '@noble/curves/abstract/curve.js';
+import { pippenger } from '@noble/curves/abstract/curve.js';
 import { ed25519, ed25519_hasher, ristretto255, ristretto255_hasher } from '@noble/curves/ed25519.js';
 import { ed448, ed448_hasher, decaf448, decaf448_hasher } from '@noble/curves/ed448.js';
 import { jubjub, jubjub_findGroupHash } from '@noble/curves/misc.js';
@@ -13,7 +14,7 @@ import { Elliptic } from '../enums';
 import { System } from '../types';
 import { BadPointError, BadScalarError } from '../errors';
 import { mod, leBytesToInt } from '../arith';
-import { Point, Group } from './abstract';
+import { Point, Group, validateMultiExp } from './abstract';
 
 
 // noble's point types are F-bounded per curve; the backend relies only on
@@ -91,6 +92,7 @@ export class EcGroup extends Group<EcPoint> {
   private hashToCurve: _HashToCurve;
   private codec: _Codec;
   private blinding: _Blinding;
+  private msmCutoff: number;
   /** @internal Point constructor of the noble curve */
   Point: _PointCons;
 
@@ -100,6 +102,7 @@ export class EcGroup extends Group<EcPoint> {
     hashToCurve: _HashToCurve,
     codec: _Codec,
     blinding: _Blinding,
+    msmCutoff: number,
   ) {
     const modulus = Point.Fp.ORDER;
     const order = Point.Fn.ORDER;
@@ -114,6 +117,7 @@ export class EcGroup extends Group<EcPoint> {
     this.hashToCurve = hashToCurve;
     this.codec = codec;
     this.blinding = blinding;
+    this.msmCutoff = msmCutoff;
   }
 
   private wrap = (point: _CurvePoint): EcPoint => new EcPoint(point, this.codec.toBytes);
@@ -166,6 +170,20 @@ export class EcGroup extends Group<EcPoint> {
     point.wrapped.multiplyUnsafe(scalar)
   );
 
+  /** Pippenger's method from `msmCutoff` points on, below which one
+   * variable-time multiplication per point is faster */
+  multiExpPublic = async (points: EcPoint[], scalars: bigint[]): Promise<EcPoint> => {
+    validateMultiExp(points, scalars, this.order);
+    const wrapped = points.map(point => point.wrapped);
+    if (points.length >= this.msmCutoff) return this.wrap(
+      pippenger(this.Point, wrapped, scalars)
+    );
+    // Inlines expPublic and operate on the raw points; keep in step with them
+    return this.wrap(wrapped.reduce(
+      (acc, point, i) => acc.add(point.multiplyUnsafe(scalars[i])), this.zero
+    ));
+  }
+
   operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => this.wrap(
     lhs.wrapped.add(rhs.wrapped)
   );
@@ -193,13 +211,21 @@ export class EcGroup extends Group<EcPoint> {
 }
 
 
+/** Number of points from which Pippenger's method beats one variable-time
+ * multiplication per point, measured with noble 2.4.0 on every supported curve;
+ * recheck on upgrades */
+const MSM_CUTOFF = 4;
+
+
 /** Supported curves; a new system needs an Elliptic member and an entry here.
- * The codec defaults to noble's native encoding */
+ * The codec defaults to noble's native encoding and the MSM cutoff to
+ * MSM_CUTOFF */
 const CURVES: Record<Elliptic, {
   Point: _PointCons,
   hashToCurve: _HashToCurve,
   codec?: (Point: _PointCons) => _Codec,
   blinding: _Blinding,
+  msmCutoff?: number,
 }> = {
   [Elliptic.ED25519]: {
     Point: ed25519.Point,
@@ -233,6 +259,9 @@ const CURVES: Record<Elliptic, {
     hashToCurve: (msg, DST) => secp256k1_hasher.hashToCurve(msg, { DST }),
     codec: sec1Codec,
     blinding: 'all',
+    // Single multiplications use the endomorphism, and Pippenger's method
+    // catches up only once noble widens its window at 16 points
+    msmCutoff: 16,
   },
   [Elliptic.P256]: {
     Point: p256.Point,
@@ -256,6 +285,8 @@ const CURVES: Record<Elliptic, {
 
 
 export function initElliptic(system: Elliptic): EcGroup {
-  const { Point, hashToCurve, codec = nobleCodec, blinding } = CURVES[system];
-  return new EcGroup(system, Point, hashToCurve, codec(Point), blinding);
+  const {
+    Point, hashToCurve, codec = nobleCodec, blinding, msmCutoff = MSM_CUTOFF,
+  } = CURVES[system];
+  return new EcGroup(system, Point, hashToCurve, codec(Point), blinding, msmCutoff);
 }

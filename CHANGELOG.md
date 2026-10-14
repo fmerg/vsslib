@@ -33,6 +33,7 @@ All notable changes to this project will be documented in this file.
 - `Group.expSecret(point, scalar)`, exponentiation by a secret scalar, and `Group.blindsNatively(point)`, which tells whether `exp` blinds secret scalars for `point`. Custom backends inherit a default that always splits the scalar; override `blindsNatively` only for points the backend blinds, and as a property like the other `Group` members, since a method would be shadowed by the default.
 - `Group.expPublic(point, scalar)`, exponentiation by a public scalar that may run in variable time. It defaults to `exp`; the elliptic backends use noble's `multiplyUnsafe`. Custom backends may override it, as a property, with a faster variable-time multiplication.
 - `computeLambdas(ctx, indexes)`, the Lagrange coefficients at zero of all given indexes, computed with a single modular inversion.
+- `Group.multiExpPublic(points, scalars)`, the product of public points raised to public scalars, which may run in variable time. It defaults to one `expPublic` per point; the elliptic backends use noble's `pippenger` from 4 points on, 16 on `secp256k1`. Custom backends may override it, as a property, with a multi-scalar multiplication.
 - Root exports of `verifyFeldmanCommitments`, `verifyPedersenCommitments`, the public types and the errors `VssError`, `BadGroupError` and `ShamirError`. Every error derives from `VssError`.
 - Type exports of `Elliptic`, the type of `System`, and of `EcGroup` and `EcPoint` from `vsslib/backend`, the types of the elliptic backends.
 
@@ -57,10 +58,12 @@ All notable changes to this project will be documented in this file.
 - `shareSecret` without predefined shares samples the coefficients of the sharing polynomial directly instead of interpolating, and interpolation builds the Lagrange basis in quadratic instead of cubic time; `shareSecret` takes 45% less time at threshold 5 and about 90% less at threshold 25.
 - The sharing polynomial is evaluated by Horner's rule over its coefficients instead of the barycentric formula, which inverted once per point and call; `getSecretShares` takes 78-93% less time.
 - Lagrange coefficients are computed over a common denominator, whose inversions for all shares are batched into one; before, every difference of indexes was inverted. `combineSecretShares` takes 12-22% less time at threshold 5, 80-84% less at threshold 25 and 93-94% less at threshold 100, and `computeLambda` inverts once instead of once per other index. `shareSecret` with predefined shares inverts the denominators of the Lagrange basis in a batch, and takes 43-55% less time at thresholds 50 and 100.
+- Public shares are combined with their Lagrange coefficients by one `multiExpPublic` instead of a constant-time `exp` per share, and `recoverPublic` parses each public share once instead of twice. With 100 shares, `combinePublicShares` takes 13-16% less time at threshold 5 on `ed25519` and `decaf448` and 36-59% less on `secp256k1` and `p521`, and 32-59% and 65-80% less at thresholds 25 to 100; `recoverPublic` takes 21-41% less time.
 
 ### Fixed
 
 - `recoverPublic` with `errorOnInvalid: false` interpolates over the valid shares only.
+- `recoverPublic` with `errorOnInvalid: false` blames packets with a malformed public share or proof, including a share outside the prime-order subgroup, instead of throwing `InvalidInput`.
 - VSS verification no longer rejects valid shares once `index ** j` exceeds 2^53.
 - `generateSecret` returns an encoded scalar consistent with the recombined secret.
 

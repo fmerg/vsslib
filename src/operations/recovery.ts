@@ -1,11 +1,10 @@
 import { Point, Group } from '../backend';
-import { InvalidPublicShare } from '../errors';
+import { InvalidInput, InvalidPublicShare } from '../errors';
 import { Algorithms } from '../enums';
 import { Algorithm, SecretShare, PublicShare, SchnorrPacket } from '../types';
 import { nizk } from '../nizk';
 import { validateIndex, validateIndexes, validateShareCount, indexToBytes } from '../indexes';
-
-import { combinePublicShares } from './shamir';
+import { computeLambdas } from '../lagrange';
 
 
 export type Nonces = { [key: number]: Uint8Array };
@@ -39,6 +38,19 @@ export async function parseSchnorrPacket<P extends Point>(
     nonce?: Uint8Array,
   } = {},
 ): Promise<PublicShare> {
+  await verifySchnorrPacket(ctx, packet, algorithm, nonce);
+  return { value: packet.value, index: packet.index };
+}
+
+
+/** Body of parseSchnorrPacket, returning the parsed public share, so that
+ * recoverPublic need not parse it again */
+async function verifySchnorrPacket<P extends Point>(
+  ctx: Group<P>,
+  packet: SchnorrPacket,
+  algorithm: Algorithm,
+  nonce?: Uint8Array,
+): Promise<P> {
   const { value, index, proof } = packet;
   validateIndex(index);
   const y = await ctx.parsePoint(value)
@@ -53,7 +65,7 @@ export async function parseSchnorrPacket<P extends Point>(
   );
   if (!isValid)
     throw new InvalidPublicShare(`Invalid packet with index ${index}`);
-  return { value, index };
+  return y;
 }
 
 
@@ -75,23 +87,30 @@ export async function recoverPublic<P extends Point>(
   // Malformed or duplicate indexes cannot be attributed to a single
   // shareholder, so they are rejected regardless of errorOnInvalid
   validateIndexes(packets.map(packet => packet.index));
-  const shares = [];
+  const points = [];
+  const indexes = [];
   const blame = [];
   for (const packet of packets) {
     const nonce = nonces[packet.index];
     try {
-      shares.push(await parseSchnorrPacket(ctx, packet, { algorithm, nonce }));
+      points.push(await verifySchnorrPacket(ctx, packet, algorithm, nonce));
+      indexes.push(packet.index);
     } catch (err: unknown) {
-      if (!(err instanceof InvalidPublicShare) || errorOnInvalid) throw err;
+      // Indexes are valid at this point, so InvalidInput means a malformed
+      // public share or proof, attributable to the shareholder
+      const isInvalid = err instanceof InvalidPublicShare || err instanceof InvalidInput;
+      if (!isInvalid || errorOnInvalid) throw err;
       blame.push({ value: packet.value, index: packet.index });
     }
   }
   // Fewer than threshold valid shares interpolate to a wrong result
-  if (shares.length < threshold) throw new InvalidPublicShare(
-    `Insufficient number of valid shares: ${shares.length} < ${threshold}`
+  if (points.length < threshold) throw new InvalidPublicShare(
+    `Insufficient number of valid shares: ${points.length} < ${threshold}`
   );
   // Interpolate over valid shares only, so that blamed indexes do not
-  // distort the Lagrange coefficients
-  const recovered = await combinePublicShares(ctx, shares, threshold);
+  // distort the Lagrange coefficients. Shares and coefficients are public,
+  // so variable time is safe
+  const lambdas = computeLambdas(ctx, indexes);
+  const recovered = (await ctx.multiExpPublic(points, lambdas)).toBytes();
   return { recovered, blame };
 }

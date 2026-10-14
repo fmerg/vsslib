@@ -9,6 +9,23 @@ export interface Point {
 }
 
 
+/** @internal Input check shared by the implementations of multiExpPublic,
+ * so that every path rejects mismatched lengths and out-of-range scalars with
+ * the same error; points are not checked, foreign points being a caller bug */
+export const validateMultiExp = (
+  points: unknown[], scalars: bigint[], order: bigint
+): void => {
+  if (points.length !== scalars.length) throw new InvalidInput(
+    `Incompatible lengths: ${points.length} points, ${scalars.length} scalars`
+  );
+  for (const [i, scalar] of scalars.entries()) {
+    if (scalar < 0n || scalar >= order) throw new InvalidInput(
+      `Scalar at position ${i} not in range [0, order)`
+    );
+  }
+}
+
+
 /** Prime-order group backing the library. Implementations must ensure that
  * - every element, including the neutral one, has a unique encoding, which
  *   bytesToPoint decodes and toBytes produces
@@ -107,6 +124,21 @@ export abstract class Group<P extends Point> {
    * backends override it, as a property like `blindsNatively`, where a faster
    * variable-time multiplication exists */
   expPublic = async (point: P, scalar: bigint): Promise<P> => this.exp(point, scalar);
+
+  /** Product of `points[i] ^ scalars[i]` over public points and scalars,
+   * such as public shares and their Lagrange coefficients, which may run in
+   * variable time and must therefore never see secrets. Defaults to one
+   * `expPublic` per point; backends override it, as a property like
+   * `expPublic`, where a multi-scalar multiplication exists. Throws
+   * InvalidInput if the lengths differ or a scalar is not in [0, order) */
+  multiExpPublic = async (points: P[], scalars: bigint[]): Promise<P> => {
+    validateMultiExp(points, scalars, this.order);
+    let acc = this.neutral;
+    for (let i = 0; i < points.length; i++) {
+      acc = await this.operate(acc, await this.expPublic(points[i], scalars[i]));
+    }
+    return acc;
+  }
 
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;

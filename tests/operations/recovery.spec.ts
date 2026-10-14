@@ -1,11 +1,11 @@
-import { describe } from 'node:test';
+import { describe, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createSchnorrPacket,
   parseSchnorrPacket,
   recoverPublic,
 } from 'vsslib/operations/recovery';
-import { randomPublic, InvalidPublicShare } from 'vsslib';
+import { randomPublic, InvalidPublicShare, InvalidInput } from 'vsslib';
 import { cartesian, partialPermutations, isEqualBuffer, each } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing, mockPublicRecoverySetup } from '../helpers';
@@ -43,6 +43,26 @@ describe('Schnorr packets', () => {
 
 
 describe('Public point recovery', () => {
+  each(systems)('parses each public share once - over %s', async (system) => {
+    // The proofs parse points of their own, which are not counted
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
+      system, nrShares, threshold
+    );
+    const { packets } = await mockPublicRecoverySetup({
+      ctx, shares, nrInvalid: nrShares - threshold
+    });
+    const parse = mock.method(ctx, 'parsePoint');
+    try {
+      const { recovered } = await recoverPublic(ctx, packets, threshold, { errorOnInvalid: false });
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
+      for (const packet of packets) {
+        const calls = parse.mock.calls.filter(call => isEqualBuffer(call.arguments[0], packet.value));
+        assert.equal(calls.length, 1);
+      }
+    } finally {
+      parse.mock.restore();
+    }
+  });
   each(cartesian([systems, algorithms])
   )('success - without nonce - over %s/%s', async (system, algorithm) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
@@ -125,6 +145,32 @@ describe('Public point recovery', () => {
       );
       assert.equal(isEqualBuffer(recovered, publicBytes), true);
       assert.deepEqual(blame.map(b => b.index).sort(), targetBlame.sort());
+    }
+  });
+  each(systems)('malformed packets - over %s', async (system) => {
+    // A malformed public share or proof is blamed like a forged one
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
+      system, nrShares, threshold
+    );
+    const { packets } = await mockPublicRecoverySetup({ ctx, shares });
+    const malformed = [
+      { ...packets[0], value: packets[0].value.slice(1) },
+      {
+        ...packets[0],
+        proof: { ...packets[0].proof, response: [packets[0].proof.response[0].slice(1)] },
+      },
+    ];
+    for (const packet of malformed) {
+      const tampered = [packet, ...packets.slice(1)];
+      await assert.rejects(recoverPublic(ctx, tampered, threshold), InvalidInput);
+      const recovery = recoverPublic(ctx, tampered, threshold, { errorOnInvalid: false });
+      if (nrShares - 1 >= threshold) {
+        const { recovered, blame } = await recovery;
+        assert.equal(isEqualBuffer(recovered, publicBytes), true);
+        assert.deepEqual(blame.map(b => b.index), [packet.index]);
+      } else {
+        await assert.rejects(recovery, /Insufficient number of valid shares/);
+      }
     }
   });
   each(cartesian([systems, algorithms])
