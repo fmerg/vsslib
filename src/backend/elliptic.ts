@@ -178,6 +178,7 @@ export class EcGroup extends Group<EcPoint> {
     if (points.length >= this.msmCutoff) return this.wrap(
       pippenger(this.Point, wrapped, scalars)
     );
+    // Inlines expPublic and operate on the raw points; keep in step with them
     return this.wrap(wrapped.reduce(
       (acc, point, i) => acc.add(point.multiplyUnsafe(scalars[i])), this.zero
     ));
