@@ -962,11 +962,12 @@ backend now computes `g^s` on `decaf448` as twice `B^s`, where `B` is the base
 point of `ed448`, whose multiplication noble blinds and accelerates by a
 precomputed table. Both groups have the same prime order, and doubling the
 result avoids any arithmetic on the secret scalar. Exponentiations of other
-points still split. Since `Group.exp` takes this route as well, verification
-also gains where it raises the generator: to the share value in VSS
-verification, and to the NIZK response in Schnorr packets. Measured changes of
-median running time on `decaf448` against the previous implementation, with
-`n = 5` shares and threshold `t = 3`:
+points still split. Verification gains as well where it raises the generator:
+to the share value in VSS verification, through `Group.expSecret`, which no
+longer splits, and to the public NIZK response in Schnorr packets, through
+`Group.exp`, which takes the same route. Measured changes of median running
+time on `decaf448` against the previous implementation, with `n = 5` shares and
+threshold `t = 3`:
 
 | operation | change |
 | --- | ---: |
