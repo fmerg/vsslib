@@ -1,12 +1,11 @@
 import {
-  randomNonce,
   derivePedersenBase,
   createPedersenPackets,
   verifyPedersenCommitments,
   parsePedersenPacket,
 } from 'vsslib';
 import { Ctx, Params, Suite, defineCase } from '../types';
-import { dealSharing, pedersenFixture, slotIndex } from '../fixtures';
+import { benchPedersenBase, dealSharing, pedersenFixture, slotIndex } from '../fixtures';
 
 
 /** Commitments and the packet of the shareholder determined by the slot; the cost of
@@ -31,7 +30,7 @@ const suite: Suite = {
       uses: ['nrShares', 'threshold'],
       setup: async (ctx, { nrShares, threshold }) => ({
         sharing: await dealSharing(ctx, nrShares, threshold),
-        pedersenBase: await derivePedersenBase(ctx, randomNonce()),
+        pedersenBase: await benchPedersenBase(ctx),
       }),
       run: async (_, { sharing, pedersenBase }) => createPedersenPackets(sharing, pedersenBase),
     }),
