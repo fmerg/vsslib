@@ -35,7 +35,7 @@ const NATIVE: Record<string, { generator: boolean, other: boolean }> = {
   ed448:        { generator: true,  other: false },
   jubjub:       { generator: true,  other: false },
   ristretto255: { generator: true,  other: false },
-  decaf448:     { generator: false, other: false },
+  decaf448:     { generator: true,  other: false },
   secp256k1:    { generator: true,  other: true },
   p256:         { generator: true,  other: true },
   p384:         { generator: true,  other: true },
@@ -80,6 +80,13 @@ describe('noble blinding assumptions', () => {
   test('ristretto255 multiplies the ed25519 base, decaf448 not the ed448 base', () => {
     assert.equal((ristretto255.Point.BASE as any).ep, ed25519.Point.BASE);
     assert.notEqual((decaf448.Point.BASE as any).ep, ed448.Point.BASE);
+  });
+  test('decaf448 base representative is twice the ed448 base, as another object', () => {
+    // The decaf448 base multiplication goes through the ed448 base for this
+    const ep = (decaf448.Point.BASE as any).ep;
+    const double = ed448.Point.BASE.double();
+    assert.notEqual(ep, double);
+    assert.equal(ep.equals(double), true);
   });
 });
 
@@ -155,6 +162,40 @@ describe('secret exponentiation', () => {
     }
     assert.ok(inverted.length > 0);
     assert.deepEqual(inverted.filter(v => sampled.includes(v)), []);
+  });
+});
+
+
+describe('decaf448 base multiplication', () => {
+  test('agrees with noble', async () => {
+    const ctx = initBackend('decaf448');
+    const scalars = [1n, 2n, ctx.order - 1n, await ctx.randomScalar()];
+    for (const scalar of scalars) {
+      const point = await ctx.exp(ctx.generator, scalar);
+      const expected = decaf448.Point.BASE.multiply(scalar);
+      assert.equal((point.wrapped as any).equals(expected), true);
+      assert.deepEqual(point.toBytes(), expected.toBytes());
+      await ctx.validatePoint(point);
+    }
+    const zero = await ctx.exp(ctx.generator, 0n);
+    assert.equal(await zero.equals(ctx.neutral), true);
+  });
+  test('goes through the ed448 base, which noble blinds', async () => {
+    // Otherwise blindsNatively would claim blinding that does not happen
+    const ctx = initBackend('decaf448');
+    // noble freezes its points and their prototypes, so spy on the hook
+    const hook = mock.method(
+      ctx as unknown as { baseMultiply: (scalar: bigint) => unknown }, 'baseMultiply'
+    );
+    try {
+      const scalar = await ctx.randomScalar();
+      await ctx.expSecret(ctx.generator, scalar);
+      await ctx.expSecret(await ctx.parsePoint(ctx.generator.toBytes()), scalar);
+      // Only the generator object, as with noble's own base
+      assert.deepEqual(hook.mock.calls.map(call => call.arguments), [[scalar]]);
+    } finally {
+      hook.mock.restore();
+    }
   });
 });
 
