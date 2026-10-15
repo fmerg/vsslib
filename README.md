@@ -111,6 +111,7 @@ See [here](#security-main) for details.
   * [Horner's method](#horner-method)
   * [Common denominator](#common-denominator)
   * [Multi-exponentiation](#multi-exponentiation)
+  * [Generator of decaf448](#decaf448-generator)
   * [Measurement setup](#measurement-setup)
 * [Development](#development)
 
@@ -692,11 +693,13 @@ which multiplies with a fixed sequence of operations and additionally blinds
 the scalar with a random multiple of the group order. Blinding is however
 applied only on curves of cofactor one (`secp256k1`, `p256`, `p384`, `p521`),
 whereas on the cofactored curves it covers only noble's own base point, i.e.,
-the generator of `ed25519`, `ed448`, `jubjub` and `ristretto255`; on `decaf448`
-it covers no point at all. A leak in an unblinded multiplication accumulates
-over repeated calls with the same scalar, e.g., when a shareholder verifies its
-long-lived Pedersen binding, and partial leakage of NIZK nonces over many proofs
-is known to suffice for lattice-based key recovery. Vsslib performs every
+the generator of `ed25519`, `ed448`, `jubjub` and `ristretto255`. On `decaf448`
+it covers no point by itself, so vsslib multiplies the generator through the
+base of `ed448` instead (see [Generator of decaf448](#decaf448-generator)). A
+leak in an unblinded multiplication accumulates over repeated calls with the
+same scalar, e.g., when a shareholder verifies its long-lived Pedersen binding,
+and partial leakage of NIZK nonces over many proofs is known to suffice for
+lattice-based key recovery. Vsslib performs every
 exponentiation by a secret scalar through `Group.expSecret`, which uses the
 backend's exponentiation directly only where it blinds natively, as reported by
 `Group.blindsNatively`. Otherwise it splits the scalar as
@@ -709,8 +712,8 @@ Since modular inversion runs in variable time as well, `r` is inverted as
 `u / (r * u)` for a second fresh random `u`, so that the inversion only sees a
 value independent of `r`. The split
 costs a second multiplication and an inversion: Pedersen dealing becomes up to
-about twice as slow on the Edwards curves, and every secret operation about
-twice as slow on `decaf448`, whereas the curves of cofactor one are unaffected.
+about twice as slow on the Edwards curves, whereas the curves of cofactor one
+are unaffected.
 On the elliptic backends, `Group.exp` is called directly only for public
 scalars, namely NIZK challenges and responses; `Group.expSecret` builds on it
 for secret scalars. Share indexes go through
@@ -948,6 +951,39 @@ which still uses `Group.exp`, now makes up most of its time. Of its gain,
 parsing once accounts for about half on `ed25519`, a quarter on `decaf448` and
 little on the curves of cofactor one, where parsing is cheap.
 
+### <a name="decaf448-generator"></a>Generator of decaf448
+
+noble blinds multiplication on the cofactored curves only for its own base
+point, which it recognizes by identity. The base point of `decaf448` is
+represented by twice the base point of `ed448`, but as another object, so that
+noble blinded none of its multiplications, and every exponentiation by a secret
+scalar on `decaf448` took the [split](#side-channel-attacks). The elliptic
+backend now computes `g^s` on `decaf448` as twice `B^s`, where `B` is the base
+point of `ed448`, whose multiplication noble blinds and accelerates by a
+precomputed table. Both groups have the same prime order, and doubling the
+result avoids any arithmetic on the secret scalar. Exponentiations of other
+points still split. Verification gains as well where it raises the generator:
+to the share value in VSS verification, through `Group.expSecret`, which no
+longer splits, and to the public NIZK response in Schnorr packets, through
+`Group.exp`, which takes the same route. Measured changes of median running
+time on `decaf448` against the previous implementation, with `n = 5` shares and
+threshold `t = 3`:
+
+| operation | change |
+| --- | ---: |
+| `randomSecret`, `extractPublic` | -86% |
+| `getPublicShares`, `createFeldmanPackets` | -86% |
+| `createSchnorrPacket` | -80% |
+| `createPedersenPackets` | -44% |
+| verify/parse Feldman packets | -72% |
+| verify/parse Pedersen packets | -40% |
+| `parseSchnorrPacket` | -33% |
+| `recoverPublic` | -23% |
+
+For example, extracting a public key takes 0.60 ms instead of 4.23 ms, against
+0.44 ms on `ed448`. Pedersen operations gain less, since exponentiations of
+the Pedersen base still split. The other curves are unchanged.
+
 ### <a name="measurement-setup"></a>Measurement setup
 
 The figures were measured with the [benchmarks](#benchmarks), 5 runs per side,
@@ -976,6 +1012,14 @@ not change:
 $ ./bench.sh -o "combinePublicShares,recoverPublic,parseSchnorrPacket" \
     -s ed25519,decaf448,secp256k1,p521 -n 100 -t 5,25,50,100 --cpus 0-7 -r 5 \
     --compare <baseline>
+```
+
+For the generator of `decaf448`, with `ed448` as a control that should not
+change:
+
+```
+$ ./bench.sh -m secrets,shamir,feldman,pedersen,recovery -s decaf448,ed448 \
+    --cpus 0-7 -r 5 --compare <baseline>
 ```
 
 # Development

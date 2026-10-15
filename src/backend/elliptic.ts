@@ -52,6 +52,12 @@ export class EcPoint implements Point {
 type _HashToCurve = (msg: Uint8Array, dst: Uint8Array) => _CurvePoint;
 
 
+/** Blinded multiplication of the base point by a scalar in [1, order),
+ * throwing outside that range like noble's, where noble does not blind the
+ * base itself; blindsNatively then reports the base as blinded */
+type _BaseMultiply = (scalar: bigint) => _CurvePoint;
+
+
 /** Points whose secret multiplication noble blinds: every point on cofactor-1
  * curves, otherwise only its base point, recognized by identity (see
  * shouldBlind in @noble/curves/abstract/curve.js; recheck on upgrades) */
@@ -93,6 +99,7 @@ export class EcGroup extends Group<EcPoint> {
   private codec: _Codec;
   private blinding: _Blinding;
   private msmCutoff: number;
+  private baseMultiply?: _BaseMultiply;
   /** @internal Point constructor of the noble curve */
   Point: _PointCons;
 
@@ -103,6 +110,7 @@ export class EcGroup extends Group<EcPoint> {
     codec: _Codec,
     blinding: _Blinding,
     msmCutoff: number,
+    baseMultiply?: _BaseMultiply,
   ) {
     const modulus = Point.Fp.ORDER;
     const order = Point.Fn.ORDER;
@@ -118,6 +126,7 @@ export class EcGroup extends Group<EcPoint> {
     this.codec = codec;
     this.blinding = blinding;
     this.msmCutoff = msmCutoff;
+    this.baseMultiply = baseMultiply;
   }
 
   private wrap = (point: _CurvePoint): EcPoint => new EcPoint(point, this.codec.toBytes);
@@ -135,8 +144,12 @@ export class EcGroup extends Group<EcPoint> {
     this.generator, await this.randomScalar()
   );
 
+  /** By identity, as noble recognizes its base */
+  private isBase = (point: EcPoint): boolean => point.wrapped === this.base;
+
   blindsNatively = (point: EcPoint): boolean => this.blinding === 'all' ||
-    (this.blinding === 'base' && point.wrapped === this.base);
+    (this.isBase(point) &&
+      (this.blinding === 'base' || this.baseMultiply !== undefined));
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
@@ -161,9 +174,13 @@ export class EcGroup extends Group<EcPoint> {
     return flag;
   }
 
-  exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => this.wrap(
-    scalar !== 0n ? point.wrapped.multiply(scalar) : this.zero
-  );
+  exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => {
+    if (scalar === 0n) return this.wrap(this.zero);
+    if (this.baseMultiply && this.isBase(point)) return this.wrap(
+      this.baseMultiply(scalar)
+    );
+    return this.wrap(point.wrapped.multiply(scalar));
+  }
 
   /** Variable-time wNAF multiplication, whose cost shrinks with the scalar */
   expPublic = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => this.wrap(
@@ -218,14 +235,15 @@ const MSM_CUTOFF = 4;
 
 
 /** Supported curves; a new system needs an Elliptic member and an entry here.
- * The codec defaults to noble's native encoding and the MSM cutoff to
- * MSM_CUTOFF */
+ * The codec defaults to noble's native encoding, the MSM cutoff to MSM_CUTOFF
+ * and the base multiplication to noble's */
 const CURVES: Record<Elliptic, {
   Point: _PointCons,
   hashToCurve: _HashToCurve,
   codec?: (Point: _PointCons) => _Codec,
   blinding: _Blinding,
   msmCutoff?: number,
+  baseMultiply?: _BaseMultiply,
 }> = {
   [Elliptic.ED25519]: {
     Point: ed25519.Point,
@@ -251,8 +269,14 @@ const CURVES: Record<Elliptic, {
   [Elliptic.DECAF448]: {
     Point: decaf448.Point,
     hashToCurve: (msg, DST) => decaf448_hasher.hashToCurve(msg, { DST }),
-    // Its Edwards base representative is not ed448's base, so noble never blinds
+    // noble never blinds it, since its Edwards base representative is twice
+    // ed448's base but another object. Multiply that very object instead,
+    // which noble blinds and tables, doubling the point rather than the secret
+    // scalar. Same prime order, and the result lies in the prime-order subgroup
     blinding: 'none',
+    baseMultiply: (scalar) => new decaf448.Point(
+      ed448.Point.BASE.multiply(scalar).double()
+    ),
   },
   [Elliptic.SECP256K1]: {
     Point: secp256k1.Point,
@@ -287,6 +311,9 @@ const CURVES: Record<Elliptic, {
 export function initElliptic(system: Elliptic): EcGroup {
   const {
     Point, hashToCurve, codec = nobleCodec, blinding, msmCutoff = MSM_CUTOFF,
+    baseMultiply,
   } = CURVES[system];
-  return new EcGroup(system, Point, hashToCurve, codec(Point), blinding, msmCutoff);
+  return new EcGroup(
+    system, Point, hashToCurve, codec(Point), blinding, msmCutoff, baseMultiply
+  );
 }
