@@ -52,8 +52,9 @@ export class EcPoint implements Point {
 type _HashToCurve = (msg: Uint8Array, dst: Uint8Array) => _CurvePoint;
 
 
-/** Multiplication of the base point by a nonzero scalar, replacing noble's
- * where that is neither blinded nor table-backed */
+/** Blinded multiplication of the base point by a scalar in [1, order),
+ * throwing outside that range like noble's, where noble does not blind the
+ * base itself; blindsNatively then reports the base as blinded */
 type _BaseMultiply = (scalar: bigint) => _CurvePoint;
 
 
@@ -143,8 +144,12 @@ export class EcGroup extends Group<EcPoint> {
     this.generator, await this.randomScalar()
   );
 
+  /** By identity, as noble recognizes its base */
+  private isBase = (point: EcPoint): boolean => point.wrapped === this.base;
+
   blindsNatively = (point: EcPoint): boolean => this.blinding === 'all' ||
-    (this.blinding === 'base' && point.wrapped === this.base);
+    (this.isBase(point) &&
+      (this.blinding === 'base' || this.baseMultiply !== undefined));
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
@@ -171,7 +176,7 @@ export class EcGroup extends Group<EcPoint> {
 
   exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => {
     if (scalar === 0n) return this.wrap(this.zero);
-    if (this.baseMultiply && point.wrapped === this.base) return this.wrap(
+    if (this.baseMultiply && this.isBase(point)) return this.wrap(
       this.baseMultiply(scalar)
     );
     return this.wrap(point.wrapped.multiply(scalar));
@@ -265,13 +270,13 @@ const CURVES: Record<Elliptic, {
     Point: decaf448.Point,
     hashToCurve: (msg, DST) => decaf448_hasher.hashToCurve(msg, { DST }),
     // noble never blinds it, since its Edwards base representative is twice
-    // ed448's base but another object; multiply that blinded and table-backed
-    // instead, doubling the point rather than the secret scalar. Same prime
-    // order, and the result lies in the prime-order subgroup
+    // ed448's base but another object. Multiply that very object instead,
+    // which noble blinds and tables, doubling the point rather than the secret
+    // scalar. Same prime order, and the result lies in the prime-order subgroup
+    blinding: 'none',
     baseMultiply: (scalar) => new decaf448.Point(
       ed448.Point.BASE.multiply(scalar).double()
     ),
-    blinding: 'base',
   },
   [Elliptic.SECP256K1]: {
     Point: secp256k1.Point,
