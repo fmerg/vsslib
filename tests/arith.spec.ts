@@ -183,3 +183,18 @@ describe('little-endian roundtrip', () => {
     expect(buffBack).toEqual(buffer);
   });
 });
+
+
+describe('little-endian fixed-length encoding', () => {
+  it.each([
+    [0, 1, [0]],
+    [1, 4, [1, 0, 0, 0]],
+    [513, 3, [1, 2, 0]],
+    [4278387201, 4, [1, 2, 3, 255]],
+  ])('%s, %s', (num, byteLength, arr) => {
+    expect(leInt2Buff(BigInt(num), byteLength)).toEqual(Uint8Array.from(arr));
+  });
+  it('rejects too short length', () => {
+    expect(() => leInt2Buff(BigInt(513), 1)).toThrow('Integer does not fit in 1 bytes');
+  });
+});

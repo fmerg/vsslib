@@ -1,4 +1,4 @@
-import { leInt2Buff, mod, modInv } from './arith';
+import { mod, modInv } from './arith';
 import { Point, Group } from './backend';
 import { unpackScalar, unpackPoint } from './secrets'
 import { SecretShare, PublicShare } from './dealer';
@@ -50,7 +50,7 @@ export async function combineSecretShares<P extends Point>(
     const xi = await unpackScalar(ctx, value);
     x = mod(x + li * xi, order);
   }
-  return leInt2Buff(x);
+  return ctx.scalar2Buff(x);
 }
 
 

@@ -34,7 +34,7 @@ export class NizkProtocol<P extends Point>{
 
   private packProof = async (proof: { commitment: P[], response: bigint[] }): Promise<NizkProof> => {
     const commitment = proof.commitment.map(c => c.toBytes());
-    const response = proof.response.map(r => leInt2Buff(r));
+    const response = proof.response.map(r => this.ctx.scalar2Buff(r));
     return { commitment, response };
   }
 
