@@ -201,6 +201,16 @@ export class EcGroup extends Group<EcPoint> {
     ));
   }
 
+  /** Attach a table of window PRECOMPUTE_WINDOW, which noble builds on the
+   * first multiplication and keeps per point object; returns the same point.
+   * The generator keeps noble's own table, which a new window would drop */
+  precomputeBase = (point: EcPoint): EcPoint => {
+    if (!this.isBase(point) && !point.wrapped.is0()) {
+      point.wrapped.precompute(PRECOMPUTE_WINDOW, true);
+    }
+    return point;
+  }
+
   operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => this.wrap(
     lhs.wrapped.add(rhs.wrapped)
   );
@@ -232,6 +242,13 @@ export class EcGroup extends Group<EcPoint> {
  * multiplication per point, measured with noble 2.4.0 on every supported curve;
  * recheck on upgrades */
 const MSM_CUTOFF = 4;
+
+
+/** Window of the tables attached by precomputeBase. Against a window of 6, it
+ * keeps 83-91% of the speedup at a third to half of the build time and memory
+ * (7-31 ms, 107-315 KB per point on ed25519 to p521), measured with noble
+ * 2.4.0; recheck on upgrades */
+const PRECOMPUTE_WINDOW = 4;
 
 
 /** Supported curves; a new system needs an Elliptic member and an entry here.

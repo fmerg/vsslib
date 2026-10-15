@@ -140,6 +140,12 @@ export abstract class Group<P extends Point> {
     return acc;
   }
 
+  /** Prepare a public point that is raised repeatedly to secret scalars, such
+   * as a Pedersen base, e.g. by attaching a precomputed table, and return the
+   * point to use instead. Defaults to the point itself; backends override it,
+   * as a property like `expPublic` */
+  precomputeBase = (point: P): P => point;
+
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
   abstract validateScalar: (scalar: bigint) => Promise<boolean>;
