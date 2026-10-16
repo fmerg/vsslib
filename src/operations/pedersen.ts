@@ -1,3 +1,4 @@
+import { bytesToHex } from '@noble/hashes/utils.js';
 import { Point, Group } from '../backend';
 import { randomPolynomial } from '../polynomials';
 import { InvalidSecretShare, InvalidInput } from '../errors';
@@ -11,6 +12,21 @@ import { evalCommitments } from './commitments';
 const PEDERSEN_BASE_DST = new TextEncoder().encode('vsslib:pedersen-base');
 
 
+/** Number of parsed and precomputed Pedersen bases kept per group class; the
+ * least recently used is evicted */
+const PEDERSEN_BASE_CACHE = 8;
+
+// By group class, so that a custom backend reusing the name of a system never
+// receives points of another class, then by system and encoding. Groups are
+// created anew by every initBackend call, so a cache per group would not hit
+let pedersenBases = new WeakMap<object, Map<string, Point>>();
+
+/** @internal Empty the cache of Pedersen bases, e.g. between tests */
+export function clearPedersenBases(): void {
+  pedersenBases = new WeakMap();
+}
+
+
 /** Derive from a public seed a Pedersen base whose discrete log is unknown */
 export async function derivePedersenBase<P extends Point>(
   ctx: Group<P>,
@@ -21,16 +37,33 @@ export async function derivePedersenBase<P extends Point>(
 
 
 /** Parse a Pedersen base, rejecting the neutral element and the generator,
- * whose discrete logs are known */
+ * whose discrete logs are known. Valid bases are prepared by precomputeBase
+ * and cached, so that later calls skip parsing and reuse the precomputation */
 export async function parsePedersenBase<P extends Point>(
   ctx: Group<P>,
   pedersenBase: Uint8Array,
 ): Promise<P> {
+  const key = `${ctx.system}:${bytesToHex(pedersenBase)}`;
+  let bases = pedersenBases.get(ctx.constructor);
+  const cached = bases?.get(key);
+  if (bases && cached) {
+    // Maps iterate in insertion order, which reinsertion turns into recency
+    bases.delete(key);
+    bases.set(key, cached);
+    return cached as P;
+  }
   const h = await ctx.parsePoint(pedersenBase);
   if (await h.equals(ctx.neutral) || await h.equals(ctx.generator)) throw new InvalidInput(
     'Pedersen base must be neither the neutral element nor the generator'
   );
-  return h;
+  const base = ctx.precomputeBase(h);
+  if (!bases) {
+    bases = new Map();
+    pedersenBases.set(ctx.constructor, bases);
+  }
+  bases.set(key, base);
+  if (bases.size > PEDERSEN_BASE_CACHE) bases.delete(bases.keys().next().value!);
+  return base;
 }
 
 
