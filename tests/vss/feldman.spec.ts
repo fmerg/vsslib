@@ -48,4 +48,13 @@ describe('Feldman VSS scheme', () => {
       await expect(parsed).rejects.toThrow('Invalid share');
     });
   });
+  it.each(systems)('success with large indexes over %s', async (system) => {
+    // index ** j exceeds Number.MAX_SAFE_INTEGER for these parameters
+    const ctx = initBackend(system);
+    const { sharing } = await shareSecret(ctx, 20, 17);
+    const { packets, commitments } = await sharing.createFeldmanPackets();
+    for (const packet of packets) {
+      await expect(verifyFeldmanCommitments(ctx, packet, commitments)).resolves.toBe(true);
+    }
+  });
 })
