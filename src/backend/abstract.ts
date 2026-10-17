@@ -1,5 +1,6 @@
 import { System } from '../types';
 import { mod, leBuff2Int, leInt2Buff } from '../arith';
+import { BadScalarError, BadPointError, InvalidInput } from '../errors';
 
 export interface Point {
   toBytes: () => Uint8Array;
@@ -29,6 +30,35 @@ export abstract class Group<P extends Point> {
   scalar2Buff = (scalar: bigint): Uint8Array => leInt2Buff(mod(scalar, this.order), this.scalarBytes);
 
   generateSecret = async (): Promise<Uint8Array> => this.scalar2Buff(await this.randomScalar());
+
+  /** Decode and validate a scalar; throws InvalidInput on invalid bytes */
+  parseScalar = async (bytes: Uint8Array): Promise<bigint> => {
+    const scalar = this.leBuff2Scalar(bytes);
+    try {
+      await this.validateScalar(scalar);
+    } catch (err: unknown) {
+      if (err instanceof BadScalarError) throw new InvalidInput(
+        'Invalid scalar provided: ' + err.message
+      );
+      throw err;
+    }
+    return scalar;
+  }
+
+  /** Decode and validate a group element; throws InvalidInput on invalid bytes */
+  parsePoint = async (bytes: Uint8Array): Promise<P> => {
+    let point;
+    try {
+      point = this.buff2Point(bytes);
+      await this.validatePoint(point);
+    } catch (err: unknown) {
+      if (err instanceof BadPointError) throw new InvalidInput(
+        'Invalid point provided: ' + err.message
+      );
+      throw err;
+    }
+    return point;
+  }
 
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;

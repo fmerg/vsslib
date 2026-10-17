@@ -1,6 +1,5 @@
 import { Group, Point } from './backend';
 import { mod } from './arith';
-import { BadScalarError, BadPointError, InvalidInput } from './errors';
 
 
 export async function randomSecret<P extends Point>(ctx: Group<P>): Promise<{
@@ -37,16 +36,7 @@ export async function unpackScalar<P extends Point>(
   ctx: Group<P>,
   secret: Uint8Array
 ): Promise<bigint> {
-  const scalar = ctx.leBuff2Scalar(secret);
-  try {
-    await ctx.validateScalar(scalar);
-  } catch (err: unknown) {
-    if (err instanceof BadScalarError) throw new InvalidInput(
-      'Invalid scalar provided: ' + err.message
-    )
-    else throw err;
-  }
-  return scalar;
+  return ctx.parseScalar(secret);
 }
 
 
@@ -54,17 +44,7 @@ export async function unpackPoint<P extends Point>(
   ctx: Group<P>,
   publicBytes: Uint8Array
 ): Promise<P> {
-  let point;
-  try {
-    point = ctx.buff2Point(publicBytes);
-    await ctx.validatePoint(point);
-  } catch (err: unknown) {
-    if (err instanceof BadPointError) throw new InvalidInput(
-      'Invalid point provided: ' + err.message
-    )
-    else throw err;
-  }
-  return point;
+  return ctx.parsePoint(publicBytes);
 }
 
 
@@ -84,8 +64,8 @@ export async function isEqualPublic<P extends Point>(
   rhs: Uint8Array
 ): Promise<boolean> {
   // TODO: Ensure that this is constant-time
-  const y = await unpackPoint(ctx, lhs);
-  const u = await unpackPoint(ctx, rhs);
+  const y = await ctx.parsePoint(lhs);
+  const u = await ctx.parsePoint(rhs);
   return y.equals(u);
 }
 
@@ -97,7 +77,7 @@ export async function isKeypair<P extends Point>(
   // TODO: Ensure that this is constant-time
   const g = ctx.generator;
   const x = ctx.leBuff2Scalar(secret);
-  const u = await unpackPoint(ctx, publicBytes);
+  const u = await ctx.parsePoint(publicBytes);
   const y = await ctx.exp(g, x);
   return y.equals(u);
 }
@@ -120,7 +100,7 @@ export async function combinePublics<P extends Point>(
   publics: Uint8Array[]
 ): Promise<Uint8Array> {
   let acc = ctx.neutral;
-  for (const y of publics.map(async p => unpackPoint(ctx, p))) {
+  for (const y of publics.map(async p => ctx.parsePoint(p))) {
     acc = await ctx.operate(acc, await y);
   }
   return acc.toBytes();
