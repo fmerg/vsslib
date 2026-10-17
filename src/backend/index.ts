@@ -4,7 +4,7 @@ import { BadGroupError } from '../errors';
 export { Group, Point } from './abstract'
 import { initElliptic } from './elliptic';
 
-export const initBackend = (system: System | string) => {
+export function initBackend(system: System | string) {
   system  = system as System;
 
   switch (system) {

@@ -3,19 +3,19 @@ import { ArithmeticError, BadModulusError, InverseNotExists } from './errors';
 const __hexLen  = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4];
 
 
-const nrBits = (num: bigint): number => {
+function nrBits(num: bigint): number {
   const numHex = num.toString(16);
   return (numHex.length - 1) * 4 + __hexLen[parseInt(numHex[0], 16)];
 }
 
-const nrBytes = (num: bigint): number => {
+function nrBytes(num: bigint): number {
   const nr = Math.floor((nrBits(num) - 1) / 8) + 1;
   return nr == 0 ? 1 : nr;
 }
 
 
 /** little-endian bytestring to big integer */
-export const leBuff2Int = (buff: Uint8Array): bigint => {
+export function leBuff2Int(buff: Uint8Array): bigint {
   let num = 0n;
   let i = 0;
   const view = new DataView(buff.buffer, buff.byteOffset, buff.byteLength);
@@ -36,7 +36,7 @@ export const leBuff2Int = (buff: Uint8Array): bigint => {
 
 
 /** big integer to little-endian bytestring, zero-padded to `byteLength` if given */
-export const leInt2Buff = (num: bigint, byteLength?: number) => {
+export function leInt2Buff(num: bigint, byteLength?: number) {
   const minLength = nrBytes(num);
   if (byteLength !== undefined && byteLength < minLength) throw new ArithmeticError(
     `Integer does not fit in ${byteLength} bytes`
@@ -67,7 +67,7 @@ export const leInt2Buff = (num: bigint, byteLength?: number) => {
 
 
 /** Modulo operation. Takes care to give non-negative results */
-export const mod = (m: bigint, n: bigint): bigint => {
+export function mod(m: bigint, n: bigint): bigint {
   if (n < 2) throw new BadModulusError(
     `Modulus must be > 2: ${n}`
   );
@@ -78,7 +78,7 @@ export const mod = (m: bigint, n: bigint): bigint => {
 
 
 /** Createst Common Divisor (extended euclidean algorithm) */
-export const gcd = (a: bigint, b: bigint): { x: bigint, y: bigint, g: bigint } => {
+export function gcd(a: bigint, b: bigint): { x: bigint, y: bigint, g: bigint } {
   if (!(a > 0n && b > 0n))
     throw new ArithmeticError('Non-positive inputs');
 
@@ -100,7 +100,7 @@ export const gcd = (a: bigint, b: bigint): { x: bigint, y: bigint, g: bigint } =
 
 
 /** Modular muptiplicative inverse operation */
-export const modInv = (m: bigint, n: bigint): bigint => {
+export function modInv(m: bigint, n: bigint): bigint {
   const a = mod(m, n);
   if (!(a > 0n)) throw new InverseNotExists(
     `No inverse exists for provided modulo`

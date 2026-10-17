@@ -104,9 +104,9 @@ export class EcGroup extends Group<EcPoint> {
 }
 
 
-export const initElliptic = (
+export function initElliptic(
   system: Elliptic.ED25519 | Elliptic.ED448 | Elliptic.JUBJUB
-): EcGroup => {
+): EcGroup {
   const mapping = {
     [Elliptic.ED25519]: ed25519,
     [Elliptic.ED448]: ed448,
