@@ -2,7 +2,14 @@ export { initBackend } from './backend';
 export type { Group, Point } from './backend';
 
 export { Systems, Algorithms } from './enums';
-export type { System, Algorithm } from './types';
+export type {
+  System,
+  Algorithm,
+  SecretShare,
+  PublicShare,
+  SecretPacket,
+  SchnorrPacket,
+} from './types';
 
 export { randomNonce } from './random';
 
@@ -20,7 +27,7 @@ export {
 } from './secrets';
 
 export { shareSecret } from './dealer';
-export type { ShamirSharing, SecretShare, SecretPacket, PublicShare } from './dealer';
+export type { ShamirSharing } from './dealer';
 
 export {
   extractPublicShare,
@@ -30,7 +37,6 @@ export {
   parsePedersenPacket,
   createSchnorrPacket,
 } from './shareholder';
-export type { SchnorrPacket } from './shareholder';
 
 export {
   computeLambda,

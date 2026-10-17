@@ -1,15 +1,10 @@
 import { Point, Group } from './backend';
 import { InvalidSecretShare, InvalidInput } from './errors';
-import { SecretShare, PublicShare, SecretPacket } from './dealer';
 import { unpackScalar, unpackPoint, extractPublic } from './secrets';
-import { NizkProof } from './nizk';
-import { Algorithm } from './types';
+import { Algorithm, SecretShare, PublicShare, SecretPacket, SchnorrPacket } from './types';
 import { Algorithms } from './enums';
 
 import { nizk } from './nizk';
-
-
-export type SchnorrPacket = PublicShare & { proof: NizkProof };
 
 
 /** Evaluate `Π_j C_j ^ (index ^ j)` in the exponent using Horner's rule */

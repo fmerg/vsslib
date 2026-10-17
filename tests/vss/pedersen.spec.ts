@@ -1,6 +1,7 @@
 import { initBackend } from 'vsslib/backend';
 import { randomSecret, randomPublic } from 'vsslib/secrets';
-import { shareSecret, SecretShare, ShamirSharing } from 'vsslib/dealer';
+import { shareSecret, ShamirSharing } from 'vsslib/dealer';
+import { SecretShare } from 'vsslib/types';
 import { verifyPedersenCommitments, parsePedersenPacket } from 'vsslib/shareholder';
 import { resolveTestConfig } from '../environ';
 import { leInt2Buff } from 'vsslib/arith';

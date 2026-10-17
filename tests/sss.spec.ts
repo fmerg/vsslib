@@ -1,7 +1,8 @@
 import { initBackend } from 'vsslib/backend';
 import { leInt2Buff } from 'vsslib/arith';
 import { unpackScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
-import { shareSecret, SecretShare } from 'vsslib/dealer';
+import { shareSecret } from 'vsslib/dealer';
+import { SecretShare } from 'vsslib/types';
 import { combineSecretShares } from 'vsslib/combiner';
 import { resolveTestConfig } from './environ';
 import { cartesian } from './utils';

@@ -4,12 +4,7 @@ import { InterpolationError, ShamirError, InvalidInput } from './errors';
 import { unpackScalar, unpackPoint } from './secrets';
 
 import { lagrange } from './lagrange';
-
-
-export type SecretShare = { value: Uint8Array, index: number };
-export type SecretPacket = SecretShare & { binding?: Uint8Array };
-
-export type PublicShare = { value: Uint8Array, index: number };
+import { SecretShare, SecretPacket, PublicShare } from './types';
 
 
 export class ShamirSharing<P extends Point> {
