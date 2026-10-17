@@ -10,10 +10,6 @@ import { Algorithm } from './types';
 import { nizk } from './nizk';
 
 
-const __0n = BigInt(0);
-const __1n = BigInt(1);
-
-
 export type Nonces = { [key: number]: Uint8Array };
 
 
@@ -24,7 +20,7 @@ export function computeLambda<P extends Point>(
 ): bigint {
   const order = ctx.order;
   const i = index;
-  let acc = __1n;
+  let acc = 1n;
   indexes.forEach(j => {
     if (i != j) {
       const curr = BigInt(j) * modInv(BigInt(j - i), order);
@@ -44,7 +40,7 @@ export async function combineSecretShares<P extends Point>(
     throw new InvalidInput('Insufficient number of shares');
   const order = ctx.order;
   const indexes = shares.map(share => share.index);
-  let x = __0n;
+  let x = 0n;
   for (const { value, index } of shares) {
     const li = computeLambda(ctx, index, indexes);
     const xi = await unpackScalar(ctx, value);
