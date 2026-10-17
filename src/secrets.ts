@@ -83,7 +83,7 @@ export const isEqualPublic = async <P extends Point>(
   lhs: Uint8Array,
   rhs: Uint8Array
 ): Promise<boolean> => {
-  // TODO: Ensure that this is constant-time, or apply ctEqualBuffer instead
+  // TODO: Ensure that this is constant-time
   const y = await unpackPoint(ctx, lhs);
   const u = await unpackPoint(ctx, rhs);
   return y.equals(u);
@@ -94,7 +94,7 @@ export const isKeypair = async <P extends Point>(
   secret: Uint8Array,
   publicBytes: Uint8Array
 ): Promise<boolean> => {
-  // TODO: Ensure that this is constant-time, or apply ctEqualBuffer instead
+  // TODO: Ensure that this is constant-time
   const g = ctx.generator;
   const x = ctx.leBuff2Scalar(secret);
   const u = await unpackPoint(ctx, publicBytes);
