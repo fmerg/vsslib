@@ -79,18 +79,11 @@ export class ShamirSharing<P extends Point> {
     commitments: Uint8Array[],
   }> => {
     const { exp, generator: g } = this.ctx;
-    const { coeffs, degree, evaluate } = this.polynomial;
-    const commitments = new Array(degree + 1);
-    const packets = new Array<SecretPacket>(this.nrShares);
-    for (let i = 0; i < this.nrShares; i++) {
-      if (i < degree + 1) {
-        const c = await exp(g, coeffs[i]);
-        commitments[i] = c.toBytes();
-      }
-      const index = i + 1;
-      const value = this.ctx.scalar2Buff(evaluate(index));
-      packets[i] = { value, index };
+    const commitments = [];
+    for (const a of this.polynomial.coeffs) {
+      commitments.push((await exp(g, a)).toBytes());
     }
+    const packets = await this.getSecretShares();
     return { packets, commitments };
   }
 
@@ -99,33 +92,20 @@ export class ShamirSharing<P extends Point> {
     bindings: Uint8Array[],
     commitments: Uint8Array[],
   }> => {
-    const polynomial = this.polynomial;
-    const degree = polynomial.degree;
-    const g = this.ctx.generator;
+    const { exp, operate, generator: g } = this.ctx;
     const h = await unpackPoint(this.ctx, publicBytes);
-    const exp = this.ctx.exp;
-    const commitments = new Array(degree + 1);
-    const bindings = new Array(degree + 1);
-    const packets = new Array<SecretPacket>(this.nrShares);
+    const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
-    for (let i = 0; i < this.nrShares; i++) {
-      if (i < degree + 1) {
-        const a = polynomial.coeffs[i];
-        const b = bindingPolynomial.coeffs[i];
-        const c = await this.ctx.operate(
-          await exp(g, a),
-          await exp(h, b),
-        );
-        commitments[i] = c.toBytes();
-      }
-      const index = i + 1;
-      const x = polynomial.evaluate(index);
-      const s = bindingPolynomial.evaluate(index)
-      const value = this.ctx.scalar2Buff(x);
-      const binding = this.ctx.scalar2Buff(s);
-      bindings[i] = binding;
-      packets[i] = { value, index, binding };
+    const commitments = [];
+    for (const [i, a] of coeffs.entries()) {
+      const b = bindingPolynomial.coeffs[i];
+      commitments.push((await operate(await exp(g, a), await exp(h, b))).toBytes());
     }
+    const shares = await this.getSecretShares();
+    const bindings = shares.map(({ index }) =>
+      this.ctx.scalar2Buff(bindingPolynomial.evaluate(index))
+    );
+    const packets = shares.map((share, i) => ({ ...share, binding: bindings[i] }));
     return { packets, bindings, commitments };
   }
 };
