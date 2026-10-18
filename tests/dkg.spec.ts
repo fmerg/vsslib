@@ -1,6 +1,7 @@
 import { initBackend } from 'vsslib/backend';
 import { Group, Point } from 'vsslib/backend';
-import { SecretShare, ShamirSharing, PublicShare } from 'vsslib/dealer';
+import { ShamirSharing } from 'vsslib/dealer';
+import { SecretShare, PublicShare } from 'vsslib/types';
 import {
   randomPublic,
   extractPublic,
@@ -12,7 +13,7 @@ import {
   parseSchnorrPacket,
   combinePublicShares,
   addSecrets,
-  combinePublics,
+  addPublics,
 } from 'vsslib';
 import { randomNonce } from 'vsslib/random';
 import { resolveTestConfig } from './environ';
@@ -49,7 +50,7 @@ describe('Distributed Key Generation (DKG)', () => {
     const ctx = initBackend(system);
 
     // Public reference for Pedersen VSS Scheme
-    const publicBytes = await randomPublic(ctx);
+    const pedersenBase = await randomPublic(ctx);
 
     // Involved parties initialization
     const parties = [];
@@ -64,12 +65,12 @@ describe('Distributed Key Generation (DKG)', () => {
       party.originalSecret = secret ;
       party.originalPublic = await extractPublic(ctx, party.originalSecret);
       party.sharing = sharing;
-      const { packets, commitments } = await party.sharing.createPedersenPackets(publicBytes);
+      const { packets, commitments } = await party.sharing.createPedersenPackets(pedersenBase);
       // Distribution of shares over the network
       for (const packet of packets) {
         const recipient = selectParty(packet.index, parties);
         const { share, binding } = await parsePedersenPacket(
-          ctx, commitments, publicBytes, packet
+          ctx, commitments, pedersenBase, packet
         );
         recipient.aggregates.push(share);
       }
@@ -90,7 +91,7 @@ describe('Distributed Key Generation (DKG)', () => {
     }
 
     // All parties should locally recover this global public
-    const targetGlobalPublic = await combinePublics(ctx, parties.map(p => p.originalPublic!));
+    const targetGlobalPublic = await addPublics(ctx, parties.map(p => p.originalPublic!));
     // Local recovery of combined public
     for (let party of parties) {
       party.globalPublic = await combinePublicShares(ctx, party.publicShares);

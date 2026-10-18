@@ -1,8 +1,7 @@
 import { Group, Point } from './backend';
 import { Algorithm } from './types';
 import { InvalidInput } from './errors';
-import { mod, leInt2Buff } from './arith';
-import { unpackScalar, unpackPoint } from './secrets';
+import { mod, intToLeBytes } from './arith';
 import { hash } from './hash';
 
 
@@ -27,14 +26,14 @@ export class NizkProtocol<P extends Point>{
     const n = response.length;
     const innerComm = new Array(m);
     const innerResp = new Array(n);
-    for (let i = 0; i < m; i++) innerComm[i] = await unpackPoint(this.ctx, commitment[i]);
-    for (let i = 0; i < n; i++) innerResp[i] = await unpackScalar(this.ctx, response[i]);
+    for (let i = 0; i < m; i++) innerComm[i] = await this.ctx.parsePoint(commitment[i]);
+    for (let i = 0; i < n; i++) innerResp[i] = await this.ctx.parseScalar(response[i]);
     return { commitment: innerComm, response: innerResp };
   }
 
   private packProof = async (proof: { commitment: P[], response: bigint[] }): Promise<NizkProof> => {
     const commitment = proof.commitment.map(c => c.toBytes());
-    const response = proof.response.map(r => this.ctx.scalar2Buff(r));
+    const response = proof.response.map(r => this.ctx.scalarToBytes(r));
     return { commitment, response };
   }
 
@@ -42,7 +41,7 @@ export class NizkProtocol<P extends Point>{
     relation: GenericLinear<P>, commitment: P[], extras: Uint8Array[], nonce?: Uint8Array,
   ): Promise<bigint> => {
     const { modulus, order, generator } = this.ctx;
-    const config = [...leInt2Buff(modulus), ...leInt2Buff(order), ...generator.toBytes()];
+    const config = [...intToLeBytes(modulus), ...intToLeBytes(order), ...generator.toBytes()];
     const { us, vs } = relation;
     const statement = [
       ...us.reduce((acc, ui) => [...acc, ...ui], []),
@@ -51,14 +50,14 @@ export class NizkProtocol<P extends Point>{
     ].reduce(
       (acc: number[], p: P) => [...acc, ...p.toBytes()], []
     );
-    const extrasBuff = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
+    const extrasBytes = extras.reduce((acc: number[], b: Uint8Array) => [...acc, ...b], []);
     nonce = nonce || Uint8Array.from([]);
     const digest = await hash(this.algorithm).digest(
       Uint8Array.from([
-        ...config, ...statement, ...extrasBuff, ...nonce
+        ...config, ...statement, ...extrasBytes, ...nonce
       ])
     );
-    return unpackScalar(this.ctx, digest);
+    return this.ctx.parseScalar(digest);
   }
 
   /* Prove knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` */

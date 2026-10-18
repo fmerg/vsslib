@@ -1,6 +1,6 @@
 import {
-  unpackScalar,
-  unpackPoint,
+  parseScalar,
+  parsePoint,
   randomPublic,
   randomSecret,
   extractPublic,
@@ -8,10 +8,10 @@ import {
   isEqualPublic,
   isKeypair,
   addSecrets,
-  combinePublics,
+  addPublics,
 } from 'vsslib/secrets';
 import { initBackend } from 'vsslib/backend';
-import { leInt2Buff } from 'vsslib/arith';
+import { intToLeBytes } from 'vsslib/arith';
 
 import { resolveTestConfig } from './environ';
 
@@ -25,8 +25,8 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     expect(await isKeypair(ctx, secret, publicBytes)).toBe(true);
 
     const g = ctx.generator;
-    const x = ctx.leBuff2Scalar(secret);
-    const y = await unpackPoint(ctx, publicBytes);
+    const x = ctx.bytesToScalar(secret);
+    const y = await parsePoint(ctx, publicBytes);
     expect(await y.equals(await ctx.exp(g, x))).toBe(true);
   });
   it.each(systems)('public extraction - over %s', async (system) => {
@@ -38,8 +38,8 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     expect(await isEqualPublic(ctx, publicBytes, targetPublic)).toBe(true);
 
     const g = ctx.generator;
-    const x = ctx.leBuff2Scalar(secret);
-    const y = await unpackPoint(ctx, publicBytes);
+    const x = ctx.bytesToScalar(secret);
+    const y = await parsePoint(ctx, publicBytes);
     expect(await y.equals(await ctx.exp(g, x))).toBe(true);
   });
   it.each(systems)('key equality - over %s', async (system) => {
@@ -66,13 +66,13 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
   it.each(systems)('secret-to-scalar roundtrip - over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret } = await randomSecret(ctx);
-    const scalar = await unpackScalar(ctx, secret);
-    expect(await isEqualSecret(ctx, leInt2Buff(scalar), secret)).toBe(true);
+    const scalar = await parseScalar(ctx, secret);
+    expect(await isEqualSecret(ctx, intToLeBytes(scalar), secret)).toBe(true);
   });
   it.each(systems)('public-to-point roundtrip - over %s', async (system) => {
     const ctx = initBackend(system);
     const publicBytes = await randomPublic(ctx);
-    const point = await unpackPoint(ctx, publicBytes);
+    const point = await parsePoint(ctx, publicBytes);
     expect(await isEqualPublic(ctx, point.toBytes(), publicBytes)).toBe(true);
   });
   it.each(systems)('summation of secrets - over %s', async (system) => {
@@ -88,13 +88,13 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
 
     // Examine zero secrets edge case
     const zeroSum = await addSecrets(ctx, []);
-    const unitPublic = await combinePublics(ctx, []);
-    expect(await isEqualSecret(ctx, zeroSum, leInt2Buff(BigInt(0))));
+    const unitPublic = await addPublics(ctx, []);
+    expect(await isEqualSecret(ctx, zeroSum, intToLeBytes(BigInt(0))));
     expect(await isEqualPublic(ctx, unitPublic, ctx.neutral.toBytes())).toBe(true);
 
     // Examine single secret edge case
     const cloneSecret = await addSecrets(ctx, secrets.slice(0, 1));
-    const clonePublic = await combinePublics(ctx, publics.slice(0, 1));
+    const clonePublic = await addPublics(ctx, publics.slice(0, 1));
     expect(await isEqualSecret(ctx, cloneSecret, secrets[0])).toBe(true);
     expect(await isEqualPublic(ctx, clonePublic, publics[0])).toBe(true);
 
@@ -102,7 +102,7 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     for (let nr = 0; nr < nrTotal; nr++) {
       const secretSum = await addSecrets(ctx, secrets.slice(0, nr));
       const targetPublic = await extractPublic(ctx, secretSum);
-      const overallPublic = await combinePublics(ctx, publics.slice(0, nr))
+      const overallPublic = await addPublics(ctx, publics.slice(0, nr))
       expect(await isEqualPublic(ctx, overallPublic, targetPublic)).toBe(true);
     }
   });

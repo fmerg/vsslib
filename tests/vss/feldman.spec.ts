@@ -1,6 +1,7 @@
 import { initBackend } from 'vsslib/backend';
 import { randomPublic } from 'vsslib/secrets';
-import { shareSecret, SecretShare, ShamirSharing } from 'vsslib/dealer';
+import { shareSecret, ShamirSharing } from 'vsslib/dealer';
+import { SecretShare } from 'vsslib/types';
 import { verifyFeldmanCommitments, parseFeldmanPacket } from 'vsslib/shareholder';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer } from '../utils';
@@ -19,8 +20,8 @@ describe('Feldman VSS scheme', () => {
       const { value: secret, index } = share;
       const isValid = await verifyFeldmanCommitments(
         ctx,
-        share,
         commitments,
+        share,
       );
       expect(isValid).toBe(true);
       // Check parsing
@@ -39,8 +40,8 @@ describe('Feldman VSS scheme', () => {
       // Check verification failure
       const verification = verifyFeldmanCommitments(
         ctx,
-        share,
         commitments,
+        share,
       );
       await expect(verification).rejects.toThrow('Invalid share');
       // Check parsing failure
@@ -54,7 +55,7 @@ describe('Feldman VSS scheme', () => {
     const { sharing } = await shareSecret(ctx, 20, 17);
     const { packets, commitments } = await sharing.createFeldmanPackets();
     for (const packet of packets) {
-      await expect(verifyFeldmanCommitments(ctx, packet, commitments)).resolves.toBe(true);
+      await expect(verifyFeldmanCommitments(ctx, commitments, packet)).resolves.toBe(true);
     }
   });
 })

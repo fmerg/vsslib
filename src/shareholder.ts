@@ -1,15 +1,10 @@
 import { Point, Group } from './backend';
 import { InvalidSecretShare, InvalidInput } from './errors';
-import { SecretShare, PublicShare, SecretPacket } from './dealer';
-import { unpackScalar, unpackPoint, extractPublic } from './secrets';
-import { NizkProof } from './nizk';
-import { Algorithm } from './types';
+import { extractPublic } from './secrets';
+import { Algorithm, SecretShare, PublicShare, SecretPacket, SchnorrPacket } from './types';
 import { Algorithms } from './enums';
 
 import { nizk } from './nizk';
-
-
-export type SchnorrPacket = PublicShare & { proof: NizkProof };
 
 
 /** Evaluate `Π_j C_j ^ (index ^ j)` in the exponent using Horner's rule */
@@ -21,7 +16,7 @@ async function evalCommitments<P extends Point>(
   const x = BigInt(index);
   let acc = ctx.neutral;
   for (let j = commitments.length - 1; j >= 0; j--) {
-    const c = await unpackPoint(ctx, commitments[j]);
+    const c = await ctx.parsePoint(commitments[j]);
     acc = await ctx.operate(await ctx.exp(acc, x), c);
   }
   return acc;
@@ -30,11 +25,11 @@ async function evalCommitments<P extends Point>(
 
 export async function verifyFeldmanCommitments<P extends Point>(
   ctx: Group<P>,
-  share: SecretShare,
   commitments: Uint8Array[],
+  share: SecretShare,
 ): Promise<boolean> {
   const { value, index } = share;
-  const x = await unpackScalar(ctx, value);
+  const x = await ctx.parseScalar(value);
   const g = ctx.generator;
   const lhs = await ctx.exp(g, x);
   const rhs = await evalCommitments(ctx, commitments, index);
@@ -48,17 +43,17 @@ export async function verifyFeldmanCommitments<P extends Point>(
 
 export async function verifyPedersenCommitments<P extends Point>(
   ctx: Group<P>,
+  commitments: Uint8Array[],
+  pedersenBase: Uint8Array,
   share: SecretShare,
   binding: Uint8Array,
-  publicBytes: Uint8Array,
-  commitments: Uint8Array[],
 ): Promise<boolean> {
   const { value, index } = share;
   const exp = ctx.exp;
   const g = ctx.generator;
-  const h = await unpackPoint(ctx, publicBytes);
-  const x = await unpackScalar(ctx, value);
-  const s = await unpackScalar(ctx, binding);
+  const h = await ctx.parsePoint(pedersenBase);
+  const x = await ctx.parseScalar(value);
+  const s = await ctx.parseScalar(binding);
   const lhs = await ctx.operate(
     await exp(g, x),
     await exp(h, s)
@@ -79,7 +74,7 @@ export async function parseFeldmanPacket<P extends Point>(
 ): Promise<{ share: SecretShare }> {
   const { value, index } = packet;
   const share = { value, index };
-  await verifyFeldmanCommitments(ctx, share, commitments);
+  await verifyFeldmanCommitments(ctx, commitments, share);
   return { share };
 }
 
@@ -87,7 +82,7 @@ export async function parseFeldmanPacket<P extends Point>(
 export async function parsePedersenPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
-  publicBytes: Uint8Array,
+  pedersenBase: Uint8Array,
   packet: SecretPacket,
 ): Promise<{ share: SecretShare, binding: Uint8Array }> {
   const { value, index, binding } = packet;
@@ -97,7 +92,7 @@ export async function parsePedersenPacket<P extends Point>(
     );
   const share = { value, index }
   await verifyPedersenCommitments(
-    ctx, share, binding, publicBytes, commitments,
+    ctx, commitments, pedersenBase, share, binding,
   );
   return { share, binding };
 }
@@ -120,7 +115,7 @@ export async function createSchnorrPacket<P extends Point>(
 ): Promise<SchnorrPacket> {
   const { value, index } = share;
   const g = ctx.generator;
-  const x = await unpackScalar(ctx, value);
+  const x = await ctx.parseScalar(value);
   const y = await ctx.exp(g, x);
   const proof = await nizk(ctx, algorithm).proveDlog(x, { u: g, v: y }, nonce);
   return { value: y.toBytes(), index, proof };

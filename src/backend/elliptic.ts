@@ -6,11 +6,9 @@ import { jubjub } from '@noble/curves/jubjub';
 import { Elliptic } from '../enums';
 import { System } from '../types';
 import { BadPointError, BadScalarError } from '../errors';
-import { mod, leBuff2Int } from '../arith';
+import { mod, leBytesToInt } from '../arith';
 import { Point, Group } from './abstract';
 
-
-const __0n = BigInt(0);
 
 interface _CurvePoint extends ExtPointType { toRawBytes?: Function; };
 
@@ -49,13 +47,13 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   randomScalar = async (): Promise<bigint> => mod(
-    leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+    leBytesToInt(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
     this.order
   );
 
   randomPoint = async (): Promise<EcPoint> => new EcPoint(
     this.base.multiply(mod(
-      leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+      leBytesToInt(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
       this.order
     ))
   );
@@ -80,7 +78,7 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => new EcPoint(
-    scalar !== __0n ? point.wrapped.multiply(scalar) : this.zero
+    scalar !== 0n ? point.wrapped.multiply(scalar) : this.zero
   );
 
   operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => new EcPoint(
@@ -91,7 +89,7 @@ export class EcGroup extends Group<EcPoint> {
     point.wrapped.negate()
   );
 
-  buff2Point = (bytes: Uint8Array): EcPoint => {
+  bytesToPoint = (bytes: Uint8Array): EcPoint => {
     let point;
     try {
       point = new EcPoint(this.curve.ExtendedPoint.fromHex(bytes));
@@ -106,9 +104,9 @@ export class EcGroup extends Group<EcPoint> {
 }
 
 
-export const initElliptic = (
+export function initElliptic(
   system: Elliptic.ED25519 | Elliptic.ED448 | Elliptic.JUBJUB
-): EcGroup => {
+): EcGroup {
   const mapping = {
     [Elliptic.ED25519]: ed25519,
     [Elliptic.ED448]: ed448,
