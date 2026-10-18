@@ -1,5 +1,5 @@
 import { Command } from 'commander';
-import { parseDecimal, parseCommaSeparatedDecimals } from './utils';
+import { parseDecimal, parseCommaSeparatedDecimals, systemOption } from './utils';
 import { VssSchemes, Party, Combiner, selectParty } from './infra';
 import {
   initBackend,
@@ -13,9 +13,7 @@ import {
   InvalidSecretShare,
   InvalidPublicShare,
 } from 'vsslib';
-import { Systems } from 'vsslib/enums';
 
-const DEFAULT_SYSTEM = Systems.ED25519;
 const DEFAULT_NR_SHARES = 5;
 const DEFAULT_THRESHOLD = 3;
 
@@ -114,7 +112,7 @@ program
   .name('node feldman.js')
   .description('Verifiable Secret Sharing (VSS) - demo')
   .option('--scheme <SCHEME>', 'VSS Scheme to use. Must be either \"feldman\" or \"pedersen\"', VssSchemes.DEFAULT)
-  .option('-s, --system <SYSTEM>', 'Underlying cryptosystem', DEFAULT_SYSTEM)
+  .addOption(systemOption())
   .option('-n, --nr-shares <NR>', 'Number of shareholders', parseDecimal, DEFAULT_NR_SHARES)
   .option('-t, --threshold <THRESHOLD>', 'Threshold paramer', parseDecimal, DEFAULT_THRESHOLD)
   .option('-c, --combine <INDEXES>', 'Qualified indexes', parseCommaSeparatedDecimals)
