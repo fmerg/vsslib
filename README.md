@@ -524,6 +524,8 @@ upon the first proof that fails to verify.
 The optional `threshold` parameter ensures that the operation completes only if
 at least `t` packets are provided,
 otherwise it throws `vsslib.InvalidInput` error.
+It also throws `vsslib.InvalidInput` if the packet indexes are not distinct
+positive integers.
 You will usually have to handle errors in order
 to adhere to some specified rejection policy:
 
@@ -538,7 +540,8 @@ try {
     // Abort and follow policy as specified by context
     ...
   } else if (err instanceof InvalidInput) {
-    // Abort and follow policy as specified by context; makes sense only
+    // Abort and follow policy as specified by context; raised upon
+    // malformed or duplicate indexes, or insufficient number of packets
     // if the `threshold` parameter has been provided.
     ...
   } else {
@@ -593,6 +596,8 @@ if (blame.length > 0) {
 
 This returns the computation result along with a list `blame`,
 containing the public shares of cheating shareholders.
+Malformed or duplicate indexes still throw `vsslib.InvalidInput`, since they
+cannot be attributed to a single shareholder.
 
 > **Warning**
 > Make sure to always check the `blame` index when using the `errorOnInvalid: false` option.

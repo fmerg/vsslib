@@ -5,6 +5,7 @@ import { Algorithm, SecretShare, PublicShare, SecretPacket, SchnorrPacket } from
 import { Algorithms } from './enums';
 
 import { nizk } from './nizk';
+import { validateIndex, indexToBytes } from './indexes';
 
 
 /** Evaluate `Π_j C_j ^ (index ^ j)` in the exponent using Horner's rule */
@@ -29,6 +30,7 @@ export async function verifyFeldmanCommitments<P extends Point>(
   share: SecretShare,
 ): Promise<boolean> {
   const { value, index } = share;
+  validateIndex(index);
   const x = await ctx.parseScalar(value);
   const g = ctx.generator;
   const lhs = await ctx.exp(g, x);
@@ -49,6 +51,7 @@ export async function verifyPedersenCommitments<P extends Point>(
   binding: Uint8Array,
 ): Promise<boolean> {
   const { value, index } = share;
+  validateIndex(index);
   const exp = ctx.exp;
   const g = ctx.generator;
   const h = await ctx.parsePoint(pedersenBase);
@@ -114,9 +117,12 @@ export async function createSchnorrPacket<P extends Point>(
   } = {},
 ): Promise<SchnorrPacket> {
   const { value, index } = share;
+  validateIndex(index);
   const g = ctx.generator;
   const x = await ctx.parseScalar(value);
   const y = await ctx.exp(g, x);
-  const proof = await nizk(ctx, algorithm).proveDlog(x, { u: g, v: y }, nonce);
+  const proof = await nizk(ctx, algorithm).proveDlog(
+    x, { u: g, v: y }, nonce, [indexToBytes(index)]
+  );
   return { value: y.toBytes(), index, proof };
 }
