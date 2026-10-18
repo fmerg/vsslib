@@ -126,7 +126,13 @@ import { initBackend } from "vsslib";
 const ctx = initBackend("ed25519");
   ```
 
-The currently provided backends are `ed25519`, `ed448`, `jubjub`, `ristretto255` and `decaf448`.
+The currently provided backends are `ed25519`, `ed448`, `jubjub`, `ristretto255`, `decaf448`,
+`secp256k1`, `p256`, `p384` and `p521`.
+
+Points of `secp256k1`, `p256`, `p384` and `p521` are encoded in compressed SEC1 form, with the
+single byte `0x00` for the point at infinity; uncompressed and hybrid encodings are rejected.
+Scalars are encoded little-endian on every backend, so secret keys of these curves, conventionally
+big-endian, must be byte-reversed when exchanged with other libraries.
 
 > **Note**
 > You can use any custom or other implementation,

@@ -179,7 +179,7 @@ describe('canonical encoding', () => {
       expect(q.toBytes()).toEqual(bytes);
     }
   });
-  it.each(systems)('unreduced encodings rejected over %s', async (system) => {
+  it.each(systems)('known non-canonical encodings rejected over %s', async (system) => {
     const ctx = initBackend(system);
     for (const bytes of fixtures[system].nonCanonicalPoints) {
       await expect(ctx.parsePoint(bytes)).rejects.toThrow('Invalid point provided');

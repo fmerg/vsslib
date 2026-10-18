@@ -2,6 +2,10 @@ import type { CurvePoint, CurvePointCons } from '@noble/curves/abstract/curve.js
 import { ed25519, ed25519_hasher, ristretto255, ristretto255_hasher } from '@noble/curves/ed25519.js';
 import { ed448, ed448_hasher, decaf448, decaf448_hasher } from '@noble/curves/ed448.js';
 import { jubjub, jubjub_findGroupHash } from '@noble/curves/misc.js';
+import { secp256k1, secp256k1_hasher } from '@noble/curves/secp256k1.js';
+import {
+  p256, p256_hasher, p384, p384_hasher, p521, p521_hasher
+} from '@noble/curves/nist.js';
 import { randomBytes, concatBytes, asciiToBytes } from '@noble/curves/utils.js';
 
 import { Elliptic } from '../enums';
@@ -52,6 +56,15 @@ const JUBJUB_PERSONALIZATION = asciiToBytes('vsslib_H');
 const nobleCodec = (Point: _PointCons): _Codec => ({
   toBytes: (point) => point.toBytes(),
   fromBytes: (bytes) => Point.fromBytes(bytes),
+});
+
+
+/** Compressed SEC1 encoding, with the single byte 0x00 for the point at
+ * infinity, which noble does not encode; noble compresses by default */
+const sec1Codec = (Point: _PointCons): _Codec => ({
+  toBytes: (point) => point.is0() ? Uint8Array.of(0) : point.toBytes(),
+  fromBytes: (bytes) => (bytes.length === 1 && bytes[0] === 0) ?
+    Point.ZERO : Point.fromBytes(bytes),
 });
 
 
@@ -175,6 +188,26 @@ const CURVES: Record<Elliptic, {
   [Elliptic.DECAF448]: {
     Point: decaf448.Point,
     hashToCurve: (msg, DST) => decaf448_hasher.hashToCurve(msg, { DST }),
+  },
+  [Elliptic.SECP256K1]: {
+    Point: secp256k1.Point,
+    hashToCurve: (msg, DST) => secp256k1_hasher.hashToCurve(msg, { DST }),
+    codec: sec1Codec,
+  },
+  [Elliptic.P256]: {
+    Point: p256.Point,
+    hashToCurve: (msg, DST) => p256_hasher.hashToCurve(msg, { DST }),
+    codec: sec1Codec,
+  },
+  [Elliptic.P384]: {
+    Point: p384.Point,
+    hashToCurve: (msg, DST) => p384_hasher.hashToCurve(msg, { DST }),
+    codec: sec1Codec,
+  },
+  [Elliptic.P521]: {
+    Point: p521.Point,
+    hashToCurve: (msg, DST) => p521_hasher.hashToCurve(msg, { DST }),
+    codec: sec1Codec,
   },
 };
 
