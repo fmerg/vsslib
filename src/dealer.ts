@@ -80,13 +80,13 @@ export class ShamirSharing<P extends Point> {
     return { packets, commitments };
   }
 
-  createPedersenPackets = async (publicBytes: Uint8Array): Promise<{
+  createPedersenPackets = async (pedersenBase: Uint8Array): Promise<{
     packets: SecretPacket[],
     bindings: Uint8Array[],
     commitments: Uint8Array[],
   }> => {
     const { exp, operate, generator: g } = this.ctx;
-    const h = await this.ctx.parsePoint(publicBytes);
+    const h = await this.ctx.parsePoint(pedersenBase);
     const { coeffs, degree } = this.polynomial;
     const bindingPolynomial = await randomPolynomial(this.ctx, degree);
     const commitments = [];

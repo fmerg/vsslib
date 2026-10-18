@@ -24,22 +24,22 @@ const program = new Command();
 
 export async function runVSS(ctx, nrShares, threshold, scheme) {
   const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
-  let publicBytes;
+  let pedersenBase;
   if (scheme == VssSchemes.PEDERSEN) {
-      publicBytes = await randomPublic(ctx);
+      pedersenBase = await randomPublic(ctx);
   }
   const { commitments, packets } = (scheme == VssSchemes.FELDMAN) ?
     await sharing.createFeldmanPackets() :
-    await sharing.createPedersenPackets(publicBytes);
-  return { secret, sharing, commitments, publicBytes, packets};
+    await sharing.createPedersenPackets(pedersenBase);
+  return { secret, sharing, commitments, pedersenBase, packets};
 }
 
 class VssParty extends Party {
-  consumeVssPacket = async (packet, commitments, publicBytes) => {
+  consumeVssPacket = async (packet, commitments, pedersenBase) => {
     try {
-      const { share } = !publicBytes ?
+      const { share } = !pedersenBase ?
         await parseFeldmanPacket(this.ctx, commitments, packet) :
-        await parsePedersenPacket(this.ctx, commitments, publicBytes, packet);
+        await parsePedersenPacket(this.ctx, commitments, pedersenBase, packet);
       this.share = share;
     } catch (err) {
       if (err instanceof InvalidSecretShare) {
@@ -70,7 +70,7 @@ async function demo() {
 
   // VSS phase ----------------------------------------------------------------
 
-  const { secret, commitments, publicBytes, packets } = await runVSS(ctx, n, t, scheme);
+  const { secret, commitments, pedersenBase, packets } = await runVSS(ctx, n, t, scheme);
 
   // At this point, the dealer broadcasts the commitments and sends each packet to the
   // respective shareholder in private
@@ -78,7 +78,7 @@ async function demo() {
   // Shareholders verify the received packets and extract their respective share
   for (const packet of packets) {
     const recipient = selectParty(packet.index, parties);
-    await recipient.consumeVssPacket(packet, commitments, publicBytes);
+    await recipient.consumeVssPacket(packet, commitments, pedersenBase);
   }
 
   // Public recovery phase ----------------------------------------------------

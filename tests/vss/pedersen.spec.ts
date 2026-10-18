@@ -14,8 +14,8 @@ describe('Pedersen VSS scheme', () => {
   it.each(systems)('success over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
-    const publicBytes = await randomPublic(ctx);
-    const { packets, commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
+    const pedersenBase = await randomPublic(ctx);
+    const { packets, commitments, bindings } = await sharing.createPedersenPackets(pedersenBase);
     const secretShares = await sharing.getSecretShares();
     secretShares.forEach(async (share: SecretShare) => {
       // Check verification
@@ -23,7 +23,7 @@ describe('Pedersen VSS scheme', () => {
       const isValid = await verifyPedersenCommitments(
         ctx,
         commitments,
-        publicBytes,
+        pedersenBase,
         share,
         binding,
       );
@@ -32,7 +32,7 @@ describe('Pedersen VSS scheme', () => {
       const packet = await parsePedersenPacket(
         ctx,
         commitments,
-        publicBytes,
+        pedersenBase,
         packets[share.index - 1]
       );
       expect(isEqualBuffer(packet.share.value, share.value)).toBe(true);
@@ -41,8 +41,8 @@ describe('Pedersen VSS scheme', () => {
   it.each(systems)('failure over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
-    const publicBytes = await randomPublic(ctx);
-    const { packets, commitments, bindings } = await sharing.createPedersenPackets(publicBytes);
+    const pedersenBase = await randomPublic(ctx);
+    const { packets, commitments, bindings } = await sharing.createPedersenPackets(pedersenBase);
     commitments[0] = await randomPublic(ctx);
     const secretShares = await sharing.getSecretShares();
     secretShares.forEach(async (share: SecretShare) => {
@@ -51,7 +51,7 @@ describe('Pedersen VSS scheme', () => {
       const verification = verifyPedersenCommitments(
         ctx,
         commitments,
-        publicBytes,
+        pedersenBase,
         share,
         binding,
       );
@@ -60,7 +60,7 @@ describe('Pedersen VSS scheme', () => {
       const parsed = parsePedersenPacket(
         ctx,
         commitments,
-        publicBytes,
+        pedersenBase,
         packets[share.index - 1]
       );
       await expect(parsed).rejects.toThrow('Invalid share');
@@ -70,11 +70,11 @@ describe('Pedersen VSS scheme', () => {
     // index ** j exceeds Number.MAX_SAFE_INTEGER for these parameters
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, 20, 17);
-    const publicBytes = await randomPublic(ctx);
-    const { packets, commitments } = await sharing.createPedersenPackets(publicBytes);
+    const pedersenBase = await randomPublic(ctx);
+    const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
     for (const packet of packets) {
       await expect(
-        parsePedersenPacket(ctx, commitments, publicBytes, packet)
+        parsePedersenPacket(ctx, commitments, pedersenBase, packet)
       ).resolves.toBeDefined();
     }
   });

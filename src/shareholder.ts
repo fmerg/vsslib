@@ -44,14 +44,14 @@ export async function verifyFeldmanCommitments<P extends Point>(
 export async function verifyPedersenCommitments<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
-  publicBytes: Uint8Array,
+  pedersenBase: Uint8Array,
   share: SecretShare,
   binding: Uint8Array,
 ): Promise<boolean> {
   const { value, index } = share;
   const exp = ctx.exp;
   const g = ctx.generator;
-  const h = await ctx.parsePoint(publicBytes);
+  const h = await ctx.parsePoint(pedersenBase);
   const x = await ctx.parseScalar(value);
   const s = await ctx.parseScalar(binding);
   const lhs = await ctx.operate(
@@ -82,7 +82,7 @@ export async function parseFeldmanPacket<P extends Point>(
 export async function parsePedersenPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
-  publicBytes: Uint8Array,
+  pedersenBase: Uint8Array,
   packet: SecretPacket,
 ): Promise<{ share: SecretShare, binding: Uint8Array }> {
   const { value, index, binding } = packet;
@@ -92,7 +92,7 @@ export async function parsePedersenPacket<P extends Point>(
     );
   const share = { value, index }
   await verifyPedersenCommitments(
-    ctx, commitments, publicBytes, share, binding,
+    ctx, commitments, pedersenBase, share, binding,
   );
   return { share, binding };
 }
