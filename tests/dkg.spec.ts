@@ -70,7 +70,7 @@ describe('Distributed Key Generation (DKG)', () => {
       for (const packet of packets) {
         const recipient = selectParty(packet.index, parties);
         const { share, binding } = await parsePedersenPacket(
-          ctx, commitments, pedersenBase, packet
+          ctx, commitments, pedersenBase, packet, threshold
         );
         recipient.aggregates.push(share);
       }

@@ -26,6 +26,7 @@ describe('Pedersen VSS scheme', () => {
         pedersenBase,
         share,
         binding,
+        threshold,
       );
       expect(isValid).toBe(true);
       // Check parsing
@@ -33,7 +34,8 @@ describe('Pedersen VSS scheme', () => {
         ctx,
         commitments,
         pedersenBase,
-        packets[share.index - 1]
+        packets[share.index - 1],
+        threshold,
       );
       expect(isEqualBuffer(packet.share.value, share.value)).toBe(true);
     });
@@ -54,6 +56,7 @@ describe('Pedersen VSS scheme', () => {
         pedersenBase,
         share,
         binding,
+        threshold,
       );
       await expect(verification).rejects.toThrow('Invalid share');
       // Check parsing failure
@@ -61,10 +64,34 @@ describe('Pedersen VSS scheme', () => {
         ctx,
         commitments,
         pedersenBase,
-        packets[share.index - 1]
+        packets[share.index - 1],
+        threshold,
       );
       await expect(parsed).rejects.toThrow('Invalid share');
     });
+  });
+  it.each(systems)('commitment count must match threshold over %s', async (system) => {
+    // A dealer announcing threshold t but sharing with another degree must be
+    // caught: with t + 1 commitments every share verifies, yet t shares cannot
+    // reconstruct the secret
+    const ctx = initBackend(system);
+    const pedersenBase = await derivePedersenBase(ctx);
+    for (const actual of [threshold - 1, threshold + 1].filter(t => t > 0)) {
+      const { sharing } = await shareSecret(ctx, nrShares + 1, actual);
+      const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+      for (const packet of packets) {
+        await expect(
+          parsePedersenPacket(ctx, commitments, pedersenBase, packet, threshold)
+        ).rejects.toThrow('Invalid number of commitments');
+      }
+    }
+    const { sharing } = await shareSecret(ctx, nrShares, threshold);
+    const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
+    for (const bad of [0, 1.5, -1]) {
+      await expect(
+        parsePedersenPacket(ctx, commitments, pedersenBase, packets[0], bad)
+      ).rejects.toThrow('Threshold must be a positive integer');
+    }
   });
   it.each(systems)('success with large indexes over %s', async (system) => {
     // index ** j exceeds Number.MAX_SAFE_INTEGER for these parameters
@@ -74,7 +101,7 @@ describe('Pedersen VSS scheme', () => {
     const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
     for (const packet of packets) {
       await expect(
-        parsePedersenPacket(ctx, commitments, pedersenBase, packet)
+        parsePedersenPacket(ctx, commitments, pedersenBase, packet, 17)
       ).resolves.toBeDefined();
     }
   });

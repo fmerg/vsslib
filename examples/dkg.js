@@ -51,9 +51,9 @@ class DkgParty extends Party {
     return this.sharing.createPedersenPackets(pedersenBase);
   }
 
-  doParseVss = async (commitments, pedersenBase, packet) => {
+  doParseVss = async (commitments, pedersenBase, packet, threshold) => {
     const { share, binding } = await parsePedersenPacket(
-      this.ctx, commitments, pedersenBase, packet
+      this.ctx, commitments, pedersenBase, packet, threshold
     );
     this.aggregates.push(share);
   }
@@ -101,7 +101,7 @@ export async function runDKG(parties, nrShares, threshold, pedersenBase) {
     const { packets, commitments } = await party.doBroadcast(pedersenBase);
     for (const packet of packets) {
       const recipient = selectParty(packet.index, parties);
-      await recipient.doParseVss(commitments, pedersenBase, packet);
+      await recipient.doParseVss(commitments, pedersenBase, packet, threshold);
     }
     console.timeEnd(`DISTRIBUTION ${party.index}`);
   }
