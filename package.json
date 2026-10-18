@@ -32,6 +32,9 @@
   "files": [
     "dist"
   ],
+  "engines": {
+    "node": ">=20.19"
+  },
   "scripts": {
     "dev": "tsc --watch",
     "test": "jest tests --maxWorkers=1",
