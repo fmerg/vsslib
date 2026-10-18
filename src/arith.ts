@@ -1,4 +1,4 @@
-import { ArithmeticError, BadModulusError, InverseNotExists } from './errors';
+import { ArithmeticError, BadModulusError, NoInverseError } from './errors';
 
 const __hexLen  = [0, 1, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 4, 4];
 
@@ -102,12 +102,12 @@ export function gcd(a: bigint, b: bigint): { x: bigint, y: bigint, g: bigint } {
 /** Modular muptiplicative inverse operation */
 export function modInv(m: bigint, n: bigint): bigint {
   const a = mod(m, n);
-  if (!(a > 0n)) throw new InverseNotExists(
+  if (!(a > 0n)) throw new NoInverseError(
     `No inverse exists for provided modulo`
   );
 
   const { x, g } = gcd(a, n);
-  if (g !== 1n) throw new InverseNotExists(
+  if (g !== 1n) throw new NoInverseError(
     `No inverse exists for provided modulo`
   );
 
