@@ -144,13 +144,13 @@ describe('point to bytes and back', () => {
     const ctx = initBackend(system);
     const p = await ctx.randomPoint();
     const buff = p.toBytes();
-    const pBack = ctx.buff2Point(buff)
+    const pBack = ctx.bytesToPoint(buff)
     expect(await pBack.equals(p)).toBe(true);
   })
   it.each(systems)('failure over %s', async (system) => {
     const ctx = initBackend(system);
     const buff = Uint8Array.from(Buffer.from('foo'));
-    expect(() => ctx.buff2Point(buff)).toThrow('bad encoding:');
+    expect(() => ctx.bytesToPoint(buff)).toThrow('bad encoding:');
   })
 });
 

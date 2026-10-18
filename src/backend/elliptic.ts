@@ -6,7 +6,7 @@ import { jubjub } from '@noble/curves/jubjub';
 import { Elliptic } from '../enums';
 import { System } from '../types';
 import { BadPointError, BadScalarError } from '../errors';
-import { mod, leBuff2Int } from '../arith';
+import { mod, leBytesToInt } from '../arith';
 import { Point, Group } from './abstract';
 
 
@@ -47,13 +47,13 @@ export class EcGroup extends Group<EcPoint> {
   }
 
   randomScalar = async (): Promise<bigint> => mod(
-    leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+    leBytesToInt(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
     this.order
   );
 
   randomPoint = async (): Promise<EcPoint> => new EcPoint(
     this.base.multiply(mod(
-      leBuff2Int(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
+      leBytesToInt(this.curve.CURVE.randomBytes(this.curve.CURVE.Fp.BYTES)),
       this.order
     ))
   );
@@ -89,7 +89,7 @@ export class EcGroup extends Group<EcPoint> {
     point.wrapped.negate()
   );
 
-  buff2Point = (bytes: Uint8Array): EcPoint => {
+  bytesToPoint = (bytes: Uint8Array): EcPoint => {
     let point;
     try {
       point = new EcPoint(this.curve.ExtendedPoint.fromHex(bytes));

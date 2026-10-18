@@ -4,7 +4,7 @@ import { shareSecret, ShamirSharing } from 'vsslib/dealer';
 import { SecretShare } from 'vsslib/types';
 import { verifyPedersenCommitments, parsePedersenPacket } from 'vsslib/shareholder';
 import { resolveTestConfig } from '../environ';
-import { leInt2Buff } from 'vsslib/arith';
+import { intToLeBytes } from 'vsslib/arith';
 import { isEqualBuffer } from '../utils';
 
 let { systems, nrShares, threshold } = resolveTestConfig();

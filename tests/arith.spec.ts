@@ -1,4 +1,4 @@
-import { leBuff2Int, leInt2Buff, mod, gcd, modInv } from 'vsslib/arith';
+import { leBytesToInt, intToLeBytes, mod, gcd, modInv } from 'vsslib/arith';
 
 const __0n = BigInt(0);
 const __1n = BigInt(1);
@@ -177,9 +177,9 @@ describe('little-endian roundtrip', () => {
     [[1, 2, 3, 255], 4278387201],
   ])('%s, %s', (arr, num) => {
     const buffer = Uint8Array.from(arr);
-    const number = leBuff2Int(buffer);
+    const number = leBytesToInt(buffer);
     expect(number).toBe(BigInt(num));
-    const buffBack = leInt2Buff(number);
+    const buffBack = intToLeBytes(number);
     expect(buffBack).toEqual(buffer);
   });
 });
@@ -192,9 +192,9 @@ describe('little-endian fixed-length encoding', () => {
     [513, 3, [1, 2, 0]],
     [4278387201, 4, [1, 2, 3, 255]],
   ])('%s, %s', (num, byteLength, arr) => {
-    expect(leInt2Buff(BigInt(num), byteLength)).toEqual(Uint8Array.from(arr));
+    expect(intToLeBytes(BigInt(num), byteLength)).toEqual(Uint8Array.from(arr));
   });
   it('rejects too short length', () => {
-    expect(() => leInt2Buff(BigInt(513), 1)).toThrow('Integer does not fit in 1 bytes');
+    expect(() => intToLeBytes(BigInt(513), 1)).toThrow('Integer does not fit in 1 bytes');
   });
 });

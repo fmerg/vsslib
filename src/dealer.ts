@@ -22,14 +22,14 @@ export class ShamirSharing<P extends Point> {
   }
 
   getOriginalSecret = (): Uint8Array => {
-    return this.ctx.scalar2Buff(this.polynomial.evaluate(0n));
+    return this.ctx.scalarToBytes(this.polynomial.evaluate(0n));
   }
 
   getSecretShares = async (): Promise<SecretShare[]> => {
     const polynomial = this.polynomial;
     const shares = new Array(this.nrShares);
     for (let index = 1; index <= this.nrShares; index++) {
-      const value = this.ctx.scalar2Buff(polynomial.evaluate(index));
+      const value = this.ctx.scalarToBytes(polynomial.evaluate(index));
       shares[index - 1] = { value, index };
     }
     return shares;
@@ -57,7 +57,7 @@ export class ShamirSharing<P extends Point> {
     const y = await this.ctx.exp(g, x);
     return {
       secretShare: {
-        value: this.ctx.scalar2Buff(x),
+        value: this.ctx.scalarToBytes(x),
         index,
       },
       publicShare: {
@@ -96,7 +96,7 @@ export class ShamirSharing<P extends Point> {
     }
     const shares = await this.getSecretShares();
     const bindings = shares.map(({ index }) =>
-      this.ctx.scalar2Buff(bindingPolynomial.evaluate(index))
+      this.ctx.scalarToBytes(bindingPolynomial.evaluate(index))
     );
     const packets = shares.map((share, i) => ({ ...share, binding: bindings[i] }));
     return { packets, bindings, commitments };
