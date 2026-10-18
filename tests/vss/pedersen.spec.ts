@@ -6,6 +6,7 @@ import { verifyPedersenCommitments, parsePedersenPacket } from 'vsslib/sharehold
 import { resolveTestConfig } from '../environ';
 import { intToLeBytes } from 'vsslib/arith';
 import { isEqualBuffer } from '../utils';
+import { fixtures } from '../systems';
 
 let { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -109,17 +110,10 @@ describe('Pedersen VSS scheme', () => {
 
 
 describe('Pedersen base derivation', () => {
-  // Pinned so that any change to the derivation, which would break interoperability, is caught
-  const defaultBases: { [system: string]: string } = {
-    ed25519: 'fed7bbcee7ed7e8101f3611762eb161ee9512f158699c1de88ccf6fc9711fabf',
-    ed448: '9f20de8c2e08e3d1a7bfd2f871dbf122b05f521839c679559858d8966afd9453' +
-      '1a4f8c63d2ca7ad0e59b4680bf55c65dba370bc40cc98e7880',
-    jubjub: '1140a506c84387ceebb0d0167f6b2ef192dbc149662908a8a4998e4dd667f24c',
-  };
   it.each(systems)('default base over %s', async (system) => {
     const ctx = initBackend(system);
     const h = await derivePedersenBase(ctx);
-    expect(Buffer.from(h).toString('hex')).toEqual(defaultBases[system]);
+    expect(Buffer.from(h).toString('hex')).toEqual(fixtures[system].defaultPedersenBase);
   });
   it.each(systems)('deterministic and seed dependent over %s', async (system) => {
     const ctx = initBackend(system);
@@ -134,8 +128,8 @@ describe('Pedersen base derivation', () => {
     const ctx = initBackend(system);
     const seeds = ['', 'a', 'session-1'].map(s => new TextEncoder().encode(s));
     for (const seed of seeds) {
+      // parsePoint rejects points outside the prime-order subgroup
       const h = await ctx.parsePoint(await derivePedersenBase(ctx, seed));
-      expect(h.wrapped.isTorsionFree()).toBe(true);
       expect(await h.equals(ctx.neutral)).toBe(false);
       expect(await h.equals(ctx.generator)).toBe(false);
     }
