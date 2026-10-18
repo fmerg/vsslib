@@ -1,4 +1,4 @@
-import { EdwardsPoint as _CurvePoint, EdDSA as _Curve } from '@noble/curves/abstract/edwards.js';
+import type { CurvePoint, CurvePointCons } from '@noble/curves/abstract/curve.js';
 import { ed25519, ed25519_hasher } from '@noble/curves/ed25519.js';
 import { ed448, ed448_hasher } from '@noble/curves/ed448.js';
 import { jubjub, jubjub_findGroupHash } from '@noble/curves/misc.js';
@@ -9,6 +9,13 @@ import { System } from '../types';
 import { BadPointError, BadScalarError } from '../errors';
 import { mod, leBytesToInt } from '../arith';
 import { Point, Group } from './abstract';
+
+
+// noble's point types are F-bounded per curve; the backend relies only on
+// the API they have in common
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type _CurvePoint = CurvePoint<bigint, any>;
+type _PointCons = CurvePointCons<_CurvePoint>;
 
 
 class EcPoint implements Point {
@@ -45,19 +52,19 @@ export class EcGroup extends Group<EcPoint> {
   private base: _CurvePoint;
   private zero: _CurvePoint;
   private hashToCurve: _HashToCurve;
-  curve: _Curve;
+  Point: _PointCons;
 
-  constructor(system: System, curve: _Curve, hashToCurve: _HashToCurve) {
-    const modulus = curve.Point.Fp.ORDER;
-    const order = curve.Point.Fn.ORDER;
-    const base = curve.Point.BASE;
-    const zero = curve.Point.ZERO;
+  constructor(system: System, Point: _PointCons, hashToCurve: _HashToCurve) {
+    const modulus = Point.Fp.ORDER;
+    const order = Point.Fn.ORDER;
+    const base = Point.BASE;
+    const zero = Point.ZERO;
     const generator = new EcPoint(base);
     const neutral = new EcPoint(zero);
     super(system, modulus, order, generator, neutral);
     this.base = base;
     this.zero = zero;
-    this.curve = curve;
+    this.Point = Point;
     this.hashToCurve = hashToCurve;
   }
 
@@ -83,8 +90,7 @@ export class EcGroup extends Group<EcPoint> {
     const flag = true;
     if (await point.wrapped.equals(this.zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: unknown) {
-      if (err instanceof Error && err.message.startsWith('bad point: '))
-        throw new BadPointError(err.message);
+      if (err instanceof Error) throw new BadPointError(err.message);
       throw err;
     }
     // Reject points with a small-order component, which would otherwise
@@ -110,7 +116,7 @@ export class EcGroup extends Group<EcPoint> {
   bytesToPoint = (bytes: Uint8Array): EcPoint => {
     let point;
     try {
-      point = new EcPoint(this.curve.Point.fromBytes(bytes));
+      point = new EcPoint(this.Point.fromBytes(bytes));
     } catch (err: unknown) {
       if (err instanceof Error) {
         throw new BadPointError(`bad encoding: ${err.message}`)
@@ -129,11 +135,11 @@ export class EcGroup extends Group<EcPoint> {
 export function initElliptic(
   system: Elliptic.ED25519 | Elliptic.ED448 | Elliptic.JUBJUB
 ): EcGroup {
-  const mapping: Record<typeof system, [_Curve, _HashToCurve]> = {
-    [Elliptic.ED25519]: [ed25519, (msg, DST) => ed25519_hasher.hashToCurve(msg, { DST })],
-    [Elliptic.ED448]: [ed448, (msg, DST) => ed448_hasher.hashToCurve(msg, { DST })],
-    [Elliptic.JUBJUB]: [jubjub, jubjubHashToCurve],
+  const mapping: Record<typeof system, [_PointCons, _HashToCurve]> = {
+    [Elliptic.ED25519]: [ed25519.Point, (msg, DST) => ed25519_hasher.hashToCurve(msg, { DST })],
+    [Elliptic.ED448]: [ed448.Point, (msg, DST) => ed448_hasher.hashToCurve(msg, { DST })],
+    [Elliptic.JUBJUB]: [jubjub.Point, jubjubHashToCurve],
   }
-  const [curve, hashToCurve] = mapping[system];
-  return new EcGroup(system, curve, hashToCurve);
+  const [Point, hashToCurve] = mapping[system];
+  return new EcGroup(system, Point, hashToCurve);
 }
