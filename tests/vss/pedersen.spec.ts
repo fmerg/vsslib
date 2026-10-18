@@ -15,11 +15,11 @@ describe('Pedersen VSS scheme', () => {
     const ctx = initBackend(system);
     const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
     const pedersenBase = await randomPublic(ctx);
-    const { packets, commitments, bindings } = await sharing.createPedersenPackets(pedersenBase);
+    const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
     const secretShares = await sharing.getSecretShares();
     secretShares.forEach(async (share: SecretShare) => {
       // Check verification
-      const binding = bindings[share.index - 1];
+      const binding = packets[share.index - 1].binding!;
       const isValid = await verifyPedersenCommitments(
         ctx,
         commitments,
@@ -42,12 +42,12 @@ describe('Pedersen VSS scheme', () => {
     const ctx = initBackend(system);
     const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
     const pedersenBase = await randomPublic(ctx);
-    const { packets, commitments, bindings } = await sharing.createPedersenPackets(pedersenBase);
+    const { packets, commitments } = await sharing.createPedersenPackets(pedersenBase);
     commitments[0] = await randomPublic(ctx);
     const secretShares = await sharing.getSecretShares();
     secretShares.forEach(async (share: SecretShare) => {
       // Check verification failure
-      const binding = bindings[share.index - 1];
+      const binding = packets[share.index - 1].binding!;
       const verification = verifyPedersenCommitments(
         ctx,
         commitments,
