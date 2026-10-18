@@ -1,7 +1,7 @@
 import { Group, Point } from './backend';
 import { Algorithm } from './types';
 import { InvalidInput } from './errors';
-import { mod, intToLeBytes } from './arith';
+import { mod, intToLeBytes, leBytesToInt } from './arith';
 import { hash } from './hash';
 
 
@@ -57,7 +57,7 @@ export class NizkProtocol<P extends Point>{
         ...config, ...statement, ...extrasBytes, ...nonce
       ])
     );
-    return this.ctx.parseScalar(digest);
+    return mod(leBytesToInt(digest), order);
   }
 
   /* Prove knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` */

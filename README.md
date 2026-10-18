@@ -623,6 +623,8 @@ elements, taking care to always ensure that the involved bytestrings are valid
 representations with respect to the underlying cryptosystem.
 Group elements are moreover required to lie in the prime-order subgroup, so
 that points with a small-order component are rejected.
+Scalars are required to be canonically encoded, i.e., little-endian with fixed
+length and value less than the group order.
 
 ### <a name="nizk-overview"></a>Support for NIZK proofs
 
