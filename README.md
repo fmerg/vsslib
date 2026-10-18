@@ -106,6 +106,8 @@ See [here](#security-main) for details.
 npm install vsslib
 ```
 
+Requires Node.js 20.19 or later.
+
 # Usage
 
 ## Preliminaries
