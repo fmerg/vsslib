@@ -3,7 +3,7 @@ import { parseDecimal, parseCommaSeparatedDecimals } from './utils';
 import { VssSchemes, Party, Combiner, selectParty } from './infra';
 import {
   initBackend,
-  randomPublic,
+  derivePedersenBase,
   isKeypair,
   shareSecret,
   parseFeldmanPacket,
@@ -26,7 +26,7 @@ export async function runVSS(ctx, nrShares, threshold, scheme) {
   const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
   let pedersenBase;
   if (scheme == VssSchemes.PEDERSEN) {
-      pedersenBase = await randomPublic(ctx);
+      pedersenBase = await derivePedersenBase(ctx);
   }
   const { commitments, packets } = (scheme == VssSchemes.FELDMAN) ?
     await sharing.createFeldmanPackets() :

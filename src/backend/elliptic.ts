@@ -1,8 +1,8 @@
 import { EdwardsPoint as _CurvePoint, EdDSA as _Curve } from '@noble/curves/abstract/edwards.js';
-import { ed25519 } from '@noble/curves/ed25519.js';
-import { ed448 } from '@noble/curves/ed448.js';
-import { jubjub } from '@noble/curves/misc.js';
-import { randomBytes } from '@noble/curves/utils.js';
+import { ed25519, ed25519_hasher } from '@noble/curves/ed25519.js';
+import { ed448, ed448_hasher } from '@noble/curves/ed448.js';
+import { jubjub, jubjub_findGroupHash } from '@noble/curves/misc.js';
+import { randomBytes, concatBytes, asciiToBytes } from '@noble/curves/utils.js';
 
 import { Elliptic } from '../enums';
 import { System } from '../types';
@@ -26,12 +26,28 @@ class EcPoint implements Point {
 }
 
 
+type _HashToCurve = (msg: Uint8Array, dst: Uint8Array) => _CurvePoint;
+
+
+// BLAKE2s personalization for the jubjub group hash
+const JUBJUB_PERSONALIZATION = asciiToBytes('vsslib_H');
+
+
+const jubjubHashToCurve: _HashToCurve = (msg, dst) => {
+  if (dst.length > 255) throw new Error('DST too long');
+  return jubjub_findGroupHash(
+    concatBytes(Uint8Array.of(dst.length), dst, msg), JUBJUB_PERSONALIZATION
+  );
+}
+
+
 export class EcGroup extends Group<EcPoint> {
   private base: _CurvePoint;
   private zero: _CurvePoint;
+  private hashToCurve: _HashToCurve;
   curve: _Curve;
 
-  constructor(system: System, curve: _Curve) {
+  constructor(system: System, curve: _Curve, hashToCurve: _HashToCurve) {
     const modulus = curve.Point.Fp.ORDER;
     const order = curve.Point.Fn.ORDER;
     const base = curve.Point.BASE;
@@ -42,6 +58,7 @@ export class EcGroup extends Group<EcPoint> {
     this.base = base;
     this.zero = zero;
     this.curve = curve;
+    this.hashToCurve = hashToCurve;
   }
 
   randomScalar = async (): Promise<bigint> => mod(
@@ -99,16 +116,21 @@ export class EcGroup extends Group<EcPoint> {
     }
     return point;
   }
+
+  hashToPoint = async (msg: Uint8Array, dst: Uint8Array): Promise<EcPoint> => new EcPoint(
+    this.hashToCurve(msg, dst)
+  );
 }
 
 
 export function initElliptic(
   system: Elliptic.ED25519 | Elliptic.ED448 | Elliptic.JUBJUB
 ): EcGroup {
-  const mapping = {
-    [Elliptic.ED25519]: ed25519,
-    [Elliptic.ED448]: ed448,
-    [Elliptic.JUBJUB]: jubjub,
+  const mapping: Record<typeof system, [_Curve, _HashToCurve]> = {
+    [Elliptic.ED25519]: [ed25519, (msg, DST) => ed25519_hasher.hashToCurve(msg, { DST })],
+    [Elliptic.ED448]: [ed448, (msg, DST) => ed448_hasher.hashToCurve(msg, { DST })],
+    [Elliptic.JUBJUB]: [jubjub, jubjubHashToCurve],
   }
-  return new EcGroup(system, mapping[system]);
+  const [curve, hashToCurve] = mapping[system];
+  return new EcGroup(system, curve, hashToCurve);
 }

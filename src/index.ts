@@ -16,6 +16,7 @@ export { randomNonce } from './random';
 export {
   randomSecret,
   randomPublic,
+  derivePedersenBase,
   extractPublic,
   isEqualSecret,
   isEqualPublic,

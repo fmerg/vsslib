@@ -68,5 +68,7 @@ export abstract class Group<P extends Point> {
   abstract operate: (lhs: P, rhs: P) => Promise<P>;
   abstract invert: (point: P) => Promise<P>;
   abstract bytesToPoint: (bytes: Uint8Array) => P;
+  /** Hash to a point of the prime-order subgroup whose discrete log is unknown */
+  abstract hashToPoint: (msg: Uint8Array, dst: Uint8Array) => Promise<P>;
 }
 
