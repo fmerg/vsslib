@@ -61,16 +61,14 @@ export class EcGroup extends Group<EcPoint> {
     this.hashToCurve = hashToCurve;
   }
 
+  // Reduce 128 extra bits modulo the order, so that the bias is negligible
   randomScalar = async (): Promise<bigint> => mod(
-    leBytesToInt(randomBytes(this.curve.Point.Fp.BYTES)),
+    leBytesToInt(randomBytes(this.scalarBytes + 16)),
     this.order
   );
 
   randomPoint = async (): Promise<EcPoint> => new EcPoint(
-    this.base.multiply(mod(
-      leBytesToInt(randomBytes(this.curve.Point.Fp.BYTES)),
-      this.order
-    ))
+    this.base.multiply(await this.randomScalar())
   );
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
