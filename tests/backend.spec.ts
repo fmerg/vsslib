@@ -2,6 +2,7 @@ import { Point } from 'vsslib/backend';
 import { Systems } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
 import { resolveTestConfig } from './environ';
+import { fixtures } from './systems';
 
 const __0n = BigInt(0)
 const __1n = BigInt(1)
@@ -176,6 +177,12 @@ describe('canonical encoding', () => {
       const q = await ctx.parsePoint(bytes);
       expect(await q.equals(p)).toBe(true);
       expect(q.toBytes()).toEqual(bytes);
+    }
+  });
+  it.each(systems)('unreduced encodings rejected over %s', async (system) => {
+    const ctx = initBackend(system);
+    for (const bytes of fixtures[system].nonCanonicalPoints) {
+      await expect(ctx.parsePoint(bytes)).rejects.toThrow('Invalid point provided');
     }
   });
   it.each(systems)('non-canonical encodings rejected over %s', async (system) => {
