@@ -132,14 +132,24 @@ export class EcGroup extends Group<EcPoint> {
 }
 
 
-export function initElliptic(
-  system: Elliptic.ED25519 | Elliptic.ED448 | Elliptic.JUBJUB
-): EcGroup {
-  const mapping: Record<typeof system, [_PointCons, _HashToCurve]> = {
-    [Elliptic.ED25519]: [ed25519.Point, (msg, DST) => ed25519_hasher.hashToCurve(msg, { DST })],
-    [Elliptic.ED448]: [ed448.Point, (msg, DST) => ed448_hasher.hashToCurve(msg, { DST })],
-    [Elliptic.JUBJUB]: [jubjub.Point, jubjubHashToCurve],
-  }
-  const [Point, hashToCurve] = mapping[system];
+/** Supported curves; a new system needs an Elliptic member and an entry here */
+const CURVES: Record<Elliptic, { Point: _PointCons, hashToCurve: _HashToCurve }> = {
+  [Elliptic.ED25519]: {
+    Point: ed25519.Point,
+    hashToCurve: (msg, DST) => ed25519_hasher.hashToCurve(msg, { DST }),
+  },
+  [Elliptic.ED448]: {
+    Point: ed448.Point,
+    hashToCurve: (msg, DST) => ed448_hasher.hashToCurve(msg, { DST }),
+  },
+  [Elliptic.JUBJUB]: {
+    Point: jubjub.Point,
+    hashToCurve: jubjubHashToCurve,
+  },
+};
+
+
+export function initElliptic(system: Elliptic): EcGroup {
+  const { Point, hashToCurve } = CURVES[system];
   return new EcGroup(system, Point, hashToCurve);
 }

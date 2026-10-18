@@ -1,10 +1,7 @@
 import { Elliptic, Algorithms } from './enums';
 import type { NizkProof } from './nizk';
 
-export type System =
-  | Elliptic.ED25519
-  | Elliptic.ED448
-  | Elliptic.JUBJUB;
+export type System = Elliptic;
 
 export type Algorithm =
   | Algorithms.SHA224
