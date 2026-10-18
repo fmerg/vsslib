@@ -13,7 +13,7 @@ import {
   parseSchnorrPacket,
   combinePublicShares,
   addSecrets,
-  combinePublics,
+  addPublics,
 } from 'vsslib';
 import { randomNonce } from 'vsslib/random';
 import { resolveTestConfig } from './environ';
@@ -91,7 +91,7 @@ describe('Distributed Key Generation (DKG)', () => {
     }
 
     // All parties should locally recover this global public
-    const targetGlobalPublic = await combinePublics(ctx, parties.map(p => p.originalPublic!));
+    const targetGlobalPublic = await addPublics(ctx, parties.map(p => p.originalPublic!));
     // Local recovery of combined public
     for (let party of parties) {
       party.globalPublic = await combinePublicShares(ctx, party.publicShares);

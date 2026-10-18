@@ -95,7 +95,7 @@ export function addSecrets<P extends Point>(
 }
 
 
-export async function combinePublics<P extends Point>(
+export async function addPublics<P extends Point>(
   ctx: Group<P>,
   publics: Uint8Array[]
 ): Promise<Uint8Array> {
