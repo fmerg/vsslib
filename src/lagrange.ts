@@ -82,12 +82,12 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
   evaluate = (value: bigint | number): bigint => {
     const { xs, ys, ws, order } = this;
     const x = BigInt(value);
-    let [a, b, c] = [0n, 0n, 0n];
+    let [b, c] = [0n, 0n];
     for (let i = 0; i < xs.length; i++) {
       if (mod(x, order) === mod(xs[i], order)) {
         return mod(ys[i], order);
       };
-      a = ws[i] * modInv(x - xs[i], order);
+      const a = ws[i] * modInv(x - xs[i], order);
       b += a * ys[i];
       c += a;
     }
