@@ -8,6 +8,14 @@ DEFAULT_ALGORITHM=""
 DEFAULT_NR_SHARES="3"
 DEFAULT_NR_THRESHOLD="2"
 
+# Supported systems, as listed in the Elliptic enum
+SYSTEMS=$(node -e '
+  const src = require("fs").readFileSync(process.argv[1], "utf8");
+  const body = src.match(/enum Elliptic \{([^}]*)\}/)[1];
+  const names = [...body.matchAll(/^\s*\w+\s*=\s*\x27([^\x27]+)\x27/gm)].map(m => m[1]);
+  console.log(names.join(", "));
+' "$(dirname "$0")/src/enums.ts")
+
 usage_string="usage: ./$(basename "$0") [options]
 
 Run tests with control over the orthogonal parameters below. For example, in
@@ -16,7 +24,7 @@ order to run dealer tests over ed25519 with hash algorithm SHA256 and reload, do
 $ ./test.sh -m  --dealer sha256 --reload
 
 Groups:
-  ed25519, ed448, jubjub
+  ${SYSTEMS}
 
 Hash algorithms:
   sha224, sha256, SHA384, sha512, sha3-224, sha3-256, sha3-384, sha3-512
@@ -101,6 +109,11 @@ do
             ;;
     esac
 done
+
+if [[ -n "$SYSTEM" && ", $SYSTEMS, " != *", $SYSTEM, "* ]]; then
+    echo "Unsupported group: $SYSTEM (supported: $SYSTEMS)" 1>&2
+    exit 1
+fi
 
 export SYSTEM="${SYSTEM}"
 export ALGORITHM="${ALGORITHM}"
