@@ -6,6 +6,26 @@ import { InverseNotExists, InterpolationError } from './errors';
 
 export type XYPoint = [bigint, bigint] | [number, number];
 
+
+/** Lagrange coefficient at zero of `index` with respect to `indexes` */
+export function computeLambda<P extends Point>(
+  ctx: Group<P>,
+  index: number,
+  indexes: number[]
+): bigint {
+  const order = ctx.order;
+  const i = index;
+  let acc = 1n;
+  indexes.forEach(j => {
+    if (i != j) {
+      const curr = BigInt(j) * modInv(BigInt(j - i), order);
+      acc = mod(acc * curr, order);
+    }
+  });
+  return acc;
+}
+
+
 export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
   xs: bigint[];
   ys: bigint[];
