@@ -9,10 +9,7 @@ export async function randomSecret<P extends Point>(ctx: Group<P>): Promise<{
   secret: Uint8Array, publicBytes: Uint8Array
 }> {
   const secret = await ctx.generateSecret();
-  const g = ctx.generator;
-  const x = ctx.bytesToScalar(secret);
-  const y = await ctx.exp(g, x);
-  const publicBytes = y.toBytes();
+  const publicBytes = await extractPublic(ctx, secret);
   return { secret, publicBytes };
 }
 
@@ -22,7 +19,7 @@ export async function extractPublic<P extends Point>(
   secret: Uint8Array
 ): Promise<Uint8Array> {
   const g = ctx.generator;
-  const x = ctx.bytesToScalar(secret);
+  const x = await ctx.parseScalar(secret);
   const y = await ctx.exp(g, x);
   return y.toBytes();
 }
@@ -66,7 +63,7 @@ export async function isEqualSecret<P extends Point>(
   rhs: Uint8Array,
 ): Promise<boolean> {
   // TODO: Make this constant-time
-  return ctx.bytesToScalar(lhs) == ctx.bytesToScalar(rhs);
+  return await ctx.parseScalar(lhs) == await ctx.parseScalar(rhs);
 }
 
 
@@ -88,22 +85,22 @@ export async function isKeypair<P extends Point>(
 ): Promise<boolean> {
   // TODO: Ensure that this is constant-time
   const g = ctx.generator;
-  const x = ctx.bytesToScalar(secret);
+  const x = await ctx.parseScalar(secret);
   const u = await ctx.parsePoint(publicBytes);
   const y = await ctx.exp(g, x);
   return y.equals(u);
 }
 
 
-export function addSecrets<P extends Point>(
+export async function addSecrets<P extends Point>(
   ctx: Group<P>,
   secrets: Uint8Array[]
-): Uint8Array {
-  if (secrets.length == 0) return ctx.scalarToBytes(0n);
-  const result = secrets.map(s => ctx.bytesToScalar(s)).reduce(
-    (acc, x) => mod(acc + x, ctx.order)
-  );
-  return ctx.scalarToBytes(result);
+): Promise<Uint8Array> {
+  let acc = 0n;
+  for (const secret of secrets) {
+    acc = mod(acc + await ctx.parseScalar(secret), ctx.order);
+  }
+  return ctx.scalarToBytes(acc);
 }
 
 
