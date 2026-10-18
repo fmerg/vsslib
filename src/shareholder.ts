@@ -5,7 +5,7 @@ import { Algorithm, SecretShare, PublicShare, SecretPacket, SchnorrPacket } from
 import { Algorithms } from './enums';
 
 import { nizk } from './nizk';
-import { validateIndex, indexToBytes } from './indexes';
+import { validateIndex, validateThreshold, indexToBytes } from './indexes';
 
 
 /** Parse a Pedersen base, rejecting the neutral element and the generator,
@@ -30,9 +30,7 @@ async function evalCommitments<P extends Point>(
   index: number,
   threshold: number,
 ): Promise<P> {
-  if (!(Number.isSafeInteger(threshold) && threshold > 0)) throw new InvalidInput(
-    `Threshold must be a positive integer: ${threshold}`
-  );
+  validateThreshold(threshold);
   if (commitments.length !== threshold) throw new InvalidSecretShare(
     `Invalid number of commitments: expected ${threshold}, got ${commitments.length}`
   );

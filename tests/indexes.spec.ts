@@ -22,16 +22,16 @@ describe('Share index validation', () => {
     const { ctx, secretShares, publicShares } = await createRawSharing(system, nrShares, threshold);
     const secrets = [...secretShares.slice(0, threshold - 1), secretShares[0]];
     const publics = [...publicShares.slice(0, threshold - 1), publicShares[0]];
-    await expect(combineSecretShares(ctx, secrets)).rejects.toThrow(InvalidInput);
-    await expect(combinePublicShares(ctx, publics)).rejects.toThrow(InvalidInput);
+    await expect(combineSecretShares(ctx, secrets, threshold)).rejects.toThrow(InvalidInput);
+    await expect(combinePublicShares(ctx, publics, threshold)).rejects.toThrow(InvalidInput);
   });
   it.each(systems)('combination rejects malformed indexes over %s', async (system) => {
     const { ctx, secretShares, publicShares } = await createRawSharing(system, nrShares, threshold);
     for (const index of badIndexes) {
       const secrets = [{ ...secretShares[0], index }, ...secretShares.slice(1)];
       const publics = [{ ...publicShares[0], index }, ...publicShares.slice(1)];
-      await expect(combineSecretShares(ctx, secrets)).rejects.toThrow('positive integer');
-      await expect(combinePublicShares(ctx, publics)).rejects.toThrow('positive integer');
+      await expect(combineSecretShares(ctx, secrets, threshold)).rejects.toThrow('positive integer');
+      await expect(combinePublicShares(ctx, publics, threshold)).rejects.toThrow('positive integer');
     }
   });
   it.each(systems)('lambda rejects inconsistent indexes over %s', async (system) => {
@@ -58,7 +58,7 @@ describe('Share index validation', () => {
     const replayed = [...packets.slice(0, threshold), packets[0]];
     for (const errorOnInvalid of [true, false]) {
       await expect(
-        recoverPublic(ctx, replayed, { errorOnInvalid })
+        recoverPublic(ctx, replayed, threshold, { errorOnInvalid })
       ).rejects.toThrow('distinct');
     }
   });
@@ -69,10 +69,15 @@ describe('Share index validation', () => {
     const { packets } = await mockPublicRecoverySetup({ ctx, shares });
     const relabeled = { ...packets[0], index: nrShares + 1 };
     await expect(parseSchnorrPacket(ctx, relabeled)).rejects.toThrow(InvalidPublicShare);
-    const { recovered, blame } = await recoverPublic(
-      ctx, [relabeled, ...packets.slice(1)], { errorOnInvalid: false }
+    const recovery = recoverPublic(
+      ctx, [relabeled, ...packets.slice(1)], threshold, { errorOnInvalid: false }
     );
-    expect(blame).toEqual([{ value: relabeled.value, index: relabeled.index }]);
-    expect(Buffer.from(recovered).equals(Buffer.from(publicBytes))).toBe(nrShares - 1 >= threshold);
+    if (nrShares - 1 >= threshold) {
+      const { recovered, blame } = await recovery;
+      expect(blame).toEqual([{ value: relabeled.value, index: relabeled.index }]);
+      expect(Buffer.from(recovered).equals(Buffer.from(publicBytes))).toBe(true);
+    } else {
+      await expect(recovery).rejects.toThrow(InvalidPublicShare);
+    }
   });
 });

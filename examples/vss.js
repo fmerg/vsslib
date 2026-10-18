@@ -97,7 +97,7 @@ async function demo() {
   // public shares and applies interpolation in the exponent in order to
   // recover the public counterpart of the original secret
   try {
-    const { recovered: recoveredPublic } = await recoverPublic(ctx, combiner.aggreagated);
+    const { recovered: recoveredPublic } = await recoverPublic(ctx, combiner.aggreagated, t);
     // Check consistency with original secret
     const ok = await isKeypair(ctx, secret, recoveredPublic);
     console.log({ ok });

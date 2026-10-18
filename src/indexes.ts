@@ -19,6 +19,14 @@ export function validateIndexes(indexes: number[]): void {
 }
 
 
+/** Ensure that `threshold` is a positive safe integer; throws InvalidInput otherwise */
+export function validateThreshold(threshold: number): void {
+  if (!(Number.isSafeInteger(threshold) && threshold > 0)) throw new InvalidInput(
+    `Threshold must be a positive integer: ${threshold}`
+  );
+}
+
+
 /** Fixed-length encoding of an index, used to bind it to NIZK proofs */
 export function indexToBytes(index: number): Uint8Array {
   return intToLeBytes(BigInt(index), 8);

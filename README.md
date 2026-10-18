@@ -235,49 +235,30 @@ const publicShare = await extractPublicShare(ctx, secretShare);
 
 #### Combination of secret shares
 
-Combine any collection of secret shares in the sense of interpolation as
-follows.
+Combine at least `t` secret shares in the sense of interpolation as follows.
 
 ```js
 import { combineSecretShares } from "vsslib";
 
-const combinedSecret = await combineSecretShares(ctx, secretShares);
-```
-
-This yields the original secret only if the number of provided shares is at least equal
-to the threshold `t`.
-In order to ensure that the operation completes only if at least `t` shares are
-provided, make sure to pass the threshold parameter explicitly.
-
-```js
 const combinedSecret = await combineSecretShares(ctx, secretShares, t);
 ```
 
 > **Warning**
-> Throws error if less than `t` shares are provided.
+> Throws `vsslib.InvalidInput` if less than `t` shares are provided.
 
 #### Combination of public shares
 
-Combine any collection of public shares using interpolation in the exponent as
+Combine at least `t` public shares using interpolation in the exponent as
 follows.
 
 ```js
 import { combinePublicShares } from "vsslib";
 
-const combinedPublic = await combinePublicShares(ctx, publicShares);
-```
-
-This yields the public counterpart of the original secret only if
-the number of provided shares is at least equal to the threshold `t`.
-In order to ensure that the operation completes only if at least `t` shares are
-provided, make sure to pass the threshold parameter explicitly.
-
-```js
 const combinedPublic = await combinePublicShares(ctx, publicShares, t);
 ```
 
 > **Warning**
-> Throws error if less than `t` shares are provided.
+> Throws `vsslib.InvalidInput` if less than `t` shares are provided.
 
 ## <a name="verifiable-secret-sharing"></a>Verifiable Secret Sharing (VSS)
 
@@ -512,7 +493,7 @@ follows.
 ```js
 import { recoverPublic } from "vsslib";
 
-const { recovered } = await recoverPublic(ctx, packets, { algorithm: "sha256", threshold: t });
+const { recovered } = await recoverPublic(ctx, packets, t, { algorithm: "sha256" });
 ```
 
 This verifies the attached Schnorr proofs against the respective public
@@ -523,10 +504,8 @@ proofs (defaults to SHA256).
 
 The operation throws `vsslib.InvalidPublicShare`
 upon the first proof that fails to verify.
-The optional `threshold` parameter ensures that the operation completes only if
-at least `t` packets are provided,
-otherwise it throws `vsslib.InvalidInput` error.
-It also throws `vsslib.InvalidInput` if the packet indexes are not distinct
+It throws `vsslib.InvalidInput` if less than `t` packets are provided, and
+also `vsslib.InvalidInput` if the packet indexes are not distinct
 positive integers.
 You will usually have to handle errors in order
 to adhere to some specified rejection policy:
@@ -535,7 +514,7 @@ to adhere to some specified rejection policy:
 import { InvalidPublicShare, InvalidInput } from "vsslib";
 
 try {
-  const { recovered } = await recoverPublic(ctx, packets, { algorithm: "sha256", threshold: t });
+  const { recovered } = await recoverPublic(ctx, packets, t, { algorithm: "sha256" });
   ...
 } catch (err) {
   if (err instanceof InvalidPublicShare) {
@@ -544,7 +523,6 @@ try {
   } else if (err instanceof InvalidInput) {
     // Abort and follow policy as specified by context; raised upon
     // malformed or duplicate indexes, or insufficient number of packets
-    // if the `threshold` parameter has been provided.
     ...
   } else {
     ...
@@ -561,7 +539,7 @@ that the respective proofs verify.
 
 ```js
 try {
-  const { recovered } = await recoverPublic(ctx, packets, {
+  const { recovered } = await recoverPublic(ctx, packets, t, {
     ...,
     nonces: {
       1: ...,
@@ -588,7 +566,7 @@ irrespective of potential verification failures so that
 malicious shareholders can be listed in a blame index.
 
 ```js
-const { recovered, blame } = await recoverPublic(ctx, packets, { ..., errorOnInvalid: false });
+const { recovered, blame } = await recoverPublic(ctx, packets, t, { ..., errorOnInvalid: false });
 
 if (blame.length > 0) {
   // Hold cheating shareholders accountable according to specified policy
@@ -598,6 +576,8 @@ if (blame.length > 0) {
 
 This returns the computation result along with a list `blame`,
 containing the public shares of cheating shareholders.
+If less than `t` packets remain valid, it throws `vsslib.InvalidPublicShare`,
+since the remaining shares would interpolate to a wrong result.
 Malformed or duplicate indexes still throw `vsslib.InvalidInput`, since they
 cannot be attributed to a single shareholder.
 

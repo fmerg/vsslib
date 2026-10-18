@@ -75,8 +75,8 @@ class DkgParty extends Party {
     this.publicShares.push(publicShare);
   }
 
-  doGlobal = async () => {
-    this.globalPublic = await combinePublicShares(this.ctx, this.publicShares);
+  doGlobal = async (threshold) => {
+    this.globalPublic = await combinePublicShares(this.ctx, this.publicShares, threshold);
   }
 }
 
@@ -119,7 +119,7 @@ export async function runDKG(parties, nrShares, threshold, pedersenBase) {
   }
 
   for (let party of parties) {
-    await party.doGlobal();
+    await party.doGlobal(threshold);
   }
 
   return { globalPublic: parties[0].globalPublic };
