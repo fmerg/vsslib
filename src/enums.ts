@@ -2,6 +2,8 @@ export enum Elliptic {
   ED25519   = 'ed25519',
   ED448     = 'ed448',
   JUBJUB    = 'jubjub',
+  RISTRETTO255 = 'ristretto255',
+  DECAF448  = 'decaf448',
   // SECP256K1 = 'secp256k1',
   // PALLAS    = 'pallas',
   // VESTA     = 'vesta',

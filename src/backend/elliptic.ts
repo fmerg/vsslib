@@ -1,6 +1,6 @@
 import type { CurvePoint, CurvePointCons } from '@noble/curves/abstract/curve.js';
-import { ed25519, ed25519_hasher } from '@noble/curves/ed25519.js';
-import { ed448, ed448_hasher } from '@noble/curves/ed448.js';
+import { ed25519, ed25519_hasher, ristretto255, ristretto255_hasher } from '@noble/curves/ed25519.js';
+import { ed448, ed448_hasher, decaf448, decaf448_hasher } from '@noble/curves/ed448.js';
 import { jubjub, jubjub_findGroupHash } from '@noble/curves/misc.js';
 import { randomBytes, concatBytes, asciiToBytes } from '@noble/curves/utils.js';
 
@@ -145,6 +145,14 @@ const CURVES: Record<Elliptic, { Point: _PointCons, hashToCurve: _HashToCurve }>
   [Elliptic.JUBJUB]: {
     Point: jubjub.Point,
     hashToCurve: jubjubHashToCurve,
+  },
+  [Elliptic.RISTRETTO255]: {
+    Point: ristretto255.Point,
+    hashToCurve: (msg, DST) => ristretto255_hasher.hashToCurve(msg, { DST }),
+  },
+  [Elliptic.DECAF448]: {
+    Point: decaf448.Point,
+    hashToCurve: (msg, DST) => decaf448_hasher.hashToCurve(msg, { DST }),
   },
 };
 
