@@ -22,10 +22,10 @@ describe('Pedersen VSS scheme', () => {
       const binding = bindings[share.index - 1];
       const isValid = await verifyPedersenCommitments(
         ctx,
+        commitments,
+        publicBytes,
         share,
         binding,
-        publicBytes,
-        commitments
       );
       expect(isValid).toBe(true);
       // Check parsing
@@ -50,10 +50,10 @@ describe('Pedersen VSS scheme', () => {
       const binding = bindings[share.index - 1];
       const verification = verifyPedersenCommitments(
         ctx,
+        commitments,
+        publicBytes,
         share,
         binding,
-        publicBytes,
-        commitments
       );
       await expect(verification).rejects.toThrow('Invalid share');
       // Check parsing failure

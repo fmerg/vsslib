@@ -355,7 +355,7 @@ verified against the commitments as follows.
 import { verifyFeldmanCommitments, InvalidSecretShare } from "vsslib";
 
 try {
-  await verifyFeldmanCommitments(ctx, share, commitments);
+  await verifyFeldmanCommitments(ctx, commitments, share);
 } catch (err) {
   if (err instanceof InvalidSecretShare) {
     // Follow rejection policy as specified by context
@@ -433,7 +433,7 @@ verified along with its binding against the commitments as follows.
 import { verifyPedersenCommitments, InvalidSecretShare } from "vsslib";
 
 try {
-  await verifyPedersenCommitments(ctx, share, binding, publicBytes, commitments);
+  await verifyPedersenCommitments(ctx, commitments, publicBytes, share, binding);
 } catch (err) {
   if (err instanceof InvalidSecretShare) {
     // Follow rejection policy as specified by context

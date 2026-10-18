@@ -20,8 +20,8 @@ describe('Feldman VSS scheme', () => {
       const { value: secret, index } = share;
       const isValid = await verifyFeldmanCommitments(
         ctx,
-        share,
         commitments,
+        share,
       );
       expect(isValid).toBe(true);
       // Check parsing
@@ -40,8 +40,8 @@ describe('Feldman VSS scheme', () => {
       // Check verification failure
       const verification = verifyFeldmanCommitments(
         ctx,
-        share,
         commitments,
+        share,
       );
       await expect(verification).rejects.toThrow('Invalid share');
       // Check parsing failure
@@ -55,7 +55,7 @@ describe('Feldman VSS scheme', () => {
     const { sharing } = await shareSecret(ctx, 20, 17);
     const { packets, commitments } = await sharing.createFeldmanPackets();
     for (const packet of packets) {
-      await expect(verifyFeldmanCommitments(ctx, packet, commitments)).resolves.toBe(true);
+      await expect(verifyFeldmanCommitments(ctx, commitments, packet)).resolves.toBe(true);
     }
   });
 })

@@ -25,8 +25,8 @@ async function evalCommitments<P extends Point>(
 
 export async function verifyFeldmanCommitments<P extends Point>(
   ctx: Group<P>,
-  share: SecretShare,
   commitments: Uint8Array[],
+  share: SecretShare,
 ): Promise<boolean> {
   const { value, index } = share;
   const x = await ctx.parseScalar(value);
@@ -43,10 +43,10 @@ export async function verifyFeldmanCommitments<P extends Point>(
 
 export async function verifyPedersenCommitments<P extends Point>(
   ctx: Group<P>,
+  commitments: Uint8Array[],
+  publicBytes: Uint8Array,
   share: SecretShare,
   binding: Uint8Array,
-  publicBytes: Uint8Array,
-  commitments: Uint8Array[],
 ): Promise<boolean> {
   const { value, index } = share;
   const exp = ctx.exp;
@@ -74,7 +74,7 @@ export async function parseFeldmanPacket<P extends Point>(
 ): Promise<{ share: SecretShare }> {
   const { value, index } = packet;
   const share = { value, index };
-  await verifyFeldmanCommitments(ctx, share, commitments);
+  await verifyFeldmanCommitments(ctx, commitments, share);
   return { share };
 }
 
@@ -92,7 +92,7 @@ export async function parsePedersenPacket<P extends Point>(
     );
   const share = { value, index }
   await verifyPedersenCommitments(
-    ctx, share, binding, publicBytes, commitments,
+    ctx, commitments, publicBytes, share, binding,
   );
   return { share, binding };
 }
