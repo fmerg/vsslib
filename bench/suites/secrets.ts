@@ -2,7 +2,6 @@ import {
   randomSecret,
   randomPublic,
   extractPublic,
-  derivePedersenBase,
   addSecrets,
   addPublics,
 } from 'vsslib';
@@ -36,12 +35,6 @@ const suite: Suite = {
       uses: [],
       setup: async (ctx) => (await randomSecret(ctx)).secret,
       run: async (ctx, secret) => extractPublic(ctx, secret),
-    }),
-    defineCase({
-      name: 'derivePedersenBase',
-      uses: [],
-      setup: async () => undefined,
-      run: async (ctx) => derivePedersenBase(ctx),
     }),
     // One summand per party, as in DKG
     defineCase({
