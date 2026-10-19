@@ -28,9 +28,10 @@ fi
 usage_string="usage: ./$(basename "$0") [options]
 
 Run tests with control over the orthogonal parameters below. For example, in
-order to run the VSS tests over ed25519 with SHA256 and rerun them on changes, do
+order to run the public recovery tests over ed25519 with SHA256 and rerun them
+on changes, do
 
-$ ./test.sh -m vss -s ed25519 -a sha256 --watch
+$ ./test.sh -m operations/recovery.spec.ts -s ed25519 -a sha256 --watch
 
 Systems:
   ${SYSTEMS}

@@ -1,12 +1,10 @@
-import { initBackend } from 'vsslib/backend';
-import { randomPublic } from 'vsslib/operations/secrets';
-import { shareSecret } from 'vsslib/operations/shamir';
 import {
   derivePedersenBase,
   createPedersenPackets,
   verifyPedersenCommitments,
   parsePedersenPacket,
 } from 'vsslib/operations/pedersen';
+import { initBackend, randomPublic, shareSecret } from 'vsslib';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer } from '../utils';
 import { fixtures } from '../systems';
