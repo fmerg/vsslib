@@ -6,7 +6,7 @@ DEFAULT_VERBOSE=false
 DEFAULT_SYSTEM=""
 DEFAULT_ALGORITHM=""
 DEFAULT_NR_SHARES="3"
-DEFAULT_NR_THRESHOLD="2"
+DEFAULT_THRESHOLD="2"
 
 # Supported systems, as listed in the Elliptic enum
 SYSTEMS=$(node -e '
@@ -87,7 +87,7 @@ do
             shift
             ;;
         -t|--threshold)
-            TRHESHOLD="$2"
+            THRESHOLD="$2"
             shift
             shift
             ;;
