@@ -10,9 +10,8 @@ import {
   addSecrets,
   addPublics,
 } from 'vsslib/operations/secrets';
-import { initBackend } from 'vsslib/backend';
+import { initBackend, InvalidInput } from 'vsslib';
 import { intToLeBytes } from 'vsslib/arith';
-import { InvalidInput } from 'vsslib/errors';
 
 import { resolveTestConfig } from '../environ';
 
