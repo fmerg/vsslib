@@ -1,5 +1,5 @@
 import { Dimension, Params } from './types';
-import { Planned, Result, operationName } from './harness';
+import { CaseResult, CaseSpec, operationName } from './harness';
 
 
 /** Only the dimensions an operation depends on, e.g. "n=5 t=3 sha256" */
@@ -26,15 +26,53 @@ const formatRate = (rate: number): string => rate >= 100 ?
   rate.toPrecision(3);
 
 
+const median = (values: number[]): number => {
+  const sorted = [...values].sort((a, b) => a - b);
+  const middle = Math.floor(sorted.length / 2);
+  return sorted.length % 2 === 1 ? sorted[middle] : (sorted[middle - 1] + sorted[middle]) / 2;
+}
+
+
+/** Summary over the runs of a case; latencies in ms */
+export type Summary = {
+  /** Median over runs of the per-run median latency */
+  median: number;
+  /** Median over runs of the per-run median absolute deviation */
+  mad: number;
+  /** Median over runs of the per-run 99th percentile */
+  p99: number;
+  /** Spread of the per-run medians relative to their median, in percent;
+   * undefined for a single run */
+  range?: number;
+  samples: number;
+}
+
+
+export const summarize = ({ runs }: CaseResult): Summary => {
+  const medians = runs.map(run => run.median);
+  const center = median(medians);
+  return {
+    median: center,
+    mad: median(runs.map(run => run.mad)),
+    p99: median(runs.map(run => run.p99)),
+    range: runs.length > 1 ?
+      (Math.max(...medians) - Math.min(...medians)) / center * 100 :
+      undefined,
+    samples: runs.reduce((total, run) => total + run.samples, 0),
+  };
+}
+
+
 type Column = { header: string; width: number; align: 'left' | 'right' };
 
 const COLUMNS: Column[] = [
   { header: 'operation', width: 40, align: 'left' },
   { header: 'system', width: 13, align: 'left' },
   { header: 'params', width: 20, align: 'left' },
-  { header: 'mean', width: 10, align: 'right' },
+  { header: 'median', width: 10, align: 'right' },
+  { header: 'mad', width: 10, align: 'right' },
   { header: 'p99', width: 10, align: 'right' },
-  { header: '±rme', width: 8, align: 'right' },
+  { header: 'range', width: 7, align: 'right' },
   { header: 'ops/s', width: 10, align: 'right' },
   { header: 'samples', width: 8, align: 'right' },
 ];
@@ -53,27 +91,28 @@ export class TableReporter {
     console.log(formatRow(COLUMNS.map(c => '-'.repeat(c.width))));
   }
 
-  row = (result: Result): void => {
+  row = (result: CaseResult): void => {
     const { operation, uses, params } = result;
+    const summary = summarize(result);
     console.log(formatRow([
       operation,
       params.system,
       formatParams(uses, params),
-      formatDuration(result.mean),
-      formatDuration(result.p99),
-      `${result.rme.toFixed(2)}%`,
-      formatRate(result.throughput),
-      String(result.samples),
+      formatDuration(summary.median),
+      formatDuration(summary.mad),
+      formatDuration(summary.p99),
+      summary.range === undefined ? '-' : `${summary.range.toFixed(1)}%`,
+      formatRate(1e3 / summary.median),
+      String(summary.samples),
     ]));
   }
 }
 
 
-export const listCases = (plan: Planned[]): void => {
-  for (const planned of plan) {
-    const { bench: { uses }, params } = planned;
+export const listCases = (plan: { spec: CaseSpec, uses: Dimension[] }[]): void => {
+  for (const { spec, uses } of plan) {
     console.log(formatRow([
-      operationName(planned), params.system, formatParams(uses, params),
+      operationName(spec), spec.params.system, formatParams(uses, spec.params),
     ]));
   }
 }
