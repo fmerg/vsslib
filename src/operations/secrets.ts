@@ -1,8 +1,5 @@
-import { Group, Point } from './backend';
-import { mod } from './arith';
-
-
-const PEDERSEN_BASE_DST = new TextEncoder().encode('vsslib:pedersen-base');
+import { Group, Point } from '../backend';
+import { mod } from '../arith';
 
 
 export async function randomSecret<P extends Point>(ctx: Group<P>): Promise<{
@@ -29,15 +26,6 @@ export async function randomPublic<P extends Point>(
   ctx: Group<P>
 ): Promise<Uint8Array> {
   return (await ctx.randomPoint()).toBytes();
-}
-
-
-/** Derive from a public seed a Pedersen base whose discrete log is unknown */
-export async function derivePedersenBase<P extends Point>(
-  ctx: Group<P>,
-  seed: Uint8Array = new Uint8Array(),
-): Promise<Uint8Array> {
-  return (await ctx.hashToPoint(seed, PEDERSEN_BASE_DST)).toBytes();
 }
 
 

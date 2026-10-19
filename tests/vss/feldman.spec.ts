@@ -1,7 +1,7 @@
 import { initBackend } from 'vsslib/backend';
-import { randomPublic } from 'vsslib/secrets';
-import { shareSecret, createFeldmanPackets } from 'vsslib/dealer';
-import { verifyFeldmanCommitments, parseFeldmanPacket } from 'vsslib/shareholder';
+import { randomPublic } from 'vsslib/operations/secrets';
+import { shareSecret } from 'vsslib/operations/shamir';
+import { createFeldmanPackets, verifyFeldmanCommitments, parseFeldmanPacket } from 'vsslib/operations/feldman';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer } from '../utils';
 

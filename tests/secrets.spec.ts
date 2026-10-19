@@ -9,7 +9,7 @@ import {
   isKeypair,
   addSecrets,
   addPublics,
-} from 'vsslib/secrets';
+} from 'vsslib/operations/secrets';
 import { initBackend } from 'vsslib/backend';
 import { intToLeBytes } from 'vsslib/arith';
 import { InvalidInput } from 'vsslib/errors';

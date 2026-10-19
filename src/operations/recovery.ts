@@ -1,61 +1,33 @@
-import { mod } from './arith';
-import { Point, Group } from './backend';
-import { InvalidPublicShare, InvalidInput } from './errors';
-import { Algorithms } from './enums';
-import { Algorithm, SecretShare, PublicShare, SchnorrPacket } from './types';
+import { Point, Group } from '../backend';
+import { InvalidPublicShare } from '../errors';
+import { Algorithms } from '../enums';
+import { Algorithm, SecretShare, PublicShare, SchnorrPacket } from '../types';
+import { nizk } from '../nizk';
+import { validateIndex, validateIndexes, validateShareCount, indexToBytes } from '../indexes';
 
-import { nizk } from './nizk';
-import { computeLambda } from './lagrange';
-import { validateIndex, validateIndexes, validateThreshold, indexToBytes } from './indexes';
+import { combinePublicShares } from './shamir';
 
 
 export type Nonces = { [key: number]: Uint8Array };
 
 
-/** Ensure that there are at least `threshold` shares */
-function checkShareCount(count: number, threshold: number): void {
-  validateThreshold(threshold);
-  if (count < threshold) throw new InvalidInput(
-    `Insufficient number of shares: ${count} < ${threshold}`
+export async function createSchnorrPacket<P extends Point>(
+  ctx: Group<P>,
+  share: SecretShare,
+  { algorithm = Algorithms.DEFAULT, nonce }: {
+    algorithm?: Algorithm,
+    nonce?: Uint8Array,
+  } = {},
+): Promise<SchnorrPacket> {
+  const { value, index } = share;
+  validateIndex(index);
+  const g = ctx.generator;
+  const x = await ctx.parseScalar(value);
+  const y = await ctx.exp(g, x);
+  const proof = await nizk(ctx, algorithm).proveDlog(
+    x, { u: g, v: y }, nonce, [indexToBytes(index)]
   );
-}
-
-
-export async function combineSecretShares<P extends Point>(
-  ctx: Group<P>,
-  shares: SecretShare[],
-  threshold: number,
-): Promise<Uint8Array> {
-  checkShareCount(shares.length, threshold);
-  const order = ctx.order;
-  const indexes = shares.map(share => share.index);
-  validateIndexes(indexes);
-  let x = 0n;
-  for (const { value, index } of shares) {
-    const li = computeLambda(ctx, index, indexes);
-    const xi = await ctx.parseScalar(value);
-    x = mod(x + li * xi, order);
-  }
-  return ctx.scalarToBytes(x);
-}
-
-
-export async function combinePublicShares<P extends Point>(
-  ctx: Group<P>,
-  shares: PublicShare[],
-  threshold: number,
-): Promise<Uint8Array> {
-  checkShareCount(shares.length, threshold);
-  const exp = ctx.exp;
-  const indexes = shares.map(share => share.index);
-  validateIndexes(indexes);
-  let y = ctx.neutral;
-  for (const { value, index } of shares) {
-    const li = computeLambda(ctx, index, indexes);
-    const yi = await ctx.parsePoint(value)
-    y = await ctx.operate(y, await exp(yi, li));
-  }
-  return y.toBytes();
+  return { value: y.toBytes(), index, proof };
 }
 
 
@@ -99,7 +71,7 @@ export async function recoverPublic<P extends Point>(
     errorOnInvalid?: boolean,
   } = {},
 ): Promise<{ recovered: Uint8Array, blame: PublicShare[] }> {
-  checkShareCount(packets.length, threshold);
+  validateShareCount(packets.length, threshold);
   // Malformed or duplicate indexes cannot be attributed to a single
   // shareholder, so they are rejected regardless of errorOnInvalid
   validateIndexes(packets.map(packet => packet.index));

@@ -1,4 +1,4 @@
-import { combinePublicShares } from 'vsslib/combiner';
+import { combinePublicShares } from 'vsslib/operations/shamir';
 import { partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing } from '../helpers';

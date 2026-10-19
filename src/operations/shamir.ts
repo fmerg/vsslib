@@ -1,11 +1,10 @@
-import { Point, Group } from './backend';
-import { FieldPolynomial, randomPolynomial } from './polynomials';
-import { InterpolationError, ShamirError, InvalidInput } from './errors';
-
-import { lagrange } from './lagrange';
-import { parsePedersenBase } from './shareholder';
-import { validateIndexes } from './indexes';
-import { SecretShare, SecretPacket, PublicShare } from './types';
+import { Point, Group } from '../backend';
+import { mod } from '../arith';
+import { FieldPolynomial } from '../polynomials';
+import { InterpolationError, ShamirError, InvalidInput } from '../errors';
+import { lagrange, computeLambda } from '../lagrange';
+import { validateIndexes, validateShareCount } from '../indexes';
+import { SecretShare, PublicShare } from '../types';
 
 
 export class ShamirSharing<P extends Point> {
@@ -144,37 +143,39 @@ export async function shareSecret<P extends Point>(
 }
 
 
-export async function createFeldmanPackets<P extends Point>(
-  sharing: ShamirSharing<P>,
-): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
-  const { exp, generator: g } = sharing.ctx;
-  const commitments = [];
-  for (const a of sharing.polynomial.coeffs) {
-    commitments.push((await exp(g, a)).toBytes());
+export async function combineSecretShares<P extends Point>(
+  ctx: Group<P>,
+  shares: SecretShare[],
+  threshold: number,
+): Promise<Uint8Array> {
+  validateShareCount(shares.length, threshold);
+  const order = ctx.order;
+  const indexes = shares.map(share => share.index);
+  validateIndexes(indexes);
+  let x = 0n;
+  for (const { value, index } of shares) {
+    const li = computeLambda(ctx, index, indexes);
+    const xi = await ctx.parseScalar(value);
+    x = mod(x + li * xi, order);
   }
-  const packets = await sharing.getSecretShares();
-  return { packets, commitments };
+  return ctx.scalarToBytes(x);
 }
 
 
-export async function createPedersenPackets<P extends Point>(
-  sharing: ShamirSharing<P>,
-  pedersenBase: Uint8Array,
-): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
-  const { ctx } = sharing;
-  const { exp, operate, generator: g } = ctx;
-  const h = await parsePedersenBase(ctx, pedersenBase);
-  const { coeffs, degree } = sharing.polynomial;
-  const bindingPolynomial = await randomPolynomial(ctx, degree);
-  const commitments = [];
-  for (const [i, a] of coeffs.entries()) {
-    const b = bindingPolynomial.coeffs[i];
-    commitments.push((await operate(await exp(g, a), await exp(h, b))).toBytes());
+export async function combinePublicShares<P extends Point>(
+  ctx: Group<P>,
+  shares: PublicShare[],
+  threshold: number,
+): Promise<Uint8Array> {
+  validateShareCount(shares.length, threshold);
+  const exp = ctx.exp;
+  const indexes = shares.map(share => share.index);
+  validateIndexes(indexes);
+  let y = ctx.neutral;
+  for (const { value, index } of shares) {
+    const li = computeLambda(ctx, index, indexes);
+    const yi = await ctx.parsePoint(value)
+    y = await ctx.operate(y, await exp(yi, li));
   }
-  const shares = await sharing.getSecretShares();
-  const packets = shares.map((share) => ({
-    ...share,
-    binding: ctx.scalarToBytes(bindingPolynomial.evaluate(share.index)),
-  }));
-  return { packets, commitments };
+  return y.toBytes();
 }
