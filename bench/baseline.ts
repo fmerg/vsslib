@@ -96,10 +96,19 @@ export type Comparison = {
 };
 
 
+/** Probability that the run medians of two invocations of unchanged code
+ * separate completely by chance, with r and s runs: 2 / C(r + s, r) */
+export const separationChance = (r: number, s: number): number => {
+  let combinations = 1;
+  for (let i = 1; i <= r; i++) combinations = combinations * (s + i) / i;
+  return 2 / combinations;
+}
+
+
 /** A case changed if its median moved by more than the tolerance and the run
- * medians of the two invocations do not overlap; with r runs on each side,
- * unchanged code separates completely with probability 2 / C(2r, r), i.e.
- * 10% for 3 runs and below 1% for 5 runs */
+ * medians of the two invocations do not overlap; see separationChance for the
+ * probability of a false verdict, e.g. 10% for 3 runs per side and below 1%
+ * for 5 */
 export const compareResult = (
   result: CaseResult, baseline: Map<string, Entry>, tolerance: number
 ): Comparison => {
@@ -141,6 +150,10 @@ export const comparabilityWarnings = (
   for (const [field, before, now] of fields) {
     if (before !== now) warnings.push(`baseline differs in ${field}: ${before} vs ${now}`);
   }
+  if (document.settings.runs !== settings.runs) warnings.push(
+    'with these run counts, unchanged cases separate by chance with probability ' +
+    `${(separationChance(document.settings.runs, settings.runs) * 100).toFixed(1)}%`
+  );
   if (previous.dirty) warnings.push(
     `baseline was taken on a dirty tree (${previous.commit ?? 'unknown commit'})`
   );

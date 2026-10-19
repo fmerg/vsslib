@@ -140,8 +140,10 @@ const expand = (opts: Options): Planned[] => {
       const thresholds = uses.includes('threshold') ? opts.threshold : opts.threshold.slice(0, 1);
       for (const system of opts.system) {
         for (const algorithm of algorithms) {
-          for (let nrShares of nrSharesList) {
-            for (let threshold of thresholds) {
+          for (const n of nrSharesList) {
+            for (const t of thresholds) {
+              let nrShares = n;
+              let threshold = t;
               if (threshold > nrShares) {
                 if (uses.includes('nrShares') && uses.includes('threshold')) continue;
                 // Inputs of the operation may still require t <= n
@@ -194,6 +196,9 @@ async function main(opts: Options): Promise<void> {
     listCases(plan);
     return;
   }
+  if (opts.failOnRegression && !opts.compare) throw new Error(
+    '--fail-on-regression requires --compare'
+  );
   if (opts.cpus) assertTaskset();
   if (opts.out && !fs.existsSync(path.dirname(path.resolve(opts.out)))) throw new Error(
     `No such directory: ${path.dirname(opts.out)}`
