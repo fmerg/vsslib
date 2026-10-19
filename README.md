@@ -673,6 +673,54 @@ Tests run against all backends by default; pass `-s <system>` to run them agains
 $ ./test.sh -s p256
 ```
 
+### Benchmarks
+
+```
+$ ./bench.sh --help
+```
+
+Benchmarks cover the high-level operations of the library, grouped in modules
+`secrets`, `dealer`, `shareholder`, `combiner`, and `protocols`, which times
+complete runs of SSS, Feldman and Pedersen VSS, public recovery and DKG over
+all parties. Options `-s`, `-a`, `-n` and `-t` take comma-separated values, and
+every combination of them is measured; parameters that an operation does not
+depend on are not repeated. For example,
+
+```
+$ ./bench.sh -m shareholder,combiner -s ed25519,p256 -t 3,10,30 -n 50
+$ ./bench.sh -o "dkg" -n 5,10,20 --iterations 3
+```
+
+Benchmarks run over `ed25519` by default; pass `-s all` for every backend.
+Each case runs in a fresh process, repeated round-robin over the cases
+(`-r`, 3 by default), over a pool of distinct inputs (`--pool`). Columns
+report the median latency, the median absolute deviation and the 99th
+percentile, each a median over runs, and `range`, the spread of the run
+medians relative to their median. A large range means that the machine was
+not quiet enough for the given precision.
+
+Results can be written as `markdown`, `csv` or `json` (`-f`), also to a file
+(`--out`), and saved as a baseline for later comparison:
+
+```
+$ ./bench.sh -m protocols --save before
+$ git checkout <other>
+$ ./bench.sh -m protocols --compare before -r 5
+```
+
+A case counts as `slower` or `faster` only if its median changed by more than
+`--tolerance` (5% by default) and the run medians of the two invocations do not
+overlap. Without a real change, run medians separate by chance with probability
+10% for 3 runs per side and below 1% for 5. `--fail-on-regression` makes slower cases exit with code 2.
+Baselines are stored, untracked, in `bench/baselines/`.
+
+For reliable figures, set the CPU frequency governor to `performance`, close
+other applications, and on CPUs with performance and efficiency cores pin the
+runs to one kind with `--cpus` (e.g. `--cpus 0-7`); `bench.sh` warns about
+the governor and about unpinned runs on such CPUs. Every run takes at least
+`--iterations` samples (10 by default); lower it for slow cases such as DKG
+with many parties, whose cost grows with the square of their number.
+
 ### Lint
 
 ```
