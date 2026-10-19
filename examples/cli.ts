@@ -19,7 +19,7 @@ const COMMON_USAGE = `
 
 
 const parseInteger = (name: string, value: string): number => {
-  if (!/^\d+$/.test(value)) throw new Error(`--${name} must be a positive integer`);
+  if (!/^\d+$/.test(value)) throw new Error(`--${name} must be a non-negative integer`);
   return parseInt(value);
 }
 
