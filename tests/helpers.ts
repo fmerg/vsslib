@@ -1,4 +1,5 @@
 import { Group, Point } from 'vsslib/backend';
+import type { EcGroup, EcPoint } from 'vsslib/backend';
 import { System, Algorithm } from 'vsslib/types';
 import {
   initBackend,
@@ -57,4 +58,23 @@ export const mockPublicRecoverySetup = async <P extends Point>(opts: {
     } 
   }
   return { packets, blame, nonces };
+}
+
+
+/** Group over the operations of an elliptic backend, with the defaults of
+ * Group for everything else, as a custom backend inherits them, e.g. under
+ * the name of a built-in system */
+export const inheriting = (ctx: EcGroup): Group<EcPoint> => {
+  class Inheriting extends Group<EcPoint> {
+    randomScalar = ctx.randomScalar;
+    randomPoint = ctx.randomPoint;
+    validateScalar = ctx.validateScalar;
+    validatePoint = ctx.validatePoint;
+    exp = ctx.exp;
+    operate = ctx.operate;
+    invert = ctx.invert;
+    bytesToPoint = ctx.bytesToPoint;
+    hashToPoint = ctx.hashToPoint;
+  }
+  return new Inheriting(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
 }

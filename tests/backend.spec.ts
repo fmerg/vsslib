@@ -1,11 +1,12 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { each } from './utils';
-import { initBackend, Group } from 'vsslib/backend';
-import type { EcGroup, EcPoint } from 'vsslib/backend';
+import { initBackend } from 'vsslib/backend';
+import type { EcPoint } from 'vsslib/backend';
 import { InvalidInput } from 'vsslib';
 import { resolveTestConfig } from './environ';
 import { fixtures } from './systems';
+import { inheriting } from './helpers';
 
 const __0n = BigInt(0)
 const __1n = BigInt(1)
@@ -196,22 +197,6 @@ describe('canonical encoding', () => {
 });
 
 
-/** Group over the operations of an elliptic backend, with the defaults of
- * Group for everything else, as a custom backend inherits them */
-const inheriting = (ctx: EcGroup): Group<EcPoint> => {
-  class Inheriting extends Group<EcPoint> {
-    randomScalar = ctx.randomScalar;
-    randomPoint = ctx.randomPoint;
-    validateScalar = ctx.validateScalar;
-    validatePoint = ctx.validatePoint;
-    exp = ctx.exp;
-    operate = ctx.operate;
-    invert = ctx.invert;
-    bytesToPoint = ctx.bytesToPoint;
-    hashToPoint = ctx.hashToPoint;
-  }
-  return new Inheriting(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
-}
 
 
 describe('public multi-exponentiation', () => {

@@ -10,10 +10,11 @@ import {
 } from 'vsslib/operations/pedersen';
 import { initBackend, randomPublic, shareSecret, InvalidInput } from 'vsslib';
 import { Group } from 'vsslib/backend';
-import type { EcGroup, EcPoint } from 'vsslib/backend';
+import type { EcPoint } from 'vsslib/backend';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer, each } from '../utils';
 import { fixtures } from '../systems';
+import { inheriting } from '../helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -138,23 +139,6 @@ describe('Pedersen base derivation', () => {
 });
 
 
-/** Group over the operations of an elliptic backend under the same system
- * name, as a custom backend could declare */
-const custom = (ctx: EcGroup): Group<EcPoint> => {
-  class Custom extends Group<EcPoint> {
-    randomScalar = ctx.randomScalar;
-    randomPoint = ctx.randomPoint;
-    validateScalar = ctx.validateScalar;
-    validatePoint = ctx.validatePoint;
-    exp = ctx.exp;
-    operate = ctx.operate;
-    invert = ctx.invert;
-    bytesToPoint = ctx.bytesToPoint;
-    hashToPoint = ctx.hashToPoint;
-  }
-  return new Custom(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
-}
-
 const seed = (i: number) => Uint8Array.of(i);
 
 
@@ -218,7 +202,7 @@ describe('Pedersen base cache', () => {
   each(systems)('keeps custom groups apart over %s', async (system) => {
     clearPedersenBases();
     const ctx = initBackend(system);
-    const other = custom(ctx);
+    const other = inheriting(ctx);
     const bytes = await derivePedersenBase(ctx);
     const h = await parsePedersenBase(ctx, bytes);
     const parse = mock.method(other, 'parsePoint');
@@ -228,11 +212,11 @@ describe('Pedersen base cache', () => {
   each(systems)('keeps groups of one class with other parameters apart over %s', async (system) => {
     clearPedersenBases();
     const ctx = initBackend(system);
-    const lhs = custom(ctx);
+    const lhs = inheriting(ctx);
     // Same class, other generator
-    const Custom = lhs.constructor as new (...args: unknown[]) => Group<EcPoint>;
+    const Inheriting = lhs.constructor as new (...args: unknown[]) => Group<EcPoint>;
     const generator = await ctx.exp(ctx.generator, BigInt(2));
-    const rhs = new Custom(ctx.system, ctx.modulus, ctx.order, generator, ctx.neutral);
+    const rhs = new Inheriting(ctx.system, ctx.modulus, ctx.order, generator, ctx.neutral);
     const bytes = await derivePedersenBase(ctx);
     const h = await parsePedersenBase(lhs, bytes);
     const parse = mock.method(rhs, 'parsePoint');
