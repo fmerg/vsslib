@@ -3,19 +3,19 @@ import { partialPermutations, isEqualBuffer } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing } from '../helpers';
 
-let { systems, algorithms, nrShares, threshold } = resolveTestConfig();
+const { systems, nrShares, threshold } = resolveTestConfig();
 
 
 describe('Combination of public shares (points)', () => {
   it.each(systems)('threshold guard - over %s', async (system) => {
-    const { ctx, secret, publicBytes, publicShares } = await createRawSharing(system, nrShares, threshold);
+    const { ctx, publicBytes, publicShares } = await createRawSharing(system, nrShares, threshold);
     for (const shares of partialPermutations(publicShares, 0, threshold - 1)) {
       await expect(combinePublicShares(ctx, shares, threshold)).rejects.toThrow(
         'Insufficient number of shares'
       );
     }
     for (const shares of partialPermutations(publicShares, threshold, nrShares)) {
-      let result = await combinePublicShares(ctx, shares, threshold);
+      const result = await combinePublicShares(ctx, shares, threshold);
       expect(isEqualBuffer(result, publicBytes)).toBe(true);
     }
   });

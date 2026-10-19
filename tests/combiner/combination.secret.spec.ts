@@ -3,7 +3,7 @@ import { partialPermutations } from '../utils';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing } from '../helpers';
 
-let { systems, algorithms, nrShares, threshold } = resolveTestConfig();
+const { systems, nrShares, threshold } = resolveTestConfig();
 
 describe('Combination of secret shares (scalars)', () => {
   it.each(systems)('threshold guard - over %s', async (system) => {
@@ -14,7 +14,7 @@ describe('Combination of secret shares (scalars)', () => {
       );
     }
     for (const shares of partialPermutations(secretShares, threshold, nrShares)) {
-      let result = await combineSecretShares(ctx, shares, threshold);
+      const result = await combineSecretShares(ctx, shares, threshold);
       expect(await isEqualSecret(ctx, result, secret)).toBe(true);
     }
   });

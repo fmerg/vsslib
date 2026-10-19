@@ -5,7 +5,6 @@ import { resolveTestConfig } from '../environ';
 
 
 const __0n = BigInt(0);
-const __1n = BigInt(1);
 const { systems } = resolveTestConfig();
 
 
@@ -36,7 +35,7 @@ describe('Algebraic operations with random poynomials', () => {
     degrees, system
   ) => {
     const ctx = initBackend(system);
-    let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
+    const [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await randomPolynomial(ctx, degree1);
     const poly2 = await randomPolynomial(ctx, degree2);
     const poly3 = new FieldPolynomial(
@@ -53,10 +52,10 @@ describe('Algebraic operations with random poynomials', () => {
     degrees, system
   ) => {
     const ctx = initBackend(system);
-    let [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
+    const [degree1, degree2] = degrees.sort((a: number, b: number) => a - b);
     const poly1 = await randomPolynomial(ctx, degree1);
     const poly2 = await randomPolynomial(ctx, degree2);
-    let newCoeffs = new Array(degree1 + degree2 + 1).fill(__0n);
+    const newCoeffs = new Array(degree1 + degree2 + 1).fill(__0n);
     for (let i = 0; i <= degree1; i++) {
       for (let j = 0; j <= degree2; j++) {
         newCoeffs[i + j] += poly1.coeffs[i] * poly2.coeffs[j];

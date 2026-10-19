@@ -1,4 +1,3 @@
-import { System } from 'vsslib/types';
 import { initBackend } from 'vsslib/backend';
 import { cartesian } from '../utils';
 import { interpolate as textbooxInterpolate } from './helpers';
@@ -8,8 +7,6 @@ import { lagrange } from 'vsslib/lagrange';
 
 const { systems } = resolveTestConfig();
 
-const __0n = BigInt(0);
-const __1n = BigInt(1);
 
 const collectionPairs: ([number, number][])[] = [
   [[0, 1]],
