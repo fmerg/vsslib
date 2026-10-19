@@ -18,8 +18,10 @@ export type BenchCase<S = unknown> = {
   name: string;
   /** Dimensions the operation depends on; the sweep collapses the others */
   uses: Dimension[];
-  /** Prepares the inputs of the operation; not timed */
-  setup: (ctx: Ctx, params: Params) => Promise<S>;
+  /** Prepares one input of the operation for the given slot of the input
+   * pool; not timed. Choices that affect the cost (e.g. share indexes) should
+   * derive from the slot, so that every run measures the same input mix */
+  setup: (ctx: Ctx, params: Params, slot: number) => Promise<S>;
   /** The timed operation */
   run: (ctx: Ctx, state: S, params: Params) => Promise<unknown>;
 };
