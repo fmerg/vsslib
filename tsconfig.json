@@ -22,6 +22,7 @@
     "node_modules",
     "tests",
     "examples",
+    "bench",
     "**/*.spec.ts",
     "./dist"
   ],
