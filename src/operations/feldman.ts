@@ -7,6 +7,8 @@ import { ShamirSharing } from './shamir';
 import { evalCommitments } from './commitments';
 
 
+/** Feldman commitments and one packet per secret share; takes no ctx, as the
+ * sharing carries its group */
 export async function createFeldmanPackets<P extends Point>(
   sharing: ShamirSharing<P>,
 ): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {

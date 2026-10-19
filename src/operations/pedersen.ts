@@ -34,6 +34,8 @@ export async function parsePedersenBase<P extends Point>(
 }
 
 
+/** Pedersen commitments and one packet per secret share, each with its binding;
+ * takes no ctx, as the sharing carries its group */
 export async function createPedersenPackets<P extends Point>(
   sharing: ShamirSharing<P>,
   pedersenBase: Uint8Array,
