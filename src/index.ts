@@ -1,3 +1,5 @@
+/** @module vsslib */
+
 export { initBackend } from './backend';
 export type { Group, Point } from './backend';
 

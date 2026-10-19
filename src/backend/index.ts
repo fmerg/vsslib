@@ -1,3 +1,5 @@
+/** @module vsslib/backend */
+
 import { System } from '../types';
 import { Elliptic } from '../enums';
 import { BadGroupError } from '../errors';
