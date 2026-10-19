@@ -1,7 +1,6 @@
 import { Point, Group } from './backend';
 import { InvalidSecretShare, InvalidInput } from './errors';
-import { extractPublic } from './secrets';
-import { Algorithm, SecretShare, PublicShare, SecretPacket, SchnorrPacket } from './types';
+import { Algorithm, SecretShare, SecretPacket, SchnorrPacket } from './types';
 import { Algorithms } from './enums';
 
 import { nizk } from './nizk';
@@ -122,13 +121,6 @@ export async function parsePedersenPacket<P extends Point>(
     ctx, commitments, pedersenBase, share, binding, threshold,
   );
   return { share, binding };
-}
-
-export async function extractPublicShare<P extends Point>(
-  ctx: Group<P>, share: SecretShare
-): Promise<PublicShare> {
-  const { value: secret, index } = share;
-  return { value: await extractPublic(ctx, secret), index };
 }
 
 

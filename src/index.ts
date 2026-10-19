@@ -31,7 +31,6 @@ export { shareSecret, createFeldmanPackets, createPedersenPackets } from './deal
 export type { ShamirSharing } from './dealer';
 
 export {
-  extractPublicShare,
   verifyFeldmanCommitments,
   verifyPedersenCommitments,
   parseFeldmanPacket,

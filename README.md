@@ -255,9 +255,12 @@ const { secretShare, publicShare } = await sharing.getShare(i);
 Access the public counterpart of a secret share as follows.
 
 ```js
-import { extractPublicShare } from "vsslib";
+import { extractPublic } from "vsslib";
 
-const publicShare = await extractPublicShare(ctx, secretShare);
+const publicShare = {
+  value: await extractPublic(ctx, secretShare.value),
+  index: secretShare.index,
+};
 ```
 
 ### Combining operations
