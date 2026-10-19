@@ -719,6 +719,13 @@ $ npm run docs
 
 ## Publish
 
+Update the CHANGELOG, then
+
 ```
-$ npm run run-publish
+$ npm version <patch|minor|major> -m "chore: release %s"
+$ npm publish
+$ git push --follow-tags
 ```
+
+`npm publish` first runs lint, type check, tests and build (`prepublishOnly`),
+and requires `npm login` or a token in `~/.npmrc`.
