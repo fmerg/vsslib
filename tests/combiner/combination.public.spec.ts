@@ -9,15 +9,15 @@ let { systems, algorithms, nrShares, threshold } = resolveTestConfig();
 describe('Combination of public shares (points)', () => {
   it.each(systems)('threshold guard - over %s', async (system) => {
     const { ctx, secret, publicBytes, publicShares } = await createRawSharing(system, nrShares, threshold);
-    partialPermutations(publicShares, 0, threshold - 1).forEach(async (shares) => {
+    for (const shares of partialPermutations(publicShares, 0, threshold - 1)) {
       await expect(combinePublicShares(ctx, shares, threshold)).rejects.toThrow(
         'Insufficient number of shares'
       );
-    });
-    partialPermutations(publicShares, threshold, nrShares).forEach(async (shares) => {
+    }
+    for (const shares of partialPermutations(publicShares, threshold, nrShares)) {
       let result = await combinePublicShares(ctx, shares, threshold);
       expect(isEqualBuffer(result, publicBytes)).toBe(true);
-    });
+    }
   });
   it.each(systems)('threshold validation - over %s', async (system) => {
     const { ctx, publicShares } = await createRawSharing(system, nrShares, threshold);

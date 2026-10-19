@@ -15,7 +15,7 @@ describe('Feldman VSS scheme', () => {
     const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
     const secretShares = await sharing.getSecretShares();
     const { packets, commitments } = await sharing.createFeldmanPackets();
-    secretShares.forEach(async (share: SecretShare) => {
+    for (const share of secretShares) {
       // Check verification
       const { value: secret, index } = share;
       const isValid = await verifyFeldmanCommitments(
@@ -28,7 +28,7 @@ describe('Feldman VSS scheme', () => {
       // Check parsing
       const packet = await parseFeldmanPacket(ctx, commitments, packets[index - 1], threshold);
       expect(isEqualBuffer(packet.share.value, share.value)).toBe(true);
-    });
+    }
   });
 
   it.each(systems)('failure over %s', async (system) => {
@@ -37,7 +37,7 @@ describe('Feldman VSS scheme', () => {
     const secretShares = await sharing.getSecretShares();
     const { packets, commitments } = await sharing.createFeldmanPackets();
     commitments[0] = await randomPublic(ctx);
-    secretShares.forEach(async (share: SecretShare) => {
+    for (const share of secretShares) {
       // Check verification failure
       const verification = verifyFeldmanCommitments(
         ctx,
@@ -49,7 +49,7 @@ describe('Feldman VSS scheme', () => {
       // Check parsing failure
       const parsed = parseFeldmanPacket(ctx, commitments, packets[share.index - 1], threshold);
       await expect(parsed).rejects.toThrow('Invalid share');
-    });
+    }
   });
   it.each(systems)('commitment count must match threshold over %s', async (system) => {
     // A dealer announcing threshold t but sharing with another degree must be

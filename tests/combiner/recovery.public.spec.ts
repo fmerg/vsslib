@@ -14,11 +14,11 @@ describe('Public point recovery', () => {
       system, nrShares, threshold
     );
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm });
-    partialPermutations(packets, threshold, nrShares).forEach(async (qualifiedPackets) => {
+    for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
       let { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm });
       expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
       expect(blame).toEqual([]);
-    });
+    }
   });
   it.each(cartesian([systems, algorithms])
   )('success - with nonce - over %s/%s', async (system, algorithm) => {
@@ -28,11 +28,11 @@ describe('Public point recovery', () => {
     const { packets, nonces } = await mockPublicRecoverySetup({
       ctx, shares, algorithm, withNonce: true
     });
-    partialPermutations(packets, threshold, nrShares).forEach(async (qualifiedPackets) => {
+    for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
       let { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm, nonces });
       expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
       expect(blame).toEqual([]);
-    });
+    }
   });
   it.each(cartesian([systems, algorithms])
   )('success - threshold guard - over %s/%s', async (system, algorithm) => {
@@ -40,16 +40,16 @@ describe('Public point recovery', () => {
       system, nrShares, threshold
     );
     const { packets } = await mockPublicRecoverySetup({ ctx, shares, algorithm });
-    partialPermutations(packets, 0, threshold - 1).forEach(async (qualifiedPackets) => {
+    for (const qualifiedPackets of partialPermutations(packets, 0, threshold - 1)) {
       await expect(recoverPublic(ctx, qualifiedPackets, threshold, { algorithm })).rejects.toThrow(
         'Insufficient number of shares'
       );
-    });
-    partialPermutations(packets, threshold, nrShares).forEach(async (qualifiedPackets) => {
+    }
+    for (const qualifiedPackets of partialPermutations(packets, threshold, nrShares)) {
       let { recovered, blame } = await recoverPublic(ctx, qualifiedPackets, threshold, { algorithm });
       expect(isEqualBuffer(recovered, publicBytes)).toBe(true);
       expect(blame).toEqual([]);
-    });
+    }
   });
   it.each(cartesian([systems, algorithms])
   )('failure - missing nonce - over %s/%s', async (system, algorithm) => {
