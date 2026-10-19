@@ -38,7 +38,7 @@
   "scripts": {
     "dev": "tsc --watch",
     "test": "jest tests --maxWorkers=1",
-    "test:reload": "jest tests --watch --maxWorkers=1",
+    "test:watch": "jest tests --watch --maxWorkers=1",
     "build": "rm -rf ./dist && tsc",
     "docs": "typedoc --out docs src/*.ts",
     "lint": "eslint ./src",

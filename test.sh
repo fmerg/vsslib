@@ -1,44 +1,49 @@
 #!/bin/bash
 
 DEFAULT_MODULE="tests"
-DEFAULT_RELOAD=false
+DEFAULT_WATCH=false
 DEFAULT_VERBOSE=false
 DEFAULT_SYSTEM=""
 DEFAULT_ALGORITHM=""
 DEFAULT_NR_SHARES="3"
 DEFAULT_THRESHOLD="2"
 
-# Supported systems, as listed in the Elliptic enum
-SYSTEMS=$(node -e '
-  const src = require("fs").readFileSync(process.argv[1], "utf8");
-  const body = src.match(/enum Elliptic \{([^}]*)\}/)[1];
-  const names = [...body.matchAll(/^\s*\w+\s*=\s*\x27([^\x27]+)\x27/gm)].map(m => m[1]);
-  console.log(names.join(", "));
-' "$(dirname "$0")/src/enums.ts")
-if [[ $? -ne 0 || -z "$SYSTEMS" ]]; then
-    echo "Could not read the supported systems from src/enums.ts" 1>&2
+# Distinct values of an enum in src/enums.ts, comma-separated
+enum_values() {
+    node -e '
+      const src = require("fs").readFileSync(process.argv[1], "utf8");
+      const body = src.match(new RegExp(`enum ${process.argv[2]} \\{([^}]*)\\}`))[1];
+      const values = [...body.matchAll(/^\s*\w+\s*=\s*\x27([^\x27]+)\x27/gm)].map(m => m[1]);
+      console.log([...new Set(values)].join(", "));
+    ' "$(dirname "$0")/src/enums.ts" "$1"
+}
+
+SYSTEMS=$(enum_values Elliptic)
+ALGORITHMS=$(enum_values Algorithms)
+if [[ -z "$SYSTEMS" || -z "$ALGORITHMS" ]]; then
+    echo "Could not read the supported systems and algorithms from src/enums.ts" 1>&2
     exit 1
 fi
 
 usage_string="usage: ./$(basename "$0") [options]
 
 Run tests with control over the orthogonal parameters below. For example, in
-order to run dealer tests over ed25519 with hash algorithm SHA256 and reload, do
+order to run the VSS tests over ed25519 with SHA256 and rerun them on changes, do
 
-$ ./test.sh -m  --dealer sha256 --reload
+$ ./test.sh -m vss -s ed25519 -a sha256 --watch
 
-Groups:
+Systems:
   ${SYSTEMS}
 
 Hash algorithms:
-  sha224, sha256, SHA384, sha512, sha3-224, sha3-256, sha3-384, sha3-512
+  ${ALGORITHMS}
 
 Options
   -m, --module <MODULE>             Tests to run. Can be any subfolder or file inside
                                     the ./tests folder. if not provided, all
                                     tests run.
-  -s, --system <GROUP>              Underlying cryptosystem. If not provided, tests run
-                                    against all supported groups.
+  -s, --system <SYSTEM>             Underlying cryptosystem. If not provided, tests run
+                                    against all supported systems.
   -a, --algorithm <HASH>            Hash algorithm to be used. This affects challenge
                                     computation for NIZK proofs (Fiat-Shamir transform).
                                     If not provided, related tests run against all
@@ -47,7 +52,7 @@ Options
                                     Shamir sharing (default: 3).
   -t, --threshold <THRESHOLD>       Threshold parameter for tests involving
                                     Shamir sharing (default: 2).
-  -r, --reload                      Reload and run tests when saving changes.
+  -w, --watch                       Rerun tests when saving changes.
   -v, --verbose                     Be verbose.
   -h, --help                        Display this help message and exit.
 
@@ -64,7 +69,7 @@ SYSTEM="$DEFAULT_SYSTEM"
 ALGORITHM="$DEFAULT_ALGORITHM"
 NR_SHARES="$DEFAULT_NR_SHARES"
 THRESHOLD="$DEFAULT_THRESHOLD"
-RELOAD="$DEFAULT_RELOAD"
+WATCH="$DEFAULT_WATCH"
 VERBOSE="$DEFAULT_VERBOSE"
 
 opts=()
@@ -97,8 +102,8 @@ do
             shift
             shift
             ;;
-        -r|--reload)
-            RELOAD=true
+        -w|--watch)
+            WATCH=true
             shift
             ;;
         -v|--verbose)
@@ -117,7 +122,11 @@ do
 done
 
 if [[ -n "$SYSTEM" && ", $SYSTEMS, " != *", $SYSTEM, "* ]]; then
-    echo "Unsupported group: $SYSTEM (supported: $SYSTEMS)" 1>&2
+    echo "Unsupported system: $SYSTEM (supported: $SYSTEMS)" 1>&2
+    exit 1
+fi
+if [[ -n "$ALGORITHM" && ", $ALGORITHMS, " != *", $ALGORITHM, "* ]]; then
+    echo "Unsupported algorithm: $ALGORITHM (supported: $ALGORITHMS)" 1>&2
     exit 1
 fi
 
@@ -133,8 +142,8 @@ if [[ $TARGET != "tests"* ]]; then
 fi
 
 
-jest_opts=(--maxWorkers=1)
-if [[ $RELOAD == "true" ]]; then
+jest_opts=()
+if [[ $WATCH == "true" ]]; then
     jest_opts+=(--watch)
 fi
 if [[ $VERBOSE == "true" ]]; then
