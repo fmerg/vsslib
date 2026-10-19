@@ -82,7 +82,7 @@ should do the job, provided that it
 - hashes to group elements of unknown discrete log, and
 - samples scalars uniformly up to negligible bias.
 
-Refer to [`vsslib/backend`](./src/backend) for details.
+Refer to [`vsslib/backend`](./src/backend/abstract.ts) for details.
 
 ### <a name="security-overview"></a>Security
 
@@ -161,7 +161,7 @@ Zcash group hash.
 > You can use any custom or other implementation,
 provided that it conforms to or has been wrapped with the internally
 prescribed interface.
-Refer to [`vsslib/backend`](./src/backend) for details.
+Refer to [`vsslib/backend`](./src/backend/abstract.ts) for details.
 
 ### Secret generation
 
@@ -676,11 +676,12 @@ $ npm run docs                      # API reference in docs/
 
 ## Layout
 
-[`src/operations`](./src/operations) holds the library operations, one module
-per scheme (`shamir`, `feldman`, `pedersen`, `recovery`, plus `secrets`), each
-with both directions of the scheme, e.g., packet creation and parsing. They
-build on the core modules of `src` (backends, NIZK proofs, interpolation),
-which never import from them. Tests in `tests/operations` mirror these modules.
+[`src/operations`](./src/operations/index.ts) holds the library operations,
+one module per scheme (`shamir`, `feldman`, `pedersen`, `recovery`, plus
+`secrets`), each with both directions of the scheme, e.g., packet creation and
+parsing. They build on the core modules of `src` (backends, NIZK proofs,
+interpolation), which never import from them. Tests in `tests/operations`
+mirror these modules.
 
 ## Examples
 

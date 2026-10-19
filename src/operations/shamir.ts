@@ -11,6 +11,7 @@ export class ShamirSharing<P extends Point> {
   ctx: Group<P>;
   nrShares: number;
   threshold: number;
+  /** @internal Sharing polynomial, read by the VSS schemes */
   polynomial: FieldPolynomial<P>;
 
   constructor(

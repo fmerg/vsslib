@@ -28,7 +28,8 @@ type _Codec = {
 };
 
 
-class EcPoint implements Point {
+export class EcPoint implements Point {
+  /** @internal Wrapped noble point */
   wrapped: _CurvePoint;
   private encode: _Codec['toBytes'];
   toBytes = (): Uint8Array => this.encode(this.wrapped);
@@ -81,6 +82,7 @@ export class EcGroup extends Group<EcPoint> {
   private zero: _CurvePoint;
   private hashToCurve: _HashToCurve;
   private codec: _Codec;
+  /** @internal Point constructor of the noble curve */
   Point: _PointCons;
 
   constructor(system: System, Point: _PointCons, hashToCurve: _HashToCurve, codec: _Codec) {

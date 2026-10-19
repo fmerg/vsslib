@@ -5,6 +5,7 @@ import { Elliptic } from '../enums';
 import { BadGroupError } from '../errors';
 export { Group, Point } from './abstract'
 import { initElliptic } from './elliptic';
+export type { EcGroup, EcPoint } from './elliptic';
 
 const ELLIPTIC = new Set<string>(Object.values(Elliptic));
 
