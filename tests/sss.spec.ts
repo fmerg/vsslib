@@ -1,7 +1,7 @@
 import { initBackend } from 'vsslib/backend';
 import { intToLeBytes } from 'vsslib/arith';
 import { parseScalar, randomSecret, extractPublic, isEqualSecret, isEqualPublic } from 'vsslib/secrets';
-import { shareSecret } from 'vsslib/dealer';
+import { shareSecret, createFeldmanPackets } from 'vsslib/dealer';
 import { SecretShare, System } from 'vsslib/types';
 import { combineSecretShares } from 'vsslib/combiner';
 import { resolveTestConfig } from './environ';
@@ -35,7 +35,7 @@ describe('Shamir secret sharing', () => {
     expect(n).toEqual((await sharing.getSecretShares()).length);
     expect(n).toEqual((await sharing.getPublicShares()).length);
     expect(t).toEqual(sharing.threshold);
-    expect(t).toEqual((await sharing.createFeldmanPackets()).commitments.length);
+    expect(t).toEqual((await createFeldmanPackets(sharing)).commitments.length);
     for (let index = 1; index <= sharing.nrShares; index++) {
       const { secretShare, publicShare } = await sharing.getShare(index);
       const { value: secretBytes } = secretShare;
@@ -65,7 +65,7 @@ describe('Shamir secret sharing', () => {
       expect(n).toEqual((await sharing.getSecretShares()).length);
       expect(n).toEqual((await sharing.getPublicShares()).length);
       expect(t).toEqual(sharing.threshold);
-      expect(t).toEqual((await sharing.createFeldmanPackets()).commitments.length);
+      expect(t).toEqual((await createFeldmanPackets(sharing)).commitments.length);
       for (let index = 1; index <= nrPredefined; index++) {
         const { secretShare } = await sharing.getShare(index);
         expect(

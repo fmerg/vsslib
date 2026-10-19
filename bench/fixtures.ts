@@ -1,6 +1,8 @@
 import {
   shareSecret,
   derivePedersenBase,
+  createFeldmanPackets,
+  createPedersenPackets,
   createSchnorrPacket,
   randomNonce,
 } from 'vsslib';
@@ -56,7 +58,7 @@ export const feldmanFixture = async (
   ctx: Ctx, nrShares: number, threshold: number
 ): Promise<FeldmanFixture> => {
   const sharing = await dealSharing(ctx, nrShares, threshold);
-  return sharing.createFeldmanPackets();
+  return createFeldmanPackets(sharing);
 }
 
 
@@ -67,7 +69,7 @@ export const pedersenFixture = async (
 ): Promise<PedersenFixture> => {
   const pedersenBase = await derivePedersenBase(ctx, randomNonce());
   const sharing = await dealSharing(ctx, nrShares, threshold);
-  return { pedersenBase, ...await sharing.createPedersenPackets(pedersenBase) };
+  return { pedersenBase, ...await createPedersenPackets(sharing, pedersenBase) };
 }
 
 

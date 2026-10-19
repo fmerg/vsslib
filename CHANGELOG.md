@@ -14,6 +14,7 @@ All notable changes to this project will be documented in this file.
 - `verifyFeldmanCommitments` and `verifyPedersenCommitments` take `(ctx, commitments, [pedersenBase,] share, [binding], threshold)`.
 - `verifyFeldmanCommitments`, `verifyPedersenCommitments`, `parseFeldmanPacket` and `parsePedersenPacket` take a required `threshold` and reject any other number of commitments.
 - `combineSecretShares` and `combinePublicShares` take a required `threshold`, and `recoverPublic` takes `(ctx, packets, threshold, options)`. All three throw `InvalidInput` on fewer than `threshold` shares; `recoverPublic` throws `InvalidPublicShare` if fewer than `threshold` packets are valid.
+- `ShamirSharing.createFeldmanPackets()` and `ShamirSharing.createPedersenPackets(pedersenBase)` are replaced by the functions `createFeldmanPackets(sharing)` and `createPedersenPackets(sharing, pedersenBase)`, which use the group of the sharing.
 - `createPedersenPackets` no longer returns `bindings`; read `packet.binding` instead.
 - `InvalidSecret` is removed.
 - Scalars are encoded little-endian with fixed width, `Group.scalarBytes` bytes. `parseScalar` and every function taking a secret, `extractPublic`, `isKeypair`, `isEqualSecret` and `addSecrets` included, reject any other length, zero and values not below the group order.

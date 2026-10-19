@@ -13,6 +13,8 @@
 import {
   shareSecret,
   derivePedersenBase,
+  createFeldmanPackets,
+  createPedersenPackets,
   parseFeldmanPacket,
   parsePedersenPacket,
   createSchnorrPacket,
@@ -32,8 +34,8 @@ export const distributeShares = async <P extends Point>(
   // Dealer: shares the secret and creates one packet per shareholder
   const { secret, sharing } = await shareSecret(ctx, nrShares, threshold);
   const { commitments, packets } = pedersenBase ?
-    await sharing.createPedersenPackets(pedersenBase) :
-    await sharing.createFeldmanPackets();
+    await createPedersenPackets(sharing, pedersenBase) :
+    await createFeldmanPackets(sharing);
 
   // Shareholders: verify their packets against the broadcast commitments.
   // An invalid packet throws InvalidSecretShare, upon which the shareholder

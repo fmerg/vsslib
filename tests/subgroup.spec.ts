@@ -5,6 +5,7 @@ import {
   parseSchnorrPacket,
   recoverPublic,
   derivePedersenBase,
+  createPedersenPackets,
   InvalidInput,
 } from 'vsslib';
 import { Algorithms } from 'vsslib/enums';
@@ -56,11 +57,11 @@ describe('Prime-order subgroup validation', () => {
     const { ctx, sharing } = await createRawSharing(system, nrShares, threshold);
     for (const base of [ctx.neutral, ctx.generator]) {
       await expect(
-        sharing.createPedersenPackets(base.toBytes())
+        createPedersenPackets(sharing, base.toBytes())
       ).rejects.toThrow('Pedersen base must be');
     }
     await expect(
-      sharing.createPedersenPackets(await derivePedersenBase(ctx))
+      createPedersenPackets(sharing, await derivePedersenBase(ctx))
     ).resolves.toBeDefined();
   });
 });
