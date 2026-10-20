@@ -28,6 +28,7 @@ All notable changes to this project will be documented in this file.
 
 - Backends `ristretto255`, `decaf448`, `secp256k1`, `p256`, `p384` and `p521`. SEC1 points are encoded compressed, with `0x00` for the point at infinity.
 - `derivePedersenBase(ctx, seed)`, which hashes a public seed to a group element of unknown discrete log.
+- `Group.expSecret(point, scalar)`, exponentiation by a secret scalar, and `Group.blindsNatively(point)`, which tells whether `exp` blinds secret scalars for `point`. Custom backends inherit a default that always splits the scalar; override `blindsNatively` only for points the backend blinds.
 - Root exports of `verifyFeldmanCommitments`, `verifyPedersenCommitments`, the public types and the errors `VssError`, `BadGroupError` and `ShamirError`. Every error derives from `VssError`.
 - Type exports of `Elliptic`, the type of `System`, and of `EcGroup` and `EcPoint` from `vsslib/backend`, the types of the elliptic backends.
 
@@ -40,6 +41,10 @@ All notable changes to this project will be documented in this file.
 - Fewer than threshold shares can no longer be combined, also when `recoverPublic` drops invalid packets.
 - Share indexes are validated and bound to Schnorr packet proofs.
 - Predefined share indexes must be distinct positive integers.
+- `isEqualSecret`, `isEqualPublic` and `isKeypair` compare canonical encodings in constant time.
+- Scalars are encoded without conversion to strings, which ran in variable time and copied secrets to the heap.
+- The random bytes from which scalars are sampled are wiped after use.
+- Exponentiations by secret scalars that noble does not blind, i.e., of non-generator points on `ed25519`, `ed448`, `jubjub` and `ristretto255` and of every point on `decaf448`, split the scalar with a fresh random factor. Pedersen dealing is up to about twice as slow on these curves, and every secret operation about twice as slow on `decaf448`.
 
 ### Fixed
 

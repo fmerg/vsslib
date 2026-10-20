@@ -626,11 +626,71 @@ cannot be attributed to a single shareholder.
 
 ### <a name="side-channel-attacks"></a>Side-channel attacks
 
-Constant-time operations have been applied where possible.
-Strict resistance against side-channel-attacks is improssible to attain,
-since JS is a garbage-collected and just-in-time compiled language.
-This moreover depends crucially on the cryptographic
-backend implementation.
+Strict resistance against side-channel attacks cannot be attained in JavaScript.
+The language is garbage-collected and just-in-time compiled, and its `BigInt`
+arithmetic, which vsslib and its backends use for scalars, makes no promise of
+running in time independent of the operands. Secret values may moreover be
+copied around the heap beyond the control of any library. Vsslib therefore aims
+at algorithmic precautions which remove the known leaks of its own code and keep
+the remaining exposure low, and which are described below. They reduce, but do
+not eliminate, what a timing or memory observer can learn; applications guarding
+high-value, long-lived keys against co-located attackers should consider a
+native implementation instead.
+
+Comparisons involving secrets run in constant time. A naive comparison of two
+values returns as soon as they differ, so that its running time reveals where
+they differ and, over repeated attempts, the values themselves. Since vsslib
+admits only canonical encodings of scalars and group elements, two values are
+equal exactly when their encodings are, which `isEqualSecret`, `isEqualPublic`
+and `isKeypair` compare byte by byte, accumulating the differences without
+early exit. The inputs are parsed beforehand, so that invalid encodings are
+still rejected. For the same reason, scalars are encoded to bytes by
+bounds-checking them against the fixed scalar length, rather than measuring
+their size by conversion to a string, which would run in variable time and
+leave a copy of the secret on the heap.
+
+Exponentiation by secret scalars, such as shares, coefficients of the sharing
+polynomial, Pedersen bindings, secret keys and NIZK nonces, is the most exposed
+operation, since it is long and its timing depends on the scalar. The
+elliptic backends rely on [`noble-curves`](https://github.com/paulmillr/noble-curves),
+which multiplies with a fixed sequence of operations and additionally blinds
+the scalar with a random multiple of the group order. Blinding is however
+applied only on curves of cofactor one (`secp256k1`, `p256`, `p384`, `p521`),
+whereas on the cofactored curves it covers only noble's own base point, i.e.,
+the generator of `ed25519`, `ed448`, `jubjub` and `ristretto255`; on `decaf448`
+it covers no point at all. A leak in an unblinded multiplication accumulates
+over repeated calls with the same scalar, e.g., when a shareholder verifies its
+long-lived Pedersen binding, and partial leakage of NIZK nonces over many proofs
+is known to suffice for lattice-based key recovery. Vsslib performs every
+exponentiation by a secret scalar through `Group.expSecret`, which uses the
+backend's exponentiation directly only where it blinds natively, as reported by
+`Group.blindsNatively`. Otherwise it splits the scalar as
+`P^s = (P^r)^(s/r)` for a freshly sampled `r`, so that each of the two
+multiplications sees a uniformly random scalar independent of `s`, which keeps
+leakage from accumulating across calls. The split is multiplicative because the
+additive alternative `P^r * P^(s - r)` requires reducing `s - r`, which branches
+on whether `s < r` and would thereby leak an estimate of `s` over many calls. It
+costs a second multiplication and an inversion: Pedersen dealing becomes up to
+about twice as slow on the Edwards curves, and every secret operation about
+twice as slow on `decaf448`, whereas the curves of cofactor one are unaffected.
+`Group.exp` remains in use for public scalars only, such as share indexes,
+Lagrange coefficients and NIZK challenges. Custom backends inherit the split and
+should override `blindsNatively` only for points their exponentiation blinds.
+
+Memory hygiene is limited by the language as well. `BigInt` values are
+immutable and cannot be overwritten, so the scalars vsslib computes with stay in
+memory until garbage collection, where heap snapshots, core dumps or swap may
+expose them. Vsslib wipes the byte buffers it controls, namely the random bytes
+from which secret scalars and nonces are sampled. The byte arrays it returns,
+such as secrets, secret shares and bindings, belong to the caller, who should
+overwrite them, e.g. with `fill(0)`, once they are no longer needed, and drop
+references to objects holding secrets, such as a `ShamirSharing`, as soon as
+possible. Finally, the remaining arithmetic on secrets, i.e., interpolation,
+combination of shares and computation of NIZK responses, operates on `BigInt`
+and is not constant-time in principle; since it involves uniformly random
+full-width values, the information exposed by its timing is expected to be
+small, and its elimination requires a fixed-width scalar representation, which
+is planned.
 
 ### <a name="input-validation-overview"></a>Input validation
 
