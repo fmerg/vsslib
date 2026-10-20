@@ -34,8 +34,13 @@ describe('hash digest at block boundaries', () => {
 });
 
 describe('hash algorithm support', () => {
+  // All algorithms regardless of the test config, so that a mismatched hasher is caught
+  const buffer = Buffer.from('sample-text');
   it.each(Object.values(Algorithms))('%s is supported', async (algorithm) => {
-    expect(hash(algorithm).algorithm).toEqual(algorithm);
+    const hasher = hash(algorithm);
+    expect(hasher.algorithm).toEqual(algorithm);
+    const expected = Uint8Array.from(createHash(algorithm).update(buffer).digest());
+    expect(await hasher.digest(buffer)).toEqual(expected);
   });
 });
 
