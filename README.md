@@ -115,7 +115,13 @@ See [here](#security-main) for details.
 npm install vsslib
 ```
 
-Requires Node.js 20.19 or later.
+Requires Node.js 20.19 or later, or a browser through a bundler such as esbuild,
+Vite or webpack. The library uses no Node APIs at runtime: it hashes with
+[`noble-hashes`](https://github.com/paulmillr/noble-hashes) and samples
+randomness with `crypto.getRandomValues`, which every modern browser and
+Node.js provide. The package is built as CommonJS, so loading it in a browser
+without a bundler, e.g. from a CDN as an ES module, is not supported yet. See
+[Browsers](#browsers) for the security implications.
 
 # Usage
 
@@ -695,6 +701,23 @@ full-width values, the information exposed by its timing is expected to be
 small, and its elimination requires a fixed-width scalar representation, which
 is planned.
 
+### <a name="browsers"></a>Browsers
+
+In a browser, vsslib shares the JavaScript engine with whatever else the page
+loads, so the precautions above meet a stronger adversary. Scripts of the same
+origin, including third-party dependencies and analytics, can read any value
+reachable from the page, secrets and shares included, and browser extensions
+with access to the page can do the same. Cross-origin code can still measure
+timing, e.g. through shared caches and high-resolution timers, which isolation
+mechanisms of the browser such as site isolation and cross-origin isolation
+mitigate, but do not remove. Applications handling secrets in the browser should
+keep them in a dedicated context, e.g. a Web Worker or a separate origin with a
+strict Content Security Policy, load vsslib from a pinned and integrity-checked
+bundle, and wipe the returned byte arrays as described above. Randomness comes
+from `crypto.getRandomValues`, which browsers back by the operating system's
+generator; it limits a single call to 65536 bytes, so that `randomNonce` accepts
+sizes from 1 to 65536 bytes.
+
 ### <a name="input-validation-overview"></a>Input validation
 
 Vsslib's interface operates with the byte representations of scalars and group
@@ -752,6 +775,14 @@ mirror these modules.
 recovery, and DKG built on top of the latter. They are reference
 implementations, with the parties of every step marked, and are also run by
 the tests and timed by the benchmarks.
+
+## Browser check
+
+[`tests/browser.spec.ts`](./tests/browser.spec.ts) bundles the library for the
+browser with esbuild, fails on any Node import, and runs VSS with public
+recovery from the bundle in a Node `vm` context that exposes only `crypto` and
+`TextEncoder`. It thereby guards against Node APIs leaking into the library,
+but does not replace testing in real browsers.
 
 ## Benchmarks
 
