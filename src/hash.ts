@@ -19,7 +19,7 @@ const HASHERS = new Map<string, (msg: Uint8Array) => Uint8Array>([
 
 
 export class Hash {
-  algorithm: Algorithm;
+  readonly algorithm: Algorithm;
   private hasher: (msg: Uint8Array) => Uint8Array;
 
   constructor(algorithm: Algorithm) {
