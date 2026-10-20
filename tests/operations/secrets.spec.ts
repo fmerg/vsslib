@@ -63,6 +63,21 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     expect(await isKeypair(ctx, secret, otherPublic)).toBe(false);
     expect(await isKeypair(ctx, otherSecret, publicBytes)).toBe(false);
   });
+  it.each(systems)('secrets differing in a single byte - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const len = ctx.scalarBytes;
+    const high = 1n << BigInt(8 * (len - 1));
+    const pairs = [
+      [high, high + 1n],  // differ in the first byte
+      [1n, high + 1n],    // differ in the last byte
+    ];
+    for (const [a, b] of pairs) {
+      const lhs = ctx.scalarToBytes(a);
+      const rhs = ctx.scalarToBytes(b);
+      expect(await isEqualSecret(ctx, lhs, rhs)).toBe(false);
+      expect(await isEqualSecret(ctx, lhs, Uint8Array.from(lhs))).toBe(true);
+    }
+  });
   it.each(systems)('secret-to-scalar roundtrip - over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret } = await randomSecret(ctx);

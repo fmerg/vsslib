@@ -40,7 +40,8 @@ export class EcPoint implements Point {
   }
 
   equals = async <Q extends Point>(other: Q): Promise<boolean> => {
-    // TODO: Ensure that this is constant time
+    // Not constant-time; compare canonical encodings with isEqualBytes where
+    // secret-dependent points are involved
     return (other instanceof EcPoint) && (this.wrapped.equals(other.wrapped));
   }
 }
