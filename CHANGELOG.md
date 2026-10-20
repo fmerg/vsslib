@@ -31,6 +31,7 @@ All notable changes to this project will be documented in this file.
 - Backends `ristretto255`, `decaf448`, `secp256k1`, `p256`, `p384` and `p521`. SEC1 points are encoded compressed, with `0x00` for the point at infinity.
 - `derivePedersenBase(ctx, seed)`, which hashes a public seed to a group element of unknown discrete log.
 - `Group.expSecret(point, scalar)`, exponentiation by a secret scalar, and `Group.blindsNatively(point)`, which tells whether `exp` blinds secret scalars for `point`. Custom backends inherit a default that always splits the scalar; override `blindsNatively` only for points the backend blinds, and as a property like the other `Group` members, since a method would be shadowed by the default.
+- `Group.expPublic(point, scalar)`, exponentiation by a public scalar that may run in variable time. It defaults to `exp`; the elliptic backends use noble's `multiplyUnsafe`. Custom backends may override it, as a property, with a faster variable-time multiplication.
 - Root exports of `verifyFeldmanCommitments`, `verifyPedersenCommitments`, the public types and the errors `VssError`, `BadGroupError` and `ShamirError`. Every error derives from `VssError`.
 - Type exports of `Elliptic`, the type of `System`, and of `EcGroup` and `EcPoint` from `vsslib/backend`, the types of the elliptic backends.
 
@@ -47,6 +48,12 @@ All notable changes to this project will be documented in this file.
 - Scalars are encoded without conversion to strings, which ran in variable time and copied secrets to the heap.
 - The random bytes from which scalars are sampled are wiped after use.
 - Exponentiations by secret scalars that noble does not blind, i.e., of non-generator points on `ed25519`, `ed448`, `jubjub` and `ristretto255` and of every point on `decaf448`, split the scalar with a fresh random factor. Pedersen dealing is up to about twice as slow on these curves, and every secret operation about twice as slow on `decaf448`.
+
+### Performance
+
+- Verification of Feldman and Pedersen commitments raises the commitments to powers of the share index through `expPublic`. Verifying and parsing Feldman packets is 31-61% faster on `ed25519` and `decaf448` and 89-95% faster on `secp256k1` and `p521`, Pedersen packets 22-54% and 73-91%; a DKG with 10 parties is 12-14% and 45-46% faster, respectively.
+- `shareSecret` without predefined shares samples the coefficients of the sharing polynomial directly instead of interpolating, and interpolation builds the Lagrange basis in quadratic instead of cubic time; `shareSecret` is 45% faster at threshold 5 and 90% faster at threshold 25.
+- The sharing polynomial is evaluated by Horner's rule over its coefficients instead of the barycentric formula, which inverted once per point and call; `getSecretShares` is 78-93% faster.
 
 ### Fixed
 

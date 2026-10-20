@@ -683,8 +683,14 @@ costs a second multiplication and an inversion: Pedersen dealing becomes up to
 about twice as slow on the Edwards curves, and every secret operation about
 twice as slow on `decaf448`, whereas the curves of cofactor one are unaffected.
 `Group.exp` remains in use for public scalars only, such as share indexes,
-Lagrange coefficients and NIZK challenges. Custom backends inherit the split and
-should override `blindsNatively` only for points their exponentiation blinds.
+Lagrange coefficients and NIZK challenges. Verification of VSS commitments
+moreover goes through `Group.expPublic`, which the elliptic backends implement
+by noble's variable-time multiplication: raising the commitments to powers of the
+share index, which is small and public, then costs a few doublings instead of a
+full constant-time multiplication, which makes verification several times
+faster. Custom backends inherit the split and should override `blindsNatively`
+only for points their exponentiation blinds; `expPublic` defaults to `exp`, and
+an override may run in variable time, since it never receives secrets.
 
 Memory hygiene is limited by the language as well. `BigInt` values are
 immutable and cannot be overwritten, so the scalars vsslib computes with stay in
@@ -694,8 +700,9 @@ from which secret scalars and nonces are sampled. The byte arrays it returns,
 such as secrets, secret shares and bindings, belong to the caller, who should
 overwrite them, e.g. with `fill(0)`, once they are no longer needed, and drop
 references to objects holding secrets, such as a `ShamirSharing`, as soon as
-possible. Finally, the remaining arithmetic on secrets, i.e., interpolation,
-combination of shares and computation of NIZK responses, operates on `BigInt`
+possible. Finally, the remaining arithmetic on secrets, i.e., evaluation of the
+sharing polynomial, interpolation over predefined shares, combination of shares
+and computation of NIZK responses, operates on `BigInt`
 and is not constant-time in principle; since it involves uniformly random
 full-width values, the information exposed by its timing is expected to be
 small, and its elimination requires a fixed-width scalar representation, which
