@@ -84,7 +84,9 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
     this.ws = ws;
   }
 
-  evaluate = (value: bigint | number): bigint => {
+  /** Evaluation at `value` in barycentric form; reference for the inherited
+   * `evaluate`, which runs Horner's rule over the coefficients */
+  evaluateBarycentric = (value: bigint | number): bigint => {
     const { xs, ys, ws, order } = this;
     const x = BigInt(value);
     let [b, c] = [0n, 0n];
