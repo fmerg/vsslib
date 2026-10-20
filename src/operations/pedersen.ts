@@ -1,3 +1,4 @@
+import { bytesToHex } from '@noble/hashes/utils.js';
 import { Point, Group } from '../backend';
 import { randomPolynomial } from '../polynomials';
 import { InvalidSecretShare, InvalidInput } from '../errors';
@@ -11,6 +12,38 @@ import { evalCommitments } from './commitments';
 const PEDERSEN_BASE_DST = new TextEncoder().encode('vsslib:pedersen-base');
 
 
+/** Number of parsed Pedersen bases kept per group class; the least recently
+ * used is evicted */
+const PEDERSEN_BASE_CACHE = 8;
+
+/** A base is prepared by precomputeBase on its second use, so that a base used
+ * once costs no more than without the cache */
+type _CachedBase = { point: Point, precomputed: boolean };
+
+// By group class, so that a custom backend reusing the name of a system never
+// receives points of another class, then by group parameters and encoding.
+// Groups are created anew by every initBackend call, so a cache per group
+// would not hit
+let pedersenBases = new WeakMap<object, Map<string, _CachedBase>>();
+
+// Cache key prefix per group, which spares encoding the generator on every call
+const groupKeys = new WeakMap<object, string>();
+
+const groupKey = <P extends Point>(ctx: Group<P>): string => {
+  let key = groupKeys.get(ctx);
+  if (key === undefined) {
+    key = `${ctx.system}:${ctx.order}:${bytesToHex(ctx.generator.toBytes())}`;
+    groupKeys.set(ctx, key);
+  }
+  return key;
+}
+
+/** @internal Empty the cache of Pedersen bases, e.g. between tests */
+export function clearPedersenBases(): void {
+  pedersenBases = new WeakMap();
+}
+
+
 /** Derive from a public seed a Pedersen base whose discrete log is unknown */
 export async function derivePedersenBase<P extends Point>(
   ctx: Group<P>,
@@ -20,9 +53,7 @@ export async function derivePedersenBase<P extends Point>(
 }
 
 
-/** Parse a Pedersen base, rejecting the neutral element and the generator,
- * whose discrete logs are known */
-export async function parsePedersenBase<P extends Point>(
+async function validatePedersenBase<P extends Point>(
   ctx: Group<P>,
   pedersenBase: Uint8Array,
 ): Promise<P> {
@@ -31,6 +62,39 @@ export async function parsePedersenBase<P extends Point>(
     'Pedersen base must be neither the neutral element nor the generator'
   );
   return h;
+}
+
+
+/** Parse a Pedersen base, rejecting the neutral element and the generator,
+ * whose discrete logs are known. Valid bases are cached, so that later calls
+ * skip parsing, and prepared by precomputeBase on their second use */
+export async function parsePedersenBase<P extends Point>(
+  ctx: Group<P>,
+  pedersenBase: Uint8Array,
+): Promise<P> {
+  // Anything else is rejected by parsing, as InvalidInput
+  if (!(pedersenBase instanceof Uint8Array)) return validatePedersenBase(ctx, pedersenBase);
+  const key = `${groupKey(ctx)}:${bytesToHex(pedersenBase)}`;
+  let entry = pedersenBases.get(ctx.constructor)?.get(key);
+  if (entry && !entry.precomputed) {
+    entry.point = ctx.precomputeBase(entry.point as P);
+    entry.precomputed = true;
+  }
+  if (!entry) {
+    const h = await validatePedersenBase(ctx, pedersenBase);
+    // Concurrent calls may have cached the base meanwhile; keep the first
+    entry = pedersenBases.get(ctx.constructor)?.get(key) ?? { point: h, precomputed: false };
+  }
+  let bases = pedersenBases.get(ctx.constructor);
+  if (!bases) {
+    bases = new Map();
+    pedersenBases.set(ctx.constructor, bases);
+  }
+  // Maps iterate in insertion order, which reinsertion turns into recency
+  bases.delete(key);
+  bases.set(key, entry);
+  if (bases.size > PEDERSEN_BASE_CACHE) bases.delete(bases.keys().next().value!);
+  return entry.point as P;
 }
 
 

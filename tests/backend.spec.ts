@@ -1,11 +1,12 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { each } from './utils';
-import { initBackend, Group } from 'vsslib/backend';
-import type { EcGroup, EcPoint } from 'vsslib/backend';
+import { initBackend } from 'vsslib/backend';
+import type { EcPoint } from 'vsslib/backend';
 import { InvalidInput } from 'vsslib';
 import { resolveTestConfig } from './environ';
 import { fixtures } from './systems';
+import { inheriting } from './helpers';
 
 const __0n = BigInt(0)
 const __1n = BigInt(1)
@@ -196,22 +197,6 @@ describe('canonical encoding', () => {
 });
 
 
-/** Group over the operations of an elliptic backend, with the defaults of
- * Group for everything else, as a custom backend inherits them */
-const inheriting = (ctx: EcGroup): Group<EcPoint> => {
-  class Inheriting extends Group<EcPoint> {
-    randomScalar = ctx.randomScalar;
-    randomPoint = ctx.randomPoint;
-    validateScalar = ctx.validateScalar;
-    validatePoint = ctx.validatePoint;
-    exp = ctx.exp;
-    operate = ctx.operate;
-    invert = ctx.invert;
-    bytesToPoint = ctx.bytesToPoint;
-    hashToPoint = ctx.hashToPoint;
-  }
-  return new Inheriting(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
-}
 
 
 describe('public multi-exponentiation', () => {
@@ -275,5 +260,36 @@ describe('public multi-exponentiation', () => {
         }
       }
     }
+  });
+});
+
+
+describe('base precomputation', () => {
+  each(systems)('returns the point and keeps exponentiation over %s', async (system) => {
+    const ctx = initBackend(system);
+    const bytes = (await ctx.hashToPoint(Uint8Array.of(1), Uint8Array.of(2))).toBytes();
+    const fresh = await ctx.parsePoint(bytes);
+    const scalars = [__0n, __1n, BigInt(2), ctx.order - __1n, await ctx.randomScalar()];
+    for (const group of [ctx, inheriting(ctx)]) {
+      const point = await ctx.parsePoint(bytes);
+      const base = group.precomputeBase(point);
+      assert.equal(base, point);
+      for (const scalar of scalars) {
+        const expected = (await ctx.exp(fresh, scalar)).toBytes();
+        for (const exp of [group.exp, group.expSecret, group.expPublic]) {
+          assert.deepEqual((await exp(base, scalar)).toBytes(), expected);
+        }
+      }
+    }
+  });
+  each(systems)('leaves the generator and the neutral element as they are over %s', async (system) => {
+    // A new window would drop noble's table for its base
+    const ctx = initBackend(system);
+    const scalar = await ctx.randomScalar();
+    const expected = (await ctx.exp(ctx.generator, scalar)).toBytes();
+    assert.equal(ctx.precomputeBase(ctx.generator), ctx.generator);
+    assert.equal(ctx.precomputeBase(ctx.neutral), ctx.neutral);
+    assert.deepEqual((await ctx.expSecret(ctx.generator, scalar)).toBytes(), expected);
+    assert.equal(await (await ctx.exp(ctx.neutral, scalar)).equals(ctx.neutral), true);
   });
 });

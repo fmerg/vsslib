@@ -1,15 +1,20 @@
-import { describe } from 'node:test';
+import { describe, test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   derivePedersenBase,
   createPedersenPackets,
   verifyPedersenCommitments,
   parsePedersenPacket,
+  parsePedersenBase,
+  clearPedersenBases,
 } from 'vsslib/operations/pedersen';
-import { initBackend, randomPublic, shareSecret } from 'vsslib';
+import { initBackend, randomPublic, shareSecret, InvalidInput } from 'vsslib';
+import { Group } from 'vsslib/backend';
+import type { EcPoint } from 'vsslib/backend';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer, each } from '../utils';
 import { fixtures } from '../systems';
+import { inheriting } from '../helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -130,5 +135,125 @@ describe('Pedersen base derivation', () => {
       assert.equal(await h.equals(ctx.neutral), false);
       assert.equal(await h.equals(ctx.generator), false);
     }
+  });
+});
+
+
+const seed = (i: number) => Uint8Array.of(i);
+
+
+describe('Pedersen base cache', () => {
+  each(systems)('returns the same base across groups over %s', async (system) => {
+    clearPedersenBases();
+    const bytes = await derivePedersenBase(initBackend(system));
+    const ctx = initBackend(system);
+    const precompute = mock.method(ctx, 'precomputeBase');
+    const h = await parsePedersenBase(ctx, bytes);
+    // Prepared on the second use only, so that a single use costs no more
+    assert.equal(precompute.mock.callCount(), 0);
+    assert.equal(await parsePedersenBase(ctx, bytes), h);
+    assert.equal(precompute.mock.callCount(), 1);
+    assert.equal(await parsePedersenBase(initBackend(system), bytes), h);
+    assert.equal(await parsePedersenBase(ctx, bytes), h);
+    assert.equal(precompute.mock.callCount(), 1);
+    assert.deepEqual(h.toBytes(), bytes);
+    const other = await parsePedersenBase(ctx, await derivePedersenBase(ctx, seed(1)));
+    assert.notEqual(other, h);
+  });
+  each(systems)('never caches invalid bases over %s', async (system) => {
+    clearPedersenBases();
+    const ctx = initBackend(system);
+    const parse = mock.method(ctx, 'parsePoint');
+    const invalid = [
+      ctx.neutral.toBytes(),
+      ctx.generator.toBytes(),
+      Uint8Array.of(...ctx.generator.toBytes(), 0),
+    ];
+    for (const bytes of invalid) {
+      for (let i = 0; i < 2; i++) {
+        await assert.rejects(parsePedersenBase(ctx, bytes), InvalidInput);
+      }
+    }
+    assert.equal(parse.mock.callCount(), 2 * invalid.length);
+    // Other than bytes, rejected as before the cache
+    for (const value of ['00', [1, 2, 3], undefined]) {
+      await assert.rejects(parsePedersenBase(ctx, value as unknown as Uint8Array), InvalidInput);
+    }
+  });
+  each(systems)('evicts the least recently used base over %s', async (system) => {
+    clearPedersenBases();
+    const ctx = initBackend(system);
+    const bases = [];
+    for (let i = 0; i < 10; i++) bases.push(await derivePedersenBase(ctx, seed(i)));
+    for (const bytes of bases.slice(0, 8)) await parsePedersenBase(ctx, bytes);
+    const parse = mock.method(ctx, 'parsePoint');
+    // A hit on the oldest makes the second oldest the next to go
+    await parsePedersenBase(ctx, bases[0]);
+    await parsePedersenBase(ctx, bases[8]);
+    assert.equal(parse.mock.callCount(), 1);
+    await parsePedersenBase(ctx, bases[0]);
+    assert.equal(parse.mock.callCount(), 1);
+    await parsePedersenBase(ctx, bases[1]);
+    assert.equal(parse.mock.callCount(), 2);
+    // That reparse evicted bases[2], the least recently used by then
+    await parsePedersenBase(ctx, bases[2]);
+    assert.equal(parse.mock.callCount(), 3);
+  });
+  each(systems)('keeps custom groups apart over %s', async (system) => {
+    clearPedersenBases();
+    const ctx = initBackend(system);
+    const other = inheriting(ctx);
+    const bytes = await derivePedersenBase(ctx);
+    const h = await parsePedersenBase(ctx, bytes);
+    const parse = mock.method(other, 'parsePoint');
+    assert.notEqual(await parsePedersenBase(other, bytes), h);
+    assert.equal(parse.mock.callCount(), 1);
+  });
+  each(systems)('keeps groups of one class with other parameters apart over %s', async (system) => {
+    clearPedersenBases();
+    const ctx = initBackend(system);
+    const lhs = inheriting(ctx);
+    // Same class, other generator
+    const Inheriting = lhs.constructor as new (...args: unknown[]) => Group<EcPoint>;
+    const generator = await ctx.exp(ctx.generator, BigInt(2));
+    const rhs = new Inheriting(ctx.system, ctx.modulus, ctx.order, generator, ctx.neutral);
+    const bytes = await derivePedersenBase(ctx);
+    const h = await parsePedersenBase(lhs, bytes);
+    const parse = mock.method(rhs, 'parsePoint');
+    assert.notEqual(await parsePedersenBase(rhs, bytes), h);
+    assert.equal(parse.mock.callCount(), 1);
+  });
+  each(systems)('keeps a single entry under concurrent calls over %s', async (system) => {
+    clearPedersenBases();
+    const ctx = initBackend(system);
+    const [b1, b2] = [await derivePedersenBase(ctx, seed(1)), await derivePedersenBase(ctx, seed(2))];
+    // Concurrent misses parse each, but all receive the first cached point
+    const points = await Promise.all([b1, b1, b1, b2].map(b => parsePedersenBase(ctx, b)));
+    assert.ok(points.slice(1, 3).every(point => point === points[0]));
+    const parse = mock.method(ctx, 'parsePoint');
+    assert.equal(await parsePedersenBase(ctx, b1), points[0]);
+    // Both keys survive, although each call found no cache for the class
+    assert.equal(await parsePedersenBase(ctx, b2), points[3]);
+    assert.equal(parse.mock.callCount(), 0);
+  });
+  test('keeps systems apart', async () => {
+    // A base whose encoding is valid on both ed25519 and ristretto255
+    clearPedersenBases();
+    const [ed, ristretto] = [initBackend('ed25519'), initBackend('ristretto255')];
+    let bytes;
+    for (let i = 0; i < 256 && !bytes; i++) {
+      const candidate = await derivePedersenBase(ed, seed(i));
+      try {
+        await ristretto.parsePoint(candidate);
+        bytes = candidate;
+      } catch { /* not a ristretto255 encoding */ }
+    }
+    assert.ok(bytes);
+    const h = await parsePedersenBase(ed, bytes);
+    const parse = mock.method(ristretto, 'parsePoint');
+    const g = await parsePedersenBase(ristretto, bytes);
+    assert.equal(parse.mock.callCount(), 1);
+    assert.notEqual(g, h);
+    assert.equal(await parsePedersenBase(ed, bytes), h);
   });
 });
