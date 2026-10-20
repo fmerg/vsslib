@@ -6,7 +6,8 @@ import { secp256k1, secp256k1_hasher } from '@noble/curves/secp256k1.js';
 import {
   p256, p256_hasher, p384, p384_hasher, p521, p521_hasher
 } from '@noble/curves/nist.js';
-import { randomBytes, concatBytes, asciiToBytes } from '@noble/curves/utils.js';
+import { randomBytes } from '@noble/hashes/utils.js';
+import { concatBytes, asciiToBytes } from '@noble/curves/utils.js';
 
 import { Elliptic } from '../enums';
 import { System } from '../types';
