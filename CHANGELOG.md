@@ -22,7 +22,7 @@ All notable changes to this project will be documented in this file.
 - NIZK challenges are computed over a length-prefixed, labelled encoding of their input, and Schnorr packet proofs cover the share index. Proofs and packets produced by 1.0.0 do not verify.
 - Share indexes must be distinct positive safe integers; violations throw `InvalidInput`, also from `recoverPublic` regardless of `errorOnInvalid`.
 - Hash algorithms outside `Algorithms` throw `InvalidInput`.
-- `randomNonce(nrBytes)` throws `InvalidInput` unless `nrBytes` is an integer from 1 to 65536; a size of 0 no longer falls back to 16 bytes.
+- `randomNonce(nrBytes)` throws `InvalidInput` unless `nrBytes` is an integer from 1 to 65536; a size of 0 or `null` no longer falls back to 16 bytes.
 - Custom backends: `Group.buff2Point` is renamed to `bytesToPoint`, `Group.bytesToScalar` is removed, and `Group` declares the abstract `hashToPoint(msg, dst)`. In the elliptic backend, `EcGroup.curve` is removed; the wrapped curve is internal.
 
 ### Added
