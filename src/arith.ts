@@ -113,3 +113,26 @@ export function modInv(m: bigint, n: bigint): bigint {
 
   return mod(x, n);
 }
+
+
+/** Modular inverses of all `values` with a single inversion (Montgomery's
+ * trick). Throws NoInverseError if any of them has no inverse */
+export function modInvBatch(values: bigint[], n: bigint): bigint[] {
+  const k = values.length;
+  const reduced = values.map(v => mod(v, n));
+  // prefixes[i] is the product of the values before i
+  const prefixes = new Array(k);
+  let acc = 1n;
+  for (let i = 0; i < k; i++) {
+    prefixes[i] = acc;
+    acc = mod(acc * reduced[i], n);
+  }
+  // The product is invertible exactly when every value is
+  let inv = modInv(acc, n);
+  const inverses = new Array(k);
+  for (let i = k - 1; i >= 0; i--) {
+    inverses[i] = mod(inv * prefixes[i], n);
+    inv = mod(inv * reduced[i], n);
+  }
+  return inverses;
+}
