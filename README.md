@@ -669,7 +669,10 @@ backend's exponentiation directly only where it blinds natively, as reported by
 multiplications sees a uniformly random scalar independent of `s`, which keeps
 leakage from accumulating across calls. The split is multiplicative because the
 additive alternative `P^r * P^(s - r)` requires reducing `s - r`, which branches
-on whether `s < r` and would thereby leak an estimate of `s` over many calls. It
+on whether `s < r` and would thereby leak an estimate of `s` over many calls.
+Since modular inversion runs in variable time as well, `r` is inverted as
+`u / (r * u)` for a second fresh random `u`, so that the inversion only sees a
+value independent of `r`. The split
 costs a second multiplication and an inversion: Pedersen dealing becomes up to
 about twice as slow on the Edwards curves, and every secret operation about
 twice as slow on `decaf448`, whereas the curves of cofactor one are unaffected.
