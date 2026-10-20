@@ -18,8 +18,8 @@ export async function evalCommitments<P extends Point>(
     `Invalid number of commitments: expected ${threshold}, got ${commitments.length}`
   );
   const x = BigInt(index);
-  let acc = ctx.neutral;
-  for (let j = commitments.length - 1; j >= 0; j--) {
+  let acc = await ctx.parsePoint(commitments[threshold - 1]);
+  for (let j = threshold - 2; j >= 0; j--) {
     const c = await ctx.parsePoint(commitments[j]);
     acc = await ctx.operate(await ctx.expPublic(acc, x), c);
   }
