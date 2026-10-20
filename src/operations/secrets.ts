@@ -18,7 +18,7 @@ export async function extractPublic<P extends Point>(
 ): Promise<Uint8Array> {
   const g = ctx.generator;
   const x = await ctx.parseScalar(secret);
-  const y = await ctx.exp(g, x);
+  const y = await ctx.expSecret(g, x);
   return y.toBytes();
 }
 
@@ -79,7 +79,7 @@ export async function isKeypair<P extends Point>(
   const g = ctx.generator;
   const x = await ctx.parseScalar(secret);
   await ctx.parsePoint(publicBytes);
-  const y = await ctx.exp(g, x);
+  const y = await ctx.expSecret(g, x);
   return isEqualBytes(y.toBytes(), publicBytes);
 }
 
