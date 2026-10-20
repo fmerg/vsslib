@@ -433,8 +433,8 @@ const pedersenBase = await derivePedersenBase(ctx, seed);
 
 The seed is optional and can be any bytestring agreed upon by the parties, e.g.,
 a session identifier; if omitted, a fixed default base is derived. Reuse the
-same base across operations: vsslib parses it once and keeps a precomputed
-table for it, which makes later operations faster (see
+same base across operations: vsslib parses it once and, from its second use on,
+keeps a precomputed table for it, which makes later operations faster (see
 [Pedersen base table](#pedersen-base-table)).
 
 > **Warning**
@@ -993,11 +993,12 @@ the Pedersen base still split. The other curves are unchanged.
 Pedersen dealing raises the Pedersen base `h` to the coefficients of the binding
 polynomial, and verification to the binding of the share, all secret scalars.
 Every operation used to parse `h` from its encoding and multiply it without a
-precomputed table. `h` now goes through `Group.precomputeBase` once, which the
-elliptic backends implement by attaching a noble table of window 4 to the point,
-and vsslib keeps up to 8 parsed and precomputed bases per process, evicting the
-least recently used. Only bases that pass validation are kept, so invalid ones
-are rejected on every call. On the curves of cofactor one, noble blinds every
+precomputed table. vsslib now keeps up to 8 parsed bases, evicting the least
+recently used, and passes a base through `Group.precomputeBase` on its second
+use, which the elliptic backends implement by attaching a noble table of window
+4 to the point. The limit applies per backend class, so that the built-in
+curves share it. Only bases that pass validation are kept, so invalid ones are
+rejected on every call. On the curves of cofactor one, noble blinds every
 multiplication and the blinded multiplication uses the table as well, so that
 the whole exponentiation of `h` becomes 4 to 4.5 times faster. On the
 cofactored curves, only the first multiplication of the
@@ -1008,17 +1009,20 @@ the same base:
 
 | operation | threshold | `ed25519` | `decaf448` | `secp256k1` | `p521` |
 | --- | ---: | ---: | ---: | ---: | ---: |
-| `createPedersenPackets` | 3 / 10 | -37% / -32% | -28% / -28% | -62% / -61% | -65% / -65% |
-| verify/parse Pedersen packets | 3 | -23% to -25% | -28% to -29% | -55% to -56% | -59% to -60% |
-| verify/parse Pedersen packets | 10 | -8% to -10% | -17% to -20% | -41% to -42% | -46% to -47% |
+| `createPedersenPackets` | 3 / 10 | -38% / -32% | -31% / -28% | -62% / -62% | -65% / -65% |
+| verify/parse Pedersen packets | 3 | -24% to -28% | -26% to -32% | -55% to -59% | -60% to -61% |
+| verify/parse Pedersen packets | 10 | -11% to -13% | -18% to -19% | -42% | -48% to -49% |
 
-For example, dealing Pedersen packets on `p521` with threshold 3 takes 9.6 ms
+For example, dealing Pedersen packets on `p521` with threshold 3 takes 9.5 ms
 instead of 27.5 ms. Verification gains less at higher thresholds, since the
 evaluation of the commitments grows with the threshold and does not involve
-`h`. The number of shares does not matter. The first operation with a new
-base builds the table, which costs about as much as the untabled
-multiplications it replaces, so that this operation takes about as long as
-before and the gain starts with the second use of the base. Moreover, the first
+`h`. The number of shares does not matter. A base used once costs as before,
+e.g. when a shareholder verifies a single packet under a per-session base,
+since the first operation with a base only parses and keeps it. The second
+builds the table, which costs a few untabled multiplications (5.9 against
+0.9 ms on `ed25519`, 20.9 against 7.4 ms on `p521`): dealing at threshold 3
+then takes about as long as before, and a single verification a few
+milliseconds longer. The gain starts with the third use. Moreover, the first
 tables built in a process run unoptimized code, a one-off of up to about 12 ms.
 A table takes 107 KB on `secp256k1` to 315 KB on `p521`.
 
@@ -1061,7 +1065,8 @@ $ ./bench.sh -m secrets,shamir,feldman,pedersen,recovery -s decaf448,ed448 \
 ```
 
 For the Pedersen base table, with the Feldman operations as a control that
-should not change:
+should not change, and `verifyPedersenNewBase` measuring the first use of a
+base:
 
 ```
 $ ./bench.sh -m pedersen,feldman -s ed25519,decaf448,secp256k1,p521 \
