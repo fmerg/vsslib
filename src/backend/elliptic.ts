@@ -57,6 +57,11 @@ type _HashToCurve = (msg: Uint8Array, dst: Uint8Array) => _CurvePoint;
  * base itself; blindsNatively then reports the base as blinded */
 type _BaseMultiply = (scalar: bigint) => _CurvePoint;
 
+/** Variable-time multiplication of the base point by a scalar in [0, order),
+ * throwing outside that range like noble's multiplyUnsafe, where noble has no
+ * table for the base itself */
+type _BaseMultiplyUnsafe = (scalar: bigint) => _CurvePoint;
+
 
 /** Points whose secret multiplication noble blinds: every point on cofactor-1
  * curves, otherwise only its base point, recognized by identity (see
@@ -100,6 +105,7 @@ export class EcGroup extends Group<EcPoint> {
   private blinding: _Blinding;
   private msmCutoff: number;
   private baseMultiply?: _BaseMultiply;
+  private baseMultiplyUnsafe?: _BaseMultiplyUnsafe;
   /** @internal Point constructor of the noble curve */
   Point: _PointCons;
 
@@ -111,6 +117,7 @@ export class EcGroup extends Group<EcPoint> {
     blinding: _Blinding,
     msmCutoff: number,
     baseMultiply?: _BaseMultiply,
+    baseMultiplyUnsafe?: _BaseMultiplyUnsafe,
   ) {
     const modulus = Point.Fp.ORDER;
     const order = Point.Fn.ORDER;
@@ -127,6 +134,7 @@ export class EcGroup extends Group<EcPoint> {
     this.blinding = blinding;
     this.msmCutoff = msmCutoff;
     this.baseMultiply = baseMultiply;
+    this.baseMultiplyUnsafe = baseMultiplyUnsafe;
   }
 
   private wrap = (point: _CurvePoint): EcPoint => new EcPoint(point, this.codec.toBytes);
@@ -182,9 +190,15 @@ export class EcGroup extends Group<EcPoint> {
     return this.wrap(point.wrapped.multiply(scalar));
   }
 
+  /** Variable-time multiplication of a raw point, through baseMultiplyUnsafe
+   * for the base; shared by expPublic and multiExpPublic */
+  private multiplyUnsafe = (point: _CurvePoint, scalar: bigint): _CurvePoint =>
+    this.baseMultiplyUnsafe && point === this.base ?
+      this.baseMultiplyUnsafe(scalar) : point.multiplyUnsafe(scalar);
+
   /** Variable-time wNAF multiplication, whose cost shrinks with the scalar */
   expPublic = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => this.wrap(
-    point.wrapped.multiplyUnsafe(scalar)
+    this.multiplyUnsafe(point.wrapped, scalar)
   );
 
   /** Pippenger's method from `msmCutoff` points on, below which one
@@ -197,7 +211,7 @@ export class EcGroup extends Group<EcPoint> {
     );
     // Inlines expPublic and operate on the raw points; keep in step with them
     return this.wrap(wrapped.reduce(
-      (acc, point, i) => acc.add(point.multiplyUnsafe(scalars[i])), this.zero
+      (acc, point, i) => acc.add(this.multiplyUnsafe(point, scalars[i])), this.zero
     ));
   }
 
@@ -259,7 +273,7 @@ const precomputed = new WeakSet<object>();
 
 /** Supported curves; a new system needs an Elliptic member and an entry here.
  * The codec defaults to noble's native encoding, the MSM cutoff to MSM_CUTOFF
- * and the base multiplication to noble's */
+ * and the base multiplications to noble's */
 const CURVES: Record<Elliptic, {
   Point: _PointCons,
   hashToCurve: _HashToCurve,
@@ -267,6 +281,7 @@ const CURVES: Record<Elliptic, {
   blinding: _Blinding,
   msmCutoff?: number,
   baseMultiply?: _BaseMultiply,
+  baseMultiplyUnsafe?: _BaseMultiplyUnsafe,
 }> = {
   [Elliptic.ED25519]: {
     Point: ed25519.Point,
@@ -299,6 +314,10 @@ const CURVES: Record<Elliptic, {
     blinding: 'none',
     baseMultiply: (scalar) => new decaf448.Point(
       ed448.Point.BASE.multiply(scalar).double()
+    ),
+    // Likewise for public scalars, so as to use the table of ed448's base
+    baseMultiplyUnsafe: (scalar) => new decaf448.Point(
+      ed448.Point.BASE.multiplyUnsafe(scalar).double()
     ),
   },
   [Elliptic.SECP256K1]: {
@@ -334,9 +353,10 @@ const CURVES: Record<Elliptic, {
 export function initElliptic(system: Elliptic): EcGroup {
   const {
     Point, hashToCurve, codec = nobleCodec, blinding, msmCutoff = MSM_CUTOFF,
-    baseMultiply,
+    baseMultiply, baseMultiplyUnsafe,
   } = CURVES[system];
   return new EcGroup(
-    system, Point, hashToCurve, codec(Point), blinding, msmCutoff, baseMultiply
+    system, Point, hashToCurve, codec(Point), blinding, msmCutoff, baseMultiply,
+    baseMultiplyUnsafe,
   );
 }
