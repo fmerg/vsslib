@@ -43,7 +43,7 @@ export {
 } from './operations';
 export type { ShamirSharing, Nonces } from './operations';
 
-export { computeLambda } from './lagrange';
+export { computeLambda, computeLambdas } from './lagrange';
 
 export type { NizkProof } from './nizk';
 

@@ -7,6 +7,7 @@ import {
   verifyFeldmanCommitments,
   createFeldmanPackets,
   computeLambda,
+  computeLambdas,
   InvalidInput,
   InvalidPublicShare,
 } from 'vsslib';
@@ -40,6 +41,9 @@ describe('Share index validation', () => {
     expect(() => computeLambda(ctx, 1, [1, 2, 2])).toThrow(InvalidInput);
     expect(() => computeLambda(ctx, 3, [1, 2])).toThrow(InvalidInput);
     expect(() => computeLambda(ctx, 1.5, [1.5, 2])).toThrow(InvalidInput);
+    expect(() => computeLambdas(ctx, [1, 2, 2])).toThrow(InvalidInput);
+    expect(() => computeLambdas(ctx, [1.5, 2])).toThrow(InvalidInput);
+    expect(() => computeLambdas(ctx, [0, 1])).toThrow(InvalidInput);
   });
   it.each(systems)('verification rejects malformed indexes over %s', async (system) => {
     const { ctx, sharing, secretShares } = await createRawSharing(system, nrShares, threshold);
