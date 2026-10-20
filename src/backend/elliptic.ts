@@ -161,6 +161,11 @@ export class EcGroup extends Group<EcPoint> {
     scalar !== 0n ? point.wrapped.multiply(scalar) : this.zero
   );
 
+  /** Variable-time wNAF multiplication, whose cost shrinks with the scalar */
+  expPublic = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => this.wrap(
+    point.wrapped.multiplyUnsafe(scalar)
+  );
+
   operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => this.wrap(
     lhs.wrapped.add(rhs.wrapped)
   );
