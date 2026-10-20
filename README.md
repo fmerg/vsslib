@@ -778,11 +778,13 @@ the tests and timed by the benchmarks.
 
 ## Browser check
 
-[`tests/browser.spec.ts`](./tests/browser.spec.ts) bundles the library for the
-browser with esbuild, fails on any Node import, and runs VSS with public
-recovery from the bundle in a Node `vm` context that exposes only `crypto` and
-`TextEncoder`. It thereby guards against Node APIs leaking into the library,
-but does not replace testing in real browsers.
+[`tests/browser.spec.ts`](./tests/browser.spec.ts) bundles the entry points of
+the library for the browser with esbuild and fails on any Node module, also one
+required inside `try`, and on any reference to Node globals such as `Buffer` or
+`process`. It then runs SSS, VSS with public recovery and NIZK proofs from the
+bundle in a Node `vm` context that exposes only `crypto` and `TextEncoder`. It
+thereby guards against Node APIs leaking into the library, but does not replace
+testing in real browsers, nor does it bundle the compiled `dist`.
 
 ## Benchmarks
 
