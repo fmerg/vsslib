@@ -684,13 +684,13 @@ value independent of `r`. The split
 costs a second multiplication and an inversion: Pedersen dealing becomes up to
 about twice as slow on the Edwards curves, and every secret operation about
 twice as slow on `decaf448`, whereas the curves of cofactor one are unaffected.
-`Group.exp` remains in use for public scalars only, such as share indexes,
-Lagrange coefficients and NIZK challenges. Verification of VSS commitments
-moreover goes through `Group.expPublic`, which the elliptic backends implement
-by noble's variable-time multiplication: raising the commitments to powers of the
-share index, which is small and public, then costs a few doublings instead of a
-full constant-time multiplication, which makes verification several times
-faster. Custom backends inherit the split and should override `blindsNatively`
+`Group.exp` remains in use for public scalars only, such as Lagrange
+coefficients and NIZK challenges and responses. Share indexes go through
+`Group.expPublic` instead, which the elliptic backends implement by noble's
+variable-time multiplication: raising the commitments to powers of the share
+index, which is small and public, then costs a few doublings instead of a full
+constant-time multiplication, which shortens verification by 31% to 95%
+depending on the curve (see [Horner's method](#horner-method)). Custom backends inherit the split and should override `blindsNatively`
 only for points their exponentiation blinds; `expPublic` defaults to `exp`, and
 an override may run in variable time, since it never receives secrets.
 
@@ -784,7 +784,7 @@ implementation, over `n = 10, 50` shares and thresholds `t = 5, 25` (DKG with
 | DKG protocol run | -12% to -14% | -45% to -46% | [variable-time steps](#horner-variable-time) |
 | `getSecretShares` | -78% to -93% | -78% to -93% | [Horner's rule](#horner-sharing-polynomial) |
 | `createFeldmanPackets` (n = 50) | up to -23% | up to -22% | [Horner's rule](#horner-sharing-polynomial) |
-| `shareSecret` (t = 5 / t = 25) | -45% / -91% | -45% / -91% | [no interpolation](#horner-sampling) |
+| `shareSecret` (t = 5 / t = 25) | -45% / -90% | -45% / -90% | [no interpolation](#horner-sampling) |
 
 Operations dominated by exponentiations by secret scalars or Lagrange
 coefficients, such as `getPublicShares`, `createPedersenPackets`, the
@@ -799,8 +799,8 @@ already did by Horner's rule as `C_0 * (C_1 * (C_2 * ...)^i)^i`. This had
 however no effect on the cost, because the steps went through `Group.exp`,
 which noble runs in constant time, with the same sequence of operations for
 every scalar up to the group order. Raising to the small index `i` then costs as
-much as raising to the large `i^j`, so that both forms take `t - 1` full
-multiplications. The steps now go through `Group.expPublic`, which the elliptic
+much as raising to the large `i^j`, so that both forms cost about one full
+multiplication per commitment. The steps now go through `Group.expPublic`, which the elliptic
 backends implement by noble's variable-time multiplication, whose cost grows
 with the length of the scalar. Each step then costs a few doublings and
 additions, since `i` has only a few bits. This is what makes verification
@@ -823,7 +823,7 @@ The sharing polynomial used to be evaluated at each share index in the
 barycentric form of the interpolating polynomial, with one modular inversion
 per interpolation point at every call. It is now evaluated by Horner's rule
 over its coefficients, with `t - 1` multiplications and a single reduction
-modulo the order, which makes `getSecretShares` 78% to 93% faster. This is the
+modulo the order, which cuts the time of `getSecretShares` by 78% to 93%. This is the
 gain of Horner's rule proper, but it concerns arithmetic on scalars, which is
 cheap compared to group operations: with `n = 50, t = 25` on `ed25519`,
 `getSecretShares` takes 92 µs instead of 1.21 ms, whereas `getPublicShares`,
@@ -837,7 +837,7 @@ operations, but not in complete protocol runs.
 secret at `0` and random values at `1, ..., t - 1`. Without predefined shares,
 it now samples the coefficients directly, with the secret as constant term,
 which yields the same distribution without interpolation, so that `shareSecret`
-is 45% faster at `t = 5` and 91% faster at `t = 25`. This is unrelated to
+takes 45% less time at `t = 5` and about 90% less at `t = 25`. This is unrelated to
 Horner's rule, and again concerns scalar arithmetic in the microsecond range.
 With predefined shares, the polynomial is still interpolated, now building the
 Lagrange basis in quadratic instead of cubic time; this case was not
