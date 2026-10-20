@@ -4,7 +4,7 @@ import { resolveTestConfig } from './environ';
 
 import { hash } from 'vsslib/hash';
 import { Algorithm } from 'vsslib/types';
-import { InvalidInput, initBackend, createSchnorrPacket } from 'vsslib';
+import { InvalidInput, initBackend, createSchnorrPacket, Algorithms } from 'vsslib';
 
 
 const { algorithms }  = resolveTestConfig()
@@ -16,6 +16,26 @@ describe('hash digest', () => {
     const hasher = createHash(algorithm).update(buffer);
     const expected = Uint8Array.from(hasher.digest());
     expect(digest).toEqual(expected);
+  });
+});
+
+describe('hash digest at block boundaries', () => {
+  // Lengths around the padding and block sizes of SHA-2 (64, 128) and SHA-3 (72-144)
+  const lengths = [0, 1, 55, 56, 63, 64, 65, 71, 72, 103, 104, 111, 112, 127, 128, 135,
+    136, 143, 144, 1000];
+  it.each(algorithms)('%s', async (algorithm) => {
+    for (const len of lengths) {
+      const buffer = Uint8Array.from({ length: len }, (_, i) => (i * 7 + len) & 0xff);
+      const digest = await hash(algorithm).digest(buffer);
+      const expected = Uint8Array.from(createHash(algorithm).update(buffer).digest());
+      expect(digest).toEqual(expected);
+    }
+  });
+});
+
+describe('hash algorithm support', () => {
+  it.each(Object.values(Algorithms))('%s is supported', async (algorithm) => {
+    expect(hash(algorithm).algorithm).toEqual(algorithm);
   });
 });
 
