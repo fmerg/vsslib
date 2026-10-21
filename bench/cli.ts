@@ -6,7 +6,7 @@ import type { System, Algorithm } from 'vsslib';
 import { SUITES, MODULES } from './registry';
 import { Dimension, Params } from './types';
 import { CaseResult, CaseSpec } from './harness';
-import { runInWorker } from './runner';
+import { bundleWorker, runInWorker } from './runner';
 import { assertTaskset, collectEnvironment, environmentWarnings } from './environment';
 import { FORMATS, Format, LineFormatter, listCases } from './report';
 import {
@@ -169,7 +169,7 @@ const expand = (opts: Options): Planned[] => {
 
 const printConfiguration = (opts: Options, plan: Planned[]): void => {
   const env = collectEnvironment(opts.cpus);
-  console.error(`node ${env.node} on ${env.cpu} (${env.cores} cpus)`);
+  console.error(`node ${env.node} (${env.runner}) on ${env.cpu} (${env.cores} cpus)`);
   console.error(`governors: ${env.governors.join(', ') || 'unknown'}; pinned to: ${env.cpus ?? 'none'}`);
   console.error(`commit: ${env.commit ?? 'unknown'}${env.dirty ? ' (dirty)' : ''}`);
   console.error(`systems: ${opts.system.join(', ')}`);
@@ -220,6 +220,7 @@ async function main(opts: Options): Promise<void> {
   if (opts.verbose) printConfiguration(opts, plan);
   const baseline = baselineDocument ? indexBaseline(baselineDocument) : undefined;
   const { runs, ...timing } = settings;
+  const worker = bundleWorker();
   const results: CaseResult[] = plan.map(({ spec, uses }) => ({
     operation: `${spec.module}/${spec.name}`, uses, params: spec.params, runs: [],
   }));
@@ -240,7 +241,7 @@ async function main(opts: Options): Promise<void> {
       if (round < runs || !liveFormatter) progress(
         `run ${round}/${runs}: ${i + 1}/${plan.length}`
       );
-      results[i].runs.push(await runInWorker(spec, timing, opts.cpus));
+      results[i].runs.push(await runInWorker(worker, spec, timing, opts.cpus));
       if (round === runs) {
         comparisons[i] = baseline && compareResult(results[i], baseline, opts.tolerance);
         if (liveFormatter) console.log(liveFormatter.row(results[i], comparisons[i]));
