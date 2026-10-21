@@ -121,7 +121,7 @@ export function modInvBatch(values: bigint[], n: bigint): bigint[] {
   const k = values.length;
   const reduced = values.map(v => mod(v, n));
   // prefixes[i] is the product of the values before i
-  const prefixes = new Array(k);
+  const prefixes = new Array<bigint>(k);
   let acc = 1n;
   for (let i = 0; i < k; i++) {
     prefixes[i] = acc;
@@ -129,7 +129,7 @@ export function modInvBatch(values: bigint[], n: bigint): bigint[] {
   }
   // The product is invertible exactly when every value is
   let inv = modInv(acc, n);
-  const inverses = new Array(k);
+  const inverses = new Array<bigint>(k);
   for (let i = k - 1; i >= 0; i--) {
     inverses[i] = mod(inv * prefixes[i], n);
     inv = mod(inv * reduced[i], n);
