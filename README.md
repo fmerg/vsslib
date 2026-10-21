@@ -790,30 +790,25 @@ multiplications and additions, as `a_0 + x(a_1 + x(a_2 + ...))`, without
 computing powers of `x`. Vsslib evaluates polynomials at every share index
 `i = 1, ..., n` in two places: in the exponent, when verifying VSS commitments,
 and over scalars, when computing the shares from the sharing polynomial. The
-work on these places sped up VSS and DKG considerably, but most of the gain
-does not come from Horner's rule itself. Verification already used it, and
-became faster because each of its steps became cheaper, whereas Horner's rule
-over the sharing polynomial gains a lot in relative terms on an operation that
-was cheap to begin with. The causes are described separately below, followed by
-the measured changes of median running time against the previous
-implementation, over `n = 10, 50` shares and thresholds `t = 5, 25` (DKG with
-`n = 10, t = 5` only):
+work on these places sped up the verification of VSS packets considerably, but
+most of the gain does not come from Horner's rule itself. Verification already
+used it, and became faster because each of its steps became cheaper, whereas
+Horner's rule over the sharing polynomial gains a lot in relative terms on an
+operation that was cheap to begin with. The causes are described separately
+below, followed by the measured changes of median running time against the
+previous implementation, over `n = 10, 50` shares and thresholds `t = 5, 25`:
 
 | operation | `ed25519`, `decaf448` | `secp256k1`, `p521` | cause |
 | --- | ---: | ---: | --- |
 | verify/parse Feldman packets | -31% to -61% | -89% to -95% | [variable-time steps](#horner-variable-time) |
 | verify/parse Pedersen packets | -22% to -54% | -73% to -91% | [variable-time steps](#horner-variable-time) |
-| Feldman VSS protocol run | -33% to -56% | -88% to -94% | [variable-time steps](#horner-variable-time) |
-| Pedersen VSS protocol run | -19% to -48% | -65% to -89% | [variable-time steps](#horner-variable-time) |
-| DKG protocol run | -12% to -14% | -45% to -46% | [variable-time steps](#horner-variable-time) |
 | `getSecretShares` | -78% to -93% | -78% to -93% | [Horner's rule](#horner-sharing-polynomial) |
 | `createFeldmanPackets` (n = 50) | up to -23% | up to -22% | [Horner's rule](#horner-sharing-polynomial) |
 | `shareSecret` (t = 5 / t = 25) | -45% / -90% | -45% / -90% | [no interpolation](#horner-sampling) |
 
 Operations dominated by exponentiations by secret scalars or Lagrange
-coefficients, such as `getPublicShares`, `createPedersenPackets`, the
-combination of shares and SSS or public recovery protocol runs, are unchanged
-within noise.
+coefficients, such as `getPublicShares`, `createPedersenPackets` and the
+combination of shares, are unchanged within noise.
 
 #### <a name="horner-variable-time"></a>Variable-time steps in commitment verification
 
@@ -829,17 +824,18 @@ backends implement by noble's variable-time multiplication, whose cost grows
 with the length of the scalar. Each step then costs a few doublings and
 additions, since `i` has only a few bits. This is what makes verification
 faster: measured on its own, this change accounts for nearly all of the gains of
-verification, VSS and DKG in the table. Horner's rule is what makes it pay off
+verification in the table. Horner's rule is what makes it pay off
 in full, since it keeps every scalar as short as `i`; with the powers `i^j`
 instead, the scalars would grow by the length of `i` per term up to the full
 length of the order. Variable time is safe here, since the index and the
 commitments are public (see [Side-channel attacks](#side-channel-attacks)), and
 `Group.expPublic` is used nowhere else.
 
-For example, a Feldman VSS run with `n = 50, t = 25` takes 179 ms instead of
-2.21 s on `secp256k1`. The gain is smaller on the Edwards curves (993 ms instead
-of 1.51 s on `ed25519`), because each parsed commitment is checked to lie in the
-prime-order subgroup, a full multiplication that remains.
+For example, parsing and verifying a Feldman packet with `n = 50, t = 25` takes
+3.32 ms instead of 46.6 ms on `secp256k1`. The gain is smaller on the Edwards
+curves (20.3 ms instead of 29.7 ms on `ed25519`), because each parsed commitment
+is checked to lie in the prime-order subgroup, a full multiplication that
+remains.
 
 #### <a name="horner-sharing-polynomial"></a>Horner's rule over the sharing polynomial
 
@@ -853,7 +849,7 @@ cheap compared to group operations: with `n = 50, t = 25` on `ed25519`,
 `getSecretShares` takes 92 µs instead of 1.21 ms, whereas `getPublicShares`,
 which raises the generator to each share, takes 11 ms. It is visible in
 `createFeldmanPackets`, which evaluates the polynomial alongside cheaper group
-operations, but not in complete protocol runs.
+operations.
 
 #### <a name="horner-sampling"></a>Sampling instead of interpolation
 
@@ -897,7 +893,7 @@ For example, combining 100 secret shares on `ed25519` takes 662 µs instead of
 `recoverPublic` are unchanged within noise, since raising each share to its
 coefficient costs far more than computing the coefficient: with `t = 25` on
 `ed25519`, `combinePublicShares` takes 39 ms, of which the coefficients took
-about 0.5 ms. The same holds for SSS and public recovery protocol runs.
+about 0.5 ms.
 
 `shareSecret` with predefined shares interpolates `t` points, which inverts the
 `t` denominators of the Lagrange basis; these are now inverted in a batch too.
@@ -916,10 +912,6 @@ the changes and compare after them. For Horner's method:
 ```
 $ ./bench.sh -m shamir,feldman,pedersen -s ed25519,decaf448,secp256k1,p521 \
     -n 10,50 -t 5,25 --cpus 0-7 -r 5 --compare <baseline>
-$ ./bench.sh -o "protocols/*Vss" -s ed25519,decaf448,secp256k1,p521 \
-    -n 10,50 -t 5,25 --cpus 0-7 -r 5 --iterations 3 --compare <baseline>
-$ ./bench.sh -o protocols/dkg -s ed25519,decaf448,secp256k1,p521 \
-    -n 10 -t 5 --cpus 0-7 -r 5 --iterations 3 --compare <baseline>
 ```
 
 For the common denominator:
@@ -927,9 +919,6 @@ For the common denominator:
 ```
 $ ./bench.sh -o "combine*,recoverPublic" -s ed25519,decaf448,secp256k1,p521 \
     -n 100 -t 5,25,50,100 --cpus 0-7 -r 5 --compare <baseline>
-$ ./bench.sh -o "protocols/sss,protocols/publicRecovery" \
-    -s ed25519,decaf448,secp256k1,p521 -n 10,50 -t 5,25 --cpus 0-7 -r 5 \
-    --iterations 3 --compare <baseline>
 ```
 
 # Development
@@ -958,7 +947,7 @@ mirror these modules.
 [`examples`](./examples/dkg.ts) holds complete flows: SSS, VSS with verifiable public
 recovery, and DKG built on top of the latter. They are reference
 implementations, with the parties of every step marked, and are also run by
-the tests and timed by the benchmarks.
+the tests.
 
 ## Browser check
 
@@ -973,8 +962,12 @@ testing in real browsers, nor does it bundle the compiled `dist`.
 ## Benchmarks
 
 Benchmarks cover the high-level operations of the library only (no backends
-or internals), up to complete protocol runs such as DKG. See `--help` for
-modules, parameter sweeps, output formats, columns and baselines.
+or internals), each as the local computation of one party: the dealer, a
+shareholder or the combiner. Complete protocol runs such as VSS or DKG are not
+benchmarked, since no party computes them as a whole: the parties run in
+parallel, and the rounds between them depend on the network and on how the
+application implements the protocol. See `--help` for modules, parameter
+sweeps, output formats, columns and baselines.
 
 ### Statistics
 
