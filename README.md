@@ -878,10 +878,10 @@ Euclidean algorithm on big integers. The coefficients are now written over a
 common denominator, as `N / (x_i D_i)` with `N` the product of all indexes and
 `D_i` the product of the differences, and the denominators of all coefficients
 are inverted together by Montgomery's trick, with a single inversion and three
-multiplications per coefficient. Since indexes are small integers, these
-products are reduced modulo the order only once they outgrow it by 256 bits:
-reducing at every step made them 2-3 times slower, and not reducing at all much
-slower for thousands of shares. Measured changes of median running time of
+multiplications per coefficient, followed by one more to multiply by `N`.
+Since indexes are small integers, these products are reduced modulo the order
+only once they outgrow it by 256 bits: reducing at every step made them 2-3
+times slower, and not reducing at all much slower for thousands of shares. Measured changes of median running time of
 `combineSecretShares` against the previous implementation, with `n = 100`
 shares:
 
