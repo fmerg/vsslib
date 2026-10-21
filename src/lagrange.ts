@@ -12,8 +12,11 @@ export type XYPoint = [bigint, bigint] | [number, number];
 // many bits; reducing at every step is slower
 const REDUCTION_MARGIN = 256n;
 
-function reduceIfLarge(m: bigint, order: bigint, bound: bigint): bigint {
-  return m >= bound || -m >= bound ? m % order : m;
+/** Reduction modulo `order` of values that outgrew it by REDUCTION_MARGIN bits */
+function reducer(order: bigint): (m: bigint) => bigint {
+  const high = order << REDUCTION_MARGIN;
+  const low = -high;
+  return (m: bigint) => m >= high || m <= low ? m % order : m;
 }
 
 /** Ensure that `indexes` are valid share indexes below `order`, so that they
@@ -41,13 +44,13 @@ export function computeLambda<P extends Point>(
   if (!indexes.includes(index)) throw new InvalidInput(
     `Index not included in indexes: ${index}`
   );
-  const bound = order << REDUCTION_MARGIN;
+  const reduce = reducer(order);
   let numerator = 1n;
   let denominator = 1n;
   for (const j of indexes) {
     if (j !== index) {
-      numerator = reduceIfLarge(numerator * BigInt(j), order, bound);
-      denominator = reduceIfLarge(denominator * BigInt(j - index), order, bound);
+      numerator = reduce(numerator * BigInt(j));
+      denominator = reduce(denominator * BigInt(j - index));
     }
   }
   return mod(numerator * modInv(denominator, order), order);
@@ -63,13 +66,13 @@ export function computeLambdas<P extends Point>(
 ): bigint[] {
   const order = ctx.order;
   validateLambdaIndexes(indexes, order);
-  const bound = order << REDUCTION_MARGIN;
+  const reduce = reducer(order);
   let numerator = 1n;
-  for (const x of indexes) numerator = reduceIfLarge(numerator * BigInt(x), order, bound);
+  for (const x of indexes) numerator = reduce(numerator * BigInt(x));
   const denominators = indexes.map(xi => {
     let d = BigInt(xi);
     for (const xj of indexes) {
-      if (xj !== xi) d = reduceIfLarge(d * BigInt(xj - xi), order, bound);
+      if (xj !== xi) d = reduce(d * BigInt(xj - xi));
     }
     return d;
   });
