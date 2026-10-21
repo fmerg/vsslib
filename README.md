@@ -1047,12 +1047,13 @@ A table takes 107 KB on `secp256k1` to 315 KB on `p521`.
 
 ### <a name="nizk-verification"></a>NIZK verification
 
-Verifying a NIZK proof checks, for each relation, that the commitment equals
-the product of the relation points raised to the responses and to the negated
-challenge. All of these are public, yet the verification used the
-constant-time `Group.exp`. It now computes each product by one
-`Group.multiExpPublic`, which below 4 points multiplies each point in variable
-time, using noble's table for the generator; on `decaf448`, the generator goes
+Verifying a NIZK proof checks, for each row of the relation, that the row's
+commitment equals the product of its points raised to the responses and to the
+negated challenge, e.g. one row for a Schnorr proof and two for a DDH proof. All
+of these are public, yet the verification used the constant-time `Group.exp`.
+It now computes each product by one `Group.multiExpPublic`, which below its
+cutoff (4 points, 16 on `secp256k1`) multiplies each point in variable time,
+using noble's table for the generator; on `decaf448`, the generator goes
 through the table of the `ed448` base, as for secret scalars (see
 [Generator of decaf448](#decaf448-generator)). Moreover, the commitments of the
 proofs are no longer checked for membership in the prime-order subgroup, which
