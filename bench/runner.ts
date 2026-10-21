@@ -8,10 +8,34 @@ import { CaseSpec, RunResult, Timing, operationName } from './harness';
 const ROOT = path.resolve(__dirname, '..');
 // Inside node_modules, so that the bundle resolves the packages left out of it
 const CACHE = path.join(ROOT, 'node_modules', '.cache', 'vsslib-bench');
+const RUN_DIR = /^run-(\d+)$/;
 
 /** How the workers run, recorded with the results; baselines without it were
  * taken by running the worker through tsx */
 export const RUNNER = 'node, esbuild bundle';
+
+
+const isAlive = (pid: number): boolean => {
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (err: unknown) {
+    // The process exists but belongs to another user
+    return (err as NodeJS.ErrnoException).code === 'EPERM';
+  }
+}
+
+
+/** Removes the bundles of invocations that ended without their exit handler,
+ * e.g. killed by SIGHUP or SIGKILL */
+const pruneBundles = (): void => {
+  for (const name of fs.readdirSync(CACHE)) {
+    const match = RUN_DIR.exec(name);
+    if (match && !isAlive(Number(match[1]))) {
+      fs.rmSync(path.join(CACHE, name), { recursive: true, force: true });
+    }
+  }
+}
 
 
 /** Bundles the worker with the library sources for plain node and returns the
@@ -21,7 +45,9 @@ export const RUNNER = 'node, esbuild bundle';
  * bundle, so that node loads them natively as it does for users of dist */
 export const bundleWorker = (): string => {
   fs.mkdirSync(CACHE, { recursive: true });
-  const dir = fs.mkdtempSync(path.join(CACHE, 'run-'));
+  pruneBundles();
+  const dir = path.join(CACHE, `run-${process.pid}`);
+  fs.mkdirSync(dir, { recursive: true });
   process.on('exit', () => fs.rmSync(dir, { recursive: true, force: true }));
   const outfile = path.join(dir, 'worker.cjs');
   buildSync({
