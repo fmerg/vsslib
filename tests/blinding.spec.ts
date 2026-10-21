@@ -205,10 +205,10 @@ describe('decaf448 base multiplication', () => {
     const parsed = await ctx.parsePoint(g.toBytes());
     const other = await ctx.randomPoint();
     const scalars = [0n, 1n, 2n, ctx.order - 1n, await ctx.randomScalar()];
-    const hook = mock.method(
-      ctx as unknown as { baseMultiplyUnsafe: (scalar: bigint) => unknown },
-      'baseMultiplyUnsafe',
-    );
+    const { baseMultiplications } = ctx as unknown as {
+      baseMultiplications: { multiplyUnsafe: (scalar: bigint) => unknown },
+    };
+    const hook = mock.method(baseMultiplications, 'multiplyUnsafe');
     try {
       for (const scalar of scalars) {
         const expected = (await ctx.exp(g, scalar)).toBytes();
