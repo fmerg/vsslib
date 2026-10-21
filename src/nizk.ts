@@ -113,6 +113,8 @@ export class NizkProtocol<P extends Point>{
   ): Promise<NizkProof> => {
     const order = this.ctx.order;
     const { us, vs } = relation;
+    if (us.length !== vs.length)
+      throw new InvalidInput('Incompatible lengths');
     const m = vs.length;
     const n = witness.length;
     const rs = new Array(n);
@@ -148,6 +150,8 @@ export class NizkProtocol<P extends Point>{
     extras: Uint8Array[] = [],
   ): Promise<boolean> => {
     const { us, vs } = relation;
+    if (us.length !== vs.length)
+      throw new InvalidInput('Incompatible lengths');
     const { commitment, response } = await this.unpackProof(proof);
     if (vs.length !== commitment.length)
       throw new InvalidInput('Incompatible lengths');

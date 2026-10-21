@@ -52,6 +52,17 @@ describe('NIZK proof of generik linear relation', () => {
       assert.equal(isValid, false, `m = ${m}`);
     }
   });
+  each(systems)('failure - rows of us and vs mismatched - over %s', async (system) => {
+    const ctx = initBackend(system);
+    const [witness, relation] = await createGenericLinear(ctx, { m: 2, n: 3 });
+    const protocol = nizk(ctx, Algorithms.SHA256);
+    const proof = await protocol.proveLinear(witness, relation);
+    const { us, vs } = relation;
+    for (const mismatched of [{ us: us.slice(0, 1), vs }, { us: [...us, us[0]], vs }]) {
+      await assert.rejects(protocol.proveLinear(witness, mismatched), /Incompatible lengths/);
+      await assert.rejects(protocol.verifyLinear(mismatched, proof), /Incompatible lengths/);
+    }
+  });
   each(systems)('failure - forged nonce - over %s', async (system) => {
     const ctx = initBackend(system);
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
