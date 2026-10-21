@@ -12,6 +12,7 @@ import {
   InvalidPublicShare,
 } from 'vsslib';
 import { resolveTestConfig } from './environ';
+import { computeLambdaNaive } from 'vsslib/lagrange';
 import { createRawSharing, mockPublicRecoverySetup } from './helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
@@ -44,6 +45,21 @@ describe('Share index validation', () => {
     expect(() => computeLambdas(ctx, [1, 2, 2])).toThrow(InvalidInput);
     expect(() => computeLambdas(ctx, [1.5, 2])).toThrow(InvalidInput);
     expect(() => computeLambdas(ctx, [0, 1])).toThrow(InvalidInput);
+  });
+  test('lambdas reject indexes not below the group order', async () => {
+    // Built-in orders exceed every safe integer; a small order stands in for a
+    // custom backend, where such indexes would make inversions fail
+    const ctx = { order: BigInt(7) } as unknown as Parameters<typeof computeLambdas>[0];
+    expect(() => computeLambdas(ctx, [7, 1])).toThrow('below the group order');
+    expect(() => computeLambdas(ctx, [1, 8])).toThrow(InvalidInput);
+    expect(() => computeLambda(ctx, 1, [1, 8])).toThrow(InvalidInput);
+    const indexes = [1, 2, 6];
+    expect(computeLambdas(ctx, indexes)).toEqual(
+      indexes.map(index => computeLambdaNaive(ctx, index, indexes))
+    );
+    const shares = [1, 8].map(index => ({ index, value: new Uint8Array(32) }));
+    await expect(combineSecretShares(ctx, shares, 2)).rejects.toThrow(InvalidInput);
+    await expect(combinePublicShares(ctx, shares, 2)).rejects.toThrow(InvalidInput);
   });
   it.each(systems)('verification rejects malformed indexes over %s', async (system) => {
     const { ctx, sharing, secretShares } = await createRawSharing(system, nrShares, threshold);

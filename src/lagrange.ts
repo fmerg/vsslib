@@ -16,6 +16,17 @@ function reduceIfLarge(m: bigint, order: bigint, bound: bigint): bigint {
   return m >= bound || -m >= bound ? m % order : m;
 }
 
+/** Ensure that `indexes` are valid share indexes below `order`, so that they
+ * and their differences are invertible; throws InvalidInput otherwise */
+function validateLambdaIndexes(indexes: number[], order: bigint): void {
+  validateIndexes(indexes);
+  for (const index of indexes) {
+    if (!(BigInt(index) < order)) throw new InvalidInput(
+      `Index not below the group order: ${index}`
+    );
+  }
+}
+
 
 /** Lagrange coefficient at zero of `index` with respect to `indexes`, as
  * the product of the indexes over the product of their differences, with a
@@ -25,11 +36,11 @@ export function computeLambda<P extends Point>(
   index: number,
   indexes: number[]
 ): bigint {
-  validateIndexes(indexes);
+  const order = ctx.order;
+  validateLambdaIndexes(indexes, order);
   if (!indexes.includes(index)) throw new InvalidInput(
     `Index not included in indexes: ${index}`
   );
-  const order = ctx.order;
   const bound = order << REDUCTION_MARGIN;
   let numerator = 1n;
   let denominator = 1n;
@@ -50,8 +61,8 @@ export function computeLambdas<P extends Point>(
   ctx: Group<P>,
   indexes: number[]
 ): bigint[] {
-  validateIndexes(indexes);
   const order = ctx.order;
+  validateLambdaIndexes(indexes, order);
   const bound = order << REDUCTION_MARGIN;
   let numerator = 1n;
   for (const x of indexes) numerator = reduceIfLarge(numerator * BigInt(x), order, bound);

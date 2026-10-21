@@ -321,7 +321,8 @@ single value for all of them (see [Common denominator](#common-denominator)).
 
 > **Warning**
 > Both throw `vsslib.InvalidInput` if the indexes are not distinct positive
-> safe integers, and `computeLambda` also if `index` is not among them.
+> safe integers below the group order, and `computeLambda` also if `index` is
+> not among them.
 
 ## <a name="verifiable-secret-sharing"></a>Verifiable Secret Sharing (VSS)
 
