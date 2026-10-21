@@ -46,7 +46,10 @@ export class NizkProtocol<P extends Point>{
     const n = response.length;
     const innerComm = new Array(m);
     const innerResp = new Array(n);
-    for (let i = 0; i < m; i++) innerComm[i] = await this.ctx.parsePoint(commitment[i]);
+    // Only compared with elements of the subgroup, so that a small-order
+    // component makes verification fail without a subgroup check, as long as
+    // the relation points are subgroup elements
+    for (let i = 0; i < m; i++) innerComm[i] = await this.ctx.parseCurvePoint(commitment[i]);
     for (let i = 0; i < n; i++) innerResp[i] = await this.ctx.parseScalar(response[i]);
     return { commitment: innerComm, response: innerResp };
   }
@@ -110,6 +113,8 @@ export class NizkProtocol<P extends Point>{
   ): Promise<NizkProof> => {
     const order = this.ctx.order;
     const { us, vs } = relation;
+    if (us.length !== vs.length)
+      throw new InvalidInput('Incompatible lengths');
     const m = vs.length;
     const n = witness.length;
     const rs = new Array(n);
@@ -144,28 +149,23 @@ export class NizkProtocol<P extends Point>{
     nonce?: Uint8Array,
     extras: Uint8Array[] = [],
   ): Promise<boolean> => {
-    const exp = this.ctx.exp;
     const { us, vs } = relation;
+    if (us.length !== vs.length)
+      throw new InvalidInput('Incompatible lengths');
     const { commitment, response } = await this.unpackProof(proof);
     if (vs.length !== commitment.length)
       throw new InvalidInput('Incompatible lengths');
     const challenge = await this.computeChallenge(type, relation, commitment, extras, nonce);
+    // Relation, challenge and responses are public, so that variable time is
+    // safe: check `Π_j u_ij ^ s_j * v_i ^ (-c) = commitment_i` by one
+    // multi-exponentiation per row
+    const exponents = [...response, mod(-challenge, this.ctx.order)];
     let flag = true;
     for (const [i, v] of vs.entries()) {
       if (us[i].length !== response.length)
         throw new InvalidInput('Incompatible lengths');
-      const rhs = await this.ctx.operate(
-        commitment[i],
-        await exp(v, challenge)
-      );
-      let lhs = this.ctx.neutral;
-      for (const [j, s] of response.entries()) {
-        lhs = await this.ctx.operate(
-          lhs,
-          await exp(us[i][j], s)
-        );
-      }
-      flag &&= await lhs.equals(rhs);
+      const lhs = await this.ctx.multiExpPublic([...us[i], v], exponents);
+      flag &&= await lhs.equals(commitment[i]);
     }
     return flag;
   }

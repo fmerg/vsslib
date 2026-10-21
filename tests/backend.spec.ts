@@ -1,7 +1,7 @@
 import { describe, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { each } from './utils';
-import { initBackend } from 'vsslib/backend';
+import { initBackend, Group } from 'vsslib/backend';
 import type { EcPoint } from 'vsslib/backend';
 import { InvalidInput } from 'vsslib';
 import { resolveTestConfig } from './environ';
@@ -291,5 +291,37 @@ describe('base precomputation', () => {
     assert.equal(ctx.precomputeBase(ctx.neutral), ctx.neutral);
     assert.deepEqual((await ctx.expSecret(ctx.generator, scalar)).toBytes(), expected);
     assert.equal(await (await ctx.exp(ctx.neutral, scalar)).equals(ctx.neutral), true);
+  });
+});
+
+
+describe('custom backends', () => {
+  each(systems)('may define validators as methods over %s', async (system) => {
+    // As a plain JavaScript backend would, so that they need their this;
+    // validatePoint only, since Group's defaults, validateCurvePoint among
+    // them, are properties that would shadow such methods
+    const ctx = initBackend(system);
+    class Methods extends Group<EcPoint> {
+      randomScalar = ctx.randomScalar;
+      randomPoint = ctx.randomPoint;
+      validateScalar = ctx.validateScalar;
+      exp = ctx.exp;
+      operate = ctx.operate;
+      invert = ctx.invert;
+      bytesToPoint = ctx.bytesToPoint;
+      hashToPoint = ctx.hashToPoint;
+      // @ts-expect-error: a method where Group declares a property
+      async validatePoint(point: EcPoint): Promise<boolean> {
+        return this.order === ctx.order && ctx.validatePoint(point);
+      }
+    }
+    const group = new Methods(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
+    const bytes = (await ctx.randomPoint()).toBytes();
+    for (const parse of [group.parsePoint, group.parseCurvePoint]) {
+      assert.deepEqual((await parse(bytes)).toBytes(), bytes);
+      for (const invalid of fixtures[system].nonCanonicalPoints) {
+        await assert.rejects(parse(invalid), InvalidInput);
+      }
+    }
   });
 });
