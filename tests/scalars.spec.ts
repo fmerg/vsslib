@@ -15,7 +15,7 @@ describe('Strict scalar decoding', () => {
     const ctx = initBackend(system);
     const { order: q, scalarBytes: len } = ctx;
     const s = await ctx.randomScalar();
-    assert.deepEqual(await parseScalar(ctx, intToLeBytes(s, len)), s);
+    assert.equal(await parseScalar(ctx, intToLeBytes(s, len)), s);
     // s + q fits in scalarBytes whenever 2q <= 2^(8 * scalarBytes)
     const sameLength = s + q < (1n << BigInt(8 * len)) ? [intToLeBytes(s + q, len)] : [];
     const encodings = [

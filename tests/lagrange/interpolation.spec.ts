@@ -38,15 +38,15 @@ describe('Lagrange interpolation', () => {
     const poly2 = textbooxInterpolate(points, order);
     assert.equal(poly2.equals(poly1), true);
     for (const [x, y] of points) {
-      assert.deepEqual(poly1.evaluate(x), y % order);
-      assert.deepEqual(poly1.evaluateBarycentric(x), y % order);
-      assert.deepEqual(poly2.evaluate(x), y % order);
+      assert.equal(poly1.evaluate(x), y % order);
+      assert.equal(poly1.evaluateBarycentric(x), y % order);
+      assert.equal(poly2.evaluate(x), y % order);
     }
     for (const x of [0n, 1n, 7n, await randomScalar()]) {
       const y = poly1.evaluate(x);
-      assert.deepEqual(poly1.evaluateNaive(x), y);
-      assert.deepEqual(poly1.evaluateBarycentric(x), y);
-      assert.deepEqual(poly2.evaluate(x), y);
+      assert.equal(poly1.evaluateNaive(x), y);
+      assert.equal(poly1.evaluateBarycentric(x), y);
+      assert.equal(poly2.evaluate(x), y);
     }
   });
   each(systems)('ok - fixed points - over %s', async (system) => {
@@ -56,8 +56,8 @@ describe('Lagrange interpolation', () => {
       const poly2 = textbooxInterpolate(points, ctx.order);
       assert.equal(poly2.equals(poly1), true);
       for (const [x, y] of points) {
-        assert.deepEqual(poly1.evaluate(x), BigInt(y) % ctx.order);
-        assert.deepEqual(poly1.evaluateBarycentric(x), BigInt(y) % ctx.order);
+        assert.equal(poly1.evaluate(x), BigInt(y) % ctx.order);
+        assert.equal(poly1.evaluateBarycentric(x), BigInt(y) % ctx.order);
       }
     }
   });

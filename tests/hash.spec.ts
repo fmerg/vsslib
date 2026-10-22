@@ -41,7 +41,7 @@ describe('hash algorithm support', () => {
   const buffer = Buffer.from('sample-text');
   each(Object.values(Algorithms))('%s is supported', async (algorithm) => {
     const hasher = hash(algorithm);
-    assert.deepEqual(hasher.algorithm, algorithm);
+    assert.equal(hasher.algorithm, algorithm);
     const expected = Uint8Array.from(createHash(algorithm).update(buffer).digest());
     assert.deepEqual(await hasher.digest(buffer), expected);
   });

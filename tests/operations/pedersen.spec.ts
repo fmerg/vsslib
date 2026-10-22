@@ -110,7 +110,7 @@ describe('Pedersen base derivation', () => {
   each(systems)('default base over %s', async (system) => {
     const ctx = initBackend(system);
     const h = await derivePedersenBase(ctx);
-    assert.deepEqual(Buffer.from(h).toString('hex'), fixtures[system].defaultPedersenBase);
+    assert.equal(Buffer.from(h).toString('hex'), fixtures[system].defaultPedersenBase);
   });
   each(systems)('deterministic and seed dependent over %s', async (system) => {
     const ctx = initBackend(system);
