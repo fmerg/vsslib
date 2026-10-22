@@ -972,7 +972,7 @@ that ships the browsers. To run it locally
 ```
 $ npx --no-install playwright-core install      # once: browsers of the pinned release
 $ npm run test:browsers                         # results also in coverage/browsers.xml
-$ BROWSERS=webkit SYSTEM=ed25519 npm run test:browsers
+$ BROWSERS=webkit npm run test:browsers -- -s ed25519   # ./test.sh --help
 ```
 
 `--no-install` makes npx run only the locked `playwright-core` and fail on a

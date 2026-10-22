@@ -2,6 +2,7 @@
 
 DEFAULT_MODULE="tests"
 DEFAULT_WATCH=false
+DEFAULT_BROWSERS=false
 DEFAULT_VERBOSE=false
 DEFAULT_SYSTEM=""
 DEFAULT_ALGORITHM=""
@@ -54,13 +55,18 @@ Options
                                     Shamir sharing (default: 3).
   -t, --threshold <THRESHOLD>       Threshold parameter for tests involving
                                     Shamir sharing (default: 2).
+  -b, --browsers                    Run the flows of the browser bundle in Chromium,
+                                    Firefox and WebKit (tests/browser/engines.ts)
+                                    instead of the spec files; BROWSERS=chromium,firefox
+                                    selects engines. Needs the browsers, see README.
+                                    Writes the JUnit report to coverage/browsers.xml.
   -w, --watch                       Rerun tests when saving changes.
   -v, --verbose                     List every test, not only failures.
   -h, --help                        Display this help message and exit.
 
 Other arguments are passed to node --test, e.g. --test-name-pattern <PATTERN>.
 Any --test-reporter given replaces the default reporters, including the JUnit
-report in coverage/junit.xml.
+report.
 
 "
 
@@ -74,6 +80,7 @@ ALGORITHM="$DEFAULT_ALGORITHM"
 NR_SHARES="$DEFAULT_NR_SHARES"
 THRESHOLD="$DEFAULT_THRESHOLD"
 WATCH="$DEFAULT_WATCH"
+RUN_BROWSERS="$DEFAULT_BROWSERS"
 VERBOSE="$DEFAULT_VERBOSE"
 
 opts=()
@@ -104,6 +111,10 @@ do
         -t|--threshold)
             THRESHOLD="$2"
             shift
+            shift
+            ;;
+        -b|--browsers)
+            RUN_BROWSERS=true
             shift
             ;;
         -w|--watch)
@@ -156,8 +167,17 @@ fi
 
 
 # Spec files of the target, run by node's test runner with tsx compiling the
-# sources; results also go to coverage/junit.xml for CI
-if [[ $TARGET == *"spec.ts" ]]; then
+# sources; results also go to a JUnit report for CI
+report=coverage/junit.xml
+if [[ $RUN_BROWSERS == "true" ]]; then
+    if [[ $MODULE != "$DEFAULT_MODULE" ]]; then
+        echo "Options --module and --browsers exclude each other" 1>&2
+        exit 1
+    fi
+    files=(tests/browser/engines.ts)
+    report=coverage/browsers.xml
+    MODULE="browser/engines.ts"
+elif [[ $TARGET == *"spec.ts" ]]; then
     files=("$TARGET")
 else
     # No mapfile, which bash 3.2 (macOS) lacks
@@ -191,7 +211,7 @@ if [[ $custom_reporter == "false" ]]; then
     fi
     node_opts+=(
         --test-reporter="$reporter" --test-reporter-destination=stdout
-        --test-reporter=junit --test-reporter-destination=coverage/junit.xml
+        --test-reporter=junit --test-reporter-destination="$report"
     )
 fi
 if [[ $WATCH == "true" ]]; then
@@ -216,7 +236,7 @@ ran_tests() {
     ' "$@"
 }
 if [[ $status -eq 0 && $custom_reporter == "false" ]] && \
-    ! ran_tests coverage/junit.xml "${files[@]}"; then
+    ! ran_tests "$report" "${files[@]}"; then
     echo "No tests ran in test module: $MODULE" 1>&2
     exit 1
 fi

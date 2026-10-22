@@ -43,7 +43,7 @@
     "dev": "tsc --watch",
     "test": "./test.sh",
     "test:watch": "./test.sh --watch",
-    "test:browsers": "mkdir -p coverage && node --import tsx --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=junit --test-reporter-destination=coverage/browsers.xml tests/browser/engines.ts",
+    "test:browsers": "./test.sh --browsers --verbose",
     "build": "rm -rf ./dist && tsc",
     "docs": "typedoc --excludeInternal --out docs src/backend/index.ts src/index.ts src/nizk.ts",
     "lint": "eslint src tests bench examples",
