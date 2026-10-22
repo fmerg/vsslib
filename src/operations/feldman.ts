@@ -8,14 +8,16 @@ import { evalCommitments } from './commitments';
 
 
 /** Feldman commitments and one packet per secret share; takes no ctx, as the
- * sharing carries its group */
+ * sharing carries its group. Commitments always number `threshold`: a vanished
+ * top coefficient commits to the neutral element */
 export async function createFeldmanPackets<P extends Point>(
   sharing: ShamirSharing<P>,
 ): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
   const { expSecret, generator: g } = sharing.ctx;
+  const { coeffs } = sharing.polynomial;
   const commitments = [];
-  for (const a of sharing.polynomial.coeffs) {
-    commitments.push((await expSecret(g, a)).toBytes());
+  for (let i = 0; i < sharing.threshold; i++) {
+    commitments.push((await expSecret(g, coeffs[i] ?? 0n)).toBytes());
   }
   const packets = await sharing.getSecretShares();
   return { packets, commitments };

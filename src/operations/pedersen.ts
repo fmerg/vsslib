@@ -99,7 +99,9 @@ export async function parsePedersenBase<P extends Point>(
 
 
 /** Pedersen commitments and one packet per secret share, each with its binding;
- * takes no ctx, as the sharing carries its group */
+ * takes no ctx, as the sharing carries its group. Commitments always number
+ * `threshold`: vanished top coefficients, of the sharing or of the binding
+ * polynomial, count as zero */
 export async function createPedersenPackets<P extends Point>(
   sharing: ShamirSharing<P>,
   pedersenBase: Uint8Array,
@@ -107,11 +109,12 @@ export async function createPedersenPackets<P extends Point>(
   const { ctx } = sharing;
   const { expSecret, operate, generator: g } = ctx;
   const h = await parsePedersenBase(ctx, pedersenBase);
-  const { coeffs, degree } = sharing.polynomial;
-  const bindingPolynomial = await randomPolynomial(ctx, degree);
+  const { threshold, polynomial: { coeffs } } = sharing;
+  const bindingPolynomial = await randomPolynomial(ctx, threshold - 1);
   const commitments = [];
-  for (const [i, a] of coeffs.entries()) {
-    const b = bindingPolynomial.coeffs[i];
+  for (let i = 0; i < threshold; i++) {
+    const a = coeffs[i] ?? 0n;
+    const b = bindingPolynomial.coeffs[i] ?? 0n;
     commitments.push((await operate(await expSecret(g, a), await expSecret(h, b))).toBytes());
   }
   const shares = await sharing.getSecretShares();
