@@ -198,4 +198,14 @@ if [[ $WATCH == "true" ]]; then
 fi
 
 mkdir -p coverage
-node "${node_opts[@]}" "${opts[@]}" "${files[@]}"
+status=0
+node "${node_opts[@]}" "${opts[@]}" "${files[@]}" || status=$?
+
+# node passes when a name pattern or an empty case table selects no tests,
+# reporting each such file as a test case named by its path
+if [[ $status -eq 0 && $custom_reporter == "false" ]] && \
+    ! grep '<testcase ' coverage/junit.xml | grep -qv 'name="[^"]*\.spec\.ts"'; then
+    echo "No tests ran in test module: $MODULE" 1>&2
+    exit 1
+fi
+exit $status
