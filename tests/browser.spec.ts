@@ -1,3 +1,6 @@
+import { describe, test, before } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from './utils';
 import path from 'node:path';
 import vm from 'node:vm';
 import { isBuiltin } from 'node:module';
@@ -134,25 +137,26 @@ const flow = `(async (system, algorithms, nrShares, threshold) => {
 describe('Browser bundle', () => {
   let code: string;
   let context: vm.Context;
-  beforeAll(async () => {
+  before(async () => {
     code = await bundle();
     context = loadBundle(code);
   });
 
   test('has no Node imports or globals', () => {
-    expect(code).not.toMatch(/node:/);
-    expect(code).not.toMatch(/require\(/);
-    expect(code.match(new RegExp(`${GLOBAL_MARKER}\\w+`, 'g')) ?? []).toEqual([]);
+    assert.doesNotMatch(code, /node:/);
+    assert.doesNotMatch(code, /require\(/);
+    assert.deepEqual(code.match(new RegExp(`${GLOBAL_MARKER}\\w+`, 'g')) ?? [], []);
   });
 
   test('exposes every entry point', () => {
-    expect(typeof context.vsslib.initBackend).toBe('function');
-    expect(typeof context.vsslib.backend.initBackend).toBe('function');
-    expect(typeof context.vsslib.nizk.nizk).toBe('function');
+    assert.equal(typeof context.vsslib.initBackend, 'function');
+    assert.equal(typeof context.vsslib.backend.initBackend, 'function');
+    assert.equal(typeof context.vsslib.nizk.nizk, 'function');
   });
 
-  it.each(systems)('flows over %s', async (system) => {
+  each(systems)('flows over %s', async (system) => {
     const run = vm.runInContext(flow, context);
-    expect(await run(system, algorithms, nrShares, threshold)).toEqual([]);
+    // Copied out of the context, whose arrays have another prototype
+    assert.deepEqual([...await run(system, algorithms, nrShares, threshold)], []);
   });
 });

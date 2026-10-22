@@ -1,3 +1,6 @@
+import { describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from '../utils';
 import { Algorithms } from 'vsslib/enums';
 import { initBackend } from 'vsslib/backend';
 import { randomNonce } from 'vsslib/random';
@@ -10,45 +13,45 @@ const { systems, algorithms } = resolveTestConfig();
 
 
 describe('NIZK proof of generik linear relation', () => {
-  it.each(cartesian([systems, algorithms]))(
+  each(cartesian([systems, algorithms]))(
     'success - without nonce - over %s/%s', async (system, algorithm) => {
     const ctx = initBackend(system);
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
     const proof = await nizk(ctx, algorithm).proveLinear(witness, relation);
     const isValid = await nizk(ctx, algorithm).verifyLinear(relation, proof);
-    expect(isValid).toBe(true);
+    assert.equal(isValid, true);
   });
-  it.each(cartesian([systems, algorithms]))(
+  each(cartesian([systems, algorithms]))(
     'success - with nonce - over %s/%s', async (system, algorithm) => {
     const ctx = initBackend(system);
     const nonce = await randomNonce();
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
     const proof = await nizk(ctx, algorithm).proveLinear(witness, relation, nonce);
     const isValid = await nizk(ctx, algorithm).verifyLinear(relation, proof, nonce);
-    expect(isValid).toBe(true);
+    assert.equal(isValid, true);
   });
-  it.each(systems)('failure - forged witness - over %s', async (system) => {
+  each(systems)('failure - forged witness - over %s', async (system) => {
     const ctx = initBackend(system);
     const [_, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
     const [witness, __] = await createGenericLinear(ctx, { m: 5, n: 3 });
     const proof = await nizk(ctx, Algorithms.SHA256).proveLinear(witness, relation);
     const isValid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof);
-    expect(isValid).toBe(false);
+    assert.equal(isValid, false);
   });
-  it.each(systems)('failure - forged nonce - over %s', async (system) => {
+  each(systems)('failure - forged nonce - over %s', async (system) => {
     const ctx = initBackend(system);
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
     const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveLinear(witness, relation, nonce);
     const isValid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof, await randomNonce());
-    expect(isValid).toBe(false);
+    assert.equal(isValid, false);
   });
-  it.each(systems)('failure - missing nonce - over %s', async (system) => {
+  each(systems)('failure - missing nonce - over %s', async (system) => {
     const ctx = initBackend(system);
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
     const nonce = await randomNonce();
     const proof = await nizk(ctx, Algorithms.SHA256).proveLinear(witness, relation, nonce);
     const isValid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof);
-    expect(isValid).toBe(false);
+    assert.equal(isValid, false);
   });
 });

@@ -1,3 +1,6 @@
+import { describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from '../utils';
 import {
   parseScalar,
   parsePoint,
@@ -19,51 +22,51 @@ const { systems } = resolveTestConfig();
 
 
 describe('Raw bytes infrastructure for asymmetric secrets', () => {
-  it.each(systems)('secret generation - over %s', async (system) => {
+  each(systems)('secret generation - over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, publicBytes } = await randomSecret(ctx);
-    expect(await isKeypair(ctx, secret, publicBytes)).toBe(true);
+    assert.equal(await isKeypair(ctx, secret, publicBytes), true);
 
     const g = ctx.generator;
     const x = await parseScalar(ctx, secret);
     const y = await parsePoint(ctx, publicBytes);
-    expect(await y.equals(await ctx.exp(g, x))).toBe(true);
+    assert.equal(await y.equals(await ctx.exp(g, x)), true);
   });
-  it.each(systems)('public extraction - over %s', async (system) => {
+  each(systems)('public extraction - over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, publicBytes: targetPublic } = await randomSecret(ctx);
 
     const publicBytes = await extractPublic(ctx, secret);
-    expect(await isKeypair(ctx, secret, publicBytes)).toBe(true);
-    expect(await isEqualPublic(ctx, publicBytes, targetPublic)).toBe(true);
+    assert.equal(await isKeypair(ctx, secret, publicBytes), true);
+    assert.equal(await isEqualPublic(ctx, publicBytes, targetPublic), true);
 
     const g = ctx.generator;
     const x = await parseScalar(ctx, secret);
     const y = await parsePoint(ctx, publicBytes);
-    expect(await y.equals(await ctx.exp(g, x))).toBe(true);
+    assert.equal(await y.equals(await ctx.exp(g, x)), true);
   });
-  it.each(systems)('key equality - over %s', async (system) => {
+  each(systems)('key equality - over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, publicBytes } = await randomSecret(ctx);
     const sameSecret = Uint8Array.from(secret);
     const samePublic = Uint8Array.from(publicBytes);
 
-    expect(await isEqualSecret(ctx, sameSecret, secret)).toBe(true);
-    expect(await isEqualPublic(ctx, samePublic, publicBytes)).toBe(true);
-    expect(await isKeypair(ctx, secret, samePublic)).toBe(true);
-    expect(await isKeypair(ctx, sameSecret, publicBytes)).toBe(true);
+    assert.equal(await isEqualSecret(ctx, sameSecret, secret), true);
+    assert.equal(await isEqualPublic(ctx, samePublic, publicBytes), true);
+    assert.equal(await isKeypair(ctx, secret, samePublic), true);
+    assert.equal(await isKeypair(ctx, sameSecret, publicBytes), true);
   });
-  it.each(systems)('key disparity - over %s', async (system) => {
+  each(systems)('key disparity - over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret, publicBytes } = await randomSecret(ctx);
     const { secret: otherSecret, publicBytes: otherPublic } = await randomSecret(ctx);
 
-    expect(await isEqualSecret(ctx, otherSecret, secret)).toBe(false);
-    expect(await isEqualPublic(ctx, otherPublic, publicBytes)).toBe(false);
-    expect(await isKeypair(ctx, secret, otherPublic)).toBe(false);
-    expect(await isKeypair(ctx, otherSecret, publicBytes)).toBe(false);
+    assert.equal(await isEqualSecret(ctx, otherSecret, secret), false);
+    assert.equal(await isEqualPublic(ctx, otherPublic, publicBytes), false);
+    assert.equal(await isKeypair(ctx, secret, otherPublic), false);
+    assert.equal(await isKeypair(ctx, otherSecret, publicBytes), false);
   });
-  it.each(systems)('secrets differing in a single byte - over %s', async (system) => {
+  each(systems)('secrets differing in a single byte - over %s', async (system) => {
     const ctx = initBackend(system);
     const len = ctx.scalarBytes;
     const high = 1n << BigInt(8 * (len - 1));
@@ -74,26 +77,26 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     for (const [a, b] of pairs) {
       const lhs = ctx.scalarToBytes(a);
       const rhs = ctx.scalarToBytes(b);
-      expect(await isEqualSecret(ctx, lhs, rhs)).toBe(false);
-      expect(await isEqualSecret(ctx, lhs, Uint8Array.from(lhs))).toBe(true);
+      assert.equal(await isEqualSecret(ctx, lhs, rhs), false);
+      assert.equal(await isEqualSecret(ctx, lhs, Uint8Array.from(lhs)), true);
     }
   });
-  it.each(systems)('secret-to-scalar roundtrip - over %s', async (system) => {
+  each(systems)('secret-to-scalar roundtrip - over %s', async (system) => {
     const ctx = initBackend(system);
     const { secret } = await randomSecret(ctx);
     const scalar = await parseScalar(ctx, secret);
-    expect(await isEqualSecret(ctx, ctx.scalarToBytes(scalar), secret)).toBe(true);
+    assert.equal(await isEqualSecret(ctx, ctx.scalarToBytes(scalar), secret), true);
   });
-  it.each(systems)('public-to-point roundtrip - over %s', async (system) => {
+  each(systems)('public-to-point roundtrip - over %s', async (system) => {
     const ctx = initBackend(system);
     const publicBytes = await randomPublic(ctx);
     const point = await parsePoint(ctx, publicBytes);
-    expect(await isEqualPublic(ctx, point.toBytes(), publicBytes)).toBe(true);
+    assert.equal(await isEqualPublic(ctx, point.toBytes(), publicBytes), true);
   });
-  it.each(systems)('summation of secrets - over %s', async (system) => {
+  each(systems)('summation of secrets - over %s', async (system) => {
     const ctx = initBackend(system);
-    const secrets = [];
-    const publics = [];
+    const secrets: Uint8Array[] = [];
+    const publics: Uint8Array[] = [];
     const nrTotal = 10;
     for (let i = 0; i < nrTotal; i++) {
       const { secret, publicBytes } = await randomSecret(ctx);
@@ -104,24 +107,24 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     // Examine zero secrets edge case
     const zeroSum = await addSecrets(ctx, []);
     const unitPublic = await addPublics(ctx, []);
-    expect(zeroSum).toEqual(ctx.scalarToBytes(0n));
-    expect(await isEqualPublic(ctx, unitPublic, ctx.neutral.toBytes())).toBe(true);
+    assert.deepEqual(zeroSum, ctx.scalarToBytes(0n));
+    assert.equal(await isEqualPublic(ctx, unitPublic, ctx.neutral.toBytes()), true);
 
     // Examine single secret edge case
     const cloneSecret = await addSecrets(ctx, secrets.slice(0, 1));
     const clonePublic = await addPublics(ctx, publics.slice(0, 1));
-    expect(await isEqualSecret(ctx, cloneSecret, secrets[0])).toBe(true);
-    expect(await isEqualPublic(ctx, clonePublic, publics[0])).toBe(true);
+    assert.equal(await isEqualSecret(ctx, cloneSecret, secrets[0]), true);
+    assert.equal(await isEqualPublic(ctx, clonePublic, publics[0]), true);
 
     // Check commutation between addition of secrets and combination of publics
     for (let nr = 1; nr < nrTotal; nr++) {
       const secretSum = await addSecrets(ctx, secrets.slice(0, nr));
       const targetPublic = await extractPublic(ctx, secretSum);
       const overallPublic = await addPublics(ctx, publics.slice(0, nr))
-      expect(await isEqualPublic(ctx, overallPublic, targetPublic)).toBe(true);
+      assert.equal(await isEqualPublic(ctx, overallPublic, targetPublic), true);
     }
   });
-  it.each(systems)('non-canonical secrets are rejected - over %s', async (system) => {
+  each(systems)('non-canonical secrets are rejected - over %s', async (system) => {
     // Lenient decoding would accept many encodings per secret, e.g. s + q or
     // trailing zero bytes, and the zero secret, whose public is the neutral element
     const ctx = initBackend(system);
@@ -136,10 +139,10 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
       intToLeBytes(q, len),
     ];
     for (const bytes of encodings) {
-      await expect(extractPublic(ctx, bytes)).rejects.toThrow(InvalidInput);
-      await expect(isKeypair(ctx, bytes, publicBytes)).rejects.toThrow(InvalidInput);
-      await expect(isEqualSecret(ctx, bytes, secret)).rejects.toThrow(InvalidInput);
-      await expect(addSecrets(ctx, [secret, bytes])).rejects.toThrow(InvalidInput);
+      await assert.rejects(extractPublic(ctx, bytes), InvalidInput);
+      await assert.rejects(isKeypair(ctx, bytes, publicBytes), InvalidInput);
+      await assert.rejects(isEqualSecret(ctx, bytes, secret), InvalidInput);
+      await assert.rejects(addSecrets(ctx, [secret, bytes]), InvalidInput);
     }
   });
 })

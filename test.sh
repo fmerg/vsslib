@@ -55,10 +55,10 @@ Options
   -t, --threshold <THRESHOLD>       Threshold parameter for tests involving
                                     Shamir sharing (default: 2).
   -w, --watch                       Rerun tests when saving changes.
-  -v, --verbose                     Be verbose.
+  -v, --verbose                     List every test, not only failures.
   -h, --help                        Display this help message and exit.
 
-Other arguments are passed to Jest, e.g. --bail or --testNamePattern <PATTERN>.
+Other arguments are passed to node --test, e.g. --test-name-pattern <PATTERN>.
 
 "
 
@@ -152,20 +152,26 @@ if [[ ! -e $TARGET ]]; then
 fi
 
 
-jest_opts=()
-if [[ $WATCH == "true" ]]; then
-    jest_opts+=(--watch)
-fi
-if [[ $VERBOSE == "true" ]]; then
-    jest_opts+=(--verbose)
-fi
-jest_opts+=("${opts[@]}")
-
-npm test -- --clearCache
-
-# NOTE: npm test -- --help
+# Spec files of the target, run by node's test runner with tsx compiling the
+# sources; results also go to coverage/junit.xml for CI
 if [[ $TARGET == *"spec.ts" ]]; then
-    npm test -- "${jest_opts[@]}" --findRelatedTests "$TARGET"
+    files=("$TARGET")
 else
-    npm test -- "${jest_opts[@]}" --findRelatedTests "$TARGET"/*
+    mapfile -t files < <(find "$TARGET" -name '*.spec.ts' | sort)
 fi
+
+reporter=dot
+if [[ $VERBOSE == "true" ]]; then
+    reporter=spec
+fi
+node_opts=(
+    --import tsx --test --test-concurrency=1
+    --test-reporter="$reporter" --test-reporter-destination=stdout
+    --test-reporter=junit --test-reporter-destination=coverage/junit.xml
+)
+if [[ $WATCH == "true" ]]; then
+    node_opts+=(--watch)
+fi
+
+mkdir -p coverage
+node "${node_opts[@]}" "${opts[@]}" "${files[@]}"

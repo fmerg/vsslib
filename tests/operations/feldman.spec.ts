@@ -1,3 +1,6 @@
+import { describe } from 'node:test';
+import assert from 'node:assert/strict';
+import { each } from '../utils';
 import { createFeldmanPackets, verifyFeldmanCommitments, parseFeldmanPacket } from 'vsslib/operations/feldman';
 import { initBackend, randomPublic, shareSecret } from 'vsslib';
 import { resolveTestConfig } from '../environ';
@@ -7,13 +10,13 @@ const { systems, nrShares, threshold } = resolveTestConfig();
 
 
 describe('Feldman VSS scheme', () => {
-  it.each(systems)('success over %s', async (system) => {
+  each(systems)('success over %s', async (system) => {
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, nrShares, threshold);
     const secretShares = await sharing.getSecretShares();
     const { packets, commitments } = await createFeldmanPackets(sharing);
-    expect(commitments.length).toEqual(threshold);
-    expect(packets.length).toEqual(nrShares);
+    assert.deepEqual(commitments.length, threshold);
+    assert.deepEqual(packets.length, nrShares);
     for (const share of secretShares) {
       // Check verification
       const { index } = share;
@@ -23,14 +26,14 @@ describe('Feldman VSS scheme', () => {
         share,
         threshold,
       );
-      expect(isValid).toBe(true);
+      assert.equal(isValid, true);
       // Check parsing
       const packet = await parseFeldmanPacket(ctx, commitments, packets[index - 1], threshold);
-      expect(isEqualBuffer(packet.share.value, share.value)).toBe(true);
+      assert.equal(isEqualBuffer(packet.share.value, share.value), true);
     }
   });
 
-  it.each(systems)('failure over %s', async (system) => {
+  each(systems)('failure over %s', async (system) => {
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, nrShares, threshold);
     const secretShares = await sharing.getSecretShares();
@@ -44,13 +47,13 @@ describe('Feldman VSS scheme', () => {
         share,
         threshold,
       );
-      await expect(verification).rejects.toThrow('Invalid share');
+      await assert.rejects(verification, /Invalid share/);
       // Check parsing failure
       const parsed = parseFeldmanPacket(ctx, commitments, packets[share.index - 1], threshold);
-      await expect(parsed).rejects.toThrow('Invalid share');
+      await assert.rejects(parsed, /Invalid share/);
     }
   });
-  it.each(systems)('commitment count must match threshold over %s', async (system) => {
+  each(systems)('commitment count must match threshold over %s', async (system) => {
     // A dealer announcing threshold t but sharing with another degree must be
     // caught: with t + 1 commitments every share verifies, yet t shares cannot
     // reconstruct the secret
@@ -59,26 +62,22 @@ describe('Feldman VSS scheme', () => {
       const { sharing } = await shareSecret(ctx, nrShares + 1, actual);
       const { packets, commitments } = await createFeldmanPackets(sharing);
       for (const packet of packets) {
-        await expect(
-          parseFeldmanPacket(ctx, commitments, packet, threshold)
-        ).rejects.toThrow('Invalid number of commitments');
+        await assert.rejects(parseFeldmanPacket(ctx, commitments, packet, threshold), /Invalid number of commitments/);
       }
     }
     const { sharing } = await shareSecret(ctx, nrShares, threshold);
     const { packets, commitments } = await createFeldmanPackets(sharing);
     for (const bad of [0, 1.5, -1]) {
-      await expect(
-        parseFeldmanPacket(ctx, commitments, packets[0], bad)
-      ).rejects.toThrow('Threshold must be a positive integer');
+      await assert.rejects(parseFeldmanPacket(ctx, commitments, packets[0], bad), /Threshold must be a positive integer/);
     }
   });
-  it.each(systems)('success with large indexes over %s', async (system) => {
+  each(systems)('success with large indexes over %s', async (system) => {
     // index ** j exceeds Number.MAX_SAFE_INTEGER for these parameters
     const ctx = initBackend(system);
     const { sharing } = await shareSecret(ctx, 20, 17);
     const { packets, commitments } = await createFeldmanPackets(sharing);
     for (const packet of packets) {
-      await expect(verifyFeldmanCommitments(ctx, commitments, packet, 17)).resolves.toBe(true);
+      assert.equal(await verifyFeldmanCommitments(ctx, commitments, packet, 17), true);
     }
   });
 })

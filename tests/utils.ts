@@ -1,3 +1,5 @@
+import { it } from 'node:test';
+
 /** Powerset of the provided collection **/
 export const powerSet = (array: any[]): any[][] => array.reduce(
   (subsets: any[][], item) => subsets.concat(subsets.map(subset => [...subset, item])), [[]]
@@ -72,3 +74,19 @@ export const isEqualBuffer = (a: Uint8Array, b: Uint8Array) => {
 }
 
 
+
+
+/** One test per case, as jest's it.each: an array case is spread into the
+* arguments of the test, which replace %s, %d, %i and %p of the name in turn */
+type Test<A extends readonly any[]> = (name: string, fn: (...args: A) => unknown) => void;
+export function each<T extends readonly any[] | [any]>(cases: readonly T[]): Test<T>;
+export function each<T>(cases: readonly T[]): Test<[T]>;
+export function each(cases: readonly unknown[]): Test<any[]> {
+  return (name, fn) => {
+    for (const c of cases) {
+      const args = Array.isArray(c) ? c : [c];
+      let i = 0;
+      it(name.replace(/%[sdip]/g, () => String(args[i++])), async () => { await fn(...args); });
+    }
+  };
+}
