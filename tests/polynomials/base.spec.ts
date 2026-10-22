@@ -232,10 +232,14 @@ describe('Evaluation - Horner against power sum', () => {
   each(Object.values(Systems))('%s', async (system) => {
     const ctx = initBackend(system);
     const order = ctx.order;
+    // Around the bounds where the reduction period changes: 2^32, 2^53 (exact
+    // as a Number) and the square root of the order
+    const root = 1n << BigInt(order.toString(2).length >> 1);
     const values = [
-      0n, 1n, 2n, 50n, 0xffffffffn, 0x100000000n, order - 1n, order, order + 7n, -1n, -order - 3n,
+      0n, 1n, 2n, 7n, 50n, 0xffffffffn, 0x100000000n, 2n ** 53n - 1n, 2n ** 53n + 1n,
+      root - 1n, root, root + 1n, order - 1n, order, order + 7n, -1n, -order - 3n,
     ];
-    for (const degree of [0, 1, 4, 24, 25]) {
+    for (const degree of [0, 1, 2, 4, 24, 25, 31, 32, 300]) {
       const coeffs = [];
       for (let i = 0; i < degree + 1; i++) coeffs.push(await ctx.randomScalar());
       const poly = new BasePolynomial(coeffs, order);

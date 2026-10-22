@@ -2,6 +2,10 @@ import { mod } from '../arith';
 import { PolynomialError } from '../errors';
 
 
+/** Up to this many coefficients, evaluation at x <= 2^32 reduces only once */
+const ACCUMULATE_MAX_COEFFS = 32;
+
+
 export class BasePolynomial {
   coeffs: bigint[];
   degree: number;
@@ -92,15 +96,27 @@ export class BasePolynomial {
   evaluate = (value: bigint | number): bigint => {
     const { coeffs, order } = this;
     const x = mod(BigInt(value), order);
-    // Small x (e.g., share indexes) keeps the accumulator short, so reducing
-    // once at the end is cheaper; otherwise reduce at each step
-    const reduceEachStep = x > 0xffffffffn;
-    let acc = 0n;
-    for (let i = coeffs.length - 1; i >= 0; i--) {
-      acc = acc * x + coeffs[i];
-      if (reduceEachStep) acc = mod(acc, order);
+    // Small x (e.g., share indexes) at low degree keeps the accumulator short,
+    // so reducing once at the end is cheapest
+    if (x <= 0xffffffffn && coeffs.length <= ACCUMULATE_MAX_COEFFS) {
+      let acc = 0n;
+      for (let i = coeffs.length - 1; i >= 0; i--) acc = acc * x + coeffs[i];
+      return mod(acc, order);
     }
-    return mod(acc, order);
+    // Otherwise reduce every k steps, so that the accumulator stays below about
+    // twice the size of the order: at each step for x above the square root of
+    // the order. Bit lengths through Number may exceed the true ones by one,
+    // which only makes k smaller
+    const xBits = x === 0n ? 0 : Math.floor(Math.log2(Number(x))) + 1;
+    const k = xBits === 0 ? coeffs.length : Math.max(1, Math.floor(Math.log2(Number(order)) / xBits));
+    let acc = 0n;
+    let i = coeffs.length - 1;
+    while (i >= 0) {
+      const stop = Math.max(i - k, -1);
+      for (; i > stop; i--) acc = acc * x + coeffs[i];
+      acc = mod(acc, order);
+    }
+    return acc;
   }
 
   /** Evaluation at `value` as a sum of powers; reference for `evaluate` */
