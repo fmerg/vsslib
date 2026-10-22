@@ -49,6 +49,7 @@ All notable changes to this project will be documented in this file.
 - Scalars are encoded without conversion to strings, which ran in variable time and copied secrets to the heap.
 - The random bytes from which scalars are sampled are wiped after use.
 - Exponentiations by secret scalars that noble does not blind, i.e., of non-generator points on `ed25519`, `ed448`, `jubjub` and `ristretto255` and of every point on `decaf448`, split the scalar with a fresh random factor. Pedersen dealing is up to about twice as slow on these curves, and every secret operation about twice as slow on `decaf448`.
+- `@noble/curves` and `@noble/hashes` are pinned to exact versions, so that installing vsslib never resolves an untested noble release. Applications that depend on another noble version get a second copy.
 
 ### Performance
 
