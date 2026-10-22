@@ -171,9 +171,10 @@ if [[ ${#files[@]} -eq 0 ]]; then
     exit 1
 fi
 
-# Fails a spec file that hangs instead of blocking the run; node applies the
-# timeout to each file as a whole, and the slowest take about 75 s locally
-node_opts=(--import tsx --test --test-concurrency=1 --test-timeout=600000)
+# Spec files run in parallel, each in its own process. The timeout fails a
+# spec file that hangs instead of blocking the run; node applies it to each
+# file as a whole, and the slowest take about 75 s locally
+node_opts=(--import tsx --test --test-timeout=600000)
 
 # Reporters passed through replace the defaults, since node pairs every
 # reporter with a destination
