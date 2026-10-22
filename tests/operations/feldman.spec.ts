@@ -1,10 +1,9 @@
 import { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from '../utils';
 import { createFeldmanPackets, verifyFeldmanCommitments, parseFeldmanPacket } from 'vsslib/operations/feldman';
 import { initBackend, randomPublic, shareSecret } from 'vsslib';
 import { resolveTestConfig } from '../environ';
-import { isEqualBuffer } from '../utils';
+import { isEqualBuffer, each } from '../utils';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 

@@ -1,6 +1,5 @@
 import { describe } from 'node:test';
 import assert from 'node:assert/strict';
-import { each } from '../utils';
 import {
   shareSecret,
   combineSecretShares,
@@ -20,7 +19,7 @@ import { intToLeBytes } from 'vsslib/arith';
 import { SecretShare, System } from 'vsslib/types';
 import { resolveTestConfig } from '../environ';
 import { createRawSharing } from '../helpers';
-import { cartesian, partialPermutations, isEqualBuffer } from '../utils';
+import { cartesian, partialPermutations, isEqualBuffer, each } from '../utils';
 import { fixtures } from '../systems';
 
 const { systems, nrShares, threshold } = resolveTestConfig();

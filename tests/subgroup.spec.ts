@@ -23,7 +23,7 @@ const cofactorSystems = systems.filter(system => fixtures[system].smallOrderPoin
 
 
 describe('Prime-order subgroup validation', () => {
-  if (cofactorSystems.length > 0) each(cofactorSystems)('small-order points are rejected over %s', async (system) => {
+  each(cofactorSystems)('small-order points are rejected over %s', async (system) => {
     const { ctx } = await createRawSharing(system, nrShares, threshold);
     // bytesToPoint decodes without validation
     const t = ctx.bytesToPoint(fixtures[system].smallOrderPoint!);
@@ -32,7 +32,7 @@ describe('Prime-order subgroup validation', () => {
       await assert.rejects(parsePoint(ctx, p.toBytes()), /not in prime-order subgroup/);
     }
   });
-  if (cofactorSystems.length > 0) each(cofactorSystems)('public share with small-order component is rejected over %s', async (system) => {
+  each(cofactorSystems)('public share with small-order component is rejected over %s', async (system) => {
     // The shareholder publishes y + T and retries the proof until the challenge
     // is even, so that T vanishes from the verification equation
     const { ctx, secretShares: shares } = await createRawSharing(system, nrShares, threshold);
