@@ -936,7 +936,11 @@ $ npm run docs                      # API reference in docs/
 ## Tests
 
 Tests run on Node's built-in test runner (`node:test`), with tsx compiling the
-sources; `./test.sh` also writes a JUnit report to `coverage/junit.xml` for CI.
+sources, one process per spec file. For CI, `./test.sh` also writes a JUnit
+report to `coverage/junit.xml` (`coverage/browsers.xml` with `--browsers`) and
+fails a run in which no test ran, e.g. for a name pattern that matches nothing.
+Neither happens in watch mode or with a `--test-reporter` of your own, which
+replaces the default reporters.
 
 ## Layout
 

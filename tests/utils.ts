@@ -76,8 +76,9 @@ export const isEqualBuffer = (a: Uint8Array, b: Uint8Array) => {
 
 
 
-/** One test per case, as jest's it.each: an array case is spread into the
-* arguments of the test, which replace %s, %d, %i and %p of the name in turn */
+/** One test per case, like jest's it.each: an array case is spread into the
+* arguments of the test, which replace %s, %d, %i and %p of the name in turn,
+* each formatted with String(), not jest's number or pretty formatting */
 type Test<A extends readonly any[]> = (name: string, fn: (...args: A) => unknown) => void;
 export function each<T extends readonly any[] | [any]>(cases: readonly T[]): Test<T>;
 export function each<T>(cases: readonly T[]): Test<[T]>;
