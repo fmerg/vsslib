@@ -59,6 +59,8 @@ Options
   -h, --help                        Display this help message and exit.
 
 Other arguments are passed to node --test, e.g. --test-name-pattern <PATTERN>.
+Any --test-reporter given replaces the default reporters, including the JUnit
+report in coverage/junit.xml.
 
 "
 
@@ -142,8 +144,9 @@ TARGET=$MODULE
 if [[ $TARGET != "tests"* ]]; then
     TARGET="tests/$TARGET"
 fi
-# Allow spec files without their suffix, e.g. operations/feldman
-if [[ ! -e $TARGET && -f $TARGET.spec.ts ]]; then
+# Allow spec files without their suffix, e.g. operations/feldman; such a file
+# takes precedence over a directory of the same name, e.g. tests/browser
+if [[ -f $TARGET.spec.ts ]]; then
     TARGET="$TARGET.spec.ts"
 fi
 if [[ ! -e $TARGET ]]; then
@@ -168,15 +171,28 @@ if [[ ${#files[@]} -eq 0 ]]; then
     exit 1
 fi
 
-reporter=dot
-if [[ $VERBOSE == "true" ]]; then
-    reporter=spec
+# Fails a spec file that hangs instead of blocking the run; node applies the
+# timeout to each file as a whole, and the slowest take about 75 s locally
+node_opts=(--import tsx --test --test-concurrency=1 --test-timeout=600000)
+
+# Reporters passed through replace the defaults, since node pairs every
+# reporter with a destination
+custom_reporter=false
+for opt in "${opts[@]}"; do
+    if [[ $opt == --test-reporter* ]]; then
+        custom_reporter=true
+    fi
+done
+if [[ $custom_reporter == "false" ]]; then
+    reporter=dot
+    if [[ $VERBOSE == "true" ]]; then
+        reporter=spec
+    fi
+    node_opts+=(
+        --test-reporter="$reporter" --test-reporter-destination=stdout
+        --test-reporter=junit --test-reporter-destination=coverage/junit.xml
+    )
 fi
-node_opts=(
-    --import tsx --test --test-concurrency=1
-    --test-reporter="$reporter" --test-reporter-destination=stdout
-    --test-reporter=junit --test-reporter-destination=coverage/junit.xml
-)
 if [[ $WATCH == "true" ]]; then
     node_opts+=(--watch)
 fi
