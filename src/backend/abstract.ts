@@ -10,7 +10,8 @@ export interface Point {
 
 
 /** @internal Input check shared by the implementations of multiExpPublic,
- * so that every path rejects bad input with the same error */
+ * so that every path rejects mismatched lengths and out-of-range scalars with
+ * the same error; points are not checked, foreign points being a caller bug */
 export const validateMultiExp = (
   points: unknown[], scalars: bigint[], order: bigint
 ): void => {
