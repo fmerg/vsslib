@@ -81,6 +81,7 @@ NR_SHARES="$DEFAULT_NR_SHARES"
 THRESHOLD="$DEFAULT_THRESHOLD"
 WATCH="$DEFAULT_WATCH"
 RUN_BROWSERS="$DEFAULT_BROWSERS"
+MODULE_GIVEN=false
 VERBOSE="$DEFAULT_VERBOSE"
 
 opts=()
@@ -90,6 +91,7 @@ do
     case $arg in
         -m|--module)
             MODULE="$2"
+            MODULE_GIVEN=true
             shift
             shift
             ;;
@@ -170,7 +172,7 @@ fi
 # sources; results also go to a JUnit report for CI
 report=coverage/junit.xml
 if [[ $RUN_BROWSERS == "true" ]]; then
-    if [[ $MODULE != "$DEFAULT_MODULE" ]]; then
+    if [[ $MODULE_GIVEN == "true" ]]; then
         echo "Options --module and --browsers exclude each other" 1>&2
         exit 1
     fi
