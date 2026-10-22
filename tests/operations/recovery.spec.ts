@@ -1,4 +1,4 @@
-import { describe } from 'node:test';
+import { describe, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   createSchnorrPacket,
@@ -43,6 +43,21 @@ describe('Schnorr packets', () => {
 
 
 describe('Public point recovery', () => {
+  each(systems)('parses each public share once - over %s', async (system) => {
+    // The proofs parse points of their own, which are not counted
+    const { ctx, secretShares: shares } = await createRawSharing(system, nrShares, threshold);
+    const { packets } = await mockPublicRecoverySetup({ ctx, shares, nrInvalid: 1 });
+    const parse = mock.method(ctx, 'parsePoint');
+    try {
+      await recoverPublic(ctx, packets, threshold, { errorOnInvalid: false });
+      for (const packet of packets) {
+        const calls = parse.mock.calls.filter(call => isEqualBuffer(call.arguments[0], packet.value));
+        assert.equal(calls.length, 1);
+      }
+    } finally {
+      parse.mock.restore();
+    }
+  });
   each(cartesian([systems, algorithms])
   )('success - without nonce - over %s/%s', async (system, algorithm) => {
     const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
