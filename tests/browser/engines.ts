@@ -15,15 +15,16 @@ const { systems, algorithms, nrShares, threshold } = resolveTestConfig();
 
 const ENGINES = { chromium, firefox, webkit };
 const engines = (process.env.BROWSERS ?
-  process.env.BROWSERS.split(',').map(name => name.trim()) :
+  process.env.BROWSERS.split(',').map(name => name.trim()).filter(name => name) :
   Object.keys(ENGINES)) as (keyof typeof ENGINES)[];
 for (const name of engines) {
   if (!Object.prototype.hasOwnProperty.call(ENGINES, name)) throw new Error(`Unsupported browser: ${name}`);
 }
 
 // Per engine, so that a hanging flow fails its engine instead of blocking
-// the run; all flows take a few seconds per engine
-const TIMEOUT = 5 * 60 * 1000;
+// the run; all flows take a few seconds per engine. The suite timeout does
+// not cover hooks, which launch and close the browser, so these get their own
+const TIMEOUT = 2 * 60 * 1000;
 
 
 let code: string | undefined;
@@ -36,10 +37,10 @@ for (const name of engines) describe(`Browser bundle in ${name}`, { timeout: TIM
     browser = await ENGINES[name].launch();
     page = await browser.newPage();
     await page.addScriptTag({ content: code });
-  });
+  }, { timeout: TIMEOUT });
   after(async () => {
     await browser?.close();
-  });
+  }, { timeout: TIMEOUT });
 
   test('exposes every entry point', async () => {
     assert.deepEqual(await page.evaluate(missingEntryPoints), []);
