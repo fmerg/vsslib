@@ -45,11 +45,16 @@ describe('Schnorr packets', () => {
 describe('Public point recovery', () => {
   each(systems)('parses each public share once - over %s', async (system) => {
     // The proofs parse points of their own, which are not counted
-    const { ctx, secretShares: shares } = await createRawSharing(system, nrShares, threshold);
-    const { packets } = await mockPublicRecoverySetup({ ctx, shares, nrInvalid: 1 });
+    const { ctx, publicBytes, secretShares: shares } = await createRawSharing(
+      system, nrShares, threshold
+    );
+    const { packets } = await mockPublicRecoverySetup({
+      ctx, shares, nrInvalid: nrShares - threshold
+    });
     const parse = mock.method(ctx, 'parsePoint');
     try {
-      await recoverPublic(ctx, packets, threshold, { errorOnInvalid: false });
+      const { recovered } = await recoverPublic(ctx, packets, threshold, { errorOnInvalid: false });
+      assert.equal(isEqualBuffer(recovered, publicBytes), true);
       for (const packet of packets) {
         const calls = parse.mock.calls.filter(call => isEqualBuffer(call.arguments[0], packet.value));
         assert.equal(calls.length, 1);
