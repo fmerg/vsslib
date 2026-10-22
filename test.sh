@@ -200,64 +200,64 @@ timeout=600000
 if [[ $RUN_BROWSERS == "true" ]]; then
     timeout=1800000
 fi
-node_opts=(--import tsx --test --test-timeout="$timeout")
+# node warns of a listener leak on its own stream with three reporters or more
+node_opts=(
+    --import tsx --test --test-timeout="$timeout"
+    --disable-warning=MaxListenersExceededWarning
+)
 
 # Reporters passed through replace the defaults, since node pairs every
 # reporter with a destination
 custom_reporter=false
-custom_destination=false
+nr_reporters=0
+nr_destinations=0
 for opt in "${opts[@]}"; do
     if [[ $opt == --test-reporter || $opt == --test-reporter=* ]]; then
         custom_reporter=true
+        nr_reporters=$((nr_reporters + 1))
     elif [[ $opt == --test-reporter-destination* ]]; then
-        custom_destination=true
+        nr_destinations=$((nr_destinations + 1))
     fi
 done
-if [[ $custom_destination == "true" && $custom_reporter == "false" ]]; then
-    echo "--test-reporter-destination needs a --test-reporter for it" 1>&2
+if [[ $nr_destinations -gt 0 && $nr_destinations -ne $nr_reporters ]]; then
+    echo "Give one --test-reporter-destination per --test-reporter, or none" 1>&2
     exit 1
 fi
-# The JUnit report, and the check below that reads it, only for single runs:
-# in watch mode node writes no test cases to it
-junit=false
-if [[ $custom_reporter == "false" && $WATCH == "false" ]]; then
-    junit=true
-fi
+# Reporters given without destinations write to stdout, as node does for a
+# single reporter, since the counting reporter below takes a destination
+for ((i = nr_destinations; i < nr_reporters; i++)); do
+    opts+=(--test-reporter-destination=stdout)
+done
 if [[ $custom_reporter == "false" ]]; then
     reporter=dot
     if [[ $VERBOSE == "true" ]]; then
         reporter=spec
     fi
-    node_opts+=(--test-reporter="$reporter" --test-reporter-destination=stdout)
+    node_opts+=(
+        --test-reporter="$reporter" --test-reporter-destination=stdout
+        --test-reporter=junit --test-reporter-destination="$report"
+    )
 fi
-if [[ $junit == "true" ]]; then
-    node_opts+=(--test-reporter=junit --test-reporter-destination="$report")
-fi
+
+# node passes when a name pattern or an empty case table selects no tests, so
+# a reporter of ours counts the tests that ran, next to any other reporters.
+# Not in watch mode, where the run never ends
+count="${report%.xml}.count"
+rm -f "$count"
 if [[ $WATCH == "true" ]]; then
     node_opts+=(--watch)
+else
+    node_opts+=(
+        --test-reporter=./tests/count-reporter.mjs
+        --test-reporter-destination="$count"
+    )
 fi
 
 mkdir -p coverage
 status=0
 node "${node_opts[@]}" "${opts[@]}" "${files[@]}" || status=$?
 
-# node passes when a name pattern or an empty case table selects no tests.
-# It then reports each such file as a test case named by its path (Node 22)
-# or the filtered tests as skipped test cases (Node 20), neither of which ran.
-# Paths are compared normalized, as node reports them, e.g. for -m ./bytes
-ran_tests() {
-    node -e '
-      const path = require("path");
-      const [report, ...files] = process.argv.slice(1).map(arg => path.normalize(arg));
-      const xml = require("fs").readFileSync(report, "utf8");
-      const cases = xml.matchAll(/<testcase name="([^"]*)"[^>]*?(?:\/>|>([\s\S]*?)<\/testcase>)/g);
-      const ran = [...cases].filter(([, name, body]) =>
-        !files.includes(path.normalize(name)) && !(body ?? "").includes("<skipped"));
-      process.exit(ran.length > 0 ? 0 : 1);
-    ' "$@"
-}
-if [[ $status -eq 0 && $junit == "true" ]] && \
-    ! ran_tests "$report" "${files[@]}"; then
+if [[ $status -eq 0 && $WATCH == "false" && $(cat "$count" 2>/dev/null) != [1-9]* ]]; then
     echo "No tests ran in test module: $MODULE" 1>&2
     exit 1
 fi

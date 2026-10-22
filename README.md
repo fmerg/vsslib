@@ -937,10 +937,11 @@ $ npm run docs                      # API reference in docs/
 
 Tests run on Node's built-in test runner (`node:test`), with tsx compiling the
 sources, one process per spec file. For CI, `./test.sh` also writes a JUnit
-report to `coverage/junit.xml` (`coverage/browsers.xml` with `--browsers`) and
-fails a run in which no test ran, e.g. for a name pattern that matches nothing.
-Neither happens in watch mode or with a `--test-reporter` of your own, which
-replaces the default reporters.
+report to `coverage/junit.xml` (`coverage/browsers.xml` with `--browsers`),
+except with a `--test-reporter` of your own, which replaces the default
+reporters. Except in watch mode, it fails a run in which no test ran, e.g. for
+a name pattern that matches nothing, counted by
+[`tests/count-reporter.mjs`](./tests/count-reporter.mjs).
 
 ## Layout
 
