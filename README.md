@@ -987,7 +987,9 @@ $ docker run --rm -v "$PWD":/src:ro mcr.microsoft.com/playwright:<tag>@<digest> 
     bash -c 'cp -r /src /w && cd /w && rm -rf node_modules && npm ci && npm run test:browsers'
 ```
 
-with the image of the `browsers` job in `.gitlab-ci.yml`.
+with the image of the `browsers` job in `.gitlab-ci.yml`. The container works
+on a copy of the checkout, so the JUnit report stays inside it; the output
+lists the failed checks.
 
 ## Benchmarks
 
