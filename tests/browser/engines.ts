@@ -2,7 +2,7 @@ import { describe, test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium, firefox, webkit, Browser, Page } from 'playwright-core';
 import { each } from '../utils';
-import { bundle, flow } from './bundle';
+import { bundle, flow, missingEntryPoints } from './bundle';
 import { resolveTestConfig } from '../environ';
 
 // Runs the flows of the browser bundle in real browser engines. Not a spec
@@ -42,9 +42,7 @@ for (const name of engines) describe(`Browser bundle in ${name}`, { timeout: TIM
   });
 
   test('exposes every entry point', async () => {
-    assert.deepEqual(await page.evaluate(
-      '[typeof vsslib.initBackend, typeof vsslib.backend.initBackend, typeof vsslib.nizk.nizk]'
-    ), ['function', 'function', 'function']);
+    assert.deepEqual(await page.evaluate(missingEntryPoints), []);
   });
 
   each(systems)('flows over %s', async (system) => {

@@ -67,10 +67,10 @@ describe('Shamir secret sharing', () => {
     assert.equal(sharing.polynomial.evaluate(0), await parseScalar(ctx, original));
     assert.equal(await isEqualSecret(ctx, sharing.getOriginalSecret(), original), true);
     assert.equal(await isEqualSecret(ctx, secret, original), true);
-    assert.deepEqual(n, sharing.nrShares);
+    assert.equal(n, sharing.nrShares);
     assert.equal(n, (await sharing.getSecretShares()).length);
     assert.equal(n, (await sharing.getPublicShares()).length);
-    assert.deepEqual(t, sharing.threshold);
+    assert.equal(t, sharing.threshold);
     for (let index = 1; index <= sharing.nrShares; index++) {
       const { secretShare, publicShare } = await sharing.getShare(index);
       const { value: secretBytes } = secretShare;
@@ -95,10 +95,10 @@ describe('Shamir secret sharing', () => {
       assert.equal(sharing.polynomial.evaluate(0), await parseScalar(ctx, original));
       assert.equal(await isEqualSecret(ctx, sharing.getOriginalSecret(), original), true);
       assert.equal(await isEqualSecret(ctx, secret, original), true);
-      assert.deepEqual(n, sharing.nrShares);
+      assert.equal(n, sharing.nrShares);
       assert.equal(n, (await sharing.getSecretShares()).length);
       assert.equal(n, (await sharing.getPublicShares()).length);
-      assert.deepEqual(t, sharing.threshold);
+      assert.equal(t, sharing.threshold);
       for (let index = 1; index <= nrPredefined; index++) {
         const { secretShare } = await sharing.getShare(index);
         assert.equal(

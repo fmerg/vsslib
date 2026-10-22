@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { each } from './utils';
 import vm from 'node:vm';
 import { webcrypto } from 'node:crypto';
-import { bundle, flow, GLOBAL_MARKER } from './browser/bundle';
+import { bundle, flow, missingEntryPoints, GLOBAL_MARKER } from './browser/bundle';
 import { resolveTestConfig } from './environ';
 
 const { systems, algorithms, nrShares, threshold } = resolveTestConfig();
@@ -32,9 +32,7 @@ describe('Browser bundle', () => {
   });
 
   test('exposes every entry point', () => {
-    assert.equal(typeof context.vsslib.initBackend, 'function');
-    assert.equal(typeof context.vsslib.backend.initBackend, 'function');
-    assert.equal(typeof context.vsslib.nizk.nizk, 'function');
+    assert.deepEqual([...vm.runInContext(missingEntryPoints, context)], []);
   });
 
   each(systems)('flows over %s', async (system) => {

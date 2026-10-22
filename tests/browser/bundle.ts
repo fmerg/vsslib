@@ -48,6 +48,12 @@ export const bundle = async () => {
   return outputFiles[0].text;
 }
 
+// Names of the entry points that the bundle does not expose as functions,
+// evaluated inside the context of the bundle
+export const missingEntryPoints = `['initBackend', 'backend.initBackend', 'nizk.nizk'].filter(
+  name => typeof name.split('.').reduce((obj, key) => obj?.[key], vsslib) !== 'function'
+)`;
+
 // Runs SSS with combination, Feldman and Pedersen VSS, public recovery and a
 // DDH proof inside the context; returns the names of the failed checks. The
 // sharings are created once per system, since only the proofs depend on the
