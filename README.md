@@ -967,11 +967,27 @@ the compiled `dist`.
 [`tests/browser/engines.ts`](./tests/browser/engines.ts) runs the same flows in
 Chromium, Firefox and WebKit through `playwright-core`, which downloads no
 browsers itself. CI runs it on schedules and on demand, in the Playwright image
-that ships the browsers. Locally, after `npx playwright-core install`,
+that ships the browsers. To run it locally
 
 ```
-$ npm run test:browsers                         # BROWSERS=chromium,firefox to select
+$ npx --no-install playwright-core install      # once: browsers of the pinned release
+$ npm run test:browsers                         # results also in coverage/browsers.xml
+$ BROWSERS=webkit SYSTEM=ed25519 npm run test:browsers
 ```
+
+`--no-install` makes npx run only the locked `playwright-core` and fail on a
+misspelled name, which plain npx would fetch from the registry and execute.
+Install the browsers as your user, not with sudo, which would put them in
+root's cache. If a browser fails to launch for missing system libraries,
+`sudo ./node_modules/.bin/playwright-core install-deps` installs them, or run
+the tests in the CI image, which needs no installation:
+
+```
+$ docker run --rm -v "$PWD":/src:ro mcr.microsoft.com/playwright:<tag>@<digest> \
+    bash -c 'cp -r /src /w && cd /w && rm -rf node_modules && npm ci && npm run test:browsers'
+```
+
+with the image of the `browsers` job in `.gitlab-ci.yml`.
 
 ## Benchmarks
 
