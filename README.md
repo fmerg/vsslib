@@ -961,8 +961,17 @@ the library for the browser with esbuild and fails on any Node module, also one
 required inside `try`, and on any reference to Node globals such as `Buffer` or
 `process`. It then runs SSS, VSS with public recovery and NIZK proofs from the
 bundle in a Node `vm` context that exposes only `crypto` and `TextEncoder`. It
-thereby guards against Node APIs leaking into the library, but does not replace
-testing in real browsers, nor does it bundle the compiled `dist`.
+thereby guards against Node APIs leaking into the library, but does not bundle
+the compiled `dist`.
+
+[`tests/browser/engines.ts`](./tests/browser/engines.ts) runs the same flows in
+Chromium, Firefox and WebKit through `playwright-core`, which downloads no
+browsers itself. CI runs it on schedules and on demand, in the Playwright image
+that ships the browsers. Locally, after `npx playwright-core install`,
+
+```
+$ npm run test:browsers                         # BROWSERS=chromium,firefox to select
+```
 
 ## Benchmarks
 
@@ -1016,7 +1025,9 @@ automatically; to bump them
    leaves time for a compromised release to be found and pulled.
 2. Bump `@noble/curves` and `@noble/hashes` together: curves pins hashes exactly,
    so both must name the same version for npm to install one copy of hashes.
-3. Bump esbuild together with tsx, within the range tsx accepts.
+3. Bump esbuild together with tsx, within the range tsx accepts, and
+   `playwright-core` together with the Playwright image of the `browsers` job,
+   whose browsers must match it.
 4. For the CI image, take the newest `22.x` tag and the digest of its index
    (see the comment in `.gitlab-ci.yml`).
 5. Run `npm install`, check that `npm ls @noble/hashes esbuild` lists one

@@ -26,3 +26,21 @@ test:
     when: always
     reports:
       junit: coverage/junit.xml
+
+# Flows of the browser bundle in Chromium, Firefox and WebKit. The image ships
+# the browsers of its Playwright release, which must equal the playwright-core
+# version in package.json. Runs on schedules; elsewhere on demand, without
+# blocking the pipeline
+browsers:
+  image: mcr.microsoft.com/playwright:v1.64.1-noble@sha256:7852dc5a7d72f5fe458a597d690f6c42fbc8e9e26ddfa95f8e6ef552558d9bbf
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "push" || $CI_PIPELINE_SOURCE == "web"
+      when: manual
+      allow_failure: true
+  script:
+    - npm run test:browsers
+  artifacts:
+    when: always
+    reports:
+      junit: coverage/browsers.xml
