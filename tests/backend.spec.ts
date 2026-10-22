@@ -269,8 +269,9 @@ describe('public multi-exponentiation', () => {
         }
         for (const bad of [ctx.order, ctx.order + __1n, -__1n]) {
           const last = [...scalars.slice(0, -1), bad];
-          await assert.rejects(group.multiExpPublic(points, last), InvalidInput);
-          await assert.rejects(group.multiExpPublic(points, last), /not in range/);
+          await assert.rejects(
+            group.multiExpPublic(points, last), { name: 'InvalidInput', message: /not in range/ }
+          );
         }
       }
     }
