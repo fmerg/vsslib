@@ -9,6 +9,14 @@ export interface Point {
 }
 
 
+/** @internal Input check shared by the implementations of multiExpPublic */
+export const validateMultiExp = (points: unknown[], scalars: bigint[]): void => {
+  if (points.length !== scalars.length) throw new InvalidInput(
+    `Incompatible lengths: ${points.length} points, ${scalars.length} scalars`
+  );
+}
+
+
 /** Prime-order group backing the library. Implementations must ensure that
  * - every element, including the neutral one, has a unique encoding, which
  *   bytesToPoint decodes and toBytes produces
@@ -107,6 +115,21 @@ export abstract class Group<P extends Point> {
    * backends override it, as a property like `blindsNatively`, where a faster
    * variable-time multiplication exists */
   expPublic = async (point: P, scalar: bigint): Promise<P> => this.exp(point, scalar);
+
+  /** Product of `points[i] ^ scalars[i]` over public points and scalars,
+   * such as public shares and their Lagrange coefficients, which may run in
+   * variable time and must therefore never see secrets. Defaults to one
+   * `expPublic` per point; backends override it, as a property like
+   * `expPublic`, where a multi-scalar multiplication exists. Throws
+   * InvalidInput if the lengths differ */
+  multiExpPublic = async (points: P[], scalars: bigint[]): Promise<P> => {
+    validateMultiExp(points, scalars);
+    let acc = this.neutral;
+    for (let i = 0; i < points.length; i++) {
+      acc = await this.operate(acc, await this.expPublic(points[i], scalars[i]));
+    }
+    return acc;
+  }
 
   abstract randomScalar: () => Promise<bigint>;
   abstract randomPoint: () => Promise<P>;
