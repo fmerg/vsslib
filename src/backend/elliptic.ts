@@ -211,7 +211,8 @@ export class EcGroup extends Group<EcPoint> {
 
 
 /** Number of points from which Pippenger's method beats one variable-time
- * multiplication per point, measured with noble 2.4.0; recheck on upgrades */
+ * multiplication per point, measured with noble 2.4.0 on every supported curve;
+ * recheck on upgrades */
 const MSM_CUTOFF = 4;
 
 

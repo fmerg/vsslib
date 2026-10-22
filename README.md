@@ -922,7 +922,7 @@ their own: the coefficients are full-width scalars, unlike the share indexes of
 [Horner's method](#horner-variable-time). On `secp256k1`, single variable-time
 multiplications already use the curve's endomorphism, so Pippenger's method takes
 over only from 16 shares on; the thresholds are the crossovers measured with
-`@noble/curves` 2.4.0. Moreover, `recoverPublic` parsed the public share of every
+`@noble/curves` 2.4.0 on every supported curve. Moreover, `recoverPublic` parsed the public share of every
 packet twice, when verifying the packet and when combining, and now keeps the
 point it verified. Measured changes of median running time against the previous
 implementation, with `n = 100` shares:
