@@ -709,8 +709,8 @@ value independent of `r`. The split
 costs a second multiplication and an inversion: Pedersen dealing becomes up to
 about twice as slow on the Edwards curves, and every secret operation about
 twice as slow on `decaf448`, whereas the curves of cofactor one are unaffected.
-`Group.exp` remains in use for public scalars only, namely NIZK challenges
-and responses. Share indexes go through
+On the elliptic backends, `Group.exp` remains in use for public scalars only,
+namely NIZK challenges and responses. Share indexes go through
 `Group.expPublic` instead, which the elliptic backends implement by noble's
 variable-time multiplication: raising the commitments to powers of the share
 index, which is small and public, then costs a few doublings instead of a full
@@ -720,8 +720,9 @@ are combined with their Lagrange coefficients through `Group.multiExpPublic`,
 which the elliptic backends implement by a variable-time multi-scalar
 multiplication (see [Multi-exponentiation](#multi-exponentiation)). Custom backends inherit the split and should override `blindsNatively`
 only for points their exponentiation blinds; `expPublic` defaults to `exp` and
-`multiExpPublic` to one `expPublic` per point, and overrides may run in
-variable time, since they never receive secrets.
+`multiExpPublic` to one `expPublic` per point, so that a custom backend
+without overrides combines public shares through `exp`. Overrides of either may
+run in variable time, since they never receive secrets.
 
 Memory hygiene is limited by the language as well. `BigInt` values are
 immutable and cannot be overwritten, so the scalars vsslib computes with stay in
@@ -833,8 +834,10 @@ verification in the table. Horner's rule is what makes it pay off
 in full, since it keeps every scalar as short as `i`; with the powers `i^j`
 instead, the scalars would grow by the length of `i` per term up to the full
 length of the order. Variable time is safe here, since the index and the
-commitments are public (see [Side-channel attacks](#side-channel-attacks)), and
-no other operation calls `Group.expPublic`.
+commitments are public (see [Side-channel attacks](#side-channel-attacks)). The
+elliptic backends call `Group.expPublic` for nothing else, whereas the default
+`Group.multiExpPublic`, which custom backends inherit, calls it with full-width
+Lagrange coefficients (see [Multi-exponentiation](#multi-exponentiation)).
 
 For example, parsing and verifying a Feldman packet with `n = 50, t = 25` takes
 3.32 ms instead of 46.6 ms on `secp256k1`. The gain is smaller on the Edwards
