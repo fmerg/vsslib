@@ -1,5 +1,5 @@
 import { Point, Group } from '../backend';
-import { InvalidPublicShare } from '../errors';
+import { InvalidInput, InvalidPublicShare } from '../errors';
 import { Algorithms } from '../enums';
 import { Algorithm, SecretShare, PublicShare, SchnorrPacket } from '../types';
 import { nizk } from '../nizk';
@@ -96,7 +96,10 @@ export async function recoverPublic<P extends Point>(
       points.push(await verifySchnorrPacket(ctx, packet, algorithm, nonce));
       indexes.push(packet.index);
     } catch (err: unknown) {
-      if (!(err instanceof InvalidPublicShare) || errorOnInvalid) throw err;
+      // Indexes are valid at this point, so InvalidInput means a malformed
+      // public share or proof, attributable to the shareholder
+      const isInvalid = err instanceof InvalidPublicShare || err instanceof InvalidInput;
+      if (!isInvalid || errorOnInvalid) throw err;
       blame.push({ value: packet.value, index: packet.index });
     }
   }
