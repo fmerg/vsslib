@@ -199,11 +199,18 @@ node_opts=(--import tsx --test --test-timeout=600000)
 # Reporters passed through replace the defaults, since node pairs every
 # reporter with a destination
 custom_reporter=false
+custom_destination=false
 for opt in "${opts[@]}"; do
-    if [[ $opt == --test-reporter* ]]; then
+    if [[ $opt == --test-reporter || $opt == --test-reporter=* ]]; then
         custom_reporter=true
+    elif [[ $opt == --test-reporter-destination* ]]; then
+        custom_destination=true
     fi
 done
+if [[ $custom_destination == "true" && $custom_reporter == "false" ]]; then
+    echo "--test-reporter-destination needs a --test-reporter for it" 1>&2
+    exit 1
+fi
 # The JUnit report, and the check below that reads it, only for single runs:
 # in watch mode node writes no test cases to it
 junit=false
