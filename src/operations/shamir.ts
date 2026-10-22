@@ -187,12 +187,10 @@ export async function combinePublicShares<P extends Point>(
   threshold: number,
 ): Promise<Uint8Array> {
   validateShareCount(shares.length, threshold);
-  const exp = ctx.exp;
   const lambdas = computeLambdas(ctx, shares.map(share => share.index));
-  let y = ctx.neutral;
-  for (let i = 0; i < shares.length; i++) {
-    const yi = await ctx.parsePoint(shares[i].value)
-    y = await ctx.operate(y, await exp(yi, lambdas[i]));
-  }
+  const points = [];
+  for (const share of shares) points.push(await ctx.parsePoint(share.value));
+  // Shares and coefficients are public, so variable time is safe
+  const y = await ctx.multiExpPublic(points, lambdas);
   return y.toBytes();
 }
