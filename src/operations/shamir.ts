@@ -123,8 +123,9 @@ export async function interpolateSharingPolynomial<P extends Point>(
   const polynomial = await lagrange(ctx).interpolate(xyPoints);
   // No point was random, so the degree is fixed by the input
   if (predefined.length === threshold - 1 && polynomial.degree < threshold - 1) {
+    const lower = polynomial.isZero() ? 'the zero polynomial' : `a polynomial of degree ${polynomial.degree}`;
     throw new InvalidInput(
-      `Predefined shares and secret lie on a polynomial of degree ${Math.max(polynomial.degree, 0)}, below ${threshold - 1}`
+      `Predefined shares and secret lie on ${lower}, below degree ${threshold - 1}`
     );
   }
   return polynomial;

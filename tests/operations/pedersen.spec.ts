@@ -14,7 +14,7 @@ import type { EcPoint } from 'vsslib/backend';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer, each } from '../utils';
 import { fixtures } from '../systems';
-import { inheriting, zeroRandomScalarAt } from '../helpers';
+import { inheriting, fixRandomScalarAt } from '../helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -104,7 +104,7 @@ describe('Pedersen VSS scheme', () => {
     const ctx = initBackend(system);
     const pedersenBase = await derivePedersenBase(ctx);
     const secret = await ctx.generateSecret();
-    const random = zeroRandomScalarAt(ctx, 1);
+    const random = fixRandomScalarAt(ctx, 1);
     const { sharing } = await shareSecret(ctx, 5, 3, secret);
     random.mock.restore();
     assert.equal(sharing.polynomial.degree, 1);
@@ -121,7 +121,7 @@ describe('Pedersen VSS scheme', () => {
     const pedersenBase = await derivePedersenBase(ctx);
     const { sharing } = await shareSecret(ctx, 5, 3);
     assert.equal(sharing.polynomial.degree, 2);
-    const random = zeroRandomScalarAt(ctx, 2);
+    const random = fixRandomScalarAt(ctx, 2);
     const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
     random.mock.restore();
     assert.equal(commitments.length, 3);

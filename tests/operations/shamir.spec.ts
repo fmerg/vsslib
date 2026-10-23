@@ -20,7 +20,7 @@ import { createFeldmanPackets, verifyFeldmanCommitments } from 'vsslib/operation
 import { intToLeBytes } from 'vsslib/arith';
 import { SecretShare, System } from 'vsslib/types';
 import { resolveTestConfig } from '../environ';
-import { createRawSharing } from '../helpers';
+import { createRawSharing, fixRandomScalarAt } from '../helpers';
 import { cartesian, partialPermutations, isEqualBuffer, each } from '../utils';
 import { fixtures } from '../systems';
 
@@ -181,8 +181,14 @@ describe('Shamir secret sharing', () => {
     ]) {
       const sharing = shareSecret(ctx, 5, 3, secret, predefined);
       await assert.rejects(sharing, ShamirError);
-      await assert.rejects(sharing, /Predefined shares and secret lie on a polynomial of degree [01], below 2/);
+      await assert.rejects(sharing, /Predefined shares and secret lie on a polynomial of degree [01], below degree 2/);
     }
+    // The zero polynomial, for backends that accept a zero scalar
+    const validate = mock.method(ctx, 'validateScalar', async () => true);
+    const zero = ctx.scalarToBytes(0n);
+    const sharing = shareSecret(ctx, 5, 3, zero, [{ index: 1, value: zero }, { index: 2, value: zero }]);
+    await assert.rejects(sharing, /Predefined shares and secret lie on the zero polynomial, below degree 2/);
+    validate.mock.restore();
   });
   each(systems)(
     'ok - predefined shares degenerate with random fill - over %s', async (system) => {
@@ -193,8 +199,7 @@ describe('Shamir secret sharing', () => {
     const { secret } = await randomSecret(ctx);
     const s = await parseScalar(ctx, secret);
     const predefined = [{ index: 1, value: secret }, { index: 2, value: secret }];
-    const random = mock.method(ctx, 'randomScalar');
-    random.mock.mockImplementationOnce(async () => s, 0);
+    const random = fixRandomScalarAt(ctx, 0, s);
     const { sharing } = await shareSecret(ctx, 5, 4, secret, predefined);
     random.mock.restore();
     assert.equal(sharing.polynomial.degree, 0);
