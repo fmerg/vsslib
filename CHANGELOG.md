@@ -48,6 +48,7 @@ All notable changes to this project will be documented in this file.
 - Fewer than threshold shares can no longer be combined, also when `recoverPublic` drops invalid packets.
 - Share indexes are validated and bound to Schnorr packet proofs.
 - Predefined share indexes must be distinct positive integers.
+- `shareSecret` throws `ShamirError` if `t - 1` predefined shares lie with the secret on a polynomial of degree below `t - 1`, e.g. all equal to the secret; before, the sharing silently had that degree, so that fewer than `t` shares recovered the secret.
 - `isEqualSecret`, `isEqualPublic` and `isKeypair` compare canonical encodings in constant time.
 - Scalars are encoded without conversion to strings, which ran in variable time and copied secrets to the heap.
 - The random bytes from which scalars are sampled are wiped after use.
@@ -65,6 +66,7 @@ All notable changes to this project will be documented in this file.
 - The generator of `decaf448` is multiplied through the base point of `ed448`, which noble accelerates by a precomputed table, and doubled; before, it had no table and secret multiplications split. On `decaf448`, key generation, `getPublicShares`, `createFeldmanPackets` and `createSchnorrPacket` take 80-86% less time, `createPedersenPackets` 44% less, verifying and parsing Feldman and Pedersen packets 72% and 40% less, `parseSchnorrPacket` 33% less and `recoverPublic` 23% less.
 - Pedersen bases are parsed once and kept, up to 8 per backend class, which the built-in curves share, with a precomputed table attached by `Group.precomputeBase` from their second use on; before, every operation parsed the base and multiplied it without a table. Reusing a base, `createPedersenPackets` takes 28-38% less time on `ed25519` and `decaf448` and 62-65% less on `secp256k1` and `p521`, and verifying and parsing Pedersen packets 11-32% and 42-61% less, depending on the threshold. A base used once costs as before; its second use builds the table, and the gain starts with the third.
 - NIZK proofs are verified with one `multiExpPublic` per row of the relation instead of constant-time `exp` calls, which leaves no direct `exp` call in the library, and their commitments are parsed without the subgroup check, since verification compares them with subgroup elements only. A commitment with a small-order component therefore fails as an invalid proof, i.e. `InvalidPublicShare` from `parseSchnorrPacket` and `recoverPublic`, instead of `InvalidInput`. The `decaf448` generator is multiplied by public scalars through the table of the `ed448` base. `parseSchnorrPacket` takes 24-32% less time on `ed25519`, `ed448` and `p521` and 51% less on `secp256k1`, and `recoverPublic` with 100 packets 22-32% and 49-50% less; `decaf448` is unchanged to 6% slower.
+- The sharing polynomial is reduced modulo the order whenever the intermediate value outgrows it by 256 bits, instead of at each step at points above 2^32 and only at the end otherwise, where the intermediate value grew with the degree. Evaluation at a share index takes about half the time at threshold 1000 and a sixth at threshold 5000, and at points above 2^32 about half; `getSecretShares` is up to 5% slower at threshold 25, about 4 µs for 50 shares, from one comparison per step.
 
 ### Fixed
 
@@ -72,6 +74,8 @@ All notable changes to this project will be documented in this file.
 - `recoverPublic` with `errorOnInvalid: false` blames packets with a malformed public share or proof, including a share outside the prime-order subgroup, instead of throwing `InvalidInput`.
 - VSS verification no longer rejects valid shares once `index ** j` exceeds 2^53.
 - `generateSecret` returns an encoded scalar consistent with the recombined secret.
+- `createFeldmanPackets` and `createPedersenPackets` always emit `threshold` commitments, the neutral element for a vanished coefficient. A sharing polynomial whose top coefficient vanished, with probability about 1/order, yielded fewer, and none of its packets verified.
+- `createPedersenPackets` no longer crashes when the top coefficient of the binding polynomial vanishes.
 
 
 ## 1.0.0 2024-10-15

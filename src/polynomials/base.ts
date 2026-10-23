@@ -1,4 +1,4 @@
-import { mod } from '../arith';
+import { mod, REDUCTION_MARGIN } from '../arith';
 import { PolynomialError } from '../errors';
 
 
@@ -92,15 +92,16 @@ export class BasePolynomial {
   evaluate = (value: bigint | number): bigint => {
     const { coeffs, order } = this;
     const x = mod(BigInt(value), order);
-    // Small x (e.g., share indexes) keeps the accumulator short, so reducing
-    // once at the end is cheaper; otherwise reduce at each step
-    const reduceEachStep = x > 0xffffffffn;
+    // Reduce once the accumulator outgrows the order by REDUCTION_MARGIN bits:
+    // rarely for small x (e.g., share indexes), at about every step for x near
+    // the order
+    const high = order << REDUCTION_MARGIN;
     let acc = 0n;
     for (let i = coeffs.length - 1; i >= 0; i--) {
       acc = acc * x + coeffs[i];
-      if (reduceEachStep) acc = mod(acc, order);
+      if (acc >= high) acc %= order;
     }
-    return mod(acc, order);
+    return acc % order;
   }
 
   /** Evaluation at `value` as a sum of powers; reference for `evaluate` */

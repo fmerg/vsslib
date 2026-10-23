@@ -14,7 +14,7 @@ import type { EcPoint } from 'vsslib/backend';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer, each } from '../utils';
 import { fixtures } from '../systems';
-import { inheriting } from '../helpers';
+import { inheriting, fixRandomScalarAt } from '../helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -96,6 +96,37 @@ describe('Pedersen VSS scheme', () => {
     const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
     for (const bad of [0, 1.5, -1]) {
       await assert.rejects(parsePedersenPacket(ctx, commitments, pedersenBase, packets[0], bad), /Threshold must be a positive integer/);
+    }
+  });
+  each(systems)('vanished top coefficient over %s', async (system) => {
+    // The sharing polynomial drops to degree 1, yet the dealing keeps threshold
+    // commitments
+    const ctx = initBackend(system);
+    const pedersenBase = await derivePedersenBase(ctx);
+    const secret = await ctx.generateSecret();
+    const random = fixRandomScalarAt(ctx, 1);
+    const { sharing } = await shareSecret(ctx, 5, 3, secret);
+    random.mock.restore();
+    assert.equal(sharing.polynomial.degree, 1);
+    const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
+    assert.equal(commitments.length, 3);
+    for (const packet of packets) {
+      assert.notEqual(await parsePedersenPacket(ctx, commitments, pedersenBase, packet, 3), undefined);
+    }
+  });
+  each(systems)('vanished top binding coefficient over %s', async (system) => {
+    // The binding polynomial is sampled first, by the first threshold calls of
+    // randomScalar; its top coefficient used to be read past the end
+    const ctx = initBackend(system);
+    const pedersenBase = await derivePedersenBase(ctx);
+    const { sharing } = await shareSecret(ctx, 5, 3);
+    assert.equal(sharing.polynomial.degree, 2);
+    const random = fixRandomScalarAt(ctx, 2);
+    const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
+    random.mock.restore();
+    assert.equal(commitments.length, 3);
+    for (const packet of packets) {
+      assert.notEqual(await parsePedersenPacket(ctx, commitments, pedersenBase, packet, 3), undefined);
     }
   });
   each(systems)('success with large indexes over %s', async (system) => {

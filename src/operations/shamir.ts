@@ -87,7 +87,9 @@ export async function sampleSharingPolynomial<P extends Point>(
 
 /** @internal Polynomial of degree < threshold through (0, secret), the predefined shares
  * and uniform values at the remaining indexes below threshold; with no
- * predefined shares it has the distribution of sampleSharingPolynomial */
+ * predefined shares it has the distribution of sampleSharingPolynomial.
+ * Throws if threshold - 1 predefined shares lie with the secret on a polynomial
+ * of lower degree, which fewer than threshold shares would recover */
 export async function interpolateSharingPolynomial<P extends Point>(
   ctx: Group<P>,
   threshold: number,
@@ -118,7 +120,15 @@ export async function interpolateSharingPolynomial<P extends Point>(
     }
     index++;
   }
-  return lagrange(ctx).interpolate(xyPoints);
+  const polynomial = await lagrange(ctx).interpolate(xyPoints);
+  // No point was random, so the degree is fixed by the input
+  if (predefined.length === threshold - 1 && polynomial.degree < threshold - 1) {
+    const lower = polynomial.isZero() ? 'the zero polynomial' : `a polynomial of degree ${polynomial.degree}`;
+    throw new InvalidInput(
+      `Predefined shares and secret lie on ${lower}, below degree ${threshold - 1}`
+    );
+  }
+  return polynomial;
 }
 
 
