@@ -78,7 +78,7 @@ export const flow = `(async (system, algorithms, nrShares, threshold) => {
   check('add secrets and publics', await vsslib.isKeypair(
     ctx,
     await vsslib.addSecrets(ctx, [secret, other.secret]),
-    await vsslib.addPublics(ctx, [publicBytes, other.publicBytes]),
+    await vsslib.combinePublics(ctx, [publicBytes, other.publicBytes]),
   ));
 
   const schemes = [];
