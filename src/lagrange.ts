@@ -1,5 +1,5 @@
 import { Point, Group } from './backend';
-import { mod, modInv, modInvBatch } from './arith';
+import { mod, modInv, modInvBatch, REDUCTION_MARGIN } from './arith';
 import { FieldPolynomial } from './polynomials';
 import { NoInverseError, InterpolationError, InvalidInput } from './errors';
 import { validateIndexes } from './indexes';
@@ -7,10 +7,6 @@ import { validateIndexes } from './indexes';
 
 export type XYPoint = [bigint, bigint] | [number, number];
 
-
-// Products of indexes are reduced only once they outgrow the order by this
-// many bits; reducing at every step is slower
-const REDUCTION_MARGIN = 256n;
 
 /** Reduction modulo `order` of values that outgrew it by REDUCTION_MARGIN bits */
 function reducer(order: bigint): (m: bigint) => bigint {

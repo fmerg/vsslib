@@ -66,6 +66,11 @@ export function intToLeBytes(num: bigint, byteLength?: number) {
 }
 
 
+/** Products and sums of products are reduced modulo the order only once they
+ * outgrow it by this many bits; reducing at every step is slower */
+export const REDUCTION_MARGIN = 256n;
+
+
 /** Modulo operation. Takes care to give non-negative results */
 export function mod(m: bigint, n: bigint): bigint {
   if (n < 2) throw new BadModulusError(

@@ -232,18 +232,36 @@ describe('Evaluation - Horner against power sum', () => {
   each(Object.values(Systems))('%s', async (system) => {
     const ctx = initBackend(system);
     const order = ctx.order;
-    // Around the bounds where the reduction period changes: 2^32, 2^53 (exact
-    // as a Number) and the square root of the order
+    // Small x reduces rarely, x above the square root of the order at about
+    // every step; 2^32 and 2^53 were earlier bounds
     const root = 1n << BigInt(order.toString(2).length >> 1);
     const values = [
       0n, 1n, 2n, 7n, 50n, 0xffffffffn, 0x100000000n, 2n ** 53n - 1n, 2n ** 53n + 1n,
       root - 1n, root, root + 1n, order - 1n, order, order + 7n, -1n, -order - 3n,
     ];
-    for (const degree of [0, 1, 2, 4, 24, 25, 31, 32, 300]) {
+    for (const degree of [0, 1, 2, 4, 24, 25, 32, 300]) {
       const coeffs = [];
       for (let i = 0; i < degree + 1; i++) coeffs.push(await ctx.randomScalar());
       const poly = new BasePolynomial(coeffs, order);
       for (const value of [...values, await ctx.randomScalar()]) {
+        assert.equal(poly.evaluate(value), poly.evaluateNaive(value));
+      }
+    }
+  });
+});
+
+
+describe('Evaluation - orders beyond Number range', () => {
+  // Custom backends may have orders far above 2^1024, where conversions to
+  // Number overflow
+  each([1031n, 2203n, 4253n])('2^%s - 1', async (exponent) => {
+    const order = 2n ** exponent - 1n;
+    const values = [0n, 7n, 0xffffffffn, 2n ** 1100n + 3n, order - 1n];
+    for (const degree of [0, 1, 40]) {
+      const coeffs = [];
+      for (let i = 0; i < degree + 1; i++) coeffs.push(order - 1n - BigInt(i));
+      const poly = new BasePolynomial(coeffs, order);
+      for (const value of values) {
         assert.equal(poly.evaluate(value), poly.evaluateNaive(value));
       }
     }
