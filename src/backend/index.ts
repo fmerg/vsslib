@@ -3,7 +3,8 @@
 import { System } from '../types';
 import { Elliptic } from '../enums';
 import { BadGroupError } from '../errors';
-export { Group, Point } from './abstract'
+export { Group, Point, validateMultiExp } from './abstract'
+export { BadPointError, BadScalarError } from '../errors';
 import { initElliptic } from './elliptic';
 export type { EcGroup, EcPoint } from './elliptic';
 
