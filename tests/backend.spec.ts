@@ -1,8 +1,8 @@
-import { describe, test } from 'node:test';
+import { describe, test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { each } from './utils';
 import { initBackend, Group } from 'vsslib/backend';
-import type { EcPoint } from 'vsslib/backend';
+import type { EcGroup, EcPoint } from 'vsslib/backend';
 import { InvalidInput } from 'vsslib';
 import { resolveTestConfig } from './environ';
 import { fixtures } from './systems';
@@ -295,33 +295,77 @@ describe('base precomputation', () => {
 });
 
 
-describe('custom backends', () => {
-  each(systems)('may define validators as methods over %s', async (system) => {
-    // As a plain JavaScript backend would, so that they need their this;
-    // validatePoint only, since Group's defaults, validateCurvePoint among
-    // them, are properties that would shadow such methods
-    const ctx = initBackend(system);
-    class Methods extends Group<EcPoint> {
-      randomScalar = ctx.randomScalar;
-      randomPoint = ctx.randomPoint;
-      validateScalar = ctx.validateScalar;
-      exp = ctx.exp;
-      operate = ctx.operate;
-      invert = ctx.invert;
-      bytesToPoint = ctx.bytesToPoint;
-      hashToPoint = ctx.hashToPoint;
-      // @ts-expect-error: a method where Group declares a property
-      async validatePoint(point: EcPoint): Promise<boolean> {
-        return this.order === ctx.order && ctx.validatePoint(point);
-      }
+/** A backend written with methods only, as a plain JavaScript or foreign
+ * backend would be, delegating to a built-in group */
+const methodsOnly = (ctx: EcGroup) => {
+  class Methods extends Group<EcPoint> {
+    async validatePoint(point: EcPoint): Promise<boolean> {
+      return this.order === ctx.order && ctx.validatePoint(point);
     }
+    async exp(point: EcPoint, scalar: bigint): Promise<EcPoint> { return ctx.exp(point, scalar); }
+    async operate(lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> { return ctx.operate(lhs, rhs); }
+    async invert(point: EcPoint): Promise<EcPoint> { return ctx.invert(point); }
+    bytesToPoint(bytes: Uint8Array): EcPoint { return ctx.bytesToPoint(bytes); }
+    async hashToPoint(msg: Uint8Array, dst: Uint8Array): Promise<EcPoint> {
+      return ctx.hashToPoint(msg, dst);
+    }
+  }
+  return Methods;
+}
+
+
+describe('custom backends', () => {
+  each(systems)('may define every member as a method over %s', async (system) => {
+    const ctx = initBackend(system);
+    const Methods = methodsOnly(ctx);
     const group = new Methods(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
     const bytes = (await ctx.randomPoint()).toBytes();
-    for (const parse of [group.parsePoint, group.parseCurvePoint]) {
+    // Destructured, as the library does with some members
+    const { parsePoint, parseCurvePoint, randomPoint, expSecret } = group;
+    for (const parse of [parsePoint, parseCurvePoint]) {
       assert.deepEqual((await parse(bytes)).toBytes(), bytes);
       for (const invalid of fixtures[system].nonCanonicalPoints) {
         await assert.rejects(parse(invalid), InvalidInput);
       }
     }
+    const scalar = await group.randomScalar();
+    const expected = (await ctx.exp(ctx.generator, scalar)).toBytes();
+    assert.deepEqual((await expSecret(group.generator, scalar)).toBytes(), expected);
+    await group.validatePoint(await randomPoint());
+  });
+  each(systems)('may override defaults as methods or properties over %s', async (system) => {
+    const ctx = initBackend(system);
+    const Methods = methodsOnly(ctx);
+    const calls: string[] = [];
+    class ByMethod extends Methods {
+      async expPublic(point: EcPoint, scalar: bigint): Promise<EcPoint> {
+        calls.push('method');
+        return this.exp(point, scalar);
+      }
+    }
+    class ByProperty extends Methods {
+      expPublic = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => {
+        calls.push('property');
+        return this.exp(point, scalar);
+      }
+    }
+    for (const [Cls, label] of [[ByMethod, 'method'], [ByProperty, 'property']] as const) {
+      const group = new Cls(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
+      calls.length = 0;
+      const { expPublic, multiExpPublic } = group;
+      await expPublic(group.generator, 5n);
+      // The default multiExpPublic reaches the override through this
+      await multiExpPublic([group.generator, group.generator], [2n, 3n]);
+      assert.deepEqual(calls, [label, label, label]);
+    }
+  });
+  each(systems)('members stay mockable over %s', async (system) => {
+    // The constructor binds members as own properties, which mocks replace
+    const ctx = initBackend(system);
+    const group = new (methodsOnly(ctx))(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
+    const random = mock.method(group, 'randomScalar', async () => 7n);
+    assert.deepEqual(await group.generateSecret(), group.scalarToBytes(7n));
+    assert.equal(random.mock.callCount(), 1);
+    random.mock.restore();
   });
 });
