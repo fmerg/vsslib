@@ -249,8 +249,8 @@ const MSM_CUTOFF = 4;
 
 /** Window of the tables attached by precomputeBase. Against a window of 6, it
  * keeps 83-91% of the speedup at a third to half of the build time and memory
- * (7-31 ms, 107-315 KB per point on ed25519 to p521), measured with noble
- * 2.4.0; recheck on upgrades */
+ * (from 107 KB on secp256k1 to 315 KB on p521 per point, built in 7 to 31 ms),
+ * measured with noble 2.4.0; recheck on upgrades */
 const PRECOMPUTE_WINDOW = 4;
 
 // Points prepared by precomputeBase, across groups
