@@ -1,4 +1,4 @@
-import { describe } from 'node:test';
+import { describe, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import {
   shareSecret,
@@ -14,7 +14,9 @@ import {
   extractPublic,
   isEqualSecret,
   isEqualPublic,
+  ShamirError,
 } from 'vsslib';
+import { createFeldmanPackets, verifyFeldmanCommitments } from 'vsslib/operations/feldman';
 import { intToLeBytes } from 'vsslib/arith';
 import { SecretShare, System } from 'vsslib/types';
 import { resolveTestConfig } from '../environ';
@@ -163,6 +165,44 @@ describe('Shamir secret sharing', () => {
     const value = (await randomSecret(ctx)).secret;
     await assert.rejects(shareSecret(ctx, 3, 2, undefined, [{ index: 0, value }]), /Index not in range: 0/);
     await assert.rejects(shareSecret(ctx, 3, 2, undefined, [{ index: 2, value }]), /Index not in range: 2/);
+  });
+  each(systems)(
+    'error - predefined shares degenerate with the secret - over %s', async (system) => {
+    // threshold - 1 predefined shares fix the polynomial; on a polynomial of
+    // lower degree, fewer than threshold shares would recover the secret
+    const ctx = initBackend(system);
+    const { secret } = await randomSecret(ctx);
+    const s = await parseScalar(ctx, secret);
+    const c = await ctx.randomScalar();
+    const line = (i: number) => ctx.scalarToBytes((s + BigInt(i) * c) % ctx.order);
+    for (const predefined of [
+      [{ index: 1, value: secret }, { index: 2, value: secret }],
+      [{ index: 1, value: line(1) }, { index: 2, value: line(2) }],
+    ]) {
+      const sharing = shareSecret(ctx, 5, 3, secret, predefined);
+      await assert.rejects(sharing, ShamirError);
+      await assert.rejects(sharing, /Predefined shares and secret lie on a polynomial of degree [01], below 2/);
+    }
+  });
+  each(systems)(
+    'ok - predefined shares degenerate with random fill - over %s', async (system) => {
+    // With fewer predefined shares a random value is involved, so a lower
+    // degree is an accident of probability 1/order: no error, and commitments
+    // are padded to threshold
+    const ctx = initBackend(system);
+    const { secret } = await randomSecret(ctx);
+    const s = await parseScalar(ctx, secret);
+    const predefined = [{ index: 1, value: secret }, { index: 2, value: secret }];
+    const random = mock.method(ctx, 'randomScalar');
+    random.mock.mockImplementationOnce(async () => s, 0);
+    const { sharing } = await shareSecret(ctx, 5, 4, secret, predefined);
+    random.mock.restore();
+    assert.equal(sharing.polynomial.degree, 0);
+    const { packets, commitments } = await createFeldmanPackets(sharing);
+    assert.equal(commitments.length, 4);
+    for (const packet of packets) {
+      assert.equal(await verifyFeldmanCommitments(ctx, commitments, packet, 4), true);
+    }
   });
   each(cartesian([systems, thresholdParams]))(
     'fixed-width scalar encoding - over %s - (n, t): %s', async (system, [n, t]) => {
