@@ -881,8 +881,9 @@ The sharing polynomial used to be evaluated at each share index in the
 barycentric form of the interpolating polynomial, with one modular inversion
 per interpolation point at every call. It is now evaluated by Horner's rule
 over its coefficients, with `t - 1` multiplications and a single reduction
-modulo the order (every few steps above 32 coefficients, so that the
-intermediate values stay short), which cuts the time of `getSecretShares` by 78% to 93%. This is the
+modulo the order (also whenever the intermediate value outgrows the order by
+256 bits, i.e. about every `256 / log2(i)` steps at share index `i`),
+which cuts the time of `getSecretShares` by 78% to 93%. This is the
 gain of Horner's rule proper, but it concerns arithmetic on scalars, which is
 cheap compared to group operations: with `n = 50, t = 25` on `ed25519`,
 `getSecretShares` takes 92 µs instead of 1.21 ms, whereas `getPublicShares`,
