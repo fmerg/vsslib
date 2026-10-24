@@ -4,6 +4,7 @@ import { createFeldmanPackets, verifyFeldmanCommitments, parseFeldmanPacket } fr
 import { initBackend, randomPublic, shareSecret } from 'vsslib';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer, each } from '../utils';
+import { zeroRandomScalarAt } from '../helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -68,6 +69,22 @@ describe('Feldman VSS scheme', () => {
     const { packets, commitments } = await createFeldmanPackets(sharing);
     for (const bad of [0, 1.5, -1]) {
       await assert.rejects(parseFeldmanPacket(ctx, commitments, packets[0], bad), /Threshold must be a positive integer/);
+    }
+  });
+  each(systems)('vanished top coefficient over %s', async (system) => {
+    // The sharing polynomial drops to degree 1, yet the dealing keeps threshold
+    // commitments, the top one neutral
+    const ctx = initBackend(system);
+    const secret = await ctx.generateSecret();
+    const random = zeroRandomScalarAt(ctx, 1);
+    const { sharing } = await shareSecret(ctx, 5, 3, secret);
+    random.mock.restore();
+    assert.equal(sharing.polynomial.degree, 1);
+    const { packets, commitments } = await createFeldmanPackets(sharing);
+    assert.equal(commitments.length, 3);
+    assert.equal(isEqualBuffer(commitments[2], ctx.neutral.toBytes()), true);
+    for (const packet of packets) {
+      assert.equal(await verifyFeldmanCommitments(ctx, commitments, packet, 3), true);
     }
   });
   each(systems)('success with large indexes over %s', async (system) => {

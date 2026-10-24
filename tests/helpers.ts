@@ -1,3 +1,4 @@
+import { mock } from 'node:test';
 import { Group, Point } from 'vsslib/backend';
 import type { EcGroup, EcPoint } from 'vsslib/backend';
 import { System, Algorithm } from 'vsslib/types';
@@ -77,4 +78,13 @@ export const inheriting = (ctx: EcGroup): Group<EcPoint> => {
     hashToPoint = ctx.hashToPoint;
   }
   return new Inheriting(ctx.system, ctx.modulus, ctx.order, ctx.generator, ctx.neutral);
+}
+
+
+/** Make call `onCall` (counted from 0) of ctx.randomScalar return 0, e.g. to
+ * make a polynomial coefficient vanish; restore with `.mock.restore()` */
+export const zeroRandomScalarAt = <P extends Point>(ctx: Group<P>, onCall: number) => {
+  const random = mock.method(ctx, 'randomScalar');
+  random.mock.mockImplementationOnce(async () => 0n, onCall);
+  return random;
 }
