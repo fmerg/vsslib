@@ -167,13 +167,21 @@ export class EcGroup extends Group<EcPoint> {
     return flag;
   }
 
-  validatePoint = async (point: EcPoint): Promise<boolean> => {
+  /** A point of the curve, possibly with a small-order component, whose
+   * equality noble decides on the full curve */
+  validateCurvePoint = async (point: EcPoint): Promise<boolean> => {
     const flag = true;
     if (await point.wrapped.equals(this.zero)) return flag;
     try { point.wrapped.assertValidity(); } catch (err: unknown) {
       if (err instanceof Error) throw new BadPointError(err.message);
       throw err;
     }
+    return flag;
+  }
+
+  validatePoint = async (point: EcPoint): Promise<boolean> => {
+    const flag = await this.validateCurvePoint(point);
+    if (await point.wrapped.equals(this.zero)) return flag;
     // Reject points with a small-order component, which would otherwise
     // vanish from verification equations for suitable challenges
     if (!point.wrapped.isTorsionFree()) throw new BadPointError(

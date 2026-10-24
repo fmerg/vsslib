@@ -46,7 +46,10 @@ export class NizkProtocol<P extends Point>{
     const n = response.length;
     const innerComm = new Array(m);
     const innerResp = new Array(n);
-    for (let i = 0; i < m; i++) innerComm[i] = await this.ctx.parsePoint(commitment[i]);
+    // Only compared with elements of the subgroup, so that a small-order
+    // component makes verification fail without a subgroup check, as long as
+    // the relation points are subgroup elements
+    for (let i = 0; i < m; i++) innerComm[i] = await this.ctx.parseCurvePoint(commitment[i]);
     for (let i = 0; i < n; i++) innerResp[i] = await this.ctx.parseScalar(response[i]);
     return { commitment: innerComm, response: innerResp };
   }

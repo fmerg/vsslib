@@ -1,4 +1,4 @@
-import { describe } from 'node:test';
+import { describe, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import { each } from './utils';
 import { nizk } from 'vsslib/nizk';
@@ -10,10 +10,11 @@ import {
   derivePedersenBase,
   createPedersenPackets,
   InvalidInput,
+  InvalidPublicShare,
 } from 'vsslib';
 import { Algorithms } from 'vsslib/enums';
 import { resolveTestConfig } from './environ';
-import { createRawSharing, mockPublicRecoverySetup } from './helpers';
+import { createRawSharing, mockPublicRecoverySetup, inheriting } from './helpers';
 import { fixtures } from './systems';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
@@ -66,5 +67,57 @@ describe('Prime-order subgroup validation', () => {
       await assert.rejects(createPedersenPackets(sharing, base.toBytes()), /Pedersen base must be/);
     }
     assert.notEqual(await createPedersenPackets(sharing, await derivePedersenBase(ctx)), undefined);
+  });
+});
+
+
+describe('Proof commitments without subgroup check', () => {
+  each(cofactorSystems)('are parsed with small-order components over %s', async (system) => {
+    const { ctx } = await createRawSharing(system, nrShares, threshold);
+    const t = ctx.bytesToPoint(fixtures[system].smallOrderPoint!);
+    const mixed = await ctx.operate(ctx.generator, t);
+    for (const p of [t, mixed]) {
+      assert.equal(await (await ctx.parseCurvePoint(p.toBytes())).equals(p), true);
+    }
+    // Custom backends keep the subgroup check unless they override it
+    await assert.rejects(
+      inheriting(ctx).parseCurvePoint(mixed.toBytes()), /not in prime-order subgroup/
+    );
+  });
+  each(systems)('are rejected when not canonical over %s', async (system) => {
+    const { ctx } = await createRawSharing(system, nrShares, threshold);
+    for (const bytes of fixtures[system].nonCanonicalPoints) {
+      await assert.rejects(ctx.parseCurvePoint(bytes), InvalidInput);
+    }
+  });
+  each(cofactorSystems)('never verify with a small-order component over %s', async (system) => {
+    // The prover commits to R + T instead of R. Whatever the challenge, the
+    // verification equation yields R, unlike a small-order component of the
+    // public share, which an even challenge cancels (see above)
+    const { ctx, secretShares: shares } = await createRawSharing(system, nrShares, threshold);
+    const { value, index } = shares[0];
+    const x = await ctx.parseScalar(value);
+    const g = ctx.generator;
+    const y = await ctx.exp(g, x);
+    const t = ctx.bytesToPoint(fixtures[system].smallOrderPoint!);
+    const protocol = nizk(ctx, Algorithms.DEFAULT);
+    const extras = [indexToBytes(index)];
+    // Proving raises to secrets only for its commitments
+    const expSecret = ctx.expSecret;
+    const forge = mock.method(ctx, 'expSecret', async (p: typeof g, s: bigint) =>
+      ctx.operate(await expSecret(p, s), t)
+    );
+    const proofs = [];
+    try {
+      for (let i = 0; i < 8; i++) proofs.push(await protocol.proveDlog(x, { u: g, v: y }, undefined, extras));
+    } finally {
+      forge.mock.restore();
+    }
+    for (const proof of proofs) {
+      assert.equal(await protocol.verifyDlog({ u: g, v: y }, proof, undefined, extras), false);
+      await assert.rejects(
+        parseSchnorrPacket(ctx, { value: y.toBytes(), index, proof }), InvalidPublicShare
+      );
+    }
   });
 });
