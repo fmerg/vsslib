@@ -347,7 +347,42 @@ describe('public exponentiation', () => {
     const trace = traceExp(ctx);
     const { blame } = await recoverPublic(ctx, packets, 3, { errorOnInvalid: false });
     assert.deepEqual(blame.map(share => share.index), [2]);
+    assert.deepEqual(trace.direct, []);
     assert.deepEqual(trace.secret, []);
-    assert.deepEqual(trace.multi, [computeLambdas(ctx, [1, 3, 4, 5])]);
+    assert.deepEqual(trace.public, []);
+    // One proof verification per packet, then the combination of the valid
+    // shares; a verification raises to the response and the negated challenge
+    assert.equal(trace.multi.length, packets.length + 1);
+    for (const [i, scalars] of trace.multi.slice(0, -1).entries()) {
+      assert.deepEqual(scalars.slice(0, -1), [await ctx.parseScalar(packets[i].proof.response[0])]);
+    }
+    assert.deepEqual(trace.multi.at(-1), computeLambdas(ctx, [1, 3, 4, 5]));
+  });
+  each(systems)('nizk verification raises public scalars only over %s', async (system) => {
+    const ctx = initBackend(system);
+    const g = ctx.generator;
+    const [x, z] = [await ctx.randomScalar(), await ctx.randomScalar()];
+    const u = await ctx.exp(g, x);
+    const v = await ctx.exp(g, z);
+    const w = await ctx.exp(u, z);
+    const protocol = nizk(ctx, Algorithms.SHA256);
+    const dlog = await protocol.proveDlog(z, { u, v: w });
+    const ddh = await protocol.proveDDH(z, { u, v, w });
+    const trace = traceExp(ctx);
+    assert.equal(await protocol.verifyDlog({ u, v: w }, dlog), true);
+    assert.equal(await protocol.verifyDDH({ u, v, w }, ddh), true);
+    assert.deepEqual(trace.direct, []);
+    assert.deepEqual(trace.secret, []);
+    assert.deepEqual(trace.public, []);
+    const responses = (proof: { response: Uint8Array[] }) =>
+      Promise.all(proof.response.map(r => ctx.parseScalar(r)));
+    // One row for dlog and two for DDH, each over the responses and the
+    // negated challenge, which vary per proof
+    assert.equal(trace.multi.length, 3);
+    assert.deepEqual(trace.multi[0].slice(0, -1), await responses(dlog));
+    for (const scalars of trace.multi.slice(1)) {
+      assert.deepEqual(scalars.slice(0, -1), await responses(ddh));
+    }
+    assert.ok(trace.multi.every(scalars => !scalars.includes(z) && !scalars.includes(x)));
   });
 });

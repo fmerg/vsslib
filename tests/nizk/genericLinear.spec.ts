@@ -37,6 +37,21 @@ describe('NIZK proof of generik linear relation', () => {
     const isValid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof);
     assert.equal(isValid, false);
   });
+  each(systems)('failure - witness of the first row only - over %s', async (system) => {
+    // Rows v_i = g ^ x_i with x_0 = x but x_i != x elsewhere: an honest
+    // prover with witness x satisfies the first row and fails each other one
+    const ctx = initBackend(system);
+    const g = ctx.generator;
+    const x = await ctx.randomScalar();
+    for (const m of [2, 3]) {
+      const vs = [await ctx.exp(g, x)];
+      for (let i = 1; i < m; i++) vs.push(await ctx.randomPoint());
+      const relation = { us: vs.map(() => [g]), vs };
+      const proof = await nizk(ctx, Algorithms.SHA256).proveLinear([x], relation);
+      const isValid = await nizk(ctx, Algorithms.SHA256).verifyLinear(relation, proof);
+      assert.equal(isValid, false, `m = ${m}`);
+    }
+  });
   each(systems)('failure - forged nonce - over %s', async (system) => {
     const ctx = initBackend(system);
     const [witness, relation] = await createGenericLinear(ctx, { m: 5, n: 3 });
