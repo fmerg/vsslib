@@ -248,6 +248,9 @@ const { sharing } = await shareSecret(ctx, n, t, secret, [
 > provided indices in not in the range `(0,..., t - 1]` or is repeated, or any of the provided
 > values is not a valid byte representation with respect to the underlying
 > cryptosystem.
+> Throws `ShamirError` also if `t - 1` predefined shares lie with the secret on a
+> polynomial of degree less than `t - 1`, e.g. if they are all equal to the
+> secret, since fewer than `t` shares would then recover it.
 
 ### Basic sharing interface
 
@@ -878,7 +881,8 @@ The sharing polynomial used to be evaluated at each share index in the
 barycentric form of the interpolating polynomial, with one modular inversion
 per interpolation point at every call. It is now evaluated by Horner's rule
 over its coefficients, with `t - 1` multiplications and a single reduction
-modulo the order, which cuts the time of `getSecretShares` by 78% to 93%. This is the
+modulo the order (every few steps above 32 coefficients, so that the
+intermediate values stay short), which cuts the time of `getSecretShares` by 78% to 93%. This is the
 gain of Horner's rule proper, but it concerns arithmetic on scalars, which is
 cheap compared to group operations: with `n = 50, t = 25` on `ed25519`,
 `getSecretShares` takes 92 µs instead of 1.21 ms, whereas `getPublicShares`,
