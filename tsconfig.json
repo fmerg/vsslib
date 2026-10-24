@@ -14,6 +14,7 @@
     "skipLibCheck": true,
     "allowJs": false,
     "declaration": true,
+    "stripInternal": true,
     "outDir": "./dist"
   },
   "include": ["src"]
