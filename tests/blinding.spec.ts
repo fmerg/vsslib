@@ -28,8 +28,9 @@ import { resolveTestConfig } from './environ';
 const { systems } = resolveTestConfig();
 
 
-// Whether noble blinds secret multiplication of the generator and of any
-// other point, per system
+// Whether exp blinds secret multiplication of the generator and of any other
+// point, per system: through noble, or through a base multiplication hook,
+// which on decaf448 covers a generator that noble does not blind
 const NATIVE: Record<string, { generator: boolean, other: boolean }> = {
   ed25519:      { generator: true,  other: false },
   ed448:        { generator: true,  other: false },
