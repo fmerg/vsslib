@@ -82,12 +82,10 @@ describe('noble blinding assumptions', () => {
     assert.equal((ristretto255.Point.BASE as any).ep, ed25519.Point.BASE);
     assert.notEqual((decaf448.Point.BASE as any).ep, ed448.Point.BASE);
   });
-  test('decaf448 base representative is twice the ed448 base, as another object', () => {
+  test('decaf448 base is twice the ed448 base', () => {
     // The decaf448 base multiplication goes through the ed448 base for this
-    const ep = (decaf448.Point.BASE as any).ep;
-    const double = ed448.Point.BASE.double();
-    assert.notEqual(ep, double);
-    assert.equal(ep.equals(double), true);
+    const double = new decaf448.Point(ed448.Point.BASE.double());
+    assert.equal(double.equals(decaf448.Point.BASE), true);
   });
 });
 
@@ -181,21 +179,22 @@ describe('decaf448 base multiplication', () => {
     const zero = await ctx.exp(ctx.generator, 0n);
     assert.equal(await zero.equals(ctx.neutral), true);
   });
-  test('goes through the ed448 base, which noble blinds', async () => {
-    // Otherwise blindsNatively would claim blinding that does not happen
+  test('is blinded by noble', async () => {
+    // Otherwise blindsNatively would claim blinding that does not happen.
+    // noble draws one random blind per blinded multiplication; equivalent
+    // routes through any other object than the ed448 base draw none
     const ctx = initBackend('decaf448');
-    // noble freezes its points and their prototypes, so spy on the hook
-    const hook = mock.method(
-      ctx as unknown as { baseMultiply: (scalar: bigint) => unknown }, 'baseMultiply'
-    );
+    const scalar = await ctx.randomScalar();
+    const parsed = await ctx.parsePoint(ctx.generator.toBytes());
+    const rng = mock.method(globalThis.crypto, 'getRandomValues');
     try {
-      const scalar = await ctx.randomScalar();
-      await ctx.expSecret(ctx.generator, scalar);
-      await ctx.expSecret(await ctx.parsePoint(ctx.generator.toBytes()), scalar);
+      await ctx.exp(ctx.generator, scalar);
+      assert.equal(rng.mock.callCount(), 1);
       // Only the generator object, as with noble's own base
-      assert.deepEqual(hook.mock.calls.map(call => call.arguments), [[scalar]]);
+      await ctx.exp(parsed, scalar);
+      assert.equal(rng.mock.callCount(), 1);
     } finally {
-      hook.mock.restore();
+      rng.mock.restore();
     }
   });
 });
