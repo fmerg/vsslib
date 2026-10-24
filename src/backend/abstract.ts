@@ -93,8 +93,10 @@ export abstract class Group<P extends Point> {
 
   /** Decode and validate a group element, rejecting non-canonical encodings;
    * throws InvalidInput on invalid bytes */
+  // Validators are called through this, so that backends may define them as
+  // methods, e.g. in plain JavaScript
   parsePoint = async (bytes: Uint8Array): Promise<P> => this.decodePoint(
-    bytes, this.validatePoint
+    bytes, (point) => this.validatePoint(point)
   );
 
   /** Like parsePoint, but validating by validateCurvePoint, which may accept
@@ -103,7 +105,7 @@ export abstract class Group<P extends Point> {
    * nothing else, such as the commitments of NIZK proofs: a point outside
    * never equals one inside, so its subgroup check would be redundant */
   parseCurvePoint = async (bytes: Uint8Array): Promise<P> => this.decodePoint(
-    bytes, this.validateCurvePoint
+    bytes, (point) => this.validateCurvePoint(point)
   );
 
   /** Validation for parseCurvePoint. Defaults to validatePoint; backends
