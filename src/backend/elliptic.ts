@@ -52,15 +52,15 @@ export class EcPoint implements Point {
 type _HashToCurve = (msg: Uint8Array, dst: Uint8Array) => _CurvePoint;
 
 
-/** Blinded multiplication of the base point by a scalar in [1, order),
- * throwing outside that range like noble's, where noble does not blind the
- * base itself; blindsNatively then reports the base as blinded */
-type _BaseMultiply = (scalar: bigint) => _CurvePoint;
-
-/** Variable-time multiplication of the base point by a scalar in [0, order),
- * throwing outside that range like noble's multiplyUnsafe, where noble has no
- * table for the base itself */
-type _BaseMultiplyUnsafe = (scalar: bigint) => _CurvePoint;
+/** Multiplications of the base point replacing noble's, where noble neither
+ * blinds nor tables the base itself: `multiply` blinded, by a scalar in
+ * [1, order), and `multiplyUnsafe` in variable time, by one in [0, order),
+ * each throwing outside its range like noble's. blindsNatively then reports
+ * the base as blinded */
+type _BaseMultiplications = {
+  multiply: (scalar: bigint) => _CurvePoint,
+  multiplyUnsafe: (scalar: bigint) => _CurvePoint,
+};
 
 
 /** Points whose secret multiplication noble blinds: every point on cofactor-1
@@ -104,8 +104,7 @@ export class EcGroup extends Group<EcPoint> {
   private codec: _Codec;
   private blinding: _Blinding;
   private msmCutoff: number;
-  private baseMultiply?: _BaseMultiply;
-  private baseMultiplyUnsafe?: _BaseMultiplyUnsafe;
+  private baseMultiplications?: _BaseMultiplications;
   /** @internal Point constructor of the noble curve */
   Point: _PointCons;
 
@@ -116,8 +115,7 @@ export class EcGroup extends Group<EcPoint> {
     codec: _Codec,
     blinding: _Blinding,
     msmCutoff: number,
-    baseMultiply?: _BaseMultiply,
-    baseMultiplyUnsafe?: _BaseMultiplyUnsafe,
+    baseMultiplications?: _BaseMultiplications,
   ) {
     const modulus = Point.Fp.ORDER;
     const order = Point.Fn.ORDER;
@@ -133,8 +131,7 @@ export class EcGroup extends Group<EcPoint> {
     this.codec = codec;
     this.blinding = blinding;
     this.msmCutoff = msmCutoff;
-    this.baseMultiply = baseMultiply;
-    this.baseMultiplyUnsafe = baseMultiplyUnsafe;
+    this.baseMultiplications = baseMultiplications;
   }
 
   private wrap = (point: _CurvePoint): EcPoint => new EcPoint(point, this.codec.toBytes);
@@ -152,12 +149,12 @@ export class EcGroup extends Group<EcPoint> {
     this.generator, await this.randomScalar()
   );
 
-  /** By identity, as noble recognizes its base */
-  private isBase = (point: EcPoint): boolean => point.wrapped === this.base;
+  /** By identity of the raw point, as noble recognizes its base */
+  private isBase = (point: _CurvePoint): boolean => point === this.base;
 
   blindsNatively = (point: EcPoint): boolean => this.blinding === 'all' ||
-    (this.isBase(point) &&
-      (this.blinding === 'base' || this.baseMultiply !== undefined));
+    (this.isBase(point.wrapped) &&
+      (this.blinding === 'base' || this.baseMultiplications !== undefined));
 
   validateScalar = async (scalar: bigint): Promise<boolean> => {
     const flag = 0 < scalar && scalar < this.order;
@@ -167,42 +164,45 @@ export class EcGroup extends Group<EcPoint> {
     return flag;
   }
 
-  /** A point of the curve, possibly with a small-order component, whose
-   * equality noble decides on the full curve */
-  validateCurvePoint = async (point: EcPoint): Promise<boolean> => {
-    const flag = true;
-    if (await point.wrapped.equals(this.zero)) return flag;
-    try { point.wrapped.assertValidity(); } catch (err: unknown) {
+  private assertOnCurve = (point: _CurvePoint): void => {
+    try { point.assertValidity(); } catch (err: unknown) {
       if (err instanceof Error) throw new BadPointError(err.message);
       throw err;
     }
-    return flag;
+  }
+
+  /** A point of the curve, possibly with a small-order component, whose
+   * equality noble decides on the full curve */
+  validateCurvePoint = async (point: EcPoint): Promise<boolean> => {
+    if (!point.wrapped.is0()) this.assertOnCurve(point.wrapped);
+    return true;
   }
 
   validatePoint = async (point: EcPoint): Promise<boolean> => {
-    const flag = await this.validateCurvePoint(point);
-    if (await point.wrapped.equals(this.zero)) return flag;
+    const wrapped = point.wrapped;
+    if (wrapped.is0()) return true;
+    this.assertOnCurve(wrapped);
     // Reject points with a small-order component, which would otherwise
     // vanish from verification equations for suitable challenges
-    if (!point.wrapped.isTorsionFree()) throw new BadPointError(
+    if (!wrapped.isTorsionFree()) throw new BadPointError(
       'bad point: not in prime-order subgroup'
     );
-    return flag;
+    return true;
   }
 
   exp = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => {
     if (scalar === 0n) return this.wrap(this.zero);
-    if (this.baseMultiply && this.isBase(point)) return this.wrap(
-      this.baseMultiply(scalar)
+    if (this.baseMultiplications && this.isBase(point.wrapped)) return this.wrap(
+      this.baseMultiplications.multiply(scalar)
     );
     return this.wrap(point.wrapped.multiply(scalar));
   }
 
-  /** Variable-time multiplication of a raw point, through baseMultiplyUnsafe
-   * for the base; shared by expPublic and multiExpPublic */
+  /** Variable-time multiplication of a raw point, through the base
+   * multiplications for the base; shared by expPublic and multiExpPublic */
   private multiplyUnsafe = (point: _CurvePoint, scalar: bigint): _CurvePoint =>
-    this.baseMultiplyUnsafe && point === this.base ?
-      this.baseMultiplyUnsafe(scalar) : point.multiplyUnsafe(scalar);
+    this.baseMultiplications && this.isBase(point) ?
+      this.baseMultiplications.multiplyUnsafe(scalar) : point.multiplyUnsafe(scalar);
 
   /** Variable-time wNAF multiplication, whose cost shrinks with the scalar */
   expPublic = async (point: EcPoint, scalar: bigint): Promise<EcPoint> => this.wrap(
@@ -229,7 +229,7 @@ export class EcGroup extends Group<EcPoint> {
    * noble's own and points already prepared keep theirs */
   precomputeBase = (point: EcPoint): EcPoint => {
     const wrapped = point.wrapped;
-    if (!this.isBase(point) && !wrapped.is0() && !precomputed.has(wrapped)) {
+    if (!this.isBase(wrapped) && !wrapped.is0() && !precomputed.has(wrapped)) {
       wrapped.precompute(PRECOMPUTE_WINDOW, true);
       precomputed.add(wrapped);
     }
@@ -288,8 +288,7 @@ const CURVES: Record<Elliptic, {
   codec?: (Point: _PointCons) => _Codec,
   blinding: _Blinding,
   msmCutoff?: number,
-  baseMultiply?: _BaseMultiply,
-  baseMultiplyUnsafe?: _BaseMultiplyUnsafe,
+  base?: _BaseMultiplications,
 }> = {
   [Elliptic.ED25519]: {
     Point: ed25519.Point,
@@ -320,13 +319,13 @@ const CURVES: Record<Elliptic, {
     // which noble blinds and tables, doubling the point rather than the secret
     // scalar. Same prime order, and the result lies in the prime-order subgroup
     blinding: 'none',
-    baseMultiply: (scalar) => new decaf448.Point(
-      ed448.Point.BASE.multiply(scalar).double()
-    ),
-    // Likewise for public scalars, so as to use the table of ed448's base
-    baseMultiplyUnsafe: (scalar) => new decaf448.Point(
-      ed448.Point.BASE.multiplyUnsafe(scalar).double()
-    ),
+    base: {
+      multiply: (scalar) => new decaf448.Point(ed448.Point.BASE.multiply(scalar).double()),
+      // Likewise for public scalars, so as to use the table of ed448's base
+      multiplyUnsafe: (scalar) => new decaf448.Point(
+        ed448.Point.BASE.multiplyUnsafe(scalar).double()
+      ),
+    },
   },
   [Elliptic.SECP256K1]: {
     Point: secp256k1.Point,
@@ -361,10 +360,9 @@ const CURVES: Record<Elliptic, {
 export function initElliptic(system: Elliptic): EcGroup {
   const {
     Point, hashToCurve, codec = nobleCodec, blinding, msmCutoff = MSM_CUTOFF,
-    baseMultiply, baseMultiplyUnsafe,
+    base,
   } = CURVES[system];
   return new EcGroup(
-    system, Point, hashToCurve, codec(Point), blinding, msmCutoff, baseMultiply,
-    baseMultiplyUnsafe,
+    system, Point, hashToCurve, codec(Point), blinding, msmCutoff, base,
   );
 }
