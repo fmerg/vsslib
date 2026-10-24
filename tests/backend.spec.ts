@@ -277,3 +277,34 @@ describe('public multi-exponentiation', () => {
     }
   });
 });
+
+
+describe('base precomputation', () => {
+  each(systems)('returns the point and keeps exponentiation over %s', async (system) => {
+    const ctx = initBackend(system);
+    const bytes = (await ctx.hashToPoint(Uint8Array.of(1), Uint8Array.of(2))).toBytes();
+    const fresh = await ctx.parsePoint(bytes);
+    const scalars = [__0n, __1n, BigInt(2), ctx.order - __1n, await ctx.randomScalar()];
+    for (const group of [ctx, inheriting(ctx)]) {
+      const point = await ctx.parsePoint(bytes);
+      const base = group.precomputeBase(point);
+      assert.equal(base, point);
+      for (const scalar of scalars) {
+        const expected = (await ctx.exp(fresh, scalar)).toBytes();
+        for (const exp of [group.exp, group.expSecret, group.expPublic]) {
+          assert.deepEqual((await exp(base, scalar)).toBytes(), expected);
+        }
+      }
+    }
+  });
+  each(systems)('leaves the generator and the neutral element as they are over %s', async (system) => {
+    // A new window would drop noble's table for its base
+    const ctx = initBackend(system);
+    const scalar = await ctx.randomScalar();
+    const expected = (await ctx.exp(ctx.generator, scalar)).toBytes();
+    assert.equal(ctx.precomputeBase(ctx.generator), ctx.generator);
+    assert.equal(ctx.precomputeBase(ctx.neutral), ctx.neutral);
+    assert.deepEqual((await ctx.expSecret(ctx.generator, scalar)).toBytes(), expected);
+    assert.equal(await (await ctx.exp(ctx.neutral, scalar)).equals(ctx.neutral), true);
+  });
+});
