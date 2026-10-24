@@ -1,3 +1,5 @@
+import { randomBytes } from '@noble/hashes/utils.js';
+
 import { System } from '../types';
 import { mod, modInv, leBytesToInt, intToLeBytes } from '../arith';
 import { BadScalarError, BadPointError, InvalidInput } from '../errors';
@@ -26,6 +28,15 @@ export const validateMultiExp = (
 }
 
 
+/** Members bound to the instance by the Group constructor */
+const GROUP_MEMBERS = [
+  'scalarToBytes', 'generateSecret', 'parseScalar', 'parsePoint', 'parseCurvePoint',
+  'validateCurvePoint', 'blindsNatively', 'invertScalar', 'expSecret', 'expPublic',
+  'multiExpPublic', 'precomputeBase', 'randomScalar', 'randomPoint', 'validateScalar',
+  'validatePoint', 'exp', 'operate', 'invert', 'bytesToPoint', 'hashToPoint',
+] as const;
+
+
 /** Prime-order group backing the library. Implementations must ensure that
  * - every element, including the neutral one, has a unique encoding, which
  *   bytesToPoint decodes and toBytes produces
@@ -35,7 +46,10 @@ export const validateMultiExp = (
  *   the subgroup only if they are that element, so that a point outside the
  *   subgroup never passes a comparison with one inside
  * - hashToPoint returns subgroup elements with unknown discrete log
- * - randomScalar is uniform modulo `order` up to negligible bias */
+ * - randomScalar is uniform modulo `order` up to negligible bias
+ *
+ * Members may be implemented or overridden as methods or as arrow properties;
+ * the constructor binds them, so that they keep working when destructured */
 export abstract class Group<P extends Point> {
   system: System;
   modulus: bigint;
@@ -48,19 +62,54 @@ export abstract class Group<P extends Point> {
     this.system = system;
     this.modulus = modulus;
     this.order = order;
-    this.generator = generator;;
+    this.generator = generator;
     this.neutral = neutral;
     this.scalarBytes = Math.ceil(order.toString(2).length / 8);
+    // Binds the most derived methods; arrow properties of subclasses are
+    // assigned after this constructor and need no binding
+    const self = this as unknown as Record<string, unknown>;
+    for (const name of GROUP_MEMBERS) {
+      const member = self[name];
+      if (typeof member === 'function') self[name] = member.bind(this);
+    }
   }
 
   /** Fixed-length little-endian encoding of a scalar reduced modulo the group order */
-  scalarToBytes = (scalar: bigint): Uint8Array => intToLeBytes(mod(scalar, this.order), this.scalarBytes);
+  scalarToBytes(scalar: bigint): Uint8Array {
+    return intToLeBytes(mod(scalar, this.order), this.scalarBytes);
+  }
 
-  generateSecret = async (): Promise<Uint8Array> => this.scalarToBytes(await this.randomScalar());
+  async generateSecret(): Promise<Uint8Array> {
+    return this.scalarToBytes(await this.randomScalar());
+  }
+
+  /** Uniform scalar modulo the order: 128 extra random bits are reduced, so
+   * that the bias is negligible, and the random bytes, which determine the
+   * scalar, are wiped */
+  async randomScalar(): Promise<bigint> {
+    const bytes = randomBytes(this.scalarBytes + 16);
+    const scalar = mod(leBytesToInt(bytes), this.order);
+    bytes.fill(0);
+    return scalar;
+  }
+
+  /** Uniform group element, as the generator raised to a random scalar */
+  async randomPoint(): Promise<P> {
+    return this.expSecret(this.generator, await this.randomScalar());
+  }
+
+  /** Accept scalars in (0, order); throws BadScalarError otherwise */
+  async validateScalar(scalar: bigint): Promise<boolean> {
+    const flag = 0 < scalar && scalar < this.order;
+    if (!flag) throw new BadScalarError(
+      `Scalar not in range`
+    );
+    return flag;
+  }
 
   /** Decode and validate a scalar, rejecting non-canonical encodings; throws
    * InvalidInput on invalid bytes */
-  parseScalar = async (bytes: Uint8Array): Promise<bigint> => {
+  async parseScalar(bytes: Uint8Array): Promise<bigint> {
     if (bytes.length !== this.scalarBytes) throw new InvalidInput(
       `Invalid scalar provided: expected ${this.scalarBytes} bytes, got ${bytes.length}`
     );
@@ -76,9 +125,9 @@ export abstract class Group<P extends Point> {
     return scalar;
   }
 
-  private decodePoint = async (
+  private async decodePoint(
     bytes: Uint8Array, validate: (point: P) => Promise<boolean>,
-  ): Promise<P> => {
+  ): Promise<P> {
     let point;
     try {
       point = this.bytesToPoint(bytes);
@@ -97,33 +146,38 @@ export abstract class Group<P extends Point> {
 
   /** Decode and validate a group element, rejecting non-canonical encodings;
    * throws InvalidInput on invalid bytes */
-  // Validators are called through this, so that backends may define them as
-  // methods, e.g. in plain JavaScript
-  parsePoint = async (bytes: Uint8Array): Promise<P> => this.decodePoint(
-    bytes, (point) => this.validatePoint(point)
-  );
+  async parsePoint(bytes: Uint8Array): Promise<P> {
+    return this.decodePoint(bytes, (point) => this.validatePoint(point));
+  }
 
   /** Like parsePoint, but validating by validateCurvePoint, which may accept
    * points outside the subgroup generated by `generator`. Only for points that
    * are compared for equality with elements of the subgroup and used for
    * nothing else, such as the commitments of NIZK proofs: a point outside
    * never equals one inside, so its subgroup check would be redundant */
-  parseCurvePoint = async (bytes: Uint8Array): Promise<P> => this.decodePoint(
-    bytes, (point) => this.validateCurvePoint(point)
-  );
+  async parseCurvePoint(bytes: Uint8Array): Promise<P> {
+    return this.decodePoint(bytes, (point) => this.validateCurvePoint(point));
+  }
 
   /** Validation for parseCurvePoint. Defaults to validatePoint; backends
-   * override it, as a property like `expPublic`, where checking membership in
-   * the subgroup is costly and other points of the curve can be told apart */
-  validateCurvePoint = async (point: P): Promise<boolean> => this.validatePoint(point);
+   * override it where checking membership in the subgroup is costly and other
+   * points of the curve can be told apart */
+  async validateCurvePoint(point: P): Promise<boolean> {
+    return this.validatePoint(point);
+  }
 
   /** Whether `exp` blinds secret scalars for `point` natively; backends
    * override it where their multiplication does so */
-  blindsNatively: (point: P) => boolean = () => false;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  blindsNatively(point: P): boolean {
+    return false;
+  }
 
-  /** @internal Inversion modulo the order, variable-time; a property, so that
+  /** @internal Inversion modulo the order, variable-time; a member, so that
    * tests can trace what `expSecret` inverts */
-  invertScalar = (scalar: bigint): bigint => modInv(scalar, this.order);
+  invertScalar(scalar: bigint): bigint {
+    return modInv(scalar, this.order);
+  }
 
   /** Exponentiation by a secret scalar. Unless `exp` blinds it natively, the
    * scalar is split as `point ^ s = (point ^ r) ^ (s / r)` for a fresh random
@@ -133,7 +187,7 @@ export abstract class Group<P extends Point> {
    * Inversion is variable-time, so `r` is inverted as `u / (r * u)` for a
    * fresh random `u`, which shows the inversion only a value independent of `r`.
    * Invert only through `invertScalar`, which tests trace for `r` */
-  expSecret = async (point: P, scalar: bigint): Promise<P> => {
+  async expSecret(point: P, scalar: bigint): Promise<P> {
     if (this.blindsNatively(point)) return this.exp(point, scalar);
     const order = this.order;
     let r = 0n;
@@ -147,17 +201,18 @@ export abstract class Group<P extends Point> {
 
   /** Exponentiation by a public scalar, such as a share index, which may run
    * in variable time and must therefore never see secrets. Defaults to `exp`;
-   * backends override it, as a property like `blindsNatively`, where a faster
-   * variable-time multiplication exists */
-  expPublic = async (point: P, scalar: bigint): Promise<P> => this.exp(point, scalar);
+   * backends override it where a faster variable-time multiplication exists */
+  async expPublic(point: P, scalar: bigint): Promise<P> {
+    return this.exp(point, scalar);
+  }
 
   /** Product of `points[i] ^ scalars[i]` over public points and scalars,
    * such as public shares and their Lagrange coefficients, which may run in
    * variable time and must therefore never see secrets. Defaults to one
-   * `expPublic` per point; backends override it, as a property like
-   * `expPublic`, where a multi-scalar multiplication exists. Throws
-   * InvalidInput if the lengths differ or a scalar is not in [0, order) */
-  multiExpPublic = async (points: P[], scalars: bigint[]): Promise<P> => {
+   * `expPublic` per point; backends override it where a multi-scalar
+   * multiplication exists. Throws InvalidInput if the lengths differ or a
+   * scalar is not in [0, order) */
+  async multiExpPublic(points: P[], scalars: bigint[]): Promise<P> {
     validateMultiExp(points, scalars, this.order);
     let acc = this.neutral;
     for (let i = 0; i < points.length; i++) {
@@ -168,20 +223,17 @@ export abstract class Group<P extends Point> {
 
   /** Prepare a public point that is raised repeatedly to secret scalars, such
    * as a Pedersen base, e.g. by attaching a precomputed table, and return the
-   * point to use instead. Defaults to the point itself; backends override it,
-   * as a property like `expPublic` */
-  precomputeBase = (point: P): P => point;
+   * point to use instead. Defaults to the point itself */
+  precomputeBase(point: P): P {
+    return point;
+  }
 
-  abstract randomScalar: () => Promise<bigint>;
-  abstract randomPoint: () => Promise<P>;
-  abstract validateScalar: (scalar: bigint) => Promise<boolean>;
-  abstract validatePoint: (point: P) => Promise<boolean>;
+  abstract validatePoint(point: P): Promise<boolean>;
   /** Exponentiation, possibly variable-time; use expSecret for secret scalars */
-  abstract exp: (point: P, scalar: bigint) => Promise<P>;
-  abstract operate: (lhs: P, rhs: P) => Promise<P>;
-  abstract invert: (point: P) => Promise<P>;
-  abstract bytesToPoint: (bytes: Uint8Array) => P;
+  abstract exp(point: P, scalar: bigint): Promise<P>;
+  abstract operate(lhs: P, rhs: P): Promise<P>;
+  abstract invert(point: P): Promise<P>;
+  abstract bytesToPoint(bytes: Uint8Array): P;
   /** Hash to a point of the prime-order subgroup whose discrete log is unknown */
-  abstract hashToPoint: (msg: Uint8Array, dst: Uint8Array) => Promise<P>;
+  abstract hashToPoint(msg: Uint8Array, dst: Uint8Array): Promise<P>;
 }
-
