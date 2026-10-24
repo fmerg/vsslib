@@ -28,10 +28,12 @@ type _Codec = {
 };
 
 
+/** Point of a built-in elliptic-curve backend, wrapping a noble point */
 export class EcPoint implements Point {
   /** @internal Wrapped noble point */
   wrapped: _CurvePoint;
   private encode: _Codec['toBytes'];
+  /** Canonical encoding of the backend's system */
   toBytes = (): Uint8Array => this.encode(this.wrapped);
 
   constructor(wrapped: _CurvePoint, encode: _Codec['toBytes']) {
@@ -39,6 +41,7 @@ export class EcPoint implements Point {
     this.encode = encode;
   }
 
+  /** Equality as elements of the curve, in variable time */
   equals = async <Q extends Point>(other: Q): Promise<boolean> => {
     // Not constant-time; compare canonical encodings with isEqualBytes where
     // secret-dependent points are involved
@@ -95,6 +98,8 @@ const jubjubHashToCurve: _HashToCurve = (msg, dst) => {
 }
 
 
+/** Built-in elliptic-curve backend over noble-curves; created by
+ * `initBackend` */
 export class EcGroup extends Group<EcPoint> {
   private base: _CurvePoint;
   private zero: _CurvePoint;
@@ -155,6 +160,8 @@ export class EcGroup extends Group<EcPoint> {
     return true;
   }
 
+  /** Accept points of the curve in the prime-order subgroup; throws
+   * BadPointError otherwise */
   validatePoint = async (point: EcPoint): Promise<boolean> => {
     const wrapped = point.wrapped;
     if (wrapped.is0()) return true;
@@ -213,14 +220,18 @@ export class EcGroup extends Group<EcPoint> {
     return point;
   }
 
+  /** Point addition */
   operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => this.wrap(
     lhs.wrapped.add(rhs.wrapped)
   );
 
+  /** Point negation */
   invert = async (point: EcPoint): Promise<EcPoint> => this.wrap(
     point.wrapped.negate()
   );
 
+  /** Decode a point of the curve, not checked to lie in the subgroup; throws
+   * BadPointError on bytes that encode no point */
   bytesToPoint = (bytes: Uint8Array): EcPoint => {
     let point;
     try {

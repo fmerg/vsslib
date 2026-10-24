@@ -105,7 +105,13 @@ export async function parsePedersenBase<P extends Point>(
 export async function createPedersenPackets<P extends Point>(
   sharing: ShamirSharing<P>,
   pedersenBase: Uint8Array,
-): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
+): Promise<{
+  /** One per share, with its binding, to be sent privately to its shareholder */
+  packets: SecretPacket[],
+  /** `g^a_i * h^b_i` for the coefficients `a_i` of the sharing polynomial and
+   * `b_i` of a random binding polynomial, to be broadcast */
+  commitments: Uint8Array[],
+}> {
   const { ctx } = sharing;
   const { expSecret, operate, generator: g } = ctx;
   const h = await parsePedersenBase(ctx, pedersenBase);
@@ -126,6 +132,10 @@ export async function createPedersenPackets<P extends Point>(
 }
 
 
+/** Verify a secret share and its binding against Pedersen commitments of a
+ * `threshold`-sharing under `pedersenBase`; returns true or throws
+ * InvalidSecretShare if they do not match or the commitments do not number
+ * `threshold`, and InvalidInput on malformed input or an invalid base */
 export async function verifyPedersenCommitments<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
@@ -154,13 +164,21 @@ export async function verifyPedersenCommitments<P extends Point>(
 }
 
 
+/** Extract the secret share and binding of a Pedersen packet, verified as by
+ * {@link verifyPedersenCommitments}, which throws on failure; throws
+ * InvalidInput if the packet has no binding */
 export async function parsePedersenPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
   pedersenBase: Uint8Array,
   packet: SecretPacket,
   threshold: number,
-): Promise<{ share: SecretShare, binding: Uint8Array }> {
+): Promise<{
+  /** The verified share */
+  share: SecretShare,
+  /** Its binding, needed only for verification */
+  binding: Uint8Array,
+}> {
   const { value, index, binding } = packet;
   if (!binding)
     throw new InvalidInput(

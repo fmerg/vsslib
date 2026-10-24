@@ -1,4 +1,11 @@
-/** @module vsslib */
+/**
+ * Secret sharing (Shamir), verifiable secret sharing (Feldman, Pedersen) and
+ * verifiable public recovery over prime-order groups. Every operation takes a
+ * backend instance, e.g. from `initBackend`, and exchanges secrets, shares and
+ * group elements as bytes
+ *
+ * @module vsslib
+ */
 
 export { initBackend } from './backend';
 export type { Group, Point } from './backend';
