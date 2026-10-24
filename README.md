@@ -113,6 +113,7 @@ See [here](#security-main) for details.
   * [Multi-exponentiation](#multi-exponentiation)
   * [Generator of decaf448](#decaf448-generator)
   * [Pedersen base table](#pedersen-base-table)
+  * [NIZK verification](#nizk-verification)
   * [Measurement setup](#measurement-setup)
 * [Development](#development)
 
@@ -576,6 +577,14 @@ The optional `algorithm` parameter specifies
 the hash function used for the verification of individual
 proofs (defaults to SHA256).
 
+Interpolation runs over all packets whose proofs verify, not just `t` of them.
+If their shares lie on one polynomial of degree `t - 1`, which honest
+shareholders ensure, the result is the same for any `t` of them. A share that
+is off the polynomial but validly proven, i.e., by a shareholder proving
+knowledge of a wrong share, distorts the result whichever packets are taken,
+and can only be detected against the dealer's commitments
+(see [Verifiable Secret Sharing](#verifiable-secret-sharing)).
+
 The operation throws `vsslib.InvalidPublicShare`
 upon the first proof that fails to verify.
 It throws `vsslib.InvalidInput` if less than `t` packets are provided,
@@ -718,20 +727,22 @@ value independent of `r`. The split
 costs a second multiplication and an inversion: Pedersen dealing becomes up to
 about twice as slow on the Edwards curves, whereas the curves of cofactor one
 are unaffected.
-On the elliptic backends, `Group.exp` is called directly only for public
-scalars, namely NIZK challenges and responses; `Group.expSecret` builds on it
-for secret scalars. Share indexes go through
-`Group.expPublic` instead, which the elliptic backends implement by noble's
+Vsslib does not call `Group.exp` directly: `Group.expSecret` builds on it for
+secret scalars, and public scalars go through `Group.expPublic` and
+`Group.multiExpPublic`. Share indexes go through
+`Group.expPublic`, which the elliptic backends implement by noble's
 variable-time multiplication: raising the commitments to powers of the share
 index, which is small and public, then costs a few doublings instead of a full
 constant-time multiplication, which shortens verification by 31% to 95%
 depending on the curve (see [Horner's method](#horner-method)). Public shares
 are combined with their Lagrange coefficients through `Group.multiExpPublic`,
 which the elliptic backends implement by a variable-time multi-scalar
-multiplication (see [Multi-exponentiation](#multi-exponentiation)). Custom backends inherit the split and should override `blindsNatively`
+multiplication (see [Multi-exponentiation](#multi-exponentiation)), and so are
+the responses and the challenge of NIZK proofs when verifying them (see
+[NIZK verification](#nizk-verification)). Custom backends inherit the split and should override `blindsNatively`
 only for points their exponentiation blinds; `expPublic` defaults to `exp` and
 `multiExpPublic` to one `expPublic` per point, so that a custom backend
-without overrides combines public shares through `exp`. Overrides of either may
+without overrides combines public shares and verifies proofs through `exp`. Overrides of either may
 run in variable time, since they never receive secrets.
 
 Memory hygiene is limited by the language as well. `BigInt` values are
@@ -773,7 +784,13 @@ Vsslib's interface operates with the byte representations of scalars and group
 elements, taking care to always ensure that the involved bytestrings are valid
 representations with respect to the underlying cryptosystem.
 Group elements are moreover required to lie in the prime-order subgroup, so
-that points with a small-order component are rejected.
+that points with a small-order component are rejected. The commitments of NIZK
+proofs are the exception: verification only compares them for equality with
+products of subgroup elements, which a point with a small-order component
+never equals, so they are checked for canonical encoding and curve membership
+only, through `Group.parseCurvePoint`. This spares a full multiplication per
+proof on `ed25519`, `ed448` and `jubjub`. Custom backends keep the full check
+unless they override `Group.validateCurvePoint`.
 Scalars are required to be canonically encoded, i.e., little-endian with fixed
 length and value less than the group order.
 
@@ -951,7 +968,8 @@ much as raising it to its coefficient used to: its check of membership in the
 prime-order subgroup is a full multiplication, which remains, and dominates
 after the change. `recoverPublic` costs the same at every threshold, since it
 combines all valid packets, here 100, and the verification of their NIZK proofs,
-which still uses `Group.exp`, now makes up most of its time. Of its gain,
+which used `Group.exp` at the time, makes up most of its time (see
+[NIZK verification](#nizk-verification)). Of its gain,
 parsing once accounts for about half on `ed25519`, a quarter on `decaf448` and
 little on the curves of cofactor one, where parsing is cheap.
 
@@ -969,9 +987,10 @@ result avoids any arithmetic on the secret scalar. Exponentiations of other
 points still split. Verification gains as well where it raises the generator:
 to the share value in VSS verification, through `Group.expSecret`, which no
 longer splits, and to the public NIZK response in Schnorr packets, through
-`Group.exp`, which takes the same route. Measured changes of median running
-time on `decaf448` against the previous implementation, with `n = 5` shares and
-threshold `t = 3`:
+`Group.exp`, which took the same route (verification has since moved to
+`Group.multiExpPublic`, see [NIZK verification](#nizk-verification)). Measured
+changes of median running time on `decaf448` against the previous
+implementation, with `n = 5` shares and threshold `t = 3`:
 
 | operation | change |
 | --- | ---: |
@@ -1026,6 +1045,35 @@ milliseconds longer. The gain starts with the third use. Moreover, the first
 tables built in a process run unoptimized code, a one-off of up to about 12 ms.
 A table takes 107 KB on `secp256k1` to 315 KB on `p521`.
 
+### <a name="nizk-verification"></a>NIZK verification
+
+Verifying a NIZK proof checks, for each relation, that the commitment equals
+the product of the relation points raised to the responses and to the negated
+challenge. All of these are public, yet the verification used the
+constant-time `Group.exp`. It now computes each product by one
+`Group.multiExpPublic`, which below 4 points multiplies each point in variable
+time, using noble's table for the generator; on `decaf448`, the generator goes
+through the table of the `ed448` base, as for secret scalars (see
+[Generator of decaf448](#decaf448-generator)). Moreover, the commitments of the
+proofs are no longer checked for membership in the prime-order subgroup, which
+costs a full multiplication on `ed25519`, `ed448` and `jubjub` (see
+[Input validation](#input-validation-overview)). Every Schnorr packet goes
+through this verification, so that it makes up most of `recoverPublic`.
+Measured changes of median running time against the previous implementation:
+
+| operation | shares | `ed25519` | `ed448` | `decaf448` | `secp256k1` | `p521` |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| `parseSchnorrPacket` | - | -32% | -25% | +6% | -51% | -24% |
+| `recoverPublic` | 5 / 20 | -26% / -25% | -19% / -22% | +2% / +6% | -50% / -40% | -14% / -19% |
+| `recoverPublic` | 100 | -32% | -27% to -29% | -1% to -2% | -49% to -50% | -22% to -27% |
+
+For example, recovering the public key from 100 packets on `secp256k1` takes
+134 ms instead of 261 ms. On `secp256k1` and `p521`, most of the gain comes from
+variable-time multiplication, on `ed25519` and `ed448` from dropping the subgroup
+check of the commitments. `decaf448` is unchanged to slightly slower: its
+subgroup check is cheap, and the variable-time multiplications gain nothing
+measurable in the verification as a whole.
+
 ### <a name="measurement-setup"></a>Measurement setup
 
 The figures were measured with the [benchmarks](#benchmarks), 5 runs per side,
@@ -1071,6 +1119,16 @@ base:
 ```
 $ ./bench.sh -m pedersen,feldman -s ed25519,decaf448,secp256k1,p521 \
     -n 5,20 -t 3,10 --cpus 0-7 -r 5 --compare <baseline>
+```
+
+For NIZK verification, with `createSchnorrPacket` as a control that should not
+change:
+
+```
+$ ./bench.sh -m recovery -s ed25519,ed448,decaf448,secp256k1,p521 -n 5,20 -t 3 \
+    --cpus 0-7 -r 5 --compare <baseline>
+$ ./bench.sh -o recoverPublic -s ed25519,ed448,decaf448,secp256k1,p521 -n 100 \
+    -t 5,50 --cpus 0-7 -r 5 --compare <baseline>
 ```
 
 # Development
