@@ -8,7 +8,7 @@ to the caller, and how it validates input. Usage is described in
 [USAGE.md](./USAGE.md), and the cost of the measures below in
 [PERFORMANCE.md](./PERFORMANCE.md).
 
-## <a name="side-channel-attacks"></a>Side-channel attacks
+## Side-channel attacks
 
 Strict resistance against side channels cannot be attained in JavaScript. The
 language is garbage-collected and just-in-time compiled, its `BigInt`
@@ -33,7 +33,7 @@ against the fixed scalar length, rather than measuring them by conversion to a
 string, which would run in variable time and leave a copy of the secret on the
 heap.
 
-### <a name="secret-exponentiation"></a>Exponentiation by secret scalars
+### Exponentiation by secret scalars
 
 Exponentiation by secret scalars, such as shares, coefficients of the sharing
 polynomial, Pedersen bindings, secret keys and NIZK nonces, is the most exposed
@@ -45,7 +45,7 @@ cofactor one (`secp256k1`, `p256`, `p384`, `p521`), but on the cofactored
 curves only its own base point, i.e. the generator of `ed25519`, `ed448`,
 `jubjub` and `ristretto255`. On `decaf448` it blinds no point, so vsslib
 multiplies the generator through the base point of `ed448` instead (see
-[Generator of decaf448](./PERFORMANCE.md#decaf448-generator)).
+[Generator of decaf448](./PERFORMANCE.md#generator-of-decaf448)).
 
 A leak in an unblinded multiplication accumulates over repeated calls with the
 same scalar, e.g. when a shareholder verifies its long-lived Pedersen binding,
@@ -69,14 +69,14 @@ and leakage does not accumulate across calls.
   [Pedersen base table](./PERFORMANCE.md#pedersen-base-table) partly recovers;
   the curves of cofactor one are unaffected.
 
-### <a name="public-scalars"></a>Public scalars
+### Public scalars
 
 Vsslib never calls `Group.exp` directly: secret scalars go through
 `Group.expSecret`, and public ones through `Group.expPublic` and
 `Group.multiExpPublic`, which may run in variable time. The elliptic backends
 implement them by noble's variable-time multiplication and multi-scalar
 multiplication. They raise the VSS commitments to the share index (see
-[Horner's method](./PERFORMANCE.md#horner-method)), combine public shares with
+[Horner's method](./PERFORMANCE.md#horners-method)), combine public shares with
 their Lagrange coefficients (see
 [Multi-exponentiation](./PERFORMANCE.md#multi-exponentiation)), and verify NIZK
 proofs (see [NIZK verification](./PERFORMANCE.md#nizk-verification)). Custom
@@ -104,7 +104,7 @@ negligible probability, the information its timing exposes is expected to be
 small. A fixed-width scalar representation would not remove it, since every
 scalar becomes a `BigInt` again inside noble.
 
-## <a name="browsers"></a>Browsers
+## Browsers
 
 In a browser, vsslib shares the JavaScript engine with whatever else the page
 loads, so the precautions above meet a stronger adversary. Scripts of the same
@@ -122,7 +122,7 @@ Randomness comes from `crypto.getRandomValues`, which browsers and Node.js back
 by the operating system's generator. It limits a single call to 65536 bytes, so
 `randomNonce` accepts sizes from 1 to 65536 bytes.
 
-## <a name="input-validation"></a>Input validation
+## Input validation
 
 The API exchanges scalars and group elements as bytes and parses every input
 before use, throwing `InvalidInput` on anything that is not a canonical
@@ -143,7 +143,7 @@ encoding.
 - The Pedersen base may be neither the neutral element nor the generator, whose
   discrete logs are known.
 
-## <a name="replay-attacks"></a>Replay attacks
+## Replay attacks
 
 A NIZK proof verifies wherever its statement does, so a proof captured in one
 session can be replayed in another. NIZK proofs, and the Schnorr packets of

@@ -45,7 +45,7 @@
     "test:watch": "./test.sh --watch",
     "test:browsers": "./test.sh --browsers --verbose",
     "build": "rm -rf ./dist && tsc",
-    "docs": "typedoc --excludeInternal --out docs src/backend/index.ts src/index.ts src/nizk.ts",
+    "docs": "typedoc --excludeInternal --validation.notDocumented --projectDocuments USAGE.md --projectDocuments SECURITY.md --projectDocuments PERFORMANCE.md --projectDocuments CHANGELOG.md --out docs src/backend/index.ts src/index.ts src/nizk.ts",
     "lint": "eslint src tests bench examples",
     "typecheck": "tsc --noEmit && tsc -p tests && tsc -p bench && tsc -p examples",
     "check:declarations": "tsc -p tests/declarations",

@@ -65,7 +65,7 @@ sharing process verifiable on behalf of the involved parties
 ([Feldman](./USAGE.md#feldman-scheme) and [Pedersen](./USAGE.md#pedersen-scheme) VSS schemes)
 and as such applicable in contexts with zero or low trust assumptions.
 
-### <a name="backend-overview"></a>Backend
+### Backend
 
 Vsslib is designed to be agnostic with respect to the underlying cryptosystem
 and to admit pluggable backends.
@@ -98,8 +98,8 @@ Refer to [`vsslib/backend`](./src/backend/abstract.ts) for details.
 [SECURITY.md](./SECURITY.md) describes the precautions against side channels,
 what is left to the caller and how input is validated, and
 [PERFORMANCE.md](./PERFORMANCE.md) explains and measures the optimizations.
-`npm run docs` builds the API reference in `docs/`, and
-[CHANGELOG.md](./CHANGELOG.md) lists the changes per release.
+[CHANGELOG.md](./CHANGELOG.md) lists the changes per release. `npm run docs`
+builds the API reference in `docs/`, together with these documents.
 
 ## Installation
 
@@ -124,7 +124,7 @@ $ npx tsx examples/dkg.ts --help    # also sss.ts and vss.ts
 $ npm run lint
 $ npm run typecheck                 # library, tests, benchmarks and examples
 $ npm run build
-$ npm run docs                      # API reference in docs/
+$ npm run docs                      # API reference and guides in docs/
 ```
 
 ### Tests
@@ -190,7 +190,7 @@ with the image of the `browsers` job in `.gitlab-ci.yml`. The container works
 on a copy of the checkout, so the JUnit report stays inside it; the output
 lists the failed checks.
 
-### <a name="benchmarks"></a>Benchmarks
+### Benchmarks
 
 Benchmarks cover the high-level operations of the library only (no backends
 or internals), each as the local computation of one party: the dealer, a

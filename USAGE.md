@@ -42,7 +42,7 @@ The built-in backends are the following.
   which uses the Zcash group hash.
 
 Any other implementation of the `Group` interface can be passed in place of a
-built-in backend (see [Backend](./README.md#backend-overview)).
+built-in backend (see [Backend](./README.md#backend)).
 
 ## Secrets and public keys
 
@@ -60,7 +60,7 @@ see [Input validation](./SECURITY.md#input-validation). The related helpers are
 `randomPublic`, `isEqualSecret`, `isEqualPublic`, `isKeypair`, `addSecrets` and
 `combinePublics`.
 
-## <a name="shamir-secret-sharing"></a>Shamir's Secret Sharing (SSS)
+## Shamir's Secret Sharing (SSS)
 
 ### Sharing a secret
 
@@ -104,7 +104,7 @@ A public share is the generator raised to the secret share, i.e.
 sharing once the shares are distributed, since it holds the secret (see
 [Side-channel attacks](./SECURITY.md#side-channel-attacks)).
 
-### <a name="combination-of-shares"></a>Combining shares
+### Combining shares
 
 ```js
 import { combineSecretShares, combinePublicShares } from "vsslib";
@@ -115,7 +115,7 @@ const combinedPublic = await combinePublicShares(ctx, publicShares, t);
 
 Both interpolate at zero, over scalars and in the exponent respectively, and
 throw `InvalidInput` on fewer than `t` shares or on invalid indexes. Neither
-verifies the shares; use the [VSS schemes](#verifiable-secret-sharing) or
+verifies the shares; use the [VSS schemes](#verifiable-secret-sharing-vss) or
 [verifiable public recovery](#verifiable-public-recovery) for that.
 
 Protocols that combine shares themselves can compute the Lagrange coefficients
@@ -133,7 +133,7 @@ for all of them (see [Common denominator](./PERFORMANCE.md#common-denominator)).
 Both throw `InvalidInput` unless the indexes are distinct positive safe integers
 below the group order, and `computeLambda` also if `index` is not among them.
 
-## <a name="verifiable-secret-sharing"></a>Verifiable Secret Sharing (VSS)
+## Verifiable Secret Sharing (VSS)
 
 Shareholders must be able to check that their shares come from one and the same
 sharing, so as to defend against a malicious dealer. In the Feldman and Pedersen
@@ -148,7 +148,7 @@ that a dealer cannot share with another threshold than the agreed one.
 > protocol's complaint policy, and to ensure that only honest parties end up
 > with a share.
 
-### <a name="feldman-scheme"></a>Feldman scheme
+### Feldman scheme
 
 ```js
 import { createFeldmanPackets, parseFeldmanPacket, InvalidSecretShare } from "vsslib";
@@ -172,7 +172,7 @@ input. A share received otherwise is checked by
 `verifyFeldmanCommitments(ctx, commitments, share, t)`, which throws the same
 errors. Feldman commitments reveal the public key of the secret.
 
-### <a name="pedersen-scheme"></a>Pedersen scheme
+### Pedersen scheme
 
 Pedersen commitments hide the secret as well, at the cost of a second base `h`
 whose discrete log with respect to the generator must be unknown to everyone.
@@ -206,7 +206,7 @@ which may be discarded afterwards. Errors are as in the Feldman scheme, and
 `verifyPedersenCommitments(ctx, commitments, pedersenBase, share, binding, t)`
 verifies a share received otherwise.
 
-## <a name="verifiable-public-recovery"></a>Verifiable public recovery
+## Verifiable public recovery
 
 To reconstruct the public key of a shared secret, e.g. for certification, a
 combiner collects public shares from the shareholders, each with a Schnorr proof
@@ -236,7 +236,7 @@ packets whose proofs verify, not only `t` of them, which gives the same result
 for any `t` of them as long as the shares lie on one polynomial of degree
 `t - 1`. A share off that polynomial but validly proven distorts the result,
 and only the dealer's commitments reveal it (see
-[VSS](#verifiable-secret-sharing)).
+[VSS](#verifiable-secret-sharing-vss)).
 
 > **Warning**
 > Recovery does not check that the public shares stem from a Shamir sharing;

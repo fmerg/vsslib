@@ -7,7 +7,7 @@ gives the measured changes of median running time; absolute times depend on the
 machine. The security reasoning behind the variable-time steps is in
 [SECURITY.md](./SECURITY.md#public-scalars).
 
-## <a name="horner-method"></a>Horner's method
+## Horner's method
 
 Horner's rule evaluates a polynomial of degree `t - 1` with `t - 1`
 multiplications and additions, as `a_0 + x(a_1 + x(a_2 + ...))`, without
@@ -21,17 +21,17 @@ shares and thresholds `t = 5, 25`:
 
 | operation | `ed25519`, `decaf448` | `secp256k1`, `p521` | cause |
 | --- | ---: | ---: | --- |
-| verify/parse Feldman packets | -31% to -61% | -89% to -95% | [variable-time steps](#horner-variable-time) |
-| verify/parse Pedersen packets | -22% to -54% | -73% to -91% | [variable-time steps](#horner-variable-time) |
-| `getSecretShares` | -78% to -93% | -78% to -93% | [Horner's rule](#horner-sharing-polynomial) |
-| `createFeldmanPackets` (n = 50) | up to -23% | up to -22% | [Horner's rule](#horner-sharing-polynomial) |
-| `shareSecret` (t = 5 / t = 25) | -45% / -90% | -45% / -90% | [no interpolation](#horner-sampling) |
+| verify/parse Feldman packets | -31% to -61% | -89% to -95% | [variable-time steps](#variable-time-steps-in-commitment-verification) |
+| verify/parse Pedersen packets | -22% to -54% | -73% to -91% | [variable-time steps](#variable-time-steps-in-commitment-verification) |
+| `getSecretShares` | -78% to -93% | -78% to -93% | [Horner's rule](#horners-rule-over-the-sharing-polynomial) |
+| `createFeldmanPackets` (n = 50) | up to -23% | up to -22% | [Horner's rule](#horners-rule-over-the-sharing-polynomial) |
+| `shareSecret` (t = 5 / t = 25) | -45% / -90% | -45% / -90% | [no interpolation](#sampling-instead-of-interpolation) |
 
 Operations dominated by exponentiations by secret scalars or Lagrange
 coefficients, such as `getPublicShares`, `createPedersenPackets` and the
 combination of shares, are unchanged within noise.
 
-### <a name="horner-variable-time"></a>Variable-time steps in commitment verification
+### Variable-time steps in commitment verification
 
 A share with index `i` is verified against the commitments `C_0, ..., C_(t-1)`
 by computing `C_0 * C_1^i * C_2^(i^2) * ... * C_(t-1)^(i^(t-1))`, which vsslib
@@ -56,7 +56,7 @@ curves (20.3 ms instead of 29.7 ms on `ed25519`), because each parsed commitment
 is checked to lie in the prime-order subgroup, a full multiplication that
 remains.
 
-### <a name="horner-sharing-polynomial"></a>Horner's rule over the sharing polynomial
+### Horner's rule over the sharing polynomial
 
 The sharing polynomial used to be evaluated at each share index in the
 barycentric form of the interpolating polynomial, with one modular inversion
@@ -71,7 +71,7 @@ which raises the generator to each share, takes 11 ms. It is visible in
 `createFeldmanPackets`, which evaluates the polynomial alongside cheaper group
 operations.
 
-### <a name="horner-sampling"></a>Sampling instead of interpolation
+### Sampling instead of interpolation
 
 `shareSecret` used to construct the sharing polynomial by interpolating the
 secret at `0` and random values at `1, ..., t - 1`. Without predefined shares,
@@ -84,7 +84,7 @@ With predefined shares, the polynomial is still interpolated, now building the
 Lagrange basis in quadratic instead of cubic time; this case was not
 benchmarked.
 
-## <a name="common-denominator"></a>Common denominator
+## Common denominator
 
 The Lagrange coefficient of index `x_i` with respect to the indexes
 `x_1, ..., x_k` of the combined shares is the product of `x_j / (x_j - x_i)`
@@ -121,7 +121,7 @@ about 0.5 ms. The exponentiations were sped up afterwards (see
 Measured with a separate script, since the benchmarks do not cover predefined
 shares, it takes 10-25% less time at `t = 25` and 43-55% less at `t = 50, 100`.
 
-## <a name="multi-exponentiation"></a>Multi-exponentiation
+## Multi-exponentiation
 
 Combining public shares `y_1, ..., y_k` computes the product of `y_i^(lambda_i)`
 over their Lagrange coefficients `lambda_i`, which used to take one constant-time
@@ -131,7 +131,7 @@ implement by noble's variable-time multiplication for fewer than 4 shares and by
 Pippenger's bucket method from 4 shares on. Pippenger's method shares one chain
 of doublings among all shares, whereas the multiplications cannot gain much on
 their own: the coefficients are full-width scalars, unlike the share indexes of
-[Horner's method](#horner-variable-time). On `secp256k1`, single variable-time
+[Horner's method](#variable-time-steps-in-commitment-verification). On `secp256k1`, single variable-time
 multiplications already use the curve's endomorphism, so Pippenger's method takes
 over only from 16 shares on; the thresholds are the crossovers measured with
 `@noble/curves` 2.4.0 on every supported curve. Moreover, `recoverPublic` parsed
@@ -157,13 +157,13 @@ which used `Group.exp` at the time, makes up most of its time (see
 for about half on `ed25519`, a quarter on `decaf448` and little on the curves of
 cofactor one, where parsing is cheap.
 
-## <a name="decaf448-generator"></a>Generator of decaf448
+## Generator of decaf448
 
 On the cofactored curves, noble blinds multiplication only for its own base
 point, which it recognizes by identity. The base point of `decaf448` is
 represented by twice the base point of `ed448`, but as another object, so that
 noble blinded none of its multiplications, and every exponentiation by a secret
-scalar on `decaf448` took the [split](./SECURITY.md#secret-exponentiation).
+scalar on `decaf448` took the [split](./SECURITY.md#exponentiation-by-secret-scalars).
 The elliptic backend now computes `g^s` on `decaf448` as twice `B^s`, where `B` is the base
 point of `ed448`, whose multiplication noble blinds and accelerates by a
 precomputed table. Both groups have the same prime order, and doubling the
@@ -190,7 +190,7 @@ For example, extracting a public key takes 0.60 ms instead of 4.23 ms, against
 0.44 ms on `ed448`. Pedersen operations gain less, since exponentiations of
 the Pedersen base still split. The other curves are unchanged.
 
-## <a name="pedersen-base-table"></a>Pedersen base table
+## Pedersen base table
 
 Pedersen dealing raises the Pedersen base `h` to the coefficients of the binding
 polynomial, and verification to the binding of the share, all secret scalars.
@@ -204,7 +204,7 @@ rejected on every call. On the curves of cofactor one, noble blinds every
 multiplication and the blinded multiplication uses the table as well, so that
 the whole exponentiation of `h` becomes 4 to 4.5 times faster. On the
 cofactored curves, only the first multiplication of the
-[split](./SECURITY.md#secret-exponentiation) can use the table, since the second
+[split](./SECURITY.md#exponentiation-by-secret-scalars) can use the table, since the second
 one runs on a fresh point, and the exponentiation of `h` becomes 30% to 37%
 faster. Measured reusing the same base:
 
@@ -227,7 +227,7 @@ milliseconds longer. The gain starts with the third use. Moreover, the first
 tables built in a process run unoptimized code, a one-off of up to about 12 ms.
 A table takes 107 KB on `secp256k1` to 315 KB on `p521`.
 
-## <a name="nizk-verification"></a>NIZK verification
+## NIZK verification
 
 Verifying a NIZK proof checks, for each row of the relation, that the row's
 commitment equals the product of its points raised to the responses and to the
@@ -237,7 +237,7 @@ It now computes each product by one `Group.multiExpPublic`, which below its
 cutoff (4 points, 16 on `secp256k1`) multiplies each point in variable time,
 using noble's table for the generator; on `decaf448`, the generator goes
 through the table of the `ed448` base, as for secret scalars (see
-[Generator of decaf448](#decaf448-generator)). Moreover, the commitments of the
+[Generator of decaf448](#generator-of-decaf448)). Moreover, the commitments of the
 proofs are no longer checked for membership in the prime-order subgroup, which
 costs a full multiplication on `ed25519`, `ed448` and `jubjub` (see
 [Input validation](./SECURITY.md#input-validation)). Every Schnorr packet goes
@@ -257,7 +257,7 @@ check of the commitments. `decaf448` is unchanged to slightly slower: its
 subgroup check is cheap, and the variable-time multiplications gain nothing
 measurable in the verification as a whole.
 
-## <a name="measurement-setup"></a>Measurement setup
+## Measurement setup
 
 The figures were measured with the [benchmarks](./README.md#benchmarks), 5 runs
 per side, on an Intel Core i5-12450H pinned to its performance cores (`--cpus 0-7`) with
