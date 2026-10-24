@@ -64,10 +64,15 @@ export const feldmanFixture = async (
 
 export type PedersenFixture = FeldmanFixture & { pedersenBase: Uint8Array };
 
+/** The Pedersen base of every input, derived from the default seed: parties
+ * agree on one base and reuse it, which a per-input base would not reflect */
+export const benchPedersenBase = async (ctx: Ctx): Promise<Uint8Array> =>
+  derivePedersenBase(ctx);
+
 export const pedersenFixture = async (
   ctx: Ctx, nrShares: number, threshold: number
 ): Promise<PedersenFixture> => {
-  const pedersenBase = await derivePedersenBase(ctx, randomNonce());
+  const pedersenBase = await benchPedersenBase(ctx);
   const sharing = await dealSharing(ctx, nrShares, threshold);
   return { pedersenBase, ...await createPedersenPackets(sharing, pedersenBase) };
 }
