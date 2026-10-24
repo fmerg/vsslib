@@ -203,10 +203,13 @@ export class EcGroup extends Group<EcPoint> {
 
   /** Attach a table of window PRECOMPUTE_WINDOW, which noble builds on the
    * first multiplication and keeps per point object; returns the same point.
-   * The generator keeps noble's own table, which a new window would drop */
+   * Setting a window drops the tables of the point, so the generator keeps
+   * noble's own and points already prepared keep theirs */
   precomputeBase = (point: EcPoint): EcPoint => {
-    if (!this.isBase(point) && !point.wrapped.is0()) {
-      point.wrapped.precompute(PRECOMPUTE_WINDOW, true);
+    const wrapped = point.wrapped;
+    if (!this.isBase(point) && !wrapped.is0() && !precomputed.has(wrapped)) {
+      wrapped.precompute(PRECOMPUTE_WINDOW, true);
+      precomputed.add(wrapped);
     }
     return point;
   }
@@ -249,6 +252,9 @@ const MSM_CUTOFF = 4;
  * (7-31 ms, 107-315 KB per point on ed25519 to p521), measured with noble
  * 2.4.0; recheck on upgrades */
 const PRECOMPUTE_WINDOW = 4;
+
+// Points prepared by precomputeBase, across groups
+const precomputed = new WeakSet<object>();
 
 
 /** Supported curves; a new system needs an Elliptic member and an entry here.

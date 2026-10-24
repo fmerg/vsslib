@@ -12,14 +12,31 @@ import { evalCommitments } from './commitments';
 const PEDERSEN_BASE_DST = new TextEncoder().encode('vsslib:pedersen-base');
 
 
-/** Number of parsed and precomputed Pedersen bases kept per group class; the
- * least recently used is evicted */
+/** Number of parsed Pedersen bases kept per group class; the least recently
+ * used is evicted */
 const PEDERSEN_BASE_CACHE = 8;
 
+/** A base is prepared by precomputeBase on its second use, so that a base used
+ * once costs no more than without the cache */
+type _CachedBase = { point: Point, precomputed: boolean };
+
 // By group class, so that a custom backend reusing the name of a system never
-// receives points of another class, then by system and encoding. Groups are
-// created anew by every initBackend call, so a cache per group would not hit
-let pedersenBases = new WeakMap<object, Map<string, Point>>();
+// receives points of another class, then by group parameters and encoding.
+// Groups are created anew by every initBackend call, so a cache per group
+// would not hit
+let pedersenBases = new WeakMap<object, Map<string, _CachedBase>>();
+
+// Cache key prefix per group, which spares encoding the generator on every call
+const groupKeys = new WeakMap<object, string>();
+
+const groupKey = <P extends Point>(ctx: Group<P>): string => {
+  let key = groupKeys.get(ctx);
+  if (key === undefined) {
+    key = `${ctx.system}:${ctx.order}:${bytesToHex(ctx.generator.toBytes())}`;
+    groupKeys.set(ctx, key);
+  }
+  return key;
+}
 
 /** @internal Empty the cache of Pedersen bases, e.g. between tests */
 export function clearPedersenBases(): void {
@@ -36,34 +53,48 @@ export async function derivePedersenBase<P extends Point>(
 }
 
 
-/** Parse a Pedersen base, rejecting the neutral element and the generator,
- * whose discrete logs are known. Valid bases are prepared by precomputeBase
- * and cached, so that later calls skip parsing and reuse the precomputation */
-export async function parsePedersenBase<P extends Point>(
+async function validatePedersenBase<P extends Point>(
   ctx: Group<P>,
   pedersenBase: Uint8Array,
 ): Promise<P> {
-  const key = `${ctx.system}:${bytesToHex(pedersenBase)}`;
-  let bases = pedersenBases.get(ctx.constructor);
-  const cached = bases?.get(key);
-  if (bases && cached) {
-    // Maps iterate in insertion order, which reinsertion turns into recency
-    bases.delete(key);
-    bases.set(key, cached);
-    return cached as P;
-  }
   const h = await ctx.parsePoint(pedersenBase);
   if (await h.equals(ctx.neutral) || await h.equals(ctx.generator)) throw new InvalidInput(
     'Pedersen base must be neither the neutral element nor the generator'
   );
-  const base = ctx.precomputeBase(h);
+  return h;
+}
+
+
+/** Parse a Pedersen base, rejecting the neutral element and the generator,
+ * whose discrete logs are known. Valid bases are cached, so that later calls
+ * skip parsing, and prepared by precomputeBase on their second use */
+export async function parsePedersenBase<P extends Point>(
+  ctx: Group<P>,
+  pedersenBase: Uint8Array,
+): Promise<P> {
+  // Anything else is rejected by parsing, as InvalidInput
+  if (!(pedersenBase instanceof Uint8Array)) return validatePedersenBase(ctx, pedersenBase);
+  const key = `${groupKey(ctx)}:${bytesToHex(pedersenBase)}`;
+  let entry = pedersenBases.get(ctx.constructor)?.get(key);
+  if (entry && !entry.precomputed) {
+    entry.point = ctx.precomputeBase(entry.point as P);
+    entry.precomputed = true;
+  }
+  if (!entry) {
+    const h = await validatePedersenBase(ctx, pedersenBase);
+    // Concurrent calls may have cached the base meanwhile; keep the first
+    entry = pedersenBases.get(ctx.constructor)?.get(key) ?? { point: h, precomputed: false };
+  }
+  let bases = pedersenBases.get(ctx.constructor);
   if (!bases) {
     bases = new Map();
     pedersenBases.set(ctx.constructor, bases);
   }
-  bases.set(key, base);
+  // Maps iterate in insertion order, which reinsertion turns into recency
+  bases.delete(key);
+  bases.set(key, entry);
   if (bases.size > PEDERSEN_BASE_CACHE) bases.delete(bases.keys().next().value!);
-  return base;
+  return entry.point as P;
 }
 
 
