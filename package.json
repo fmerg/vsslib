@@ -2,6 +2,14 @@
   "name": "vsslib",
   "version": "1.0.0",
   "description": "",
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/fmerg/vsslib.git"
+  },
+  "homepage": "https://gitlab.com/fmerg/vsslib#readme",
+  "bugs": {
+    "url": "https://gitlab.com/fmerg/vsslib/-/issues"
+  },
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
