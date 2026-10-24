@@ -197,6 +197,36 @@ describe('decaf448 base multiplication', () => {
       rng.mock.restore();
     }
   });
+  test('public multiplication agrees and goes through the ed448 base', async () => {
+    // Below the cutoff of Pippenger's method, where each point is multiplied
+    // on its own; noble has no table for the decaf448 base
+    const ctx = initBackend('decaf448');
+    const g = ctx.generator;
+    const parsed = await ctx.parsePoint(g.toBytes());
+    const other = await ctx.randomPoint();
+    const scalars = [0n, 1n, 2n, ctx.order - 1n, await ctx.randomScalar()];
+    const hook = mock.method(
+      ctx as unknown as { baseMultiplyUnsafe: (scalar: bigint) => unknown },
+      'baseMultiplyUnsafe',
+    );
+    try {
+      for (const scalar of scalars) {
+        const expected = (await ctx.exp(g, scalar)).toBytes();
+        assert.deepEqual((await ctx.expPublic(g, scalar)).toBytes(), expected);
+        const t = await ctx.randomScalar();
+        const multi = await ctx.multiExpPublic([g, other], [scalar, t]);
+        const sum = await ctx.operate(await ctx.exp(g, scalar), await ctx.exp(other, t));
+        assert.deepEqual(multi.toBytes(), sum.toBytes());
+      }
+      assert.equal(hook.mock.callCount(), 2 * scalars.length);
+      // Only the generator object, as with the secret route
+      await ctx.expPublic(parsed, scalars[4]);
+      await ctx.multiExpPublic([parsed, other], [scalars[4], 1n]);
+      assert.equal(hook.mock.callCount(), 2 * scalars.length);
+    } finally {
+      hook.mock.restore();
+    }
+  });
 });
 
 
