@@ -70,9 +70,10 @@ export const benchPedersenBase = async (ctx: Ctx): Promise<Uint8Array> =>
   derivePedersenBase(ctx);
 
 export const pedersenFixture = async (
-  ctx: Ctx, nrShares: number, threshold: number
+  ctx: Ctx, nrShares: number, threshold: number, newBase = false,
 ): Promise<PedersenFixture> => {
-  const pedersenBase = await benchPedersenBase(ctx);
+  const pedersenBase = newBase ?
+    await derivePedersenBase(ctx, randomNonce()) : await benchPedersenBase(ctx);
   const sharing = await dealSharing(ctx, nrShares, threshold);
   return { pedersenBase, ...await createPedersenPackets(sharing, pedersenBase) };
 }
