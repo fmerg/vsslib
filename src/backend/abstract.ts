@@ -1,6 +1,5 @@
 import { randomBytes } from '@noble/hashes/utils.js';
 
-import { System } from '../types';
 import { mod, modInv, leBytesToInt, intToLeBytes } from '../arith';
 import { BadScalarError, BadPointError, InvalidInput } from '../errors';
 import { isEqualBytes } from '../bytes';
@@ -11,9 +10,9 @@ export interface Point {
 }
 
 
-/** @internal Input check shared by the implementations of multiExpPublic,
- * so that every path rejects mismatched lengths and out-of-range scalars with
- * the same error; points are not checked, foreign points being a caller bug */
+/** Input check of multiExpPublic, for backends overriding it, so that every
+ * implementation rejects mismatched lengths and out-of-range scalars with the
+ * same error; points are not checked, foreign points being a caller bug */
 export const validateMultiExp = (
   points: unknown[], scalars: bigint[], order: bigint
 ): void => {
@@ -47,18 +46,29 @@ const GROUP_MEMBERS = [
  *   subgroup never passes a comparison with one inside
  * - hashToPoint returns subgroup elements with unknown discrete log
  * - randomScalar is uniform modulo `order` up to negligible bias
+ * - bytesToPoint and the validators throw BadPointError, and validateScalar
+ *   BadScalarError (both exported by vsslib/backend), on invalid input, which
+ *   parsing reports as InvalidInput; other errors propagate as they are
+ * - bytesToPoint, blindsNatively and precomputeBase are synchronous
+ *
+ * Scalars cross the interface as bigint and are encoded by the base class,
+ * little-endian with fixed width. An alternative implementation of a built-in
+ * system, e.g. a native or WASM one, interoperates with it only if it has the
+ * same modulus, order and generator, which enter NIZK challenges, the same
+ * point encoding and the same hashToPoint, from which Pedersen bases derive.
  *
  * Members may be implemented or overridden as methods or as arrow properties;
  * the constructor binds them, so that they keep working when destructured */
 export abstract class Group<P extends Point> {
-  system: System;
+  /** Name of the group, e.g. one of the built-in systems */
+  system: string;
   modulus: bigint;
   order: bigint;
   generator: P;
   neutral: P;
   scalarBytes: number;
 
-  constructor(system: System, modulus: bigint, order: bigint, generator: P, neutral: P) {
+  constructor(system: string, modulus: bigint, order: bigint, generator: P, neutral: P) {
     this.system = system;
     this.modulus = modulus;
     this.order = order;
