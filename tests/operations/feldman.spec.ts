@@ -4,7 +4,7 @@ import { createFeldmanPackets, verifyFeldmanCommitments, parseFeldmanPacket } fr
 import { initBackend, randomPublic, shareSecret } from 'vsslib';
 import { resolveTestConfig } from '../environ';
 import { isEqualBuffer, each } from '../utils';
-import { zeroRandomScalarAt } from '../helpers';
+import { fixRandomScalarAt } from '../helpers';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
 
@@ -76,7 +76,7 @@ describe('Feldman VSS scheme', () => {
     // commitments, the top one neutral
     const ctx = initBackend(system);
     const secret = await ctx.generateSecret();
-    const random = zeroRandomScalarAt(ctx, 1);
+    const random = fixRandomScalarAt(ctx, 1);
     const { sharing } = await shareSecret(ctx, 5, 3, secret);
     random.mock.restore();
     assert.equal(sharing.polynomial.degree, 1);

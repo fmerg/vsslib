@@ -81,10 +81,11 @@ export const inheriting = (ctx: EcGroup): Group<EcPoint> => {
 }
 
 
-/** Make call `onCall` (counted from 0) of ctx.randomScalar return 0, e.g. to
- * make a polynomial coefficient vanish; restore with `.mock.restore()` */
-export const zeroRandomScalarAt = <P extends Point>(ctx: Group<P>, onCall: number) => {
+/** Make call `onCall` (counted from 0) of ctx.randomScalar return `value`, by
+ * default 0 to make a polynomial coefficient vanish; restore with
+ * `.mock.restore()` */
+export const fixRandomScalarAt = <P extends Point>(ctx: Group<P>, onCall: number, value = 0n) => {
   const random = mock.method(ctx, 'randomScalar');
-  random.mock.mockImplementationOnce(async () => 0n, onCall);
+  random.mock.mockImplementationOnce(async () => value, onCall);
   return random;
 }
