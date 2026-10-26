@@ -11,7 +11,7 @@ import {
   isEqualPublic,
   isKeypair,
   addSecrets,
-  combinePublics,
+  multiplyPublics,
 } from 'vsslib/operations/secrets';
 import { initBackend, InvalidInput } from 'vsslib';
 import { intToLeBytes } from 'vsslib/arith';
@@ -106,13 +106,13 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
 
     // Examine zero secrets edge case
     const zeroSum = await addSecrets(ctx, []);
-    const unitPublic = await combinePublics(ctx, []);
+    const unitPublic = await multiplyPublics(ctx, []);
     assert.deepEqual(zeroSum, ctx.scalarToBytes(0n));
     assert.equal(await isEqualPublic(ctx, unitPublic, ctx.neutral.toBytes()), true);
 
     // Examine single secret edge case
     const cloneSecret = await addSecrets(ctx, secrets.slice(0, 1));
-    const clonePublic = await combinePublics(ctx, publics.slice(0, 1));
+    const clonePublic = await multiplyPublics(ctx, publics.slice(0, 1));
     assert.equal(await isEqualSecret(ctx, cloneSecret, secrets[0]), true);
     assert.equal(await isEqualPublic(ctx, clonePublic, publics[0]), true);
 
@@ -120,7 +120,7 @@ describe('Raw bytes infrastructure for asymmetric secrets', () => {
     for (let nr = 1; nr < nrTotal; nr++) {
       const secretSum = await addSecrets(ctx, secrets.slice(0, nr));
       const targetPublic = await extractPublic(ctx, secretSum);
-      const overallPublic = await combinePublics(ctx, publics.slice(0, nr))
+      const overallPublic = await multiplyPublics(ctx, publics.slice(0, nr))
       assert.equal(await isEqualPublic(ctx, overallPublic, targetPublic), true);
     }
   });

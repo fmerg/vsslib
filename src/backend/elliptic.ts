@@ -28,10 +28,12 @@ type _Codec = {
 };
 
 
+/** Point of a built-in elliptic-curve backend, wrapping a noble point */
 export class EcPoint implements Point {
   /** @internal Wrapped noble point */
   wrapped: _CurvePoint;
   private encode: _Codec['toBytes'];
+  /** Canonical encoding of the backend's system */
   toBytes = (): Uint8Array => this.encode(this.wrapped);
 
   constructor(wrapped: _CurvePoint, encode: _Codec['toBytes']) {
@@ -39,6 +41,7 @@ export class EcPoint implements Point {
     this.encode = encode;
   }
 
+  /** Equality as elements of the curve, in variable time */
   equals = async <Q extends Point>(other: Q): Promise<boolean> => {
     // Not constant-time; compare canonical encodings with isEqualBytes where
     // secret-dependent points are involved
@@ -95,6 +98,8 @@ const jubjubHashToCurve: _HashToCurve = (msg, dst) => {
 }
 
 
+/** Built-in elliptic-curve backend over noble-curves; created by
+ * `initBackend` */
 export class EcGroup extends Group<EcPoint> {
   private base: _CurvePoint;
   private zero: _CurvePoint;
@@ -137,6 +142,7 @@ export class EcGroup extends Group<EcPoint> {
   /** By identity of the raw point, as noble recognizes its base */
   private isBase = (point: _CurvePoint): boolean => point === this.base;
 
+  // SECURITY! points whose secret multiplication noble blinds
   blindsNatively = (point: EcPoint): boolean => this.blinding === 'all' ||
     (this.isBase(point.wrapped) &&
       (this.blinding === 'base' || this.baseMultiplications !== undefined));
@@ -155,10 +161,13 @@ export class EcGroup extends Group<EcPoint> {
     return true;
   }
 
+  /** Accept points of the curve in the prime-order subgroup; throws
+   * BadPointError otherwise */
   validatePoint = async (point: EcPoint): Promise<boolean> => {
     const wrapped = point.wrapped;
     if (wrapped.is0()) return true;
     this.assertOnCurve(wrapped);
+    // SECURITY!
     // Reject points with a small-order component, which would otherwise
     // vanish from verification equations for suitable challenges
     if (!wrapped.isTorsionFree()) throw new BadPointError(
@@ -191,6 +200,7 @@ export class EcGroup extends Group<EcPoint> {
   multiExpPublic = async (points: EcPoint[], scalars: bigint[]): Promise<EcPoint> => {
     validateMultiExp(points, scalars, this.order);
     const wrapped = points.map(point => point.wrapped);
+    // PERFORMANCE! Pippenger's method from the cutoff on
     if (points.length >= this.msmCutoff) return this.wrap(
       pippenger(this.Point, wrapped, scalars)
     );
@@ -213,14 +223,18 @@ export class EcGroup extends Group<EcPoint> {
     return point;
   }
 
+  /** Point addition */
   operate = async (lhs: EcPoint, rhs: EcPoint): Promise<EcPoint> => this.wrap(
     lhs.wrapped.add(rhs.wrapped)
   );
 
+  /** Point negation */
   invert = async (point: EcPoint): Promise<EcPoint> => this.wrap(
     point.wrapped.negate()
   );
 
+  /** Decode a point of the curve, not checked to lie in the subgroup; throws
+   * BadPointError on bytes that encode no point */
   bytesToPoint = (bytes: Uint8Array): EcPoint => {
     let point;
     try {
@@ -291,6 +305,7 @@ const CURVES: Record<Elliptic, {
   [Elliptic.DECAF448]: {
     Point: decaf448.Point,
     hashToCurve: (msg, DST) => decaf448_hasher.hashToCurve(msg, { DST }),
+    // PERFORMANCE!
     // noble never blinds it, since its Edwards base representative is twice
     // ed448's base but another object. Multiply that very object instead,
     // which noble blinds and tables, doubling the point rather than the secret

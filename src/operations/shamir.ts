@@ -7,9 +7,15 @@ import { validateIndexes, validateShareCount } from '../indexes';
 import { SecretShare, PublicShare } from '../types';
 
 
+/** A `(nrShares, threshold)`-sharing of a secret, created by
+ * {@link shareSecret}. It holds the secret, so drop it once the shares are
+ * distributed */
 export class ShamirSharing<P extends Point> {
+  /** Group of the sharing */
   ctx: Group<P>;
+  /** Number of shares, at indexes 1 to `nrShares` */
   nrShares: number;
+  /** Number of shares that recover the secret */
   threshold: number;
   /** @internal Sharing polynomial, read by the VSS schemes */
   polynomial: FieldPolynomial<P>;
@@ -23,10 +29,12 @@ export class ShamirSharing<P extends Point> {
     this.polynomial = polynomial;
   }
 
+  /** The shared secret */
   getOriginalSecret = (): Uint8Array => {
     return this.ctx.scalarToBytes(this.polynomial.evaluate(0n));
   }
 
+  /** All secret shares, in the order of their indexes */
   getSecretShares = async (): Promise<SecretShare[]> => {
     const polynomial = this.polynomial;
     const shares = new Array(this.nrShares);
@@ -37,6 +45,7 @@ export class ShamirSharing<P extends Point> {
     return shares;
   }
 
+  /** All public shares, in the order of their indexes */
   getPublicShares = async (): Promise<PublicShare[]> => {
     const polynomial = this.polynomial;
     const shares = [];
@@ -50,9 +59,12 @@ export class ShamirSharing<P extends Point> {
     return shares;
   }
 
+  /** Secret and public share at `index` */
   getShare = async (index: number): Promise<{
+    /** Share at `index` */
     secretShare: SecretShare,
-    publicShare: PublicShare
+    /** Its public counterpart */
+    publicShare: PublicShare,
   }> => {
     const g = this.ctx.generator;
     const x = await this.polynomial.evaluate(index);
@@ -80,6 +92,7 @@ export async function sampleSharingPolynomial<P extends Point>(
 ): Promise<FieldPolynomial<P>> {
   const coeffs = new Array(threshold);
   coeffs[0] = secret;
+  // PERFORMANCE! coefficients sampled directly instead of interpolated
   for (let i = 1; i < threshold; i++) coeffs[i] = await ctx.randomScalar();
   return new FieldPolynomial(ctx, coeffs);
 }
@@ -132,13 +145,25 @@ export async function interpolateSharingPolynomial<P extends Point>(
 }
 
 
+/** Share a secret, freshly generated unless given, such that any `threshold`
+ * of the `nrShares` shares recover it and fewer reveal nothing about it.
+ * Up to `threshold - 1` predefined shares, at indexes below `threshold`, are
+ * kept as given. Throws ShamirError unless `1 <= threshold <= nrShares < order`,
+ * on invalid predefined shares, and if `threshold - 1` predefined shares lie
+ * with the secret on a polynomial of lower degree; throws InvalidInput on an
+ * invalid secret */
 export async function shareSecret<P extends Point>(
   ctx: Group<P>,
   nrShares: number,
   threshold: number,
   secret?: Uint8Array,
   predefined?: SecretShare[],
-): Promise<{ secret: Uint8Array, sharing: ShamirSharing<P>}> {
+): Promise<{
+  /** The shared secret */
+  secret: Uint8Array,
+  /** The sharing, from which shares and VSS packets are taken */
+  sharing: ShamirSharing<P>,
+}> {
   predefined = predefined || [];
   if (nrShares < 1) throw new ShamirError(
     `Number of shares must be at least one: ${nrShares}`
@@ -174,6 +199,9 @@ export async function shareSecret<P extends Point>(
 }
 
 
+/** Secret recovered from at least `threshold` secret shares by interpolation
+ * at zero; the shares are not verified. Throws InvalidInput on fewer shares,
+ * invalid indexes or values */
 export async function combineSecretShares<P extends Point>(
   ctx: Group<P>,
   shares: SecretShare[],
@@ -191,6 +219,10 @@ export async function combineSecretShares<P extends Point>(
 }
 
 
+/** Public counterpart of the secret, recovered from at least `threshold`
+ * public shares by interpolation in the exponent; the shares are not verified
+ * (see {@link recoverPublic}). Throws InvalidInput on fewer shares, invalid
+ * indexes or values */
 export async function combinePublicShares<P extends Point>(
   ctx: Group<P>,
   shares: PublicShare[],
@@ -200,6 +232,7 @@ export async function combinePublicShares<P extends Point>(
   const lambdas = computeLambdas(ctx, shares.map(share => share.index));
   const points = [];
   for (const share of shares) points.push(await ctx.parsePoint(share.value));
+  // PERFORMANCE! one multi-exponentiation instead of one per share
   // Shares and coefficients are public, so variable time is safe
   const y = await ctx.multiExpPublic(points, lambdas);
   return y.toBytes();

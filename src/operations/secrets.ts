@@ -3,8 +3,12 @@ import { mod } from '../arith';
 import { isEqualBytes } from '../bytes';
 
 
+/** Random secret with its public counterpart */
 export async function randomSecret<P extends Point>(ctx: Group<P>): Promise<{
-  secret: Uint8Array, publicBytes: Uint8Array
+  /** Encoded uniform scalar */
+  secret: Uint8Array,
+  /** Encoded generator raised to the secret */
+  publicBytes: Uint8Array,
 }> {
   const secret = await ctx.generateSecret();
   const publicBytes = await extractPublic(ctx, secret);
@@ -12,6 +16,8 @@ export async function randomSecret<P extends Point>(ctx: Group<P>): Promise<{
 }
 
 
+/** Public counterpart of a secret, i.e. the generator raised to it; throws
+ * InvalidInput on an invalid secret */
 export async function extractPublic<P extends Point>(
   ctx: Group<P>,
   secret: Uint8Array
@@ -23,6 +29,7 @@ export async function extractPublic<P extends Point>(
 }
 
 
+/** Random group element, whose discrete log is discarded */
 export async function randomPublic<P extends Point>(
   ctx: Group<P>
 ): Promise<Uint8Array> {
@@ -30,6 +37,8 @@ export async function randomPublic<P extends Point>(
 }
 
 
+/** Decode a scalar; throws InvalidInput unless the bytes are a canonical
+ * encoding of a nonzero scalar below the group order */
 export async function parseScalar<P extends Point>(
   ctx: Group<P>,
   bytes: Uint8Array
@@ -38,6 +47,8 @@ export async function parseScalar<P extends Point>(
 }
 
 
+/** Decode a group element; throws InvalidInput unless the bytes are a
+ * canonical encoding of an element of the prime-order subgroup */
 export async function parsePoint<P extends Point>(
   ctx: Group<P>,
   bytes: Uint8Array
@@ -46,11 +57,14 @@ export async function parsePoint<P extends Point>(
 }
 
 
+/** Whether two secrets are equal, compared in constant time; throws
+ * InvalidInput on an invalid secret */
 export async function isEqualSecret<P extends Point>(
   ctx: Group<P>,
   lhs: Uint8Array,
   rhs: Uint8Array,
 ): Promise<boolean> {
+  // SECURITY!
   // Parsing rejects non-canonical encodings, so that equal secrets have
   // equal bytes, which are compared in constant time
   await ctx.parseScalar(lhs);
@@ -59,11 +73,14 @@ export async function isEqualSecret<P extends Point>(
 }
 
 
+/** Whether two group elements are equal, compared in constant time; throws
+ * InvalidInput on an invalid element */
 export async function isEqualPublic<P extends Point>(
   ctx: Group<P>,
   lhs: Uint8Array,
   rhs: Uint8Array
 ): Promise<boolean> {
+  // SECURITY!
   // Parsing rejects non-canonical encodings, so that equal points have
   // equal bytes, which are compared in constant time
   await ctx.parsePoint(lhs);
@@ -71,6 +88,8 @@ export async function isEqualPublic<P extends Point>(
   return isEqualBytes(lhs, rhs);
 }
 
+/** Whether `publicBytes` is the public counterpart of `secret`, compared in
+ * constant time; throws InvalidInput on invalid input */
 export async function isKeypair<P extends Point>(
   ctx: Group<P>,
   secret: Uint8Array,
@@ -80,10 +99,13 @@ export async function isKeypair<P extends Point>(
   const x = await ctx.parseScalar(secret);
   await ctx.parsePoint(publicBytes);
   const y = await ctx.expSecret(g, x);
+  // SECURITY! constant-time comparison of the encodings
   return isEqualBytes(y.toBytes(), publicBytes);
 }
 
 
+/** Sum of secrets modulo the group order, e.g. the joint secret of a DKG;
+ * throws InvalidInput on an invalid secret */
 export async function addSecrets<P extends Point>(
   ctx: Group<P>,
   secrets: Uint8Array[]
@@ -96,7 +118,10 @@ export async function addSecrets<P extends Point>(
 }
 
 
-export async function combinePublics<P extends Point>(
+/** Product of group elements, the public counterpart of the sum of their
+ * secrets, e.g. the joint public key of a DKG; the neutral element for none.
+ * Throws InvalidInput on an invalid element */
+export async function multiplyPublics<P extends Point>(
   ctx: Group<P>,
   publics: Uint8Array[]
 ): Promise<Uint8Array> {

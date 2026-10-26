@@ -1,4 +1,9 @@
-/** @module vsslib/nizk */
+/**
+ * Non-interactive zero-knowledge proofs of knowledge of discrete logs
+ * satisfying linear relations, by the Fiat-Shamir transform
+ *
+ * @module vsslib/nizk
+ */
 
 import { Group, Point } from './backend';
 import { Algorithm } from './types';
@@ -7,10 +12,40 @@ import { mod, intToLeBytes, leBytesToInt } from './arith';
 import { hash } from './hash';
 
 
-export type DlogPair<P extends Point> = { u: P, v: P };
-export type DDHTuple<P extends Point> = { u: P, v: P, w: P };
-export type GenericLinear<P extends Point> = { us: P[][], vs: P[] };
-export type NizkProof = { commitment: Uint8Array[], response: Uint8Array[] };
+/** Statement `v = u^x` of a discrete-log proof */
+export type DlogPair<P extends Point> = {
+  /** Base */
+  u: P,
+  /** Power */
+  v: P,
+};
+
+/** Statement `u = g^x`, `v = g^z`, `w = g^(xz)` of a Diffie-Hellman proof,
+ * with `g` the generator, i.e. `log_g v = log_u w` */
+export type DDHTuple<P extends Point> = {
+  /** `g^x` */
+  u: P,
+  /** `g^z` */
+  v: P,
+  /** `g^(xz)` */
+  w: P,
+};
+
+/** Statement `v_i = Π_j u_ij ^ x_j` of a linear-relation proof, one row per `i` */
+export type GenericLinear<P extends Point> = {
+  /** Bases, one row per relation and one column per witness */
+  us: P[][],
+  /** Right-hand sides, one per row */
+  vs: P[],
+};
+
+/** Encoded non-interactive proof */
+export type NizkProof = {
+  /** One group element per row of the relation */
+  commitment: Uint8Array[],
+  /** One scalar per witness */
+  response: Uint8Array[],
+};
 
 type ProofType = 'linear' | 'dlog' | 'ddh';
 
@@ -31,8 +66,15 @@ function encodeFields(fields: Uint8Array[]): Uint8Array {
 const encodeCount = (n: number): Uint8Array => intToLeBytes(BigInt(n), 4);
 
 
+/** Fiat-Shamir proofs of knowledge of discrete logs over a group, with
+ * challenges hashed by `algorithm`. Every proof may be bound to a `nonce`,
+ * against replay, and to `extras`, further public context; verification needs
+ * the same values. Verifiers return false on a wrong proof and throw
+ * InvalidInput on malformed input */
 export class NizkProtocol<P extends Point>{
+  /** Group of the statements */
   ctx: Group<P>;
+  /** Hash function of the challenges */
   algorithm: Algorithm;
 
   constructor(ctx: Group<P>, algorithm: Algorithm) {
@@ -46,6 +88,7 @@ export class NizkProtocol<P extends Point>{
     const n = response.length;
     const innerComm = new Array(m);
     const innerResp = new Array(n);
+    // PERFORMANCE! no subgroup check on the commitments
     // Only compared with elements of the subgroup, so that a small-order
     // component makes verification fail without a subgroup check, as long as
     // the relation points are subgroup elements
@@ -70,6 +113,7 @@ export class NizkProtocol<P extends Point>{
     const { modulus, order, generator } = this.ctx;
     const { us, vs } = relation;
     const toBytes = (p: P) => p.toBytes();
+    // SECURITY! length-prefixed fields, so distinct inputs encode differently
     const input = encodeFields([
       new TextEncoder().encode(`vsslib:nizk:${type}`),
       intToLeBytes(modulus),
@@ -83,13 +127,14 @@ export class NizkProtocol<P extends Point>{
       ...commitment.map(toBytes),
       encodeCount(extras.length),
       ...extras,
+      // SECURITY! binds the proof to the nonce, against replay
       nonce || new Uint8Array(),
     ]);
     const digest = await hash(this.algorithm).digest(input);
     return mod(leBytesToInt(digest), order);
   }
 
-  /* Prove knowledge of `x_j`'s such that `v_i = Π_{j} u_ij ^ x_j` */
+  /** Prove knowledge of the witnesses `x_j` such that `v_i = Π_j u_ij ^ x_j` */
   proveLinear = async (
     witness: bigint[],
     relation: GenericLinear<P>,
@@ -97,6 +142,7 @@ export class NizkProtocol<P extends Point>{
     extras: Uint8Array[] = [],
   ): Promise<NizkProof> => this.prove('linear', witness, relation, nonce, extras);
 
+  /** Verify a proof of {@link proveLinear} */
   verifyLinear = async (
     relation: GenericLinear<P>,
     proof: NizkProof,
@@ -156,6 +202,7 @@ export class NizkProtocol<P extends Point>{
     if (vs.length !== commitment.length)
       throw new InvalidInput('Incompatible lengths');
     const challenge = await this.computeChallenge(type, relation, commitment, extras, nonce);
+    // PERFORMANCE!
     // Relation, challenge and responses are public, so that variable time is
     // safe: check `Π_j u_ij ^ s_j * v_i ^ (-c) = commitment_i` by one
     // multi-exponentiation per row
@@ -170,7 +217,7 @@ export class NizkProtocol<P extends Point>{
     return flag;
   }
 
-  /* Prove knowledge of `x` such that `v = u ^ x` */
+  /** Prove knowledge of `x` such that `v = u ^ x` */
   proveDlog = async (
     x: bigint, { u, v }: DlogPair<P>, nonce?: Uint8Array, extras: Uint8Array[] = [],
   ): Promise<NizkProof> => {
@@ -186,6 +233,7 @@ export class NizkProtocol<P extends Point>{
     );
   }
 
+  /** Verify a proof of {@link proveDlog} */
   verifyDlog = async (
     { u, v }: DlogPair<P>, proof: NizkProof, nonce?: Uint8Array, extras: Uint8Array[] = [],
   ): Promise<boolean> => {
@@ -201,7 +249,8 @@ export class NizkProtocol<P extends Point>{
     );
   }
 
-  /* Prove knowledge of `z` such that `u = g ^ x`, `v = g ^ z` and `w = g ^ xz` */
+  /** Prove knowledge of `z` such that `u = g ^ x`, `v = g ^ z` and `w = g ^ xz`,
+   * i.e. that `(u, v, w)` is a Diffie-Hellman tuple */
   proveDDH = async (z: bigint, { u, v, w }: DDHTuple<P>, nonce?: Uint8Array): Promise<NizkProof> => {
     const g = this.ctx.generator;
     const n = this.ctx.neutral;
@@ -216,6 +265,7 @@ export class NizkProtocol<P extends Point>{
     );
   }
 
+  /** Verify a proof of {@link proveDDH} */
   verifyDDH = async ({ u, v, w }: DDHTuple<P>, proof: NizkProof, nonce?: Uint8Array): Promise<boolean> => {
     const g = this.ctx.generator;
     const n = this.ctx.neutral;
@@ -231,6 +281,7 @@ export class NizkProtocol<P extends Point>{
   }
 }
 
+/** NIZK protocol over `ctx` with challenges hashed by `algorithm` */
 export function nizk<P extends Point>(ctx: Group<P>, algorithm: Algorithm) {
   return new NizkProtocol(ctx, algorithm);
 }

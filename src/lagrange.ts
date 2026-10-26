@@ -49,6 +49,7 @@ export function computeLambda<P extends Point>(
       denominator = reduce(denominator * BigInt(j - index));
     }
   }
+  // PERFORMANCE! one inversion of the product of differences
   return mod(numerator * modInv(denominator, order), order);
 }
 
@@ -72,6 +73,7 @@ export function computeLambdas<P extends Point>(
     }
     return d;
   });
+  // PERFORMANCE! one batch inversion for all coefficients
   return modInvBatch(denominators, order).map(w => mod(numerator * w, order));
 }
 
@@ -123,6 +125,7 @@ export function expandBasis(xs: bigint[], order: bigint): {
   const denominators = new Array(k);
   for (let j = 0; j < k; j++) {
     const xj = xs[j];
+    // PERFORMANCE! divide the expanded product: quadratic, not cubic time
     // Synthetic division by (x - x_j)
     const pj = new Array(k);
     pj[k - 1] = master[k];
@@ -190,6 +193,7 @@ export class LagrangePolynomial<P extends Point> extends FieldPolynomial<P> {
     const ys = points.map(([, y]) => y);
     const { numerators, denominators } = expandBasis(xs, order);
     let ws: bigint[];
+    // PERFORMANCE! one batch inversion of the basis denominators
     try { ws = modInvBatch(denominators, order); } catch (err: unknown) {
       if (err instanceof NoInverseError) throw new InterpolationError(
         'Not all provided x\'s are distinct modulo order'

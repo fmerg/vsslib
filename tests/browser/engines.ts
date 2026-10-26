@@ -8,7 +8,7 @@ import { resolveTestConfig } from '../environ';
 // Runs the flows of the browser bundle in real browser engines. Not a spec
 // file, so that the default test run leaves it out: it needs the browsers of
 // the Playwright image (see .gitlab-ci.yml) or, locally,
-// `npx --no-install playwright-core install` (see README, Browser check).
+// `npx --no-install playwright-core install` (see README, Tests).
 // BROWSERS selects engines, e.g. BROWSERS=chromium,firefox
 
 const { systems, algorithms, nrShares, threshold } = resolveTestConfig();

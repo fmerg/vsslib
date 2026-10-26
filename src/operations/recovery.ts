@@ -7,9 +7,14 @@ import { validateIndex, validateIndexes, validateShareCount, indexToBytes } from
 import { computeLambdas } from '../lagrange';
 
 
+/** Nonces of the shareholders of a recovery session, by share index */
 export type Nonces = { [key: number]: Uint8Array };
 
 
+/** Public share of a secret share with a Schnorr proof of knowledge of the
+ * latter, bound to the share index and, if given, to the combiner's `nonce`.
+ * The hash `algorithm` defaults to SHA-256 and must match the verifier's.
+ * Throws InvalidInput on an invalid share */
 export async function createSchnorrPacket<P extends Point>(
   ctx: Group<P>,
   share: SecretShare,
@@ -30,6 +35,10 @@ export async function createSchnorrPacket<P extends Point>(
 }
 
 
+/** Extract the public share of a Schnorr packet after verifying its proof
+ * under `algorithm` and `nonce`, as given to {@link createSchnorrPacket}.
+ * Throws InvalidPublicShare if the proof fails, and InvalidInput on a
+ * malformed packet */
 export async function parseSchnorrPacket<P extends Point>(
   ctx: Group<P>,
   packet: SchnorrPacket,
@@ -69,6 +78,13 @@ async function verifySchnorrPacket<P extends Point>(
 }
 
 
+/** Public counterpart of the shared secret, recovered from at least
+ * `threshold` Schnorr packets: every proof is verified, with the nonce of its
+ * index, and the valid public shares are interpolated in the exponent. Throws
+ * InvalidPublicShare at the first invalid proof, and InvalidInput on fewer than
+ * `threshold` packets, invalid or duplicate indexes and malformed packets. With
+ * `errorOnInvalid: false`, invalid and malformed packets are blamed instead,
+ * and InvalidPublicShare is thrown only if fewer than `threshold` remain */
 export async function recoverPublic<P extends Point>(
   ctx: Group<P>,
   packets: SchnorrPacket[],
@@ -82,7 +98,12 @@ export async function recoverPublic<P extends Point>(
     nonces?: Nonces,
     errorOnInvalid?: boolean,
   } = {},
-): Promise<{ recovered: Uint8Array, blame: PublicShare[] }> {
+): Promise<{
+  /** Encoded public counterpart of the secret */
+  recovered: Uint8Array,
+  /** Public shares of the blamed packets, empty unless `errorOnInvalid` is false */
+  blame: PublicShare[],
+}> {
   validateShareCount(packets.length, threshold);
   // Malformed or duplicate indexes cannot be attributed to a single
   // shareholder, so they are rejected regardless of errorOnInvalid
@@ -93,6 +114,7 @@ export async function recoverPublic<P extends Point>(
   for (const packet of packets) {
     const nonce = nonces[packet.index];
     try {
+      // PERFORMANCE! public share parsed once, by its verification
       points.push(await verifySchnorrPacket(ctx, packet, algorithm, nonce));
       indexes.push(packet.index);
     } catch (err: unknown) {
@@ -110,6 +132,7 @@ export async function recoverPublic<P extends Point>(
   // Interpolate over valid shares only, so that blamed indexes do not
   // distort the Lagrange coefficients. Shares and coefficients are public,
   // so variable time is safe
+  // PERFORMANCE! one multi-exponentiation instead of one per share
   const lambdas = computeLambdas(ctx, indexes);
   const recovered = (await ctx.multiExpPublic(points, lambdas)).toBytes();
   return { recovered, blame };
