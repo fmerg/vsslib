@@ -12,7 +12,13 @@ import { evalCommitments } from './commitments';
  * top coefficient commits to the neutral element */
 export async function createFeldmanPackets<P extends Point>(
   sharing: ShamirSharing<P>,
-): Promise<{ packets: SecretPacket[], commitments: Uint8Array[] }> {
+): Promise<{
+  /** One per share, to be sent privately to its shareholder */
+  packets: SecretPacket[],
+  /** The generator raised to each coefficient of the sharing polynomial, to be
+   * broadcast; the first is the public counterpart of the secret */
+  commitments: Uint8Array[],
+}> {
   const { expSecret, generator: g } = sharing.ctx;
   const { coeffs } = sharing.polynomial;
   const commitments = [];
@@ -24,6 +30,10 @@ export async function createFeldmanPackets<P extends Point>(
 }
 
 
+/** Verify a secret share against Feldman commitments of a
+ * `threshold`-sharing; returns true or throws InvalidSecretShare if the share
+ * does not match or the commitments do not number `threshold`, and
+ * InvalidInput on malformed input */
 export async function verifyFeldmanCommitments<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
@@ -44,12 +54,17 @@ export async function verifyFeldmanCommitments<P extends Point>(
 }
 
 
+/** Extract the secret share of a Feldman packet, verified as by
+ * {@link verifyFeldmanCommitments}, which throws on failure */
 export async function parseFeldmanPacket<P extends Point>(
   ctx: Group<P>,
   commitments: Uint8Array[],
   packet: SecretPacket,
   threshold: number,
-): Promise<{ share: SecretShare }> {
+): Promise<{
+  /** The verified share */
+  share: SecretShare,
+}> {
   const { value, index } = packet;
   const share = { value, index };
   await verifyFeldmanCommitments(ctx, commitments, share, threshold);
