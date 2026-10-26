@@ -121,7 +121,7 @@ export async function addSecrets<P extends Point>(
 /** Product of group elements, the public counterpart of the sum of their
  * secrets, e.g. the joint public key of a DKG; the neutral element for none.
  * Throws InvalidInput on an invalid element */
-export async function combinePublics<P extends Point>(
+export async function multiplyPublics<P extends Point>(
   ctx: Group<P>,
   publics: Uint8Array[]
 ): Promise<Uint8Array> {

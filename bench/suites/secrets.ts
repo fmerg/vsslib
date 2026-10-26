@@ -3,7 +3,7 @@ import {
   randomPublic,
   extractPublic,
   addSecrets,
-  combinePublics,
+  multiplyPublics,
 } from 'vsslib';
 import { Ctx, Suite, defineCase } from '../types';
 
@@ -46,12 +46,12 @@ const suite: Suite = {
       run: async (ctx, secrets) => addSecrets(ctx, secrets),
     }),
     defineCase({
-      name: 'combinePublics',
+      name: 'multiplyPublics',
       uses: ['nrShares'],
       setup: async (ctx, { nrShares }) => (
         await randomSecrets(ctx, nrShares)).map(s => s.publicBytes
       ),
-      run: async (ctx, publics) => combinePublics(ctx, publics),
+      run: async (ctx, publics) => multiplyPublics(ctx, publics),
     }),
   ],
 };

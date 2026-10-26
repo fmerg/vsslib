@@ -5,7 +5,7 @@ import {
   initBackend,
   derivePedersenBase,
   extractPublic,
-  combinePublics,
+  multiplyPublics,
   addSecrets,
   combineSecretShares,
   isEqualPublic,
@@ -51,7 +51,7 @@ describe('Example flows', () => {
       ctx, nrShares, threshold, pedersenBase
     );
     const jointSecret = await addSecrets(ctx, secrets);
-    const jointPublic = await combinePublics(
+    const jointPublic = await multiplyPublics(
       ctx, await Promise.all(secrets.map(secret => extractPublic(ctx, secret)))
     );
     const combined = await combineSecretShares(

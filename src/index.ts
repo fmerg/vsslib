@@ -31,7 +31,7 @@ export {
   isEqualPublic,
   isKeypair,
   addSecrets,
-  combinePublics,
+  multiplyPublics,
   parseScalar,
   parsePoint,
   shareSecret,

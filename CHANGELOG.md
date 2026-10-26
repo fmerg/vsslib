@@ -10,6 +10,7 @@ All notable changes to this project will be documented in this file.
 - Node.js 20.19 or later is required.
 - The package is published with an `exports` map; import from `vsslib`, `vsslib/backend` and `vsslib/nizk`.
 - `unpackScalar` and `unpackPoint` are renamed to `parseScalar` and `parsePoint`.
+- `combinePublics` is renamed to `multiplyPublics`.
 - `addSecrets` is async.
 - `verifyFeldmanCommitments` and `verifyPedersenCommitments` take `(ctx, commitments, [pedersenBase,] share, [binding], threshold)`.
 - `verifyFeldmanCommitments`, `verifyPedersenCommitments`, `parseFeldmanPacket` and `parsePedersenPacket` take a required `threshold` and reject any other number of commitments.

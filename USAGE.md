@@ -55,7 +55,7 @@ values and non-canonical encodings (see
 [Input validation](./SECURITY.md#input-validation)).
 
 Related helpers: `randomPublic`, `isEqualSecret`, `isEqualPublic`, `isKeypair`,
-`addSecrets` and `combinePublics`.
+`addSecrets` and `multiplyPublics`.
 
 ## Shamir's Secret Sharing (SSS)
 

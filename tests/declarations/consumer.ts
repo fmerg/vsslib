@@ -12,7 +12,7 @@ import {
   createSchnorrPacket,
   recoverPublic,
   combineSecretShares,
-  combinePublics,
+  multiplyPublics,
 } from '../../dist/index';
 import type { ShamirSharing, SecretShare } from '../../dist/index';
 import { Group, BadPointError, validateMultiExp } from '../../dist/backend/index';
@@ -34,7 +34,7 @@ export async function flows(): Promise<void> {
   const packets = await Promise.all(shares.map(share => createSchnorrPacket(ctx, share)));
   await recoverPublic(ctx, packets, 3);
   await combineSecretShares(ctx, shares.slice(0, 3), 3);
-  await combinePublics(ctx, []);
+  await multiplyPublics(ctx, []);
 }
 
 
