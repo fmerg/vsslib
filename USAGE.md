@@ -1,15 +1,18 @@
 # Usage
 
-This guide walks through the operations of vsslib with short examples. For the
-signatures and every thrown error, see the API reference (`npm run docs`); for
-complete flows, see [`examples`](./examples/dkg.ts). Security considerations
-are in [SECURITY.md](./SECURITY.md) and measurements in
+For the API reference, run `npm run docs`; for complete flows, see
+[`examples`](./examples/dkg.ts); for performance, see
 [PERFORMANCE.md](./PERFORMANCE.md).
+
+Vsslib validates every input and hardens its own arithmetic on secrets; the
+safeguards that depend on the application are up to the caller, e.g. nonces
+against replay, zeroization of returned secrets, complaint handling in a DKG
+and isolation in browsers (see [SECURITY.md](./SECURITY.md)).
 
 ## Cryptosystem setup
 
-Every operation takes a backend instance, `ctx`, which the parties of a
-protocol must share:
+Vsslib works over any discrete-log group, which a backend provides; parties
+interact only if they use the same backend.
 
 ```js
 import { initBackend } from "vsslib";
@@ -17,34 +20,27 @@ import { initBackend } from "vsslib";
 const ctx = initBackend("ed25519");
 ```
 
-The built-in backends are the following.
+The built-in backends wrap
+[`noble-curves`](https://github.com/paulmillr/noble-curves). The Edwards curves
+`ed25519` and `ed448` (cofactors 8 and 4) encode points per RFC 8032 in 32 and
+57 bytes, and `jubjub` (cofactor 8) per Zcash in 32 bytes; on these, vsslib
+rejects points outside the prime-order subgroup. The prime-order groups
+`ristretto255` and `decaf448` encode points per RFC 9496 in 32 and 56 bytes. The
+prime-order Weierstrass curves `secp256k1`, `p256`, `p384` and `p521` (NIST
+P-256, P-384 and P-521) accept only compressed SEC1 points, in 33, 33, 49 and
+67 bytes, with the single byte `0x00` for the point at infinity.
 
-| System         | Group                      | Point encoding     | Point bytes | Scalar bytes |
-|----------------|----------------------------|--------------------|-------------|--------------|
-| `ed25519`      | edwards25519, cofactor 8   | RFC 8032           | 32          | 32           |
-| `ed448`        | edwards448, cofactor 4     | RFC 8032           | 57          | 56           |
-| `jubjub`       | Jubjub, cofactor 8         | Zcash              | 32          | 32           |
-| `ristretto255` | ristretto255, prime order  | RFC 9496           | 32          | 32           |
-| `decaf448`     | decaf448, prime order      | RFC 9496           | 56          | 56           |
-| `secp256k1`    | secp256k1, prime order     | SEC1, compressed   | 33          | 32           |
-| `p256`         | NIST P-256, prime order    | SEC1, compressed   | 33          | 32           |
-| `p384`         | NIST P-384, prime order    | SEC1, compressed   | 49          | 48           |
-| `p521`         | NIST P-521, prime order    | SEC1, compressed   | 67          | 66           |
+Scalars are fixed-width little-endian on every backend: 32 bytes, except 56 on
+`ed448` and `decaf448`, 48 on `p384` and 66 on `p521`. Reverse the bytes of SEC1
+secret keys when exchanging them with other libraries. Pedersen bases are
+derived by RFC 9380 hash-to-curve (the Zcash group hash on `jubjub`).
 
-- On the curves with a cofactor, points outside the prime-order subgroup are
-  rejected.
-- SEC1 points are accepted only compressed, with the single byte `0x00` for the
-  point at infinity; uncompressed and hybrid encodings are rejected.
-- Scalars are encoded little-endian with fixed width on every backend, so the
-  conventionally big-endian secret keys of the SEC1 curves must be byte-reversed
-  when exchanged with other libraries.
-- Pedersen bases are derived with RFC 9380 hash-to-curve, except on `jubjub`,
-  which uses the Zcash group hash.
+Any other implementation of the `Group` interface can replace a built-in
+backend (see [Backend](./README.md#backend)).
 
-Any other implementation of the `Group` interface can be passed in place of a
-built-in backend (see [Backend](./README.md#backend)).
+### Secrets and public keys
 
-## Secrets and public keys
+A party generates a keypair, or derives the public key of a secret:
 
 ```js
 import { randomSecret, extractPublic } from "vsslib";
@@ -53,29 +49,32 @@ const { secret, publicBytes } = await randomSecret(ctx);
 const same = await extractPublic(ctx, secret);
 ```
 
-`secret` encodes a uniformly random scalar modulo the group order, and
-`publicBytes` the generator raised to it. Every function taking a secret or a
-public key throws `InvalidInput` on bytes that are not a canonical encoding;
-see [Input validation](./SECURITY.md#input-validation). The related helpers are
-`randomPublic`, `isEqualSecret`, `isEqualPublic`, `isKeypair`, `addSecrets` and
-`combinePublics`.
+`secret` is a uniformly random scalar and `publicBytes` the generator raised to
+it. Functions taking secrets or public keys throw `InvalidInput` on invalid
+values and non-canonical encodings (see
+[Input validation](./SECURITY.md#input-validation)).
+
+Related helpers: `randomPublic`, `isEqualSecret`, `isEqualPublic`, `isKeypair`,
+`addSecrets` and `combinePublics`.
 
 ## Shamir's Secret Sharing (SSS)
 
 ### Sharing a secret
 
+The dealer shares a fresh secret, or a given one:
+
 ```js
 import { shareSecret } from "vsslib";
 
-const { secret, sharing } = await shareSecret(ctx, n, t);          // fresh secret
-const { sharing: other } = await shareSecret(ctx, n, t, secret);   // given secret
+const { secret, sharing } = await shareSecret(ctx, n, t);
+const { sharing: other } = await shareSecret(ctx, n, t, secret);
 ```
 
-This creates an `(n, t)`-sharing, i.e. `n` shares of which any `t` recover the
-secret. It throws `ShamirError` unless `1 <= t <= n < q`, with `q` the group
-order, and `InvalidInput` on an invalid secret.
+`shareSecret` creates `n` shares, any `t` of which recover the secret. It throws
+`ShamirError` unless `1 <= t <= n < q`, with `q` the group order, and
+`InvalidInput` on an invalid secret.
 
-Up to `t - 1` shares may be fixed in advance, at indexes from 1 to `t - 1`:
+Up to `t - 1` shares, at indexes 1 to `t - 1`, may be fixed in advance:
 
 ```js
 const { sharing } = await shareSecret(ctx, n, t, secret, [
@@ -84,13 +83,13 @@ const { sharing } = await shareSecret(ctx, n, t, secret, [
 ]);
 ```
 
-This throws `ShamirError` if there are `t` or more predefined shares, if an
-index is out of range or repeated, or if a value is invalid. It also throws if
-`t - 1` predefined shares lie with the secret on a polynomial of degree below
-`t - 1`, e.g. if they all equal the secret, since fewer than `t` shares would
-then recover it.
+This throws `ShamirError` on `t` or more predefined shares, on out-of-range or
+repeated indexes, on invalid values, and if the predefined shares would let
+fewer than `t` shares recover the secret (see [Threshold](#threshold)).
 
 ### Accessing the shares
+
+The dealer reads the secret and the shares to distribute from the sharing:
 
 ```js
 const secret = sharing.getOriginalSecret();
@@ -100,11 +99,14 @@ const { secretShare, publicShare } = await sharing.getShare(i);
 ```
 
 A public share is the generator raised to the secret share, i.e.
-`await extractPublic(ctx, secretShare.value)` with the same index. Drop the
-sharing once the shares are distributed, since it holds the secret (see
-[Side-channel attacks](./SECURITY.md#side-channel-attacks)).
+`extractPublic(ctx, secretShare.value)` at the same index. The sharing holds the
+secret, so drop it once the shares are distributed (see
+[Memory](./SECURITY.md#memory)).
 
 ### Combining shares
+
+A combiner recovers the secret from `t` secret shares, or the public key from
+`t` public shares:
 
 ```js
 import { combineSecretShares, combinePublicShares } from "vsslib";
@@ -114,12 +116,12 @@ const combinedPublic = await combinePublicShares(ctx, publicShares, t);
 ```
 
 Both interpolate at zero, over scalars and in the exponent respectively, and
-throw `InvalidInput` on fewer than `t` shares or on invalid indexes. Neither
-verifies the shares; use the [VSS schemes](#verifiable-secret-sharing-vss) or
-[verifiable public recovery](#verifiable-public-recovery) for that.
+throw `InvalidInput` on fewer than `t` shares or invalid indexes. Neither
+verifies the shares; use [VSS](#verifiable-secret-sharing-vss) or
+[verifiable public key recovery](#verifiable-public-key-recovery) for that.
 
-Protocols that combine shares themselves can compute the Lagrange coefficients
-at zero, as bigints modulo the group order:
+Protocols combining shares themselves can compute the Lagrange coefficients at
+zero, as bigints modulo the group order:
 
 ```js
 import { computeLambda, computeLambdas } from "vsslib";
@@ -128,25 +130,24 @@ const lambdas = computeLambdas(ctx, [1, 3, 4]);   // one per index, in order
 const lambda = computeLambda(ctx, 3, [1, 3, 4]);  // that of index 3 only
 ```
 
-Prefer `computeLambdas` when all coefficients are needed, since it inverts once
-for all of them (see [Common denominator](./PERFORMANCE.md#common-denominator)).
-Both throw `InvalidInput` unless the indexes are distinct positive safe integers
-below the group order, and `computeLambda` also if `index` is not among them.
+`computeLambdas` inverts once for all coefficients, so prefer it when all are
+needed (see [Common denominator](./PERFORMANCE.md#common-denominator)). Both
+throw `InvalidInput` unless the indexes are distinct positive safe integers
+below the group order; `computeLambda` also if `index` is not among them.
 
 ## Verifiable Secret Sharing (VSS)
 
-Shareholders must be able to check that their shares come from one and the same
-sharing, so as to defend against a malicious dealer. In the Feldman and Pedersen
-schemes, the dealer broadcasts commitments to the sharing polynomial and sends
-each shareholder a packet, which the shareholder verifies against them.
-Commitments always number `t`, and verification rejects any other number, so
-that a dealer cannot share with another threshold than the agreed one.
+To defend against a malicious dealer, shareholders check that their shares stem
+from one sharing. In the Feldman and Pedersen schemes, the dealer broadcasts
+commitments to the sharing polynomial and sends each shareholder a packet,
+verified against them. Verification requires exactly `t` commitments, which
+bound the degree of the sharing polynomial by `t - 1` (see
+[Threshold](#threshold)).
 
 > **Warning**
-> Applying VSS correctly in a DKG protocol is out of the library's scope. It is
-> the caller's responsibility to handle verification errors according to the
-> protocol's complaint policy, and to ensure that only honest parties end up
-> with a share.
+> Applying VSS correctly in a DKG protocol is out of scope: handling
+> verification errors per the protocol's complaint policy, and ensuring that
+> only honest parties end up with a share, is up to the caller.
 
 ### Feldman scheme
 
@@ -167,17 +168,16 @@ try {
 ```
 
 `parseFeldmanPacket` throws `InvalidSecretShare` if the share does not match the
-commitments or if these do not number `t`, and `InvalidInput` on malformed
-input. A share received otherwise is checked by
-`verifyFeldmanCommitments(ctx, commitments, share, t)`, which throws the same
-errors. Feldman commitments reveal the public key of the secret.
+commitments or these do not number `t`, and `InvalidInput` on malformed input.
+`verifyFeldmanCommitments(ctx, commitments, share, t)` checks a share received
+otherwise, with the same errors. The first Feldman commitment is the public key
+of the secret, which every recipient thus learns.
 
 ### Pedersen scheme
 
-Pedersen commitments hide the secret as well, at the cost of a second base `h`
-whose discrete log with respect to the generator must be unknown to everyone.
-Derive it from a public seed agreed upon by the parties, e.g. a session
-identifier:
+Pedersen commitments hide the secret, at the cost of a second base `h`
+whose discrete log nobody may know. All parties derive it from a public seed
+they agree on, e.g. a session identifier:
 
 ```js
 import { derivePedersenBase } from "vsslib";
@@ -186,31 +186,33 @@ const pedersenBase = await derivePedersenBase(ctx, seed);  // seed is optional
 ```
 
 > **Warning**
-> Never use a base generated by one of the parties, e.g. with `randomPublic`.
-> Whoever knows its discrete log can open commitments to arbitrary values,
-> i.e. distribute invalid shares that pass verification.
+> Never use a base generated by a party, e.g. with `randomPublic` (see
+> [Pedersen base](#pedersen-base)).
 
-Reuse the same base across operations: vsslib keeps the parsed base and, from
-its second use on, a precomputed table for it (see
+Reuse the base: vsslib keeps it parsed and, from its second use on, attaches a
+precomputed table (see
 [Pedersen base table](./PERFORMANCE.md#pedersen-base-table)).
 
 ```js
 import { createPedersenPackets, parsePedersenPacket } from "vsslib";
 
+// Dealer: broadcast the commitments, send each packet privately
 const { packets, commitments } = await createPedersenPackets(sharing, pedersenBase);
+
+// Shareholder
 const { share, binding } = await parsePedersenPacket(ctx, commitments, pedersenBase, packet, t);
 ```
 
-Each packet carries the share's secret `binding`, which verification uses and
-which may be discarded afterwards. Errors are as in the Feldman scheme, and
+Each packet carries the share's secret `binding`, needed only for verification.
+Errors are as for Feldman;
 `verifyPedersenCommitments(ctx, commitments, pedersenBase, share, binding, t)`
 verifies a share received otherwise.
 
-## Verifiable public recovery
+## Verifiable public key recovery
 
 To reconstruct the public key of a shared secret, e.g. for certification, a
-combiner collects public shares from the shareholders, each with a Schnorr proof
-of knowledge of the secret share.
+combiner collects public shares, each with a Schnorr proof of knowledge of the
+secret share.
 
 ```js
 import { createSchnorrPacket, recoverPublic } from "vsslib";
@@ -222,26 +224,28 @@ const packet = await createSchnorrPacket(ctx, share, { algorithm: "sha256", nonc
 const { recovered } = await recoverPublic(ctx, packets, t, { algorithm: "sha256", nonces });
 ```
 
-The hash algorithm defaults to SHA-256 and must be the same on both sides; a
-mismatch makes the proofs fail. The nonce is optional and defends against
-replayed proofs (see [Replay attacks](./SECURITY.md#replay-attacks)): the
-combiner sends each shareholder a fresh nonce, e.g. from `randomNonce()`, and
-passes them to `recoverPublic` by index. A single packet is verified by
-`parseSchnorrPacket(ctx, packet, { algorithm, nonce })`.
+The hash algorithm defaults to SHA-256 and must match on both sides, else the
+proofs fail. The optional nonce defends against replayed proofs (see
+[Replay attacks](./SECURITY.md#replay-attacks)): the combiner sends each
+shareholder a fresh nonce, e.g. from `randomNonce()`, and passes them to
+`recoverPublic` by index.
+`parseSchnorrPacket(ctx, packet, { algorithm, nonce })` verifies a single
+packet.
 
-`recoverPublic` throws `InvalidPublicShare` at the first proof that fails, and
+`recoverPublic` throws `InvalidPublicShare` at the first failing proof, and
 `InvalidInput` on fewer than `t` packets, on indexes that are not distinct
-positive integers, and at the first malformed packet. It interpolates over all
-packets whose proofs verify, not only `t` of them, which gives the same result
-for any `t` of them as long as the shares lie on one polynomial of degree
-`t - 1`. A share off that polynomial but validly proven distorts the result,
+positive integers and at the first malformed packet.
+
+It interpolates over all packets whose proofs verify, not just `t`, which
+agrees with any `t` of them as long as the shares lie on one polynomial of
+degree `t - 1`. A validly proven share off that polynomial distorts the result,
 and only the dealer's commitments reveal it (see
 [VSS](#verifiable-secret-sharing-vss)).
 
 > **Warning**
-> Recovery does not check that the public shares stem from a Shamir sharing;
-> it only checks that each shareholder knows its secret share.
-> `combinePublicShares` skips even that check.
+> Recovery checks only that each shareholder knows its secret share, not that
+> the public shares stem from a Shamir sharing. `combinePublicShares` checks
+> neither.
 
 To identify every cheating shareholder instead of aborting at the first:
 
@@ -253,29 +257,38 @@ if (blame.length > 0) {
 ```
 
 `blame` lists the public shares, with their indexes, whose proofs fail or whose
-packets are malformed, and the result is interpolated over the others. If fewer
-than `t` remain, it throws `InvalidPublicShare`; invalid or duplicate indexes
-still throw `InvalidInput`, since they cannot be attributed to one shareholder.
+packets are malformed; the result is interpolated over the rest. If fewer than
+`t` remain, it throws `InvalidPublicShare`; invalid or duplicate indexes still
+throw `InvalidInput`, since they cannot be attributed to one shareholder.
 Always check `blame` with this option.
 
-## NIZK proofs
+### Sharing integrity
 
-[`vsslib/nizk`](./src/nizk.ts) proves knowledge of discrete logs satisfying
-linear relations, `v_i = Π_j u_ij ^ x_j`, made non-interactive by the
-Fiat-Shamir transform over a choice of hash function. Schnorr packets use its
-discrete-log proofs; protocols can use it for their own statements.
+#### Threshold
 
-```js
-import { nizk } from "vsslib/nizk";
+A sharing of threshold `t` uses a polynomial of degree `t - 1`, so that any `t`
+(but not less) shares recover the secret key. A dealer may announce `t` but
+share a polynomial of another degree `d`:
 
-const protocol = nizk(ctx, "sha256");
-const x = await ctx.parseScalar(secret);
-const proof = await protocol.proveDlog(x, { u: ctx.generator, v: y }, nonce);
-const valid = await protocol.verifyDlog({ u: ctx.generator, v: y }, proof, nonce);
-```
+- `d > t - 1`: `t` shares do not recover the secret.
+- `d < t - 1`: `d + 1` shares, fewer than `t`, recover it.
 
-Besides discrete logs (`proveDlog`), it proves equality of discrete logs, i.e.
-Diffie-Hellman tuples (`proveDDH`), and generic linear relations
-(`proveLinear`), each with its `verify` counterpart. The optional `nonce` binds
-a proof to a session (see [Replay attacks](./SECURITY.md#replay-attacks)), and
-`extras` to further public context, e.g. the share index in Schnorr packets.
+Verification requires exactly `t` commitments, which bound the degree by
+`t - 1`, and throws `InvalidSecretShare` otherwise; this rules out the first
+case. The second remains possible with vanished top coefficients, which
+verification accepts: dealing commits to them with the neutral element, and
+Pedersen commitments hide them. A dishonest dealer, who knows the secret anyway,
+can thus still cause it.
+
+Predefined shares can cause it without dishonesty. With `t - 1` predefined
+shares, no point of the sharing polynomial is random; if they lie with the
+secret on a polynomial of lower degree (e.g. all equal to the secret), the
+sharing has that degree. `shareSecret` detects this and throws `ShamirError`.
+
+#### Pedersen base
+
+Pedersen commitments bind the dealer only if nobody knows the discrete log of
+the base `h`; whoever knows it can distribute invalid shares that pass
+verification. `derivePedersenBase` hashes a public seed to the group, which
+yields an element of unknown discrete log; parsing rejects the neutral element
+and the generator (discrete logs 0 and 1).
