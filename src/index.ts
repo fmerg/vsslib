@@ -24,7 +24,7 @@ export {
   isEqualPublic,
   isKeypair,
   addSecrets,
-  addPublics,
+  combinePublics,
   parseScalar,
   parsePoint,
   shareSecret,

@@ -7,13 +7,11 @@ import { secp256k1, secp256k1_hasher } from '@noble/curves/secp256k1.js';
 import {
   p256, p256_hasher, p384, p384_hasher, p521, p521_hasher
 } from '@noble/curves/nist.js';
-import { randomBytes } from '@noble/hashes/utils.js';
 import { concatBytes, asciiToBytes } from '@noble/curves/utils.js';
 
 import { Elliptic } from '../enums';
 import { System } from '../types';
-import { BadPointError, BadScalarError } from '../errors';
-import { mod, leBytesToInt } from '../arith';
+import { BadPointError } from '../errors';
 import { Point, Group, validateMultiExp } from './abstract';
 
 
@@ -136,33 +134,12 @@ export class EcGroup extends Group<EcPoint> {
 
   private wrap = (point: _CurvePoint): EcPoint => new EcPoint(point, this.codec.toBytes);
 
-  // Reduce 128 extra bits modulo the order, so that the bias is negligible,
-  // and wipe the random bytes, which determine the scalar
-  randomScalar = async (): Promise<bigint> => {
-    const bytes = randomBytes(this.scalarBytes + 16);
-    const scalar = mod(leBytesToInt(bytes), this.order);
-    bytes.fill(0);
-    return scalar;
-  }
-
-  randomPoint = async (): Promise<EcPoint> => this.expSecret(
-    this.generator, await this.randomScalar()
-  );
-
   /** By identity of the raw point, as noble recognizes its base */
   private isBase = (point: _CurvePoint): boolean => point === this.base;
 
   blindsNatively = (point: EcPoint): boolean => this.blinding === 'all' ||
     (this.isBase(point.wrapped) &&
       (this.blinding === 'base' || this.baseMultiplications !== undefined));
-
-  validateScalar = async (scalar: bigint): Promise<boolean> => {
-    const flag = 0 < scalar && scalar < this.order;
-    if (!flag) throw new BadScalarError(
-      `Scalar not in range`
-    );
-    return flag;
-  }
 
   private assertOnCurve = (point: _CurvePoint): void => {
     try { point.assertValidity(); } catch (err: unknown) {

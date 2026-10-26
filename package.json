@@ -48,8 +48,9 @@
     "docs": "typedoc --excludeInternal --out docs src/backend/index.ts src/index.ts src/nizk.ts",
     "lint": "eslint src tests bench examples",
     "typecheck": "tsc --noEmit && tsc -p tests && tsc -p bench && tsc -p examples",
+    "check:declarations": "tsc -p tests/declarations",
     "bench": "./bench.sh",
-    "prepublishOnly": "npm run lint && npm run typecheck && ./test.sh && npm run build"
+    "prepublishOnly": "npm run lint && npm run typecheck && ./test.sh && npm run build && npm run check:declarations"
   },
   "author": "",
   "license": "GPL-3.0-only",

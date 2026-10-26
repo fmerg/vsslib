@@ -14,7 +14,7 @@
 import {
   derivePedersenBase,
   addSecrets,
-  addPublics,
+  combinePublics,
   extractPublic,
   isEqualPublic,
 } from 'vsslib';
@@ -69,7 +69,7 @@ public key.`, {});
 
   // The joint public key is the sum of the public counterparts of all dealt
   // secrets, which nobody learns
-  const expected = await addPublics(
+  const expected = await combinePublics(
     ctx, await Promise.all(secrets.map(secret => extractPublic(ctx, secret)))
   );
   for (const [i, jointPublic] of jointPublics.entries()) {
