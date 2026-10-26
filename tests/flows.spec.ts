@@ -15,6 +15,7 @@ import {
 import { runSss } from '../examples/sss';
 import { distributeShares, recoverPublicKey } from '../examples/vss';
 import { runDkg } from '../examples/dkg';
+import { generateKey, signMessage, verifySignature } from '../examples/tss';
 import { resolveTestConfig } from './environ';
 
 const { systems, nrShares, threshold } = resolveTestConfig();
@@ -60,6 +61,22 @@ describe('Example flows', () => {
     assert.equal(await isEqualSecret(ctx, combined, jointSecret), true);
     for (const recovered of jointPublics) {
       assert.equal(await isEqualPublic(ctx, recovered, jointPublic), true);
+    }
+  });
+
+  each(systems)('Threshold Schnorr signature over %s', async (system) => {
+    const ctx = initBackend(system);
+    const pedersenBase = await derivePedersenBase(ctx);
+    const { shares, publicKey } = await generateKey(ctx, nrShares, threshold, pedersenBase);
+    const message = new TextEncoder().encode('vsslib');
+    const all = Array.from({ length: nrShares }, (_, i) => i + 1);
+    for (const coalition of [qualified, all]) {
+      const { signature, isValid } = await signMessage(
+        ctx, threshold, publicKey, shares, coalition, message
+      );
+      assert.equal(isValid, true);
+      const other = new TextEncoder().encode('other');
+      assert.equal(await verifySignature(ctx, publicKey, other, signature), false);
     }
   });
 });

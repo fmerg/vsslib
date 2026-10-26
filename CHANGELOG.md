@@ -42,6 +42,7 @@ All notable changes to this project will be documented in this file.
 - Root exports of `verifyFeldmanCommitments`, `verifyPedersenCommitments`, the public types and the errors `VssError`, `BadGroupError` and `ShamirError`. Every error derives from `VssError`.
 - Type exports of `Elliptic`, the type of `System`, and of `EcGroup` and `EcPoint` from `vsslib/backend`, the types of the elliptic backends.
 - Exports of `BadPointError`, `BadScalarError` and `validateMultiExp` from `vsslib/backend`, for backends outside the library: the errors are those that parsing reports as `InvalidInput`, and `validateMultiExp` is the input check of `multiExpPublic`.
+- Example `examples/tss.ts`: threshold Schnorr signatures after Stinson and Strobl (ACISP 2001), with the key and the combined commitment of every signature computed by DKG.
 
 ### Security
 
