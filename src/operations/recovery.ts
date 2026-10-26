@@ -114,6 +114,7 @@ export async function recoverPublic<P extends Point>(
   for (const packet of packets) {
     const nonce = nonces[packet.index];
     try {
+      // PERFORMANCE! public share parsed once, by its verification
       points.push(await verifySchnorrPacket(ctx, packet, algorithm, nonce));
       indexes.push(packet.index);
     } catch (err: unknown) {
@@ -131,6 +132,7 @@ export async function recoverPublic<P extends Point>(
   // Interpolate over valid shares only, so that blamed indexes do not
   // distort the Lagrange coefficients. Shares and coefficients are public,
   // so variable time is safe
+  // PERFORMANCE! one multi-exponentiation instead of one per share
   const lambdas = computeLambdas(ctx, indexes);
   const recovered = (await ctx.multiExpPublic(points, lambdas)).toBytes();
   return { recovered, blame };

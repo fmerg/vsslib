@@ -64,6 +64,7 @@ export async function isEqualSecret<P extends Point>(
   lhs: Uint8Array,
   rhs: Uint8Array,
 ): Promise<boolean> {
+  // SECURITY!
   // Parsing rejects non-canonical encodings, so that equal secrets have
   // equal bytes, which are compared in constant time
   await ctx.parseScalar(lhs);
@@ -79,6 +80,7 @@ export async function isEqualPublic<P extends Point>(
   lhs: Uint8Array,
   rhs: Uint8Array
 ): Promise<boolean> {
+  // SECURITY!
   // Parsing rejects non-canonical encodings, so that equal points have
   // equal bytes, which are compared in constant time
   await ctx.parsePoint(lhs);
@@ -97,6 +99,7 @@ export async function isKeypair<P extends Point>(
   const x = await ctx.parseScalar(secret);
   await ctx.parsePoint(publicBytes);
   const y = await ctx.expSecret(g, x);
+  // SECURITY! constant-time comparison of the encodings
   return isEqualBytes(y.toBytes(), publicBytes);
 }
 

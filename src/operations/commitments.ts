@@ -17,6 +17,7 @@ export async function evalCommitments<P extends Point>(
   if (commitments.length !== threshold) throw new InvalidSecretShare(
     `Invalid number of commitments: expected ${threshold}, got ${commitments.length}`
   );
+  // PERFORMANCE! Horner's rule in the exponent, by the small public index
   const x = BigInt(index);
   let acc = await ctx.parsePoint(commitments[threshold - 1]);
   for (let j = threshold - 2; j >= 0; j--) {

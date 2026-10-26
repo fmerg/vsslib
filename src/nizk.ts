@@ -88,6 +88,7 @@ export class NizkProtocol<P extends Point>{
     const n = response.length;
     const innerComm = new Array(m);
     const innerResp = new Array(n);
+    // PERFORMANCE! no subgroup check on the commitments
     // Only compared with elements of the subgroup, so that a small-order
     // component makes verification fail without a subgroup check, as long as
     // the relation points are subgroup elements
@@ -112,6 +113,7 @@ export class NizkProtocol<P extends Point>{
     const { modulus, order, generator } = this.ctx;
     const { us, vs } = relation;
     const toBytes = (p: P) => p.toBytes();
+    // SECURITY! length-prefixed fields, so distinct inputs encode differently
     const input = encodeFields([
       new TextEncoder().encode(`vsslib:nizk:${type}`),
       intToLeBytes(modulus),
@@ -125,6 +127,7 @@ export class NizkProtocol<P extends Point>{
       ...commitment.map(toBytes),
       encodeCount(extras.length),
       ...extras,
+      // SECURITY! binds the proof to the nonce, against replay
       nonce || new Uint8Array(),
     ]);
     const digest = await hash(this.algorithm).digest(input);
@@ -199,6 +202,7 @@ export class NizkProtocol<P extends Point>{
     if (vs.length !== commitment.length)
       throw new InvalidInput('Incompatible lengths');
     const challenge = await this.computeChallenge(type, relation, commitment, extras, nonce);
+    // PERFORMANCE!
     // Relation, challenge and responses are public, so that variable time is
     // safe: check `Π_j u_ij ^ s_j * v_i ^ (-c) = commitment_i` by one
     // multi-exponentiation per row

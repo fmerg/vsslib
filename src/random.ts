@@ -3,7 +3,7 @@ import { randomBytes } from '@noble/hashes/utils.js';
 import { InvalidInput } from './errors';
 
 const NONCE_DEFAULT_SIZE = 16;
-// Quota of crypto.getRandomValues per call
+// SECURITY! quota of crypto.getRandomValues per call
 const NONCE_MAX_SIZE = 65536;
 
 /** Random nonce of `nrBytes` bytes, sampled with crypto.getRandomValues */

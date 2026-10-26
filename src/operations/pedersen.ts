@@ -74,8 +74,10 @@ export async function parsePedersenBase<P extends Point>(
 ): Promise<P> {
   // Anything else is rejected by parsing, as InvalidInput
   if (!(pedersenBase instanceof Uint8Array)) return validatePedersenBase(ctx, pedersenBase);
+  // PERFORMANCE! cached, so that later calls skip parsing
   const key = `${groupKey(ctx)}:${bytesToHex(pedersenBase)}`;
   let entry = pedersenBases.get(ctx.constructor)?.get(key);
+  // PERFORMANCE! table attached on the second use
   if (entry && !entry.precomputed) {
     entry.point = ctx.precomputeBase(entry.point as P);
     entry.precomputed = true;

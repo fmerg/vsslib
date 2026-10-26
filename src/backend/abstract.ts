@@ -109,6 +109,7 @@ export abstract class Group<P extends Point> {
   async randomScalar(): Promise<bigint> {
     const bytes = randomBytes(this.scalarBytes + 16);
     const scalar = mod(leBytesToInt(bytes), this.order);
+    // SECURITY! zeroize the bytes, which determine the scalar
     bytes.fill(0);
     return scalar;
   }
@@ -134,6 +135,7 @@ export abstract class Group<P extends Point> {
       `Invalid scalar provided: expected ${this.scalarBytes} bytes, got ${bytes.length}`
     );
     const scalar = leBytesToInt(bytes);
+    // SECURITY! reject non-canonical and out-of-range scalars
     try {
       await this.validateScalar(scalar);
     } catch (err: unknown) {
@@ -151,6 +153,7 @@ export abstract class Group<P extends Point> {
     let point;
     try {
       point = this.bytesToPoint(bytes);
+      // SECURITY! reject non-canonical encodings and invalid points
       if (!isEqualBytes(point.toBytes(), bytes)) throw new BadPointError(
         'bad encoding: not canonical'
       );
@@ -208,6 +211,7 @@ export abstract class Group<P extends Point> {
    * fresh random `u`, which shows the inversion only a value independent of `r`.
    * Invert only through `invertScalar`, which tests trace for `r` */
   async expSecret(point: P, scalar: bigint): Promise<P> {
+    // SECURITY! blinded natively or split, so leakage does not accumulate
     if (this.blindsNatively(point)) return this.exp(point, scalar);
     const order = this.order;
     let r = 0n;
@@ -223,6 +227,7 @@ export abstract class Group<P extends Point> {
    * in variable time and must therefore never see secrets. Defaults to `exp`;
    * backends override it where a faster variable-time multiplication exists */
   async expPublic(point: P, scalar: bigint): Promise<P> {
+    // SECURITY! variable time: public scalars only
     return this.exp(point, scalar);
   }
 
@@ -233,6 +238,7 @@ export abstract class Group<P extends Point> {
    * multiplication exists. Throws InvalidInput if the lengths differ or a
    * scalar is not in [0, order) */
   async multiExpPublic(points: P[], scalars: bigint[]): Promise<P> {
+    // SECURITY! variable time: public scalars only
     validateMultiExp(points, scalars, this.order);
     let acc = this.neutral;
     for (let i = 0; i < points.length; i++) {

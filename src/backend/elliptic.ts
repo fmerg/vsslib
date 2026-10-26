@@ -142,6 +142,7 @@ export class EcGroup extends Group<EcPoint> {
   /** By identity of the raw point, as noble recognizes its base */
   private isBase = (point: _CurvePoint): boolean => point === this.base;
 
+  // SECURITY! points whose secret multiplication noble blinds
   blindsNatively = (point: EcPoint): boolean => this.blinding === 'all' ||
     (this.isBase(point.wrapped) &&
       (this.blinding === 'base' || this.baseMultiplications !== undefined));
@@ -166,6 +167,7 @@ export class EcGroup extends Group<EcPoint> {
     const wrapped = point.wrapped;
     if (wrapped.is0()) return true;
     this.assertOnCurve(wrapped);
+    // SECURITY!
     // Reject points with a small-order component, which would otherwise
     // vanish from verification equations for suitable challenges
     if (!wrapped.isTorsionFree()) throw new BadPointError(
@@ -198,6 +200,7 @@ export class EcGroup extends Group<EcPoint> {
   multiExpPublic = async (points: EcPoint[], scalars: bigint[]): Promise<EcPoint> => {
     validateMultiExp(points, scalars, this.order);
     const wrapped = points.map(point => point.wrapped);
+    // PERFORMANCE! Pippenger's method from the cutoff on
     if (points.length >= this.msmCutoff) return this.wrap(
       pippenger(this.Point, wrapped, scalars)
     );
@@ -302,6 +305,7 @@ const CURVES: Record<Elliptic, {
   [Elliptic.DECAF448]: {
     Point: decaf448.Point,
     hashToCurve: (msg, DST) => decaf448_hasher.hashToCurve(msg, { DST }),
+    // PERFORMANCE!
     // noble never blinds it, since its Edwards base representative is twice
     // ed448's base but another object. Multiply that very object instead,
     // which noble blinds and tables, doubling the point rather than the secret

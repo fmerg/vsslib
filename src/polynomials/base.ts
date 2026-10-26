@@ -92,6 +92,7 @@ export class BasePolynomial {
   evaluate = (value: bigint | number): bigint => {
     const { coeffs, order } = this;
     const x = mod(BigInt(value), order);
+    // PERFORMANCE! Horner's rule, reducing only past a bound
     // Reduce once the accumulator outgrows the order by REDUCTION_MARGIN bits:
     // rarely for small x (e.g., share indexes), at about every step for x near
     // the order

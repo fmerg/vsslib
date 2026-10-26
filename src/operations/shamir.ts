@@ -92,6 +92,7 @@ export async function sampleSharingPolynomial<P extends Point>(
 ): Promise<FieldPolynomial<P>> {
   const coeffs = new Array(threshold);
   coeffs[0] = secret;
+  // PERFORMANCE! coefficients sampled directly instead of interpolated
   for (let i = 1; i < threshold; i++) coeffs[i] = await ctx.randomScalar();
   return new FieldPolynomial(ctx, coeffs);
 }
@@ -231,6 +232,7 @@ export async function combinePublicShares<P extends Point>(
   const lambdas = computeLambdas(ctx, shares.map(share => share.index));
   const points = [];
   for (const share of shares) points.push(await ctx.parsePoint(share.value));
+  // PERFORMANCE! one multi-exponentiation instead of one per share
   // Shares and coefficients are public, so variable time is safe
   const y = await ctx.multiExpPublic(points, lambdas);
   return y.toBytes();

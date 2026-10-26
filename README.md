@@ -67,6 +67,7 @@ On top of [Shamir's Secret Sharing](./USAGE.md#shamirs-secret-sharing-sss)
 [Pedersen](./USAGE.md#pedersen-scheme) VSS), for settings with zero or low
 trust, and the public key of the secret
 [recoverable](./USAGE.md#verifiable-public-key-recovery).
+
 See also [USAGE.md](./USAGE.md), [SECURITY.md](./SECURITY.md) and
 [PERFORMANCE.md](./PERFORMANCE.md).
 
