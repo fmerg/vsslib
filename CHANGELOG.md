@@ -24,20 +24,23 @@ All notable changes to this project will be documented in this file.
 - Hash algorithms outside `Algorithms` throw `InvalidInput`.
 - `randomNonce(nrBytes)` throws `InvalidInput` unless `nrBytes` is an integer from 1 to 65536; a size of 0 or `null` no longer falls back to 16 bytes.
 - Custom backends: `Group.buff2Point` is renamed to `bytesToPoint`, `Group.bytesToScalar` is removed, and `Group` declares the abstract `hashToPoint(msg, dst)`. In the elliptic backend, `EcGroup.curve` is removed; the wrapped curve is internal.
+- `Group` members are methods, abstract or default, bound to the instance by the constructor, so that backends may implement or override them as methods or as properties; overriding a member as a method used to fail to compile, and in plain JavaScript was shadowed by the default. `Group.system` is a `string`. `randomScalar`, `validateScalar` and `randomPoint` have defaults in `Group` and are no longer abstract.
+- Members marked internal, such as `EcPoint.wrapped`, `ShamirSharing.polynomial` and `Group.invertScalar`, are no longer declared in the published types.
 
 ### Added
 
 - Browser support through bundlers. Hashing uses `@noble/hashes`, now a direct dependency, and randomness comes from `crypto.getRandomValues`, so that no Node APIs are needed at runtime.
 - Backends `ristretto255`, `decaf448`, `secp256k1`, `p256`, `p384` and `p521`. SEC1 points are encoded compressed, with `0x00` for the point at infinity.
 - `derivePedersenBase(ctx, seed)`, which hashes a public seed to a group element of unknown discrete log.
-- `Group.expSecret(point, scalar)`, exponentiation by a secret scalar, and `Group.blindsNatively(point)`, which tells whether `exp` blinds secret scalars for `point`. Custom backends inherit a default that always splits the scalar; override `blindsNatively` only for points the backend blinds, and as a property like the other `Group` members, since a method would be shadowed by the default.
-- `Group.expPublic(point, scalar)`, exponentiation by a public scalar that may run in variable time. It defaults to `exp`; the elliptic backends use noble's `multiplyUnsafe`. Custom backends may override it, as a property, with a faster variable-time multiplication.
+- `Group.expSecret(point, scalar)`, exponentiation by a secret scalar, and `Group.blindsNatively(point)`, which tells whether `exp` blinds secret scalars for `point`. Custom backends inherit a default that always splits the scalar; override `blindsNatively` only for points the backend blinds.
+- `Group.expPublic(point, scalar)`, exponentiation by a public scalar that may run in variable time. It defaults to `exp`; the elliptic backends use noble's `multiplyUnsafe`. Custom backends may override it with a faster variable-time multiplication.
 - `computeLambdas(ctx, indexes)`, the Lagrange coefficients at zero of all given indexes, computed with a single modular inversion.
-- `Group.multiExpPublic(points, scalars)`, the product of public points raised to public scalars, which may run in variable time. It defaults to one `expPublic` per point; the elliptic backends use noble's `pippenger` from 4 points on, 16 on `secp256k1`. Custom backends may override it, as a property, with a multi-scalar multiplication.
-- `Group.parseCurvePoint(bytes)` and `Group.validateCurvePoint(point)`, which decode and validate a point that may lie outside the prime-order subgroup, for points only compared with subgroup elements, such as the commitments of NIZK proofs. `validateCurvePoint` defaults to `validatePoint`; the elliptic backends skip only the subgroup check. Custom backends may override it, as a property.
-- `Group.precomputeBase(point)`, which prepares a public point raised repeatedly to secret scalars, such as a Pedersen base, and returns the point to use instead. It defaults to the point itself; the elliptic backends attach a precomputed noble table. Custom backends may override it, as a property.
+- `Group.multiExpPublic(points, scalars)`, the product of public points raised to public scalars, which may run in variable time. It defaults to one `expPublic` per point; the elliptic backends use noble's `pippenger` from 4 points on, 16 on `secp256k1`. Custom backends may override it with a multi-scalar multiplication.
+- `Group.parseCurvePoint(bytes)` and `Group.validateCurvePoint(point)`, which decode and validate a point that may lie outside the prime-order subgroup, for points only compared with subgroup elements, such as the commitments of NIZK proofs. `validateCurvePoint` defaults to `validatePoint`; the elliptic backends skip only the subgroup check. Custom backends may override it.
+- `Group.precomputeBase(point)`, which prepares a public point raised repeatedly to secret scalars, such as a Pedersen base, and returns the point to use instead. It defaults to the point itself; the elliptic backends attach a precomputed noble table. Custom backends may override it.
 - Root exports of `verifyFeldmanCommitments`, `verifyPedersenCommitments`, the public types and the errors `VssError`, `BadGroupError` and `ShamirError`. Every error derives from `VssError`.
 - Type exports of `Elliptic`, the type of `System`, and of `EcGroup` and `EcPoint` from `vsslib/backend`, the types of the elliptic backends.
+- Exports of `BadPointError`, `BadScalarError` and `validateMultiExp` from `vsslib/backend`, for backends outside the library: the errors are those that parsing reports as `InvalidInput`, and `validateMultiExp` is the input check of `multiExpPublic`.
 
 ### Security
 

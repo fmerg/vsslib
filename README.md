@@ -82,6 +82,14 @@ should do the job, provided that it
 - hashes to group elements of unknown discrete log, and
 - samples scalars uniformly up to negligible bias.
 
+A backend is a subclass of `Group` from `vsslib/backend`, whose instance is
+passed to the API in place of `initBackend(...)`; its members may be written as
+methods or as properties. Invalid encodings are reported by throwing
+`BadPointError` or `BadScalarError`, which parsing turns into `InvalidInput`.
+An alternative implementation of a built-in system, e.g. a native or WASM one,
+interoperates with it if it has the same group parameters, point encoding and
+hash to the group, which enter NIZK challenges and Pedersen bases.
+
 Refer to [`vsslib/backend`](./src/backend/abstract.ts) for details.
 
 ### <a name="security-overview"></a>Security
