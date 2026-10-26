@@ -9,7 +9,8 @@ Interfaces for Verifiable Secret Sharing (VSS) in TypeScript/JavaScript.
 the moment.**
 
 Vsslib provides building blocks for threshold-cryptographic protocols based on
-Verifiable Secret Sharing (VSS), e.g. Distributed Key Generation (DKG) schemes.
+Verifiable Secret Sharing (VSS), e.g. Distributed Key Generation (DKG) schemes
+and threshold Schnorr signatures.
 
 ## Quick example
 
@@ -57,7 +58,8 @@ try {
 }
 ```
 
-See [`examples`](./examples/dkg.ts) for complete flows of SSS, VSS and DKG.
+See [`examples`](./examples/dkg.ts) for complete flows of SSS, VSS, DKG and
+threshold Schnorr signatures.
 
 ## Overview
 
@@ -124,12 +126,14 @@ browser lacks system libraries, run
 ### Examples
 
 ```
-$ npx tsx examples/dkg.ts --help    # also sss.ts and vss.ts
+$ npx tsx examples/dkg.ts --help    # also sss.ts, vss.ts and tss.ts
 ```
 
 [`examples`](./examples/dkg.ts) holds complete flows (SSS, VSS with verifiable
-public key recovery, DKG on top of the latter), with the parties of every step
-marked; the tests run them.
+public key recovery, DKG on top of the latter, and
+[threshold Schnorr signatures](./examples/tss.ts) after Stinson and Strobl,
+with key and combined commitment computed by DKG), with the parties of every
+step marked; the tests run them.
 
 ### Benchmarks
 
