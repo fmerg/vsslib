@@ -1,6 +1,6 @@
 # vsslib
 
-[![build status](https://gitlab.com/fmerg/vsslib/badges/master/pipeline.svg)](https://gitlab.com/fmerg/vsslib/commits/master)
+[![build status](https://img.shields.io/gitlab/pipeline-status/fmerg%2Fvsslib?branch=develop)](https://gitlab.com/fmerg/vsslib/-/pipelines?ref=develop)
 [![npm version](https://img.shields.io/npm/v/vsslib.svg)](https://www.npmjs.com/package/vsslib)
 
 Interfaces for Verifiable Secret Sharing (VSS) in TypeScript/JavaScript.
