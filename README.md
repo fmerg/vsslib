@@ -63,32 +63,32 @@ threshold Schnorr signatures.
 
 ## Overview
 
-On top of [Shamir's Secret Sharing](./USAGE.md#shamirs-secret-sharing-sss)
-(SSS), vsslib makes the sharing verifiable by the parties
-([Feldman](./USAGE.md#feldman-scheme) and
-[Pedersen](./USAGE.md#pedersen-scheme) VSS), for settings with zero or low
-trust, and the public key of the secret
-[recoverable](./USAGE.md#verifiable-public-key-recovery).
+Vsslib provides modular building blocks for implementing threshold-cryptographic
+protocols based on [Shamir's Secret Sharing](./USAGE.md#shamirs-secret-sharing-sss)
+(SSS). It focuses on primitives that make the sharing process verifiable on
+behalf of the involved parties ([Feldman](./USAGE.md#feldman-scheme) and
+[Pedersen](./USAGE.md#pedersen-scheme) VSS schemes) and as such applicable in
+contexts with low trust assumptions.
 
 See also [USAGE.md](./USAGE.md), [SECURITY.md](./SECURITY.md) and
 [PERFORMANCE.md](./PERFORMANCE.md).
 
 ### Backend
 
-Vsslib is agnostic of the underlying cryptosystem: it interacts only with a
-generic group interface, so backends are pluggable. It comes with several
-backends based on [`noble-curves`](https://github.com/paulmillr/noble-curves),
-but any implementation wrapped with the prescribed interface should do the job,
-provided that it operates over a group of prime order, encodes every element
-(the neutral one included) uniquely, rejects elements outside the prime-order
-subgroup, hashes to elements of unknown discrete log and samples scalars
-uniformly up to negligible bias.
+Vsslib is be agnostic of the underlying cryptosystem
+and to admit pluggable backends. It abstracts away algebraic details by
+internally interacting with a generic cryptosystem interface, which backend
+implementations are expected to conform with.
 
-A backend subclasses `Group` from [`vsslib/backend`](./src/backend/abstract.ts)
-and replaces `initBackend(...)`; it reports invalid encodings with
-`BadPointError` or `BadScalarError`. An alternative implementation of a
-built-in system, e.g. a native or WASM one, interoperates with it given the
-same group parameters, point encoding and hash to the group.
+Vsslib comes with several backends based on
+[`noble-curves`](https://github.com/paulmillr/noble-curves), but any
+implementation wrapped with the prescribed interface should do the job,
+provided that it operates over a group of prime order, gives every element
+a unique encoding, rejects elements outside the
+prime-order subgroup, hashes to group elements of unknown discrete log, and
+samples scalars uniformly up to negligible bias.
+
+Refer to [`vsslib/backend`](./src/backend/abstract.ts) for details.
 
 ## Installation
 
